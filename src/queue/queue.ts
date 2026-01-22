@@ -1,4 +1,5 @@
 import { Message as DiscordMessage, TextChannel } from "discord.js";
+import { FileMemory } from "../memory/fileMemory";
 
 const wait = require("node:timers/promises").setTimeout;
 
@@ -11,6 +12,11 @@ interface DirectLLMRequest {
   replyToMessage?: DiscordMessage;
 }
 
+// Configuration mémoire persistante
+const memoryFilePath = process.env.MEMORY_FILE || "./data/memory.json";
+const memoryMaxTurns = Number(process.env.MEMORY_MAX_TURNS || "12");
+const memory = new FileMemory(memoryFilePath);
+
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest) {
   const { prompt, userId, userName, channel, replyToMessage } = request;
@@ -20,10 +26,23 @@ export async function processLLMRequest(request: DirectLLMRequest) {
   // Récupérer le prompt de personnalité depuis .env
   const systemPrompt = process.env.BOT_SYSTEM_PROMPT || "Tu es un assistant Discord.";
 
-  // Construire le message utilisateur avec son identité
-  const userMessage = `[User ID: ${userId} | Display Name: ${userName}]\n${prompt}`;
+  // Clé de mémoire unique (le bot n'écrit que dans un seul channel)
+  const watchedChannelId = process.env.WATCH_CHANNEL_ID;
+  const channelKey = watchedChannelId || channel.id;
+
+  // Récupérer l'historique des conversations précédentes
+  const recentTurns = await memory.getRecentTurns(channelKey, memoryMaxTurns);
+
+  // Construire le contexte avec l'historique
+  const historyBlock = recentTurns.length === 0 ? "" : recentTurns.map((t) => `[UID Discord: ${t.discordUid}] [Pseudo: ${t.displayName}]\nMessage: ${t.userText}\nAssistant: ${t.assistantText}`).join("\n\n");
+
+  const currentUserBlock = `[UID Discord: ${userId}]\n[Pseudo: ${userName}]\nMessage: ${prompt}`;
+
+  // Assembler le prompt final avec contexte si disponible
+  const userMessage = historyBlock.length > 0 ? `Contexte (conversations précédentes dans ce channel) :\n\n${historyBlock}\n\n---\n\nMessage actuel :\n${currentUserBlock}` : currentUserBlock;
 
   console.log(`[System Prompt Length]: ${systemPrompt.length} chars`);
+  console.log(`[Memory]: ${recentTurns.length} turns loaded`);
 
   const url = "http://localhost:11434/api/generate";
 
@@ -48,6 +67,11 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     let result = "";
     let responseChunks: Array<string> = [];
     let messages: Array<DiscordMessage> = [];
+    
+    // Variables pour compter les tokens
+    let promptTokens = 0;
+    let completionTokens = 0;
+    let totalTokens = 0;
 
     // Throttle pour ne pas dépasser les limites Discord
     const throttleResponse = async () => {
@@ -81,17 +105,53 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           return reader?.read().then(async function ({ done, value }) {
             if (done) {
               console.log(`[processLLMRequest] Request complete for user ${userId}`);
+              
+              // Afficher les stats de tokens
+              if (totalTokens > 0) {
+                console.log(`[Tokens] Prompt: ${promptTokens} | Completion: ${completionTokens} | Total: ${totalTokens}`);
+              }
+              
               await wait(2000);
               // Mettre à jour le dernier message avec le contenu final
               if (messages.length > 0) {
                 await messages[messages.length - 1].edit(responseChunks[responseChunks.length - 1]);
               }
+
+              // Sauvegarder le tour de conversation dans la mémoire persistante
+              const assistantText = result.trim();
+              if (assistantText.length > 0) {
+                await memory.appendTurn(
+                  channelKey,
+                  {
+                    ts: Date.now(),
+                    discordUid: userId,
+                    displayName: userName,
+                    userText: prompt,
+                    assistantText,
+                  },
+                  memoryMaxTurns,
+                );
+                console.log(`[Memory]: Conversation saved`);
+              }
+
               clearInterval(throttleResponseInterval);
               controller.close();
               return;
             }
 
-            const chunk = JSON.parse(decoder.decode(value)).response;
+            const decodedChunk = JSON.parse(decoder.decode(value));
+            const chunk = decodedChunk.response || "";
+            
+            // Extraire les informations de tokens si disponibles
+            if (decodedChunk.prompt_eval_count) {
+              promptTokens = decodedChunk.prompt_eval_count;
+            }
+            if (decodedChunk.eval_count) {
+              completionTokens = decodedChunk.eval_count;
+            }
+            if (promptTokens && completionTokens) {
+              totalTokens = promptTokens + completionTokens;
+            }
 
             if (responseChunks.length === 0) {
               responseChunks.push(result);
