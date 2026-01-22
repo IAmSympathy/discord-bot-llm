@@ -17,6 +17,12 @@ const memoryFilePath = process.env.MEMORY_FILE || "./data/memory.json";
 const memoryMaxTurns = Number(process.env.MEMORY_MAX_TURNS || "12");
 const memory = new FileMemory(memoryFilePath);
 
+// Fonction pour effacer la mémoire d'un channel
+export async function clearMemory(channelKey: string): Promise<void> {
+  await memory.clearChannel(channelKey);
+  console.log(`[Memory] Channel ${channelKey} memory cleared`);
+}
+
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest) {
   const { prompt, userId, userName, channel, replyToMessage } = request;
@@ -67,7 +73,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     let result = "";
     let responseChunks: Array<string> = [];
     let messages: Array<DiscordMessage> = [];
-    
+
     // Variables pour compter les tokens
     let promptTokens = 0;
     let completionTokens = 0;
@@ -105,12 +111,12 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           return reader?.read().then(async function ({ done, value }) {
             if (done) {
               console.log(`[processLLMRequest] Request complete for user ${userId}`);
-              
+
               // Afficher les stats de tokens
               if (totalTokens > 0) {
                 console.log(`[Tokens] Prompt: ${promptTokens} | Completion: ${completionTokens} | Total: ${totalTokens}`);
               }
-              
+
               await wait(2000);
               // Mettre à jour le dernier message avec le contenu final
               if (messages.length > 0) {
@@ -141,7 +147,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
             const decodedChunk = JSON.parse(decoder.decode(value));
             const chunk = decodedChunk.response || "";
-            
+
             // Extraire les informations de tokens si disponibles
             if (decodedChunk.prompt_eval_count) {
               promptTokens = decodedChunk.prompt_eval_count;
