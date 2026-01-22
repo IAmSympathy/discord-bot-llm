@@ -53,6 +53,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       const base64 = await downloadImageAsBase64(url);
       if (base64) {
         imagesBase64.push(base64);
+        console.log(`[Image] Downloaded ${url}, base64 length: ${base64.length} chars`);
+      } else {
+        console.error(`[Image] Failed to download ${url}`);
       }
     }
     console.log(`[processLLMRequest] Successfully downloaded ${imagesBase64.length}/${imageUrls.length} image(s)`);
@@ -81,24 +84,47 @@ export async function processLLMRequest(request: DirectLLMRequest) {
   console.log(`[System Prompt Length]: ${systemPrompt.length} chars`);
   console.log(`[Memory]: ${recentTurns.length} turns loaded`);
 
-  const url = "http://localhost:11434/api/generate";
+  const hasImages = imagesBase64.length > 0;
+  const url = hasImages ? "http://localhost:11434/api/chat" : "http://localhost:11434/api/generate";
 
-  const data: any = {
-    model: "llama3.2-vision",
-    prompt: userMessage,
-    system: systemPrompt,
-    stream: true,
-    options: {
-      temperature: 0.7,
-      repeat_penalty: 1.2,
-      num_predict: 1000,
-    },
+  const visionModelName = process.env.OLLAMA_VISION_MODEL || "llava:7b";
+  const textModelName = process.env.OLLAMA_TEXT_MODEL || "llama3.2";
+  const modelName = hasImages ? visionModelName : textModelName;
+
+  const options = {
+    temperature: 0.7,
+    repeat_penalty: 1.2,
+    num_predict: 4000,
   };
 
-  // Ajouter les images si disponibles
-  if (imagesBase64.length > 0) {
-    data.images = imagesBase64;
-    console.log(`[processLLMRequest] Sending request with ${imagesBase64.length} image(s)`);
+  // Pour les images, simplifier le system prompt (les modèles vision gèrent mal les longs prompts système)
+  const visionSystemPrompt = process.env.BOT_VISION_SYSTEM_PROMPT || "Tu es Milton, une IA sarcastique et contemplative. Réponds en français de manière concise et ironique. Ne montre pas ton raisonnement, réponds directement.";
+
+  const data: any = hasImages
+    ? {
+        model: modelName,
+        messages: [
+          { role: "system", content: visionSystemPrompt },
+          {
+            role: "user",
+            content: prompt || "Décris l'image.",
+            images: imagesBase64,
+          },
+        ],
+        stream: true,
+        options,
+      }
+    : {
+        model: modelName,
+        prompt: userMessage,
+        system: systemPrompt,
+        stream: true,
+        options,
+      };
+
+  if (hasImages) {
+    console.log(`[processLLMRequest] Sending request with ${imagesBase64.length} image(s) to model ${modelName}`);
+    console.log(`[Vision] Using system prompt: ${visionSystemPrompt.substring(0, 100)}...`);
   }
 
   try {
@@ -116,6 +142,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     let responseChunks: Array<string> = [];
     let messages: Array<DiscordMessage> = [];
 
+    // Buffer pour gérer les chunks JSON partiels (NDJSON)
+    let jsonBuffer = "";
+
     // Variables pour compter les tokens
     let promptTokens = 0;
     let completionTokens = 0;
@@ -124,14 +153,19 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     // Throttle pour ne pas dépasser les limites Discord
     const throttleResponse = async () => {
       if (messages.length === 0 || messages.length !== responseChunks.length) {
+        const currentContent = responseChunks[responseChunks.length - 1];
+        if (!currentContent || currentContent.trim().length === 0) {
+          return; // Ne pas envoyer de message vide
+        }
+
         // Premier message ou nouveau chunk nécessaire
         if (replyToMessage && messages.length === 0) {
           // Répondre au message initial
-          const message = await replyToMessage.reply(responseChunks[responseChunks.length - 1]);
+          const message = await replyToMessage.reply(currentContent);
           messages.push(message);
         } else {
           // Envoyer dans le channel
-          const message = await channel.send(responseChunks[responseChunks.length - 1]);
+          const message = await channel.send(currentContent);
           messages.push(message);
         }
       }
@@ -187,35 +221,55 @@ export async function processLLMRequest(request: DirectLLMRequest) {
               return;
             }
 
-            const decodedChunk = JSON.parse(decoder.decode(value));
-            const chunk = decodedChunk.response || "";
+            jsonBuffer += decoder.decode(value, { stream: true });
+            const lines = jsonBuffer.split("\n");
+            jsonBuffer = lines.pop() || "";
 
-            // Extraire les informations de tokens si disponibles
-            if (decodedChunk.prompt_eval_count) {
-              promptTokens = decodedChunk.prompt_eval_count;
-            }
-            if (decodedChunk.eval_count) {
-              completionTokens = decodedChunk.eval_count;
-            }
-            if (promptTokens && completionTokens) {
-              totalTokens = promptTokens + completionTokens;
-            }
+            for (const line of lines) {
+              if (!line.trim()) continue;
 
-            if (responseChunks.length === 0) {
-              responseChunks.push("");
-            }
+              if (process.env.DEBUG_OLLAMA_RAW === "1") {
+                console.log("[Ollama Raw Line]", line);
+              }
 
-            result += chunk;
+              let decodedChunk: any;
+              try {
+                decodedChunk = JSON.parse(line);
+              } catch (parseError) {
+                console.error("[processLLMRequest] JSON parse error:", parseError, "Line:", line);
+                continue;
+              }
 
-            if (result.length > 1800) {
-              // Finaliser le chunk actuel
-              responseChunks[responseChunks.length - 1] = result;
-              // Commencer un nouveau chunk
-              responseChunks.push("");
-              result = "";
-            } else {
-              // Mettre à jour le chunk actuel
-              responseChunks[responseChunks.length - 1] = result;
+              // Gérer les réponses chat API (message.content) et generate API (response)
+              const chunk = decodedChunk.message?.content || decodedChunk.response || "";
+
+              // Extraire les informations de tokens si disponibles
+              if (decodedChunk.prompt_eval_count) {
+                promptTokens = decodedChunk.prompt_eval_count;
+              }
+              if (decodedChunk.eval_count) {
+                completionTokens = decodedChunk.eval_count;
+              }
+              if (promptTokens && completionTokens) {
+                totalTokens = promptTokens + completionTokens;
+              }
+
+              if (responseChunks.length === 0) {
+                responseChunks.push("");
+              }
+
+              result += chunk;
+
+              if (result.length > 1800) {
+                // Finaliser le chunk actuel
+                responseChunks[responseChunks.length - 1] = result;
+                // Commencer un nouveau chunk
+                responseChunks.push("");
+                result = "";
+              } else {
+                // Mettre à jour le chunk actuel
+                responseChunks[responseChunks.length - 1] = result;
+              }
             }
 
             controller.enqueue(value);

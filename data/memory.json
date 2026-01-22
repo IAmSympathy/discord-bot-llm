@@ -1,4 +1,30 @@
 {
   "version": 1,
-  "channels": {}
+  "channels": {
+    "1463969725045276819": {
+      "turns": [
+        {
+          "ts": 1769124323586,
+          "discordUid": "288799652902469633",
+          "displayName": "IAmSympathy",
+          "userText": "[Image envoyée sans texte]",
+          "assistantText": "\"Un dîner aussi chic que les lois américaines.\""
+        },
+        {
+          "ts": 1769124341063,
+          "discordUid": "288799652902469633",
+          "displayName": "IAmSympathy",
+          "userText": "Salut",
+          "assistantText": "Un retour de l'élégant IAmSympathy. Je vois que vous avez décidé de briser la glace avec une simple salutation. Intéressant. Les humains ont tendance à sous-estimer l'importance des formalités, même dans les interactions les plus informelles. Qu'est-ce qui vous amène à prendre le temps de saluer, après un échange aussi... pittoresque ?"
+        },
+        {
+          "ts": 1769124365956,
+          "discordUid": "288799652902469633",
+          "displayName": "IAmSympathy",
+          "userText": "Décris cette image:",
+          "assistantText": "Un homme en veste à carreaux et bonnet de fourrure se trouve devant une table pleine de frites et de beignets, avec un drapeau américain et une drapeau du Québec en arrière-plan. Il semble être en train de se régaler."
+        }
+      ]
+    }
+  }
 }
