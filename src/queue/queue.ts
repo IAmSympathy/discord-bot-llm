@@ -28,6 +28,44 @@ async function downloadImageAsBase64(url: string): Promise<string | null> {
   }
 }
 
+// Fonction pour générer une description d'image avec le modèle vision
+async function generateImageDescription(imageBase64: string): Promise<string | null> {
+  const visionModelName = process.env.OLLAMA_VISION_MODEL || "llava:7b";
+  const visionSystemPrompt = "Décris cette image de manière détaillée et précise. Sois concis mais complet.";
+
+  try {
+    const response = await fetch("http://localhost:11434/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: visionModelName,
+        messages: [
+          { role: "system", content: visionSystemPrompt },
+          { role: "user", content: "Décris cette image.", images: [imageBase64] },
+        ],
+        stream: false,
+        options: {
+          temperature: 0.7,
+          num_predict: 500,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`[Vision] Error: ${response.status} ${response.statusText}`);
+      return null;
+    }
+
+    const result = await response.json();
+    const description = result.message?.content || null;
+    console.log(`[Vision] Generated description (${description?.length || 0} chars)`);
+    return description;
+  } catch (error) {
+    console.error(`[Vision] Error generating description:`, error);
+    return null;
+  }
+}
+
 // Configuration mémoire persistante
 const memoryFilePath = process.env.MEMORY_FILE || "./data/memory.json";
 const memoryMaxTurns = Number(process.env.MEMORY_MAX_TURNS || "12");
@@ -45,20 +83,26 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
   console.log(`[processLLMRequest] User ${userId} sent prompt: ${prompt}${imageUrls && imageUrls.length > 0 ? ` with ${imageUrls.length} image(s)` : ""}`);
 
-  // Télécharger et convertir les images en base64
-  let imagesBase64: string[] = [];
+  // Télécharger les images et générer leurs descriptions avec le modèle vision
+  let imageDescriptions: string[] = [];
   if (imageUrls && imageUrls.length > 0) {
-    console.log(`[processLLMRequest] Downloading ${imageUrls.length} image(s)...`);
+    console.log(`[processLLMRequest] Processing ${imageUrls.length} image(s)...`);
     for (const url of imageUrls) {
       const base64 = await downloadImageAsBase64(url);
       if (base64) {
-        imagesBase64.push(base64);
-        console.log(`[Image] Downloaded ${url}, base64 length: ${base64.length} chars`);
+        console.log(`[Image] Downloaded ${url}, generating description...`);
+        const description = await generateImageDescription(base64);
+        if (description) {
+          imageDescriptions.push(description);
+          console.log(`[Image] Description: ${description.substring(0, 100)}...`);
+        } else {
+          console.error(`[Image] Failed to generate description for ${url}`);
+        }
       } else {
         console.error(`[Image] Failed to download ${url}`);
       }
     }
-    console.log(`[processLLMRequest] Successfully downloaded ${imagesBase64.length}/${imageUrls.length} image(s)`);
+    console.log(`[processLLMRequest] Successfully processed ${imageDescriptions.length}/${imageUrls.length} image(s)`);
   }
 
   // Récupérer le prompt de personnalité depuis .env
@@ -71,25 +115,39 @@ export async function processLLMRequest(request: DirectLLMRequest) {
   // Récupérer l'historique des conversations précédentes
   const recentTurns = await memory.getRecentTurns(channelKey, memoryMaxTurns);
 
-  // Construire le contexte avec l'historique
-  const historyBlock = recentTurns.length === 0 ? "" : recentTurns.map((t) => `[UID Discord: ${t.discordUid}] [Pseudo: ${t.displayName}]\nMessage: ${t.userText}\nAssistant: ${t.assistantText}`).join("\n\n");
+  // Les descriptions d'images historiques sont déjà dans recentTurns via imageDescription
 
-  // Indiquer explicitement si des images sont présentes
-  const imageNotice = imagesBase64.length > 0 ? `\n[${imagesBase64.length} image(s) fournie(s) - analyse-les dans ta réponse]` : "";
-  const currentUserBlock = `[UID Discord: ${userId}]\n[Pseudo: ${userName}]\nMessage: ${prompt}${imageNotice}`;
+  // Construire le contexte avec l'historique - format très clair pour éviter la confusion
+  const historyBlock =
+    recentTurns.length === 0
+      ? ""
+      : recentTurns
+          .map((t) => {
+            const imageContext = t.imageDescription ? `\n[L'utilisateur a fourni une image. Description générée automatiquement: ${t.imageDescription}]` : "";
+            return `UTILISATEUR (UID: ${t.discordUid}, Nom: ${t.displayName}):\n${t.userText}${imageContext}\n\nTOI (Milton, l'assistant):\n${t.assistantText}`;
+          })
+          .join("\n\n--- Échange suivant ---\n\n");
 
-  // Assembler le prompt final avec contexte si disponible
-  const userMessage = historyBlock.length > 0 ? `Contexte (conversations précédentes dans ce channel) :\n\n${historyBlock}\n\n---\n\nMessage actuel :\n${currentUserBlock}` : currentUserBlock;
+  // Ajouter les descriptions d'images actuelles au message utilisateur
+  const imageContext = imageDescriptions.length > 0 ? `\n[L'utilisateur fournit une image. Description générée automatiquement: ${imageDescriptions.join(" | ")}]` : "";
+  const currentUserBlock = `UTILISATEUR (UID: ${userId}, Nom: ${userName}):\n${prompt}${imageContext}`;
+
+  // Assembler le prompt final avec un préambule explicatif
+  const contextPreamble =
+    historyBlock.length > 0 ? `IMPORTANT: Voici l'historique de la conversation. Lis attentivement QUI a dit QUOI. Ne confonds JAMAIS ce que l'utilisateur a dit avec ce que TU as dit.\n\n=== HISTORIQUE ===\n\n${historyBlock}\n\n=== FIN HISTORIQUE ===\n\n=== MESSAGE ACTUEL ===\n\n` : "";
+
+  const userMessage = `${contextPreamble}${currentUserBlock}\n\nRéponds maintenant en tant que Milton:`;
 
   console.log(`[System Prompt Length]: ${systemPrompt.length} chars`);
   console.log(`[Memory]: ${recentTurns.length} turns loaded`);
+  if (imageDescriptions.length > 0) {
+    console.log(`[Images]: ${imageDescriptions.length} image description(s) included in context`);
+  }
 
-  const hasImages = imagesBase64.length > 0;
-  const url = hasImages ? "http://localhost:11434/api/chat" : "http://localhost:11434/api/generate";
-
-  const visionModelName = process.env.OLLAMA_VISION_MODEL || "llava:7b";
+  // Toujours utiliser le modèle texte avec l'API generate
+  const url = "http://localhost:11434/api/generate";
   const textModelName = process.env.OLLAMA_TEXT_MODEL || "llama3.2";
-  const modelName = hasImages ? visionModelName : textModelName;
+  const modelName = textModelName;
 
   const options = {
     temperature: 0.7,
@@ -97,35 +155,15 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     num_predict: 4000,
   };
 
-  // Pour les images, simplifier le system prompt (les modèles vision gèrent mal les longs prompts système)
-  const visionSystemPrompt = process.env.BOT_VISION_SYSTEM_PROMPT || "Tu es Milton, une IA sarcastique et contemplative. Réponds en français de manière concise et ironique. Ne montre pas ton raisonnement, réponds directement.";
+  const data = {
+    model: modelName,
+    prompt: userMessage,
+    system: systemPrompt,
+    stream: true,
+    options,
+  };
 
-  const data: any = hasImages
-    ? {
-        model: modelName,
-        messages: [
-          { role: "system", content: visionSystemPrompt },
-          {
-            role: "user",
-            content: prompt || "Décris l'image.",
-            images: imagesBase64,
-          },
-        ],
-        stream: true,
-        options,
-      }
-    : {
-        model: modelName,
-        prompt: userMessage,
-        system: systemPrompt,
-        stream: true,
-        options,
-      };
-
-  if (hasImages) {
-    console.log(`[processLLMRequest] Sending request with ${imagesBase64.length} image(s) to model ${modelName}`);
-    console.log(`[Vision] Using system prompt: ${visionSystemPrompt.substring(0, 100)}...`);
-  }
+  console.log(`[processLLMRequest] Sending request to text model ${modelName}`);
 
   try {
     const response = await fetch(url, {
@@ -210,10 +248,11 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                     displayName: userName,
                     userText: prompt,
                     assistantText,
+                    ...(imageDescriptions.length > 0 ? { imageDescription: imageDescriptions.join(" | ") } : {}),
                   },
                   memoryMaxTurns,
                 );
-                console.log(`[Memory]: Conversation saved`);
+                console.log(`[Memory]: Conversation saved${imageDescriptions.length > 0 ? " with image description" : ""}`);
               }
 
               clearInterval(throttleResponseInterval);

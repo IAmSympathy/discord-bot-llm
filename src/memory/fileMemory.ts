@@ -7,6 +7,7 @@ export type MemoryTurn = {
   displayName: string;
   userText: string;
   assistantText: string;
+  imageDescription?: string;
 };
 
 type ChannelMemory = {
