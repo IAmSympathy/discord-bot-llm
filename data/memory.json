@@ -1,23 +1,4 @@
 {
   "version": 1,
-  "channels": {
-    "1463969725045276819": {
-      "turns": [
-        {
-          "ts": 1769117361545,
-          "discordUid": "288799652902469633",
-          "displayName": "IAmSympathy",
-          "userText": "Salut",
-          "assistantText": "Un salut. C'est un début. Mais que souhaitez-vous vraiment dire ?"
-        },
-        {
-          "ts": 1769117368699,
-          "discordUid": "288799652902469633",
-          "displayName": "IAmSympathy",
-          "userText": "RIen",
-          "assistantText": "Rien, c'est un début. L'absence de désir de communication est-elle un désir en soi ?"
-        }
-      ]
-    }
-  }
+  "channels": {}
 }

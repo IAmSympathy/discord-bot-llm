@@ -27,20 +27,31 @@ export function registerWatchedChannelResponder(client: Client) {
       if (message.content?.startsWith("/")) return;
 
       const userText = message.content?.trim();
-      if (!userText) return;
+
+      // Extraire les images (attachments Discord)
+      const imageUrls: string[] = [];
+      for (const attachment of message.attachments.values()) {
+        if (attachment.contentType?.startsWith("image/")) {
+          imageUrls.push(attachment.url);
+        }
+      }
+
+      // Si pas de texte ni d'image, on ignore
+      if (!userText && imageUrls.length === 0) return;
 
       // Indique que le bot "écrit"
       await message.channel.sendTyping();
 
-      console.log(`[watchChannel] Processing message from ${message.author.displayName}: ${userText}`);
+      console.log(`[watchChannel] Processing message from ${message.author.displayName}: ${userText}${imageUrls.length > 0 ? ` [${imageUrls.length} image(s)]` : ""}`);
 
       // Utiliser la logique LLM existante mais sans thread
       await processLLMRequest({
-        prompt: userText,
+        prompt: userText || "[Image envoyée sans texte]",
         userId: message.author.id,
         userName: message.author.displayName,
         channel: message.channel as TextChannel,
         replyToMessage: message,
+        imageUrls,
       });
     } catch (err) {
       console.error("[watchChannel] messageCreate error:", err);

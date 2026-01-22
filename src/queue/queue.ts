@@ -10,6 +10,22 @@ interface DirectLLMRequest {
   userName: string;
   channel: TextChannel;
   replyToMessage?: DiscordMessage;
+  imageUrls?: string[];
+}
+
+// Fonction pour télécharger une image et la convertir en base64
+async function downloadImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+
+    const buffer = await response.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString("base64");
+    return base64;
+  } catch (error) {
+    console.error(`[downloadImage] Error downloading ${url}:`, error);
+    return null;
+  }
 }
 
 // Configuration mémoire persistante
@@ -25,9 +41,22 @@ export async function clearMemory(channelKey: string): Promise<void> {
 
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest) {
-  const { prompt, userId, userName, channel, replyToMessage } = request;
+  const { prompt, userId, userName, channel, replyToMessage, imageUrls } = request;
 
-  console.log(`[processLLMRequest] User ${userId} sent prompt: ${prompt}`);
+  console.log(`[processLLMRequest] User ${userId} sent prompt: ${prompt}${imageUrls && imageUrls.length > 0 ? ` with ${imageUrls.length} image(s)` : ""}`);
+
+  // Télécharger et convertir les images en base64
+  let imagesBase64: string[] = [];
+  if (imageUrls && imageUrls.length > 0) {
+    console.log(`[processLLMRequest] Downloading ${imageUrls.length} image(s)...`);
+    for (const url of imageUrls) {
+      const base64 = await downloadImageAsBase64(url);
+      if (base64) {
+        imagesBase64.push(base64);
+      }
+    }
+    console.log(`[processLLMRequest] Successfully downloaded ${imagesBase64.length}/${imageUrls.length} image(s)`);
+  }
 
   // Récupérer le prompt de personnalité depuis .env
   const systemPrompt = process.env.BOT_SYSTEM_PROMPT || "Tu es un assistant Discord.";
@@ -42,7 +71,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
   // Construire le contexte avec l'historique
   const historyBlock = recentTurns.length === 0 ? "" : recentTurns.map((t) => `[UID Discord: ${t.discordUid}] [Pseudo: ${t.displayName}]\nMessage: ${t.userText}\nAssistant: ${t.assistantText}`).join("\n\n");
 
-  const currentUserBlock = `[UID Discord: ${userId}]\n[Pseudo: ${userName}]\nMessage: ${prompt}`;
+  // Indiquer explicitement si des images sont présentes
+  const imageNotice = imagesBase64.length > 0 ? `\n[${imagesBase64.length} image(s) fournie(s) - analyse-les dans ta réponse]` : "";
+  const currentUserBlock = `[UID Discord: ${userId}]\n[Pseudo: ${userName}]\nMessage: ${prompt}${imageNotice}`;
 
   // Assembler le prompt final avec contexte si disponible
   const userMessage = historyBlock.length > 0 ? `Contexte (conversations précédentes dans ce channel) :\n\n${historyBlock}\n\n---\n\nMessage actuel :\n${currentUserBlock}` : currentUserBlock;
@@ -52,12 +83,23 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
   const url = "http://localhost:11434/api/generate";
 
-  const data = {
+  const data: any = {
     model: "llama3.2-vision",
     prompt: userMessage,
     system: systemPrompt,
     stream: true,
+    options: {
+      temperature: 0.7,
+      repeat_penalty: 1.2,
+      num_predict: 1000,
+    },
   };
+
+  // Ajouter les images si disponibles
+  if (imagesBase64.length > 0) {
+    data.images = imagesBase64;
+    console.log(`[processLLMRequest] Sending request with ${imagesBase64.length} image(s)`);
+  }
 
   try {
     const response = await fetch(url, {
@@ -160,15 +202,20 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             }
 
             if (responseChunks.length === 0) {
-              responseChunks.push(result);
+              responseChunks.push("");
             }
 
-            if (result.length + chunk.length > 1800) {
-              responseChunks.push(chunk);
+            result += chunk;
+
+            if (result.length > 1800) {
+              // Finaliser le chunk actuel
+              responseChunks[responseChunks.length - 1] = result;
+              // Commencer un nouveau chunk
+              responseChunks.push("");
               result = "";
             } else {
-              responseChunks[responseChunks.length - 1] = responseChunks[responseChunks.length - 1].concat(chunk);
-              result += chunk;
+              // Mettre à jour le chunk actuel
+              responseChunks[responseChunks.length - 1] = result;
             }
 
             controller.enqueue(value);
