@@ -1,5 +1,6 @@
 import { Message as DiscordMessage, TextChannel, ThreadChannel } from "discord.js";
 import { FileMemory } from "../memory/fileMemory";
+import emojiRegex from "emoji-regex";
 
 const wait = require("node:timers/promises").setTimeout;
 
@@ -12,6 +13,11 @@ interface DirectLLMRequest {
   replyToMessage?: DiscordMessage;
   referencedMessage?: DiscordMessage;
   imageUrls?: string[];
+}
+
+function extractValidEmojis(str: string): string[] {
+  const regex = emojiRegex();
+  return Array.from(str.matchAll(regex), (m) => m[0]);
 }
 
 // Fonction pour télécharger une image et la convertir en base64
@@ -233,7 +239,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     }
 
     // Récupérer le prompt de personnalité depuis .env
-    const systemPrompt = process.env.BOT_SYSTEM_PROMPT || "Tu es un assistant Discord.";
+    let systemPrompt = process.env.BOT_SYSTEM_PROMPT || "Tu es une assistante Discord.";
 
     // Récupérer l'historique des conversations précédentes
     const recentTurns = await memory.getRecentTurns(channelKey, memoryMaxTurns);
@@ -247,27 +253,26 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         : recentTurns
             .map((t) => {
               const imageContext = t.imageDescription ? `\n[L'utilisateur a fourni une image. Description générée automatiquement: ${t.imageDescription}]` : "";
-              return `UTILISATEUR (UID: ${t.discordUid}, Nom: ${t.displayName}):\n${t.userText}${imageContext}\n\nTOI (Netricsa, l'assistant):\n${t.assistantText}`;
+              return `UTILISATEUR (UID: ${t.discordUid}, Nom: ${t.displayName}):\n${t.userText}${imageContext}\n\nTOI (Netricsa):\n${t.assistantText}`;
             })
             .join("\n\n--- Échange suivant ---\n\n");
 
     // Ajouter les descriptions d'images actuelles au message utilisateur
     const imageContext = imageDescriptions.length > 0 ? `\n[L'utilisateur fournit une image. Description générée automatiquement: ${imageDescriptions.join(" | ")}]` : "";
-    const currentUserBlock = `UTILISATEUR (UID Discord: ${userId}, Nom: ${userName}):\n${prompt}${imageContext}\n\n[RAPPEL: Pour mentionner cet utilisateur sur Discord, utilise exactement: <@${userId}>]`;
+    const currentUserBlock = `UTILISATEUR (UID Discord: ${userId}, Nom: ${userName}):\n${prompt}${imageContext}\n\n[RAPPEL: Pour mentionner/ping cet utilisateur sur Discord, utilise exactement: <@${userId}>]`;
 
-    const searchIntentRegex =
-      /(cherche|recherche|rechercher|trouve|trouver|source|sources|lien|liens|actualité|news|site|web|internet|documentation|doc|wiki|wikipédia|prix|comparaison|avis|review|références|\bquand\b|\bc'?est[-\s]*quoi\b|\bqui\b|\boù\b|\bpourquoi\b|\bcombien\b|\bquel(le)?s?\b|\bqu'?est-ce que\b|\bc'?est\b)/i;
+    const searchIntentRegex = /(cherche|recherche|rechercher|trouve|trouver|source|sources|lien|liens|actualité|news|site|web|internet|documentation|wiki|wikipédia|prix|review|références|\bquand\b|\bc'?est[-\s]*quoi\b|\bquel(le)?s?\b|\bqu'?est-ce que\b)/i;
     const shouldSearch = !!process.env.BRAVE_SEARCH_API_KEY && searchIntentRegex.test(prompt || "");
     const webResults = shouldSearch ? await searchBrave(prompt) : null;
     if (webResults) {
       console.log("[BraveSearch] Web context added to prompt");
     }
-    const webBlock = webResults ? `IMPORTANT: Voici du contexte provenant du web. Ne mentionne pas que ça provient du web et utilise ce contexte dans ta réponse. Prend le comme factuel.=== DÉBUT CONTEXTE WEB === (Brave Search) ===\n${webResults}\n=== FIN CONTEXTE WEB ===\n\n` : "";
+    const webBlock = webResults ? `Voici du contexte provenant du web. Ne mentionne pas que ça provient du web et utilise ce contexte dans ta réponse. Prend le comme factuel.=== DÉBUT CONTEXTE WEB ===\n${webResults}\n=== FIN CONTEXTE WEB ===\n\n` : "";
 
     // Assembler le prompt final avec un préambule explicatif
     const contextPreamble =
       historyBlock.length > 0
-        ? `IMPORTANT: Voici l'historique de la conversation. Lis attentivement QUI a dit QUOI. Ne confonds JAMAIS ce que l'utilisateur a dit avec ce que TU as dit.\n\n=== HISTORIQUE ===\n\n${historyBlock}\n\n=== FIN HISTORIQUE ===\n\n${webBlock}=== MESSAGE ACTUEL ===\n\n`
+        ? `Voici l'historique de la conversation, tu dois t'en servir comme contexte. Lis attentivement qui a dit quoi. Ne confonds jamais ce que les utilisateurs ont dit avec ce que tu as dit.\n\n=== HISTORIQUE ===\n\n${historyBlock}\n\n=== FIN HISTORIQUE ===\n\n${webBlock}=== MESSAGE ACTUEL ===\n\n`
         : webBlock.length > 0
           ? `${webBlock}=== MESSAGE ACTUEL ===\n\n`
           : "";
@@ -329,32 +334,20 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       const extractAndApplyReaction = async (text: string): Promise<string> => {
         let modifiedText = text;
 
-        // Réaction au message de l'utilisateur
-        const match = modifiedText.match(/\[REACT:([^\]]+)\]/);
-        if (match && !reactionApplied && replyToMessage) {
-          const emoji = match[1].trim();
-          try {
-            await replyToMessage.react(emoji);
-            reactionApplied = true;
-            console.log(`[Reaction] Applied ${emoji} to user message`);
-          } catch (error) {
-            console.warn(`[Reaction] Failed to apply ${emoji}:`, error);
+        if (replyToMessage && !reactionApplied) {
+          const emojis = extractValidEmojis(modifiedText);
+          for (const emoji of emojis) {
+            try {
+              await replyToMessage.react(emoji);
+              console.log(`[Reaction] Applied ${emoji} to user message`);
+            } catch (error) {
+              console.warn(`[Reaction] Failed to apply ${emoji}:`, error);
+            }
           }
-          modifiedText = modifiedText.replace(/\[REACT:[^\]]+\]/g, "").trim();
-        }
-
-        // Réaction au message référencé
-        const matchRef = modifiedText.match(/\[REACT_REF:([^\]]+)\]/);
-        if (matchRef && !reactionRefApplied && referencedMessage) {
-          const emoji = matchRef[1].trim();
-          try {
-            await referencedMessage.react(emoji);
-            reactionRefApplied = true;
-            console.log(`[Reaction] Applied ${emoji} to referenced message`);
-          } catch (error) {
-            console.warn(`[Reaction] Failed to apply ${emoji} to referenced message:`, error);
-          }
-          modifiedText = modifiedText.replace(/\[REACT_REF:[^\]]+\]/g, "").trim();
+          // Retirer les emojis du message avant l'affichage en préservant les espaces
+          modifiedText = modifiedText.replace(emojiRegex(), "");
+          // Normaliser les espaces multiples mais préserver les sauts de ligne
+          modifiedText = modifiedText.replace(/ {2,}/g, " ");
         }
 
         return modifiedText;
@@ -456,7 +449,12 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                 }
 
                 // Sauvegarder le tour de conversation dans la mémoire persistante
-                const assistantText = result.trim();
+                // Ne pas trim pour préserver les sauts de ligne, juste retirer les espaces aux extrémités de chaque ligne
+                const assistantText = result
+                  .split("\n")
+                  .map((line) => line.trimEnd())
+                  .join("\n")
+                  .replace(/^\s+|\s+$/g, "");
 
                 // Ne pas sauvegarder si la réponse est un refus de modération
                 // Détection améliorée des réponses de refus du bot

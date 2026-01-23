@@ -26,7 +26,7 @@ module.exports = {
       await clearMemory(channelKey);
 
       await interaction.editReply({
-        content: `Ma mémoire a été effacée pour ce salon.`,
+        content: `------ Ma mémoire a été effacée pour ce salon. ------`,
       });
 
       console.log(`[Reset Command] Memory cleared for channel ${channelKey} by ${interaction.user.displayName}`);

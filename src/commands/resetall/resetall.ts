@@ -29,16 +29,16 @@ module.exports = {
 
       // Envoyer le message de confirmation
       const response = await interaction.reply({
-        content: "**ATTENTION** : Ceci va effacer TOUTE ma mémoire dans TOUS les salons. Cette action est irréversible.\n\nÊtes-vous sûr de vouloir continuer ?",
+        content: "**ATTENTION** : Ceci va effacer ma mémoire de TOUS les salons. Cette action est irréversible.\n\nÊtes-vous sûr de vouloir continuer ?",
         components: [row],
         ephemeral: true,
       });
 
-      // Attendre la réponse de l'utilisateur (60 secondes)
+      // Attendre la réponse de l'utilisateur (10 secondes)
       try {
         const confirmation = await response.awaitMessageComponent({
           componentType: ComponentType.Button,
-          time: 60000,
+          time: 10000,
           filter: (i) => i.user.id === interaction.user.id,
         });
 
@@ -59,7 +59,7 @@ module.exports = {
 
           // Envoyer un message PUBLIC (non-éphémère)
           if (interaction.channel && "send" in interaction.channel) {
-            await interaction.channel.send("Toute ma mémoire a été effacée dans tous les salons.");
+            await interaction.channel.send("------ Ma mémoire a été effacée pour tous les salons. ------");
           }
 
           console.log(`[ResetAll Command] All memory cleared by ${interaction.user.displayName}`);
