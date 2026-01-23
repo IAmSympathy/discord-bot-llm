@@ -153,6 +153,12 @@ export async function clearMemory(channelKey: string): Promise<void> {
   console.log(`[Memory] Channel ${channelKey} memory cleared`);
 }
 
+// Fonction pour effacer TOUTE la mémoire (tous les channels)
+export async function clearAllMemory(): Promise<void> {
+  await memory.clearAll();
+  console.log(`[Memory] All channels memory cleared`);
+}
+
 // Fonction pour arrêter un stream en cours
 export function abortStream(channelKey: string): boolean {
   const streamInfo = activeStreams.get(channelKey);

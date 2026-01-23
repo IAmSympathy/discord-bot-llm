@@ -1,9 +1,24 @@
-import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
+import { ChatInputCommandInteraction, GuildMember, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { clearMemory } from "../../queue/queue";
 
 module.exports = {
   data: new SlashCommandBuilder().setName("reset").setDescription("Efface la mémoire de Nettie dans ce channel"),
   async execute(interaction: ChatInputCommandInteraction) {
+    // Vérifier les rôles autorisés
+    const ALLOWED_ROLES = ["1122751212299767929", "829521404214640671", "828652861218226196"];
+    const member = interaction.member;
+
+    if (!member || !(member instanceof GuildMember)) {
+      await interaction.reply({ content: "Vous n'avez pas la permission d'utiliser cette commande.", ephemeral: true });
+      return;
+    }
+
+    const hasRole = ALLOWED_ROLES.some((roleId) => member.roles.cache.has(roleId));
+    if (!hasRole) {
+      await interaction.reply({ content: "Vous n'avez pas la permission d'utiliser cette commande. (Owner, Admin ou Membre certifié requis)", ephemeral: true });
+      return;
+    }
+
     await interaction.deferReply();
 
     try {

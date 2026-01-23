@@ -90,4 +90,12 @@ export class FileMemory {
       await this.writeChain;
     }
   }
+
+  async clearAll(): Promise<void> {
+    await this.ensureLoaded();
+
+    this.data!.channels = {};
+    this.writeChain = this.writeChain.then(() => this.flush());
+    await this.writeChain;
+  }
 }
