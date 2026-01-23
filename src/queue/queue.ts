@@ -259,7 +259,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
     // Ajouter les descriptions d'images actuelles au message utilisateur
     const imageContext = imageDescriptions.length > 0 ? `\n[L'utilisateur fournit une image. Description générée automatiquement: ${imageDescriptions.join(" | ")}]` : "";
-    const currentUserBlock = `UTILISATEUR (UID Discord: ${userId}, Nom: ${userName}):\n${prompt}${imageContext}\n\n[RAPPEL: Pour mentionner/ping cet utilisateur sur Discord, utilise exactement: <@${userId}>]`;
+    const currentUserBlock = `UTILISATEUR (UID Discord: ${userId}, Nom: ${userName}):\n${prompt}${imageContext}\n\n[RAPPEL: Pour mentionner cet utilisateur, utilise exactement: <@${userId}>]`;
 
     const searchIntentRegex = /(cherche|recherche|rechercher|trouve|trouver|source|sources|lien|liens|actualité|news|site|web|internet|documentation|wiki|wikipédia|prix|review|références|\bquand\b|\bc'?est[-\s]*quoi\b|\bquel(le)?s?\b|\bqu'?est-ce que\b)/i;
     const shouldSearch = !!process.env.BRAVE_SEARCH_API_KEY && searchIntentRegex.test(prompt || "");
