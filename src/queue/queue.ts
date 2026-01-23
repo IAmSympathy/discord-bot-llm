@@ -317,7 +317,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       let totalTokens = 0;
 
       const extractAndApplyReaction = async (text: string): Promise<string> => {
-        const match = text.match(/^\s*\[REACT:([^\]]+)\]\s*/);
+        const match = text.match(/\[REACT:([^\]]+)\]/);
         if (match && !reactionApplied && replyToMessage) {
           const emoji = match[1].trim();
           try {
@@ -327,7 +327,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           } catch (error) {
             console.warn(`[Reaction] Failed to apply ${emoji}:`, error);
           }
-          return text.replace(/^\s*\[REACT:[^\]]+\]\s*/, "").trim();
+          return text.replace(/\[REACT:[^\]]+\]/g, "").trim();
         }
         return text;
       };
