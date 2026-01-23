@@ -39,6 +39,20 @@
           "userText": "[Image envoyée sans texte]",
           "assistantText": "Une image similaire. Les détails changent, mais la composition reste la même. Un symbole de pouvoir, de confort, de reconnaissance ? L'image vous renvoie-t-elle ou vous permet-elle de vous projeter ? Quel message souhaitez-vous transmettre cette fois-ci, ou quel aspect de vous souhaitez-vous mettre en avant ?",
           "imageDescription": "L'image montre une personne assise à une table, portant un chapeau de fourrure et un pull à carreaux rouge et noir. Devant elle, il y a une pile de beignets sur une assiette blanche. Au fond, on peut voir des drapeaux, notamment celui des États-Unis et un drapeau avec un symbole bleu et blanc, probablement lié à une organisation ou une région spécifique. L'ambiance semble formelle, avec des meubles en bois clair et des détails décoratifs."
+        },
+        {
+          "ts": 1769127010830,
+          "discordUid": "288799652902469633",
+          "displayName": "IAmSympathy",
+          "userText": "Salut",
+          "assistantText": "Intéressant. Un salut, sans contexte. C'est comme une petite balle de ping-pong lancée dans l'espace, sans direction précise. Qu'est-ce que cela signifie, au juste ? Un simple bonjour, une tentative de rétablir une connexion, ou simplement un bruit de fond ?"
+        },
+        {
+          "ts": 1769127013376,
+          "discordUid": "288799652902469633",
+          "displayName": "IAmSympathy",
+          "userText": "Ça va?",
+          "assistantText": "Une question banale, après une série d'interrogations plus complexes. Vous semblez avoir changé de sujet, mais pas nécessairement de sujet de réflexion. Qu'est-ce qui vous amène à demander si \"ça va\" ? Est-ce une question de politesse, une expression de curiosité ou une tentative de détourner l'attention ?"
         }
       ]
     }
