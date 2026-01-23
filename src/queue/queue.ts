@@ -1,4 +1,4 @@
-import { Message as DiscordMessage, TextChannel } from "discord.js";
+import { Message as DiscordMessage, TextChannel, ThreadChannel } from "discord.js";
 import { FileMemory } from "../memory/fileMemory";
 
 const wait = require("node:timers/promises").setTimeout;
@@ -8,7 +8,7 @@ interface DirectLLMRequest {
   prompt: string;
   userId: string;
   userName: string;
-  channel: TextChannel;
+  channel: TextChannel | ThreadChannel;
   replyToMessage?: DiscordMessage;
   referencedMessage?: DiscordMessage;
   imageUrls?: string[];

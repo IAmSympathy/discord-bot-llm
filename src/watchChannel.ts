@@ -1,4 +1,4 @@
-import { Client, Message, TextChannel } from "discord.js";
+import { Client, Message, TextChannel, ChannelType } from "discord.js";
 import { processLLMRequest } from "./queue/queue";
 
 function isWatchedChannel(message: Message, watchedChannelId?: string) {
@@ -7,6 +7,7 @@ function isWatchedChannel(message: Message, watchedChannelId?: string) {
 
 export function registerWatchedChannelResponder(client: Client) {
   const watchedChannelId = process.env.WATCH_CHANNEL_ID;
+  const forumChannelId = process.env.FORUM_CHANNEL_ID;
 
   if (watchedChannelId) {
     console.log(`[watchChannel] Watching channel: ${watchedChannelId}`);
@@ -41,10 +42,14 @@ export function registerWatchedChannelResponder(client: Client) {
       // Si pas de texte ni d'image, on ignore
       if (!userText && imageUrls.length === 0) return;
 
-      // Construire le contexte avec le message référencé si présent
-      let contextPrompt = userText || "[Image envoyée sans texte]";
+      // Construire le contexte avec le nom du channel et le message référencé si présent
+      const channelName = message.channel.isDMBased() ? "Message privé" : (message.channel as any).name || "Channel";
+      let contextPrompt = `[Channel: "${channelName}"]
+${userText || "[Image envoyée sans texte]"}`;
       let referencedMsg: Message | undefined = undefined;
 
+      // Vérifier si on doit ajouter une réaction obligatoire (thread dans forum Création)
+      let mustReact = false;
       if (message.reference?.messageId) {
         try {
           const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
@@ -60,12 +65,31 @@ export function registerWatchedChannelResponder(client: Client) {
             }
           }
 
+          // Vérifier si c'est le premier message d'un thread dans le forum Création
+          if (message.channel.isThread() && forumChannelId) {
+            const thread = message.channel;
+            if (thread.parent?.type === ChannelType.GuildForum && thread.parent.id === forumChannelId) {
+              // Récupérer le premier message du thread
+              const messages = await thread.messages.fetch({ limit: 1, after: "0" });
+              const firstMessage = messages.first();
+              if (firstMessage && firstMessage.id === referencedMessage.id) {
+                mustReact = true;
+                console.log(`[watchChannel] Detected reply to original post in Création forum - must react`);
+              }
+            }
+          }
+
           const refImageNotice = referencedMessage.attachments.size > 0 ? " [contient une image]" : "";
           contextPrompt = `[L'utilisateur répond au message suivant]\n${refAuthor}: ${refContent}${refImageNotice}\n\n[Réponse de l'utilisateur]\n${contextPrompt}`;
           console.log(`[watchChannel] Message references another message from ${refAuthor}`);
         } catch (error) {
           console.warn("[watchChannel] Failed to fetch referenced message:", error);
         }
+      }
+
+      // Ajouter l'instruction de réaction obligatoire si nécessaire
+      if (mustReact) {
+        contextPrompt = `[Note: Ajoute une réaction emoji avec [REACT:emoji] pour donner ton avis]\n${contextPrompt}`;
       }
 
       // Indique que le bot "écrit"

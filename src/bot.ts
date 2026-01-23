@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import { Client, Collection, Events, GatewayIntentBits } from "discord.js";
 import { registerWatchedChannelResponder } from "./watchChannel";
+import { registerForumThreadHandler } from "./forumThreadHandler";
 import deployCommands from "./deploy/deployCommands";
 
 // Load environment variables
@@ -38,6 +39,9 @@ deployCommands();
 
 // Register the watched channel responder
 registerWatchedChannelResponder(client);
+
+// Register the forum thread handler
+registerForumThreadHandler(client);
 
 // Once the WebSocket is connected, log a message to the console.
 client.once(Events.ClientReady, () => {
