@@ -238,13 +238,13 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         : recentTurns
             .map((t) => {
               const imageContext = t.imageDescription ? `\n[L'utilisateur a fourni une image. Description générée automatiquement: ${t.imageDescription}]` : "";
-              return `UTILISATEUR (UID: ${t.discordUid}, Nom: ${t.displayName}):\n${t.userText}${imageContext}\n\nTOI (Milton, l'assistant):\n${t.assistantText}`;
+              return `UTILISATEUR (UID: ${t.discordUid}, Nom: ${t.displayName}):\n${t.userText}${imageContext}\n\nTOI (Netricsa, l'assistant):\n${t.assistantText}`;
             })
             .join("\n\n--- Échange suivant ---\n\n");
 
     // Ajouter les descriptions d'images actuelles au message utilisateur
     const imageContext = imageDescriptions.length > 0 ? `\n[L'utilisateur fournit une image. Description générée automatiquement: ${imageDescriptions.join(" | ")}]` : "";
-    const currentUserBlock = `UTILISATEUR (UID: ${userId}, Nom: ${userName}):\n${prompt}${imageContext}`;
+    const currentUserBlock = `UTILISATEUR (UID Discord: ${userId}, Nom: ${userName}):\n${prompt}${imageContext}\n\n[RAPPEL: Pour mentionner cet utilisateur sur Discord, utilise exactement: <@${userId}>]`;
 
     const searchIntentRegex =
       /(cherche|recherche|rechercher|trouve|trouver|source|sources|lien|liens|actualité|news|site|web|internet|documentation|doc|wiki|wikipédia|prix|comparaison|avis|review|références|\bquand\b|\bc'?est[-\s]*quoi\b|\bqui\b|\boù\b|\bpourquoi\b|\bcombien\b|\bquel(le)?s?\b|\bqu'?est-ce que\b|\bc'?est\b)/i;
@@ -263,7 +263,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           ? `${webBlock}=== MESSAGE ACTUEL ===\n\n`
           : "";
 
-    const userMessage = `${contextPreamble}${currentUserBlock}\n\nRéponds maintenant en tant que Milton:`;
+    const userMessage = `${contextPreamble}${currentUserBlock}\n\nRéponds maintenant en tant que Netricsa:`;
 
     console.log(`[System Prompt Length]: ${systemPrompt.length} chars`);
     console.log(`[Memory]: ${recentTurns.length} turns loaded`);
@@ -353,7 +353,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           } else if (messages.length === 0) {
             // Pas de message d'analyse, créer un nouveau message
             if (replyToMessage) {
-              const message = await replyToMessage.reply(currentContent);
+              const message = await replyToMessage.reply({ content: currentContent, allowedMentions: { repliedUser: false } });
               messages.push(message);
             } else {
               const message = await channel.send(currentContent);
@@ -416,23 +416,15 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                 // Ne pas sauvegarder si la réponse est un refus de modération
                 // Détection améliorée des réponses de refus du bot
                 const isModerationRefusal =
-                  assistantText.toLowerCase().includes("je suis désolé") ||
-                  assistantText.toLowerCase().includes("i'm sorry") ||
-                  assistantText.toLowerCase().includes("i cannot") ||
-                  assistantText.toLowerCase().includes("je ne peux pas") ||
-                  assistantText.toLowerCase().includes("ne peux pas") ||
+                  (assistantText.toLowerCase().includes("je suis désolé") && assistantText.toLowerCase().includes("ne peux pas")) ||
+                  (assistantText.toLowerCase().includes("i'm sorry") && assistantText.toLowerCase().includes("i cannot")) ||
                   assistantText.toLowerCase().includes("ne répondrai pas") ||
                   assistantText.toLowerCase().includes("m'abstiens") ||
-                  assistantText.toLowerCase().includes("ne peux répondre") ||
                   assistantText.toLowerCase().includes("cannot respond") ||
-                  assistantText.toLowerCase().includes("cannot answer") ||
                   assistantText.toLowerCase().includes("refuse to") ||
-                  assistantText.toLowerCase().includes("declined") ||
                   assistantText.toLowerCase().includes("inappropriate") ||
                   assistantText.toLowerCase().includes("inapproprié") ||
-                  assistantText.toLowerCase().includes("can't assist") ||
-                  assistantText.toLowerCase().includes("unable to") ||
-                  assistantText.length < 15 || // Réponses très courtes = probablement refus
+                  assistantText.length < 10 || // Réponses très courtes = probablement refus
                   /^(non|no|désolé|sorry)\.?$/i.test(assistantText); // Réponses ultra-courtes
 
                 if (assistantText.length > 0 && !isModerationRefusal) {
