@@ -83,6 +83,27 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
   console.log(`[processLLMRequest] User ${userId} sent prompt: ${prompt}${imageUrls && imageUrls.length > 0 ? ` with ${imageUrls.length} image(s)` : ""}`);
 
+  // Envoyer un message d'analyse si des images sont présentes
+  let analysisMessage: DiscordMessage | null = null;
+  let analysisInterval: NodeJS.Timeout | null = null;
+  if (imageUrls && imageUrls.length > 0) {
+    if (replyToMessage) {
+      analysisMessage = await replyToMessage.reply("Analyse en cours.");
+    } else {
+      analysisMessage = await channel.send("Analyse en cours.");
+    }
+
+    // Animer les points
+    let dotCount = 1;
+    analysisInterval = setInterval(async () => {
+      if (analysisMessage) {
+        dotCount = (dotCount % 3) + 1;
+        const dots = ".".repeat(dotCount);
+        await analysisMessage.edit(`Analyse en cours${dots}`).catch(() => {});
+      }
+    }, 500);
+  }
+
   // Télécharger les images et générer leurs descriptions avec le modèle vision
   let imageDescriptions: string[] = [];
   if (imageUrls && imageUrls.length > 0) {
@@ -196,13 +217,26 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           return; // Ne pas envoyer de message vide
         }
 
-        // Premier message ou nouveau chunk nécessaire
-        if (replyToMessage && messages.length === 0) {
-          // Répondre au message initial
-          const message = await replyToMessage.reply(currentContent);
-          messages.push(message);
+        // Arrêter l'animation et utiliser le message d'analyse s'il existe
+        if (messages.length === 0 && analysisMessage) {
+          if (analysisInterval) {
+            clearInterval(analysisInterval);
+            analysisInterval = null;
+          }
+          await analysisMessage.edit(currentContent);
+          messages.push(analysisMessage);
+          analysisMessage = null;
+        } else if (messages.length === 0) {
+          // Pas de message d'analyse, créer un nouveau message
+          if (replyToMessage) {
+            const message = await replyToMessage.reply(currentContent);
+            messages.push(message);
+          } else {
+            const message = await channel.send(currentContent);
+            messages.push(message);
+          }
         } else {
-          // Envoyer dans le channel
+          // Nouveau chunk nécessaire
           const message = await channel.send(currentContent);
           messages.push(message);
         }
