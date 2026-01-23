@@ -45,7 +45,7 @@ async function generateImageDescription(imageBase64: string): Promise<string | n
         ],
         stream: false,
         options: {
-          temperature: 0.7,
+          temperature: 0.9,
           num_predict: 500,
         },
       }),
@@ -197,8 +197,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     const modelName = textModelName;
 
     const options = {
-      temperature: 0.7,
-      repeat_penalty: 1.2,
+      temperature: 0.95,
+      repeat_penalty: 1.3,
       num_predict: 4000,
     };
 
@@ -299,7 +299,30 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
                 // Sauvegarder le tour de conversation dans la mémoire persistante
                 const assistantText = result.trim();
-                if (assistantText.length > 0) {
+
+                // Ne pas sauvegarder si la réponse est un refus de modération
+                // Détection améliorée des réponses de refus du bot
+                const isModerationRefusal =
+                  assistantText.toLowerCase().includes("je suis désolé") ||
+                  assistantText.toLowerCase().includes("i'm sorry") ||
+                  assistantText.toLowerCase().includes("i cannot") ||
+                  assistantText.toLowerCase().includes("je ne peux pas") ||
+                  assistantText.toLowerCase().includes("ne peux pas") ||
+                  assistantText.toLowerCase().includes("ne répondrai pas") ||
+                  assistantText.toLowerCase().includes("m'abstiens") ||
+                  assistantText.toLowerCase().includes("ne peux répondre") ||
+                  assistantText.toLowerCase().includes("cannot respond") ||
+                  assistantText.toLowerCase().includes("cannot answer") ||
+                  assistantText.toLowerCase().includes("refuse to") ||
+                  assistantText.toLowerCase().includes("declined") ||
+                  assistantText.toLowerCase().includes("inappropriate") ||
+                  assistantText.toLowerCase().includes("inapproprié") ||
+                  assistantText.toLowerCase().includes("can't assist") ||
+                  assistantText.toLowerCase().includes("unable to") ||
+                  assistantText.length < 15 || // Réponses très courtes = probablement refus
+                  /^(non|no|désolé|sorry)\.?$/i.test(assistantText); // Réponses ultra-courtes
+
+                if (assistantText.length > 0 && !isModerationRefusal) {
                   await memory.appendTurn(
                     channelKey,
                     {
@@ -313,6 +336,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                     memoryMaxTurns,
                   );
                   console.log(`[Memory]: Conversation saved${imageDescriptions.length > 0 ? " with image description" : ""}`);
+                } else if (isModerationRefusal) {
+                  console.log(`[Memory]: Moderation refusal detected, NOT saving to memory`);
                 }
 
                 clearInterval(throttleResponseInterval);
