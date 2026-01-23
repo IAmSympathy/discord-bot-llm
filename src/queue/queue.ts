@@ -66,6 +66,56 @@ async function generateImageDescription(imageBase64: string): Promise<string | n
   }
 }
 
+function sanitizeSnippet(text: string, maxLength = 240): string {
+  const cleaned = text.replace(/\s+/g, " ").trim();
+  if (cleaned.length <= maxLength) return cleaned;
+  return `${cleaned.slice(0, maxLength - 1)}…`;
+}
+
+async function searchBrave(query: string): Promise<string | null> {
+  const apiKey = process.env.BRAVE_SEARCH_API_KEY;
+  if (!apiKey) return null;
+
+  const url = new URL("https://api.search.brave.com/res/v1/web/search");
+  url.searchParams.set("q", query);
+  url.searchParams.set("count", "5");
+  url.searchParams.set("search_lang", "fr");
+  url.searchParams.set("country", "FR");
+  url.searchParams.set("safesearch", "moderate");
+  url.searchParams.set("text_decorations", "0");
+
+  try {
+    const response = await fetch(url.toString(), {
+      headers: {
+        Accept: "application/json",
+        "X-Subscription-Token": apiKey,
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`[BraveSearch] Error ${response.status} ${response.statusText}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const results: Array<{ title?: string; url?: string; description?: string }> = data?.web?.results || [];
+    if (!results.length) return null;
+
+    const lines = results.slice(0, 5).map((r, i) => {
+      const title = r.title ? sanitizeSnippet(r.title, 120) : "Sans titre";
+      const desc = r.description ? sanitizeSnippet(r.description, 240) : "";
+      const link = r.url || "";
+      return `${i + 1}. ${title}${desc ? ` — ${desc}` : ""}${link ? ` (${link})` : ""}`;
+    });
+
+    const joined = lines.join("\n");
+    return joined.length > 1200 ? joined.slice(0, 1199) + "…" : joined;
+  } catch (error) {
+    console.warn("[BraveSearch] Request failed:", error);
+    return null;
+  }
+}
+
 // Configuration mémoire persistante
 const memoryFilePath = process.env.MEMORY_FILE || "./data/memory.json";
 const memoryMaxTurns = Number(process.env.MEMORY_MAX_TURNS || "12");
@@ -74,6 +124,7 @@ const memory = new FileMemory(memoryFilePath);
 // Système de queue par channel pour traiter les requêtes séquentiellement
 type AsyncJob<T> = () => Promise<T>;
 const channelQueues = new Map<string, Promise<unknown>>();
+const activeStreams = new Map<string, { abortFlag: boolean; channelId: string }>();
 
 function enqueuePerChannel<T>(channelKey: string, job: AsyncJob<T>): Promise<T> {
   const prev = channelQueues.get(channelKey) ?? Promise.resolve();
@@ -101,6 +152,18 @@ export async function clearMemory(channelKey: string): Promise<void> {
   console.log(`[Memory] Channel ${channelKey} memory cleared`);
 }
 
+// Fonction pour arrêter un stream en cours
+export function abortStream(channelKey: string): boolean {
+  const streamInfo = activeStreams.get(channelKey);
+  if (streamInfo) {
+    streamInfo.abortFlag = true;
+    activeStreams.delete(channelKey);
+    console.log(`[AbortStream] Stream aborted for channel ${channelKey}`);
+    return true;
+  }
+  return false;
+}
+
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest) {
   const { prompt, userId, userName, channel, replyToMessage, imageUrls } = request;
@@ -112,6 +175,10 @@ export async function processLLMRequest(request: DirectLLMRequest) {
   // Mettre en queue pour traiter séquentiellement par channel
   return enqueuePerChannel(channelKey, async () => {
     console.log(`[processLLMRequest] User ${userId} sent prompt: ${prompt}${imageUrls && imageUrls.length > 0 ? ` with ${imageUrls.length} image(s)` : ""}`);
+
+    // Enregistrer ce stream comme actif
+    const streamInfo = { abortFlag: false, channelId: channel.id };
+    activeStreams.set(channelKey, streamInfo);
 
     // Envoyer un message d'analyse si des images sont présentes
     let analysisMessage: DiscordMessage | null = null;
@@ -179,9 +246,22 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     const imageContext = imageDescriptions.length > 0 ? `\n[L'utilisateur fournit une image. Description générée automatiquement: ${imageDescriptions.join(" | ")}]` : "";
     const currentUserBlock = `UTILISATEUR (UID: ${userId}, Nom: ${userName}):\n${prompt}${imageContext}`;
 
+    const searchIntentRegex =
+      /(cherche|recherche|rechercher|trouve|trouver|source|sources|lien|liens|actualité|news|site|web|internet|documentation|doc|wiki|wikipédia|prix|comparaison|avis|review|références|\bquand\b|\bc'?est[-\s]*quoi\b|\bqui\b|\boù\b|\bpourquoi\b|\bcombien\b|\bquel(le)?s?\b|\bqu'?est-ce que\b|\bc'?est\b)/i;
+    const shouldSearch = !!process.env.BRAVE_SEARCH_API_KEY && searchIntentRegex.test(prompt || "");
+    const webResults = shouldSearch ? await searchBrave(prompt) : null;
+    if (webResults) {
+      console.log("[BraveSearch] Web context added to prompt");
+    }
+    const webBlock = webResults ? `IMPORTANT: Voici du contexte provenant du web. Ne mentionne pas que ça provient du web et utilise ce contexte dans ta réponse. Prend le comme factuel.=== DÉBUT CONTEXTE WEB === (Brave Search) ===\n${webResults}\n=== FIN CONTEXTE WEB ===\n\n` : "";
+
     // Assembler le prompt final avec un préambule explicatif
     const contextPreamble =
-      historyBlock.length > 0 ? `IMPORTANT: Voici l'historique de la conversation. Lis attentivement QUI a dit QUOI. Ne confonds JAMAIS ce que l'utilisateur a dit avec ce que TU as dit.\n\n=== HISTORIQUE ===\n\n${historyBlock}\n\n=== FIN HISTORIQUE ===\n\n=== MESSAGE ACTUEL ===\n\n` : "";
+      historyBlock.length > 0
+        ? `IMPORTANT: Voici l'historique de la conversation. Lis attentivement QUI a dit QUOI. Ne confonds JAMAIS ce que l'utilisateur a dit avec ce que TU as dit.\n\n=== HISTORIQUE ===\n\n${historyBlock}\n\n=== FIN HISTORIQUE ===\n\n${webBlock}=== MESSAGE ACTUEL ===\n\n`
+        : webBlock.length > 0
+          ? `${webBlock}=== MESSAGE ACTUEL ===\n\n`
+          : "";
 
     const userMessage = `${contextPreamble}${currentUserBlock}\n\nRéponds maintenant en tant que Milton:`;
 
@@ -235,10 +315,27 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       let completionTokens = 0;
       let totalTokens = 0;
 
+      const decodeHtmlEntities = (text: string) =>
+        text
+          .replace(/&#39;/g, "'")
+          .replace(/&quot;/g, '"')
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+          .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+
+      const wrapLinksNoEmbed = (text: string) =>
+        text
+          // Convertir le format markdown [texte](url) en texte: <url>
+          .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, "$1: <$2>")
+          // Entourer les URLs restantes de chevrons
+          .replace(/(?<!<)(https?:\/\/[^\s>]+)(?!>)/g, "<$1>");
+
       // Throttle pour ne pas dépasser les limites Discord
       const throttleResponse = async () => {
         if (messages.length === 0 || messages.length !== responseChunks.length) {
-          const currentContent = responseChunks[responseChunks.length - 1];
+          const currentContent = wrapLinksNoEmbed(decodeHtmlEntities(responseChunks[responseChunks.length - 1]));
           if (!currentContent || currentContent.trim().length === 0) {
             return; // Ne pas envoyer de message vide
           }
@@ -270,8 +367,11 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
         // Mettre à jour les messages existants
         for (let i = 0; i < messages.length; i++) {
-          if (messages[i].content !== responseChunks[i]) {
-            await messages[i].edit(responseChunks[i]);
+          const message = messages[i];
+          if (!message) continue;
+          const nextContent = wrapLinksNoEmbed(decodeHtmlEntities(responseChunks[i]));
+          if (message.content !== nextContent) {
+            await message.edit(nextContent);
           }
         }
       };
@@ -283,6 +383,16 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           return pump();
           function pump(): any {
             return reader?.read().then(async function ({ done, value }) {
+              // Vérifier si le stream a été avorté
+              if (streamInfo.abortFlag) {
+                console.log(`[processLLMRequest] Stream aborted by user for channel ${channelKey}`);
+                clearInterval(throttleResponseInterval);
+                if (analysisInterval) clearInterval(analysisInterval);
+                activeStreams.delete(channelKey);
+                controller.close();
+                return;
+              }
+
               if (done) {
                 console.log(`[processLLMRequest] Request complete for user ${userId}`);
 
@@ -340,6 +450,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                   console.log(`[Memory]: Moderation refusal detected, NOT saving to memory`);
                 }
 
+                activeStreams.delete(channelKey);
                 clearInterval(throttleResponseInterval);
                 controller.close();
                 return;
