@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteracti
 import { clearAllMemory } from "../../queue/queue";
 
 module.exports = {
-  data: new SlashCommandBuilder().setName("resetall").setDescription("Efface TOUTE la mémoire de Nettie (tous les channels)"),
+  data: new SlashCommandBuilder().setName("resetall").setDescription("Efface TOUTE la mémoire de Nettie (tous les salons)"),
   async execute(interaction: ChatInputCommandInteraction) {
     try {
       // Vérifier le rôle Owner uniquement
@@ -16,7 +16,7 @@ module.exports = {
 
       const hasOwnerRole = OWNER_ROLES.some((roleId) => member.roles.cache.has(roleId));
       if (!hasOwnerRole) {
-        await interaction.reply({ content: "Vous n'avez pas la permission d'utiliser cette commande. (Owner requis)", ephemeral: true });
+        await interaction.reply({ content: "Vous n'avez pas la permission d'utiliser cette commande. (Tah-Um)", ephemeral: true });
         return;
       }
 
@@ -29,7 +29,7 @@ module.exports = {
 
       // Envoyer le message de confirmation
       const response = await interaction.reply({
-        content: "**ATTENTION** : Ceci va effacer TOUTE ma mémoire dans TOUS les channels. Cette action est irréversible.\n\nÊtes-vous sûr de vouloir continuer ?",
+        content: "**ATTENTION** : Ceci va effacer TOUTE ma mémoire dans TOUS les salons. Cette action est irréversible.\n\nÊtes-vous sûr de vouloir continuer ?",
         components: [row],
         ephemeral: true,
       });
@@ -59,7 +59,7 @@ module.exports = {
 
           // Envoyer un message PUBLIC (non-éphémère)
           if (interaction.channel && "send" in interaction.channel) {
-            await interaction.channel.send("Toute ma mémoire a été effacée dans tous les channels.");
+            await interaction.channel.send("Toute ma mémoire a été effacée dans tous les salons.");
           }
 
           console.log(`[ResetAll Command] All memory cleared by ${interaction.user.displayName}`);

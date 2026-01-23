@@ -12,7 +12,7 @@ module.exports = {
 
       if (success) {
         await interaction.editReply({
-          content: "D'accord, j'arrête de parler.",
+          content: "Je suis désolé, j'arrête de parler.",
         });
         console.log(`[Stop Command] Stream aborted by ${interaction.user.displayName}`);
       } else {

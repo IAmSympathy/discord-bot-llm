@@ -398,7 +398,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           } else if (messages.length === 0) {
             // Pas de message d'analyse, créer un nouveau message
             if (replyToMessage) {
-              const message = await replyToMessage.reply({ content: currentContent, allowedMentions: { repliedUser: false } });
+              const message = await replyToMessage.reply({ content: currentContent, allowedMentions: { repliedUser: true } });
               messages.push(message);
             } else {
               const message = await channel.send(currentContent);

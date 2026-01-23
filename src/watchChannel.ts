@@ -42,17 +42,33 @@ export function registerWatchedChannelResponder(client: Client) {
       // Si pas de texte ni d'image, on ignore
       if (!userText && imageUrls.length === 0) return;
 
-      // Construire le contexte avec le nom du channel et le message référencé si présent
-      const channelName = message.channel.isDMBased() ? "Message privé" : (message.channel as any).name || "Channel";
-      let contextPrompt = `[Channel: "${channelName}"]
-${userText || "[Image envoyée sans texte]"}`;
+      // Construire le contexte avec le message référencé si présent
+      let contextPrompt = userText || "[Image envoyée sans texte]";
       let referencedMsg: Message | undefined = undefined;
 
       // Vérifier si on doit ajouter une réaction obligatoire (thread dans forum Création)
       let mustReact = false;
-      if (message.reference?.messageId) {
+
+      // Si on est dans un thread et qu'il n'y a pas de référence, on référence automatiquement le message principal du thread
+      let messageReferenceId = message.reference?.messageId;
+      if (!messageReferenceId && message.channel.isThread()) {
+        const thread = message.channel;
+        // Récupérer le premier message du thread (message starter)
         try {
-          const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
+          const messages = await thread.messages.fetch({ limit: 1, after: "0" });
+          const starterMessage = messages.first();
+          if (starterMessage) {
+            messageReferenceId = starterMessage.id;
+            console.log(`[watchChannel] Auto-referencing thread starter message in thread "${thread.name}"`);
+          }
+        } catch (error) {
+          console.warn("[watchChannel] Failed to fetch thread starter message:", error);
+        }
+      }
+
+      if (messageReferenceId) {
+        try {
+          const referencedMessage = await message.channel.messages.fetch(messageReferenceId);
           referencedMsg = referencedMessage;
           const refAuthor = referencedMessage.author.bot ? "Nettie (toi)" : referencedMessage.author.displayName || referencedMessage.author.username;
           const refContent = referencedMessage.content || "[message sans texte]";
