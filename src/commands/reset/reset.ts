@@ -5,7 +5,7 @@ module.exports = {
   data: new SlashCommandBuilder().setName("reset").setDescription("Efface la mémoire de Nettie dans ce channel"),
   async execute(interaction: ChatInputCommandInteraction) {
     // Vérifier les rôles autorisés
-    const ALLOWED_ROLES = ["1122751212299767929", "829521404214640671", "828652861218226196"];
+    const ALLOWED_ROLES = ["1122751212299767929", "1129445913123880960", "829521404214640671", "828652861218226196"];
     const member = interaction.member;
 
     if (!member || !(member instanceof GuildMember)) {

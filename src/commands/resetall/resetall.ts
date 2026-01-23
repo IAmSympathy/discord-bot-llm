@@ -6,7 +6,7 @@ module.exports = {
   async execute(interaction: ChatInputCommandInteraction) {
     try {
       // Vérifier le rôle Owner uniquement
-      const OWNER_ROLE_ID = "1122751212299767929";
+      const OWNER_ROLES = ["1122751212299767929", "1129445913123880960"];
       const member = interaction.member;
 
       if (!member || !(member instanceof GuildMember)) {
@@ -14,7 +14,8 @@ module.exports = {
         return;
       }
 
-      if (!member.roles.cache.has(OWNER_ROLE_ID)) {
+      const hasOwnerRole = OWNER_ROLES.some((roleId) => member.roles.cache.has(roleId));
+      if (!hasOwnerRole) {
         await interaction.reply({ content: "Vous n'avez pas la permission d'utiliser cette commande. (Owner requis)", ephemeral: true });
         return;
       }
