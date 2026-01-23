@@ -4,7 +4,7 @@ import { clearMemory } from "../../queue/queue";
 module.exports = {
   data: new SlashCommandBuilder().setName("reset").setDescription("Efface la mémoire de Milton"),
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    await interaction.deferReply();
 
     try {
       const channelKey = process.env.WATCH_CHANNEL_ID || interaction.channelId;
