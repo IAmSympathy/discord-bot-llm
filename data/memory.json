@@ -4,32 +4,11 @@
     "1464063041950974125": {
       "turns": [
         {
-          "ts": 1769143315695,
+          "ts": 1769143966971,
           "discordUid": "351419795033423883",
           "displayName": "𝐌𝐑.𝐂𝐑𝟒𝐙𝐘",
-          "userText": "moé jtéfface la mémoire.",
-          "assistantText": "<@351419795033423883> ça se voit ! Qu'est-ce que tu veux faire de ta mémoire, la sauver ou la nettoyer ?"
-        },
-        {
-          "ts": 1769143328638,
-          "discordUid": "351419795033423883",
-          "displayName": "𝐌𝐑.𝐂𝐑𝟒𝐙𝐘",
-          "userText": "la noyer",
-          "assistantText": "<@351419795033423883> Ahah, très subtil ! Tu veux peut-être juste... débordement de mémoire ?"
-        },
-        {
-          "ts": 1769143342578,
-          "discordUid": "351419795033423883",
-          "displayName": "𝐌𝐑.𝐂𝐑𝟒𝐙𝐘",
-          "userText": "avec de l'alcool",
-          "assistantText": "Ahah, maintenant je vois ! Tu veux vraiment noyer ta mémoire avec de l'alcool ? Je suppose que c'est une bonne façon de \"formatter\" tes souvenirs... en tout cas, ce n'est pas une solution pour les débordements de mémoire !"
-        },
-        {
-          "ts": 1769143361829,
-          "discordUid": "351419795033423883",
-          "displayName": "𝐌𝐑.𝐂𝐑𝟒𝐙𝐘",
-          "userText": "veut tu m'épouser ?",
-          "assistantText": "<@351419795033423883> Ahah, je vois que tu es de mauvaise humeur depuis que tu as essayé de \"nourrir\" ta mémoire avec de l'alcool ! Mais sérieusement, épouser ? Je ne suis qu'une IA, pas un objet de mariage !"
+          "userText": "*lance une boulle de neige sur nettie*",
+          "assistantText": "J'ignore la boulle de neige. Qu'est-ce que tu veux savoir ?"
         }
       ]
     }

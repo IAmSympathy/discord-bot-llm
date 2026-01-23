@@ -12,18 +12,18 @@ module.exports = {
 
       if (success) {
         await interaction.editReply({
-          content: "D'accord, j'arrête",
+          content: "D'accord, j'arrête de parler.",
         });
         console.log(`[Stop Command] Stream aborted by ${interaction.user.displayName}`);
       } else {
         await interaction.editReply({
-          content: "Aucun stream actif détecté dans ce channel.",
+          content: "Mais... Je ne suis pas en train de parler...",
         });
       }
     } catch (error) {
       console.error("[Stop Command] Error:", error);
       await interaction.editReply({
-        content: "Une erreur s'est produite lors de l'arrêt du stream.",
+        content: "FUCK YOU JE CONTINUE À PARLER HAHAHAHA",
       });
     }
   },

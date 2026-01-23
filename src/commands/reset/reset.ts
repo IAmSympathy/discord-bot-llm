@@ -11,14 +11,14 @@ module.exports = {
       await clearMemory(channelKey);
 
       await interaction.editReply({
-        content: "La mémoire a été effacée.",
+        content: "Ma mémoire a été effacée.",
       });
 
       console.log(`[Reset Command] Memory cleared by ${interaction.user.displayName}`);
     } catch (error) {
       console.error("[Reset Command] Error:", error);
       await interaction.editReply({
-        content: "La mémoire n'a pas pu être effacée.",
+        content: "Ma mémoire n'a pas pu être effacée.",
       });
     }
   },
