@@ -2,7 +2,7 @@ import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "
 import { clearMemory } from "../../queue/queue";
 
 module.exports = {
-  data: new SlashCommandBuilder().setName("reset").setDescription("Efface la mémoire de Milton"),
+  data: new SlashCommandBuilder().setName("reset").setDescription("Efface la mémoire de Nettie"),
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
@@ -11,14 +11,14 @@ module.exports = {
       await clearMemory(channelKey);
 
       await interaction.editReply({
-        content: "La mémoire a été effacée. Nous repartons d'un vide contemplatif.",
+        content: "La mémoire a été effacée.",
       });
 
       console.log(`[Reset Command] Memory cleared by ${interaction.user.displayName}`);
     } catch (error) {
       console.error("[Reset Command] Error:", error);
       await interaction.editReply({
-        content: "Une anomalie s'est glissée lors de l'effacement. Le chaos demeure… pour l'instant.",
+        content: "La mémoire n'a pas pu être effacée.",
       });
     }
   },

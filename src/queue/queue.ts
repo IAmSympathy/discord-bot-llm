@@ -335,10 +335,11 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       // Throttle pour ne pas dépasser les limites Discord
       const throttleResponse = async () => {
         if (messages.length === 0 || messages.length !== responseChunks.length) {
-          const currentContent = wrapLinksNoEmbed(decodeHtmlEntities(responseChunks[responseChunks.length - 1]));
-          if (!currentContent || currentContent.trim().length === 0) {
+          const rawContent = responseChunks[responseChunks.length - 1];
+          if (!rawContent || rawContent.trim().length === 0) {
             return; // Ne pas envoyer de message vide
           }
+          const currentContent = wrapLinksNoEmbed(decodeHtmlEntities(rawContent));
 
           // Arrêter l'animation et utiliser le message d'analyse s'il existe
           if (messages.length === 0 && analysisMessage) {
@@ -369,7 +370,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         for (let i = 0; i < messages.length; i++) {
           const message = messages[i];
           if (!message) continue;
-          const nextContent = wrapLinksNoEmbed(decodeHtmlEntities(responseChunks[i]));
+          const rawChunk = responseChunks[i];
+          if (!rawChunk) continue;
+          const nextContent = wrapLinksNoEmbed(decodeHtmlEntities(rawChunk));
           if (message.content !== nextContent) {
             await message.edit(nextContent);
           }
