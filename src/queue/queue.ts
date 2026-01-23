@@ -10,6 +10,7 @@ interface DirectLLMRequest {
   userName: string;
   channel: TextChannel;
   replyToMessage?: DiscordMessage;
+  referencedMessage?: DiscordMessage;
   imageUrls?: string[];
 }
 
@@ -166,11 +167,13 @@ export function abortStream(channelKey: string): boolean {
 
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest) {
-  const { prompt, userId, userName, channel, replyToMessage, imageUrls } = request;
+  const { prompt, userId, userName, channel, replyToMessage, referencedMessage, imageUrls } = request;
 
-  // Clé de mémoire unique (le bot n'écrit que dans un seul channel)
+  // Clé de mémoire unique par channel
+  // Si on est dans le watched channel, utiliser son ID fixe
+  // Sinon, utiliser l'ID du channel actuel (pour les mentions dans d'autres channels)
   const watchedChannelId = process.env.WATCH_CHANNEL_ID;
-  const channelKey = watchedChannelId || channel.id;
+  const channelKey = channel.id === watchedChannelId ? watchedChannelId : channel.id;
 
   // Mettre en queue pour traiter séquentiellement par channel
   return enqueuePerChannel(channelKey, async () => {
@@ -307,6 +310,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       let responseChunks: Array<string> = [];
       let messages: Array<DiscordMessage> = [];
       let reactionApplied = false;
+      let reactionRefApplied = false;
 
       // Buffer pour gérer les chunks JSON partiels (NDJSON)
       let jsonBuffer = "";
@@ -317,7 +321,10 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       let totalTokens = 0;
 
       const extractAndApplyReaction = async (text: string): Promise<string> => {
-        const match = text.match(/\[REACT:([^\]]+)\]/);
+        let modifiedText = text;
+
+        // Réaction au message de l'utilisateur
+        const match = modifiedText.match(/\[REACT:([^\]]+)\]/);
         if (match && !reactionApplied && replyToMessage) {
           const emoji = match[1].trim();
           try {
@@ -327,9 +334,24 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           } catch (error) {
             console.warn(`[Reaction] Failed to apply ${emoji}:`, error);
           }
-          return text.replace(/\[REACT:[^\]]+\]/g, "").trim();
+          modifiedText = modifiedText.replace(/\[REACT:[^\]]+\]/g, "").trim();
         }
-        return text;
+
+        // Réaction au message référencé
+        const matchRef = modifiedText.match(/\[REACT_REF:([^\]]+)\]/);
+        if (matchRef && !reactionRefApplied && referencedMessage) {
+          const emoji = matchRef[1].trim();
+          try {
+            await referencedMessage.react(emoji);
+            reactionRefApplied = true;
+            console.log(`[Reaction] Applied ${emoji} to referenced message`);
+          } catch (error) {
+            console.warn(`[Reaction] Failed to apply ${emoji} to referenced message:`, error);
+          }
+          modifiedText = modifiedText.replace(/\[REACT_REF:[^\]]+\]/g, "").trim();
+        }
+
+        return modifiedText;
       };
 
       const decodeHtmlEntities = (text: string) =>
