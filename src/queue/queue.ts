@@ -306,6 +306,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       let result = "";
       let responseChunks: Array<string> = [];
       let messages: Array<DiscordMessage> = [];
+      let reactionApplied = false;
 
       // Buffer pour gérer les chunks JSON partiels (NDJSON)
       let jsonBuffer = "";
@@ -314,6 +315,22 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       let promptTokens = 0;
       let completionTokens = 0;
       let totalTokens = 0;
+
+      const extractAndApplyReaction = async (text: string): Promise<string> => {
+        const match = text.match(/^\s*\[REACT:([^\]]+)\]\s*/);
+        if (match && !reactionApplied && replyToMessage) {
+          const emoji = match[1].trim();
+          try {
+            await replyToMessage.react(emoji);
+            reactionApplied = true;
+            console.log(`[Reaction] Applied ${emoji} to user message`);
+          } catch (error) {
+            console.warn(`[Reaction] Failed to apply ${emoji}:`, error);
+          }
+          return text.replace(/^\s*\[REACT:[^\]]+\]\s*/, "").trim();
+        }
+        return text;
+      };
 
       const decodeHtmlEntities = (text: string) =>
         text
@@ -489,6 +506,12 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                 }
 
                 result += chunk;
+
+                // Extraire et appliquer la réaction si présente
+                const cleanedResult = await extractAndApplyReaction(result);
+                if (cleanedResult !== result) {
+                  result = cleanedResult;
+                }
 
                 if (result.length > 1800) {
                   // Finaliser le chunk actuel
