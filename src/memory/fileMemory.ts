@@ -1,13 +1,26 @@
 import { promises as fs } from "node:fs";
 import * as path from "node:path";
 
+export type WebContext = {
+  query: string;
+  facts: string[];
+};
+
 export type MemoryTurn = {
   ts: number;
   discordUid: string;
   displayName: string;
   userText: string;
   assistantText: string;
-  imageDescription?: string;
+
+  // Image (optionnelle)
+  imageDescriptions?: string[];
+
+  // Contexte web (optionnel)
+  webContext?: WebContext;
+
+  // Réactions appliquées par l'assistant (ex: ["😏", "🔥"])
+  assistantReactions?: string[];
 };
 
 type ChannelMemory = {

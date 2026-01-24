@@ -1,6 +1,7 @@
 import { Message as DiscordMessage, TextChannel, ThreadChannel } from "discord.js";
 import { FileMemory } from "../memory/fileMemory";
 import emojiRegex from "emoji-regex";
+import fs from "fs";
 
 const wait = require("node:timers/promises").setTimeout;
 
@@ -37,8 +38,15 @@ async function downloadImageAsBase64(url: string): Promise<string | null> {
 
 // Fonction pour générer une description d'image avec le modèle vision
 async function generateImageDescription(imageBase64: string): Promise<string | null> {
-  const visionModelName = process.env.OLLAMA_VISION_MODEL || "llava:7b";
-  const visionSystemPrompt = "Décris cette image de manière détaillée et précise. Sois concis mais complet.";
+  const visionModelName = process.env.OLLAMA_VISION_MODEL || "qwen2.5vl:7b";
+
+  // Récupérer le prompt de vision
+  const visionPromptPath = process.env.SYSTEM_PROMPT_VISION_PATH;
+
+  if (!visionPromptPath) {
+    throw new Error("SYSTEM_PROMPT_VISION_PATH n'est pas défini dans le .env");
+  }
+  const visionSystemPrompt = fs.readFileSync(visionPromptPath, "utf8");
 
   try {
     const response = await fetch("http://localhost:11434/api/chat", {
@@ -52,7 +60,7 @@ async function generateImageDescription(imageBase64: string): Promise<string | n
         ],
         stream: false,
         options: {
-          temperature: 0.9,
+          temperature: 0.2,
           num_predict: 500,
         },
       }),
@@ -87,7 +95,7 @@ async function searchBrave(query: string): Promise<string | null> {
   url.searchParams.set("q", query);
   url.searchParams.set("count", "5");
   url.searchParams.set("search_lang", "fr");
-  url.searchParams.set("country", "FR");
+  url.searchParams.set("country", "CA");
   url.searchParams.set("safesearch", "moderate");
   url.searchParams.set("text_decorations", "0");
 
@@ -238,8 +246,14 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       console.log(`[processLLMRequest] Successfully processed ${imageDescriptions.length}/${imageUrls.length} image(s)`);
     }
 
-    // Récupérer le prompt de personnalité depuis .env
-    let systemPrompt = process.env.BOT_SYSTEM_PROMPT || "Tu es une assistante Discord.";
+    // Récupérer le prompt de personnalité
+    const promptPath = process.env.SYSTEM_PROMPT_PATH;
+
+    if (!promptPath) {
+      throw new Error("SYSTEM_PROMPT_PATH n'est pas défini dans le .env");
+    }
+
+    const systemPrompt = fs.readFileSync(promptPath, "utf8");
 
     // Récupérer l'historique des conversations précédentes
     const recentTurns = await memory.getRecentTurns(channelKey, memoryMaxTurns);
@@ -252,8 +266,15 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         ? ""
         : recentTurns
             .map((t) => {
-              const imageContext = t.imageDescription ? `\n[L'utilisateur a fourni une image. Description générée automatiquement: ${t.imageDescription}]` : "";
-              return `UTILISATEUR (UID: ${t.discordUid}, Nom: ${t.displayName}):\n${t.userText}${imageContext}\n\nTOI (Netricsa):\n${t.assistantText}`;
+              const imageContext = t.imageDescriptions?.length ? `\n[Images décrites]:\n- ${t.imageDescriptions.join("\n- ")}` : "";
+              const webContextBlock = t.webContext ? `\n[Contexte factuel précédemment vérifié : ${t.webContext.facts.join(" | ")}]` : "";
+              const reactionContext = t.assistantReactions?.length ? `\n[Réactions appliquées par toi (Netricsa)]: ${t.assistantReactions.join(" ")}` : "";
+
+              return `UTILISATEUR (UID: ${t.discordUid}, Nom: ${t.displayName}):
+              ${t.userText}${imageContext}${webContextBlock}
+
+              TOI (Netricsa):
+              ${t.assistantText}${reactionContext}`;
             })
             .join("\n\n--- Échange suivant ---\n\n");
 
@@ -261,23 +282,106 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     const imageContext = imageDescriptions.length > 0 ? `\n[L'utilisateur fournit une image. Description générée automatiquement: ${imageDescriptions.join(" | ")}]` : "";
     const currentUserBlock = `UTILISATEUR (UID Discord: ${userId}, Nom: ${userName}):\n${prompt}${imageContext}\n\n[RAPPEL: Pour mentionner cet utilisateur, utilise exactement: <@${userId}>, N’utilise <@${userId}> uniquement lorsque c’est nécessaire pour clarifier le destinataire. Ne commence pas toutes tes réponses par cette mention.]`;
 
-    const searchIntentRegex = /(cherche|recherche|rechercher|trouve|trouver|source|sources|lien|liens|actualité|news|site|web|internet|documentation|wiki|wikipédia|prix|review|références|\bquand\b|\bc'?est[-\s]*quoi\b|\bquel(le)?s?\b|\bqu'?est-ce que\b)/i;
-    const shouldSearch = !!process.env.BRAVE_SEARCH_API_KEY && searchIntentRegex.test(prompt || "");
+    //==========================//
+    //     RECHERCHE WEB        //
+    //==========================//
+
+    //détecte s'il faut chercher sur le web
+    function detectSearchIntent(prompt: string): boolean {
+      //Élimine le question comme "C'est quoi React", le LLM le sait déjà.
+      if (prompt.length < 15) return false;
+
+      const p = prompt.toLowerCase();
+
+      // Questions factuelles explicites
+      if (/(source|sources|lien|liens|référence|références|documentation|wiki|wikipédia)/i.test(p)) {
+        return true;
+      }
+
+      // Actualité / temps réel
+      if (/(actualité|news|aujourd'hui|cette semaine|récemment|dernier|dernière|mise à jour)/i.test(p)) {
+        return true;
+      }
+
+      // Prix / comparaisons
+      if (/(prix|coût|combien|review|avis|comparatif|vs)/i.test(p)) {
+        return true;
+      }
+
+      // Faits datés / évolutifs
+      if (/(version|sorti|date|quand|maintenant|actuel|au canada|en france|au québec|au quebec)/i.test(p)) {
+        return true;
+      }
+
+      return false;
+    }
+
+    function normalizeSearchQuery(prompt: string): string {
+      // Supprime les mots inutiles et ponctuations pour la recherche
+      let query = prompt.toLowerCase();
+
+      // Retirer les phrases superflues (ex: "C'est combien", "Est-ce que")
+      query = query.replace(/c'est combien|est-ce que|dis moi|svp|c'est quoi|s'il te plaît/gi, "");
+
+      // Retirer ponctuation inutile
+      query = query.replace(/[?!.]/g, "");
+
+      // Optionnel : capitaliser les mots clés
+      query = query
+        .split(" ")
+        .map((w) => w.trim())
+        .filter(Boolean)
+        .join(" ");
+
+      return query;
+    }
+
+    const shouldSearch = !!process.env.BRAVE_SEARCH_API_KEY && detectSearchIntent(prompt);
     const webResults = shouldSearch ? await searchBrave(prompt) : null;
+    //
+    let webContext: { query: string; facts: string[] } | null = null;
+
     if (webResults) {
+      const facts = webResults
+        .split("\n")
+        .slice(0, 3)
+        .map((l) => l.replace(/^\d+\.\s*/, "").slice(0, 200));
+
+      webContext = {
+        query: normalizeSearchQuery(prompt),
+        facts,
+      };
+    }
+    //
+    if (webContext) {
       console.log("[BraveSearch] Web context added to prompt");
     }
-    const webBlock = webResults ? `Voici du contexte provenant du web. Ne mentionne pas que ça provient du web et utilise ce contexte dans ta réponse. Prend le comme factuel.=== DÉBUT CONTEXTE WEB ===\n${webResults}\n=== FIN CONTEXTE WEB ===\n\n` : "";
+    const webBlock = webContext
+      ? `=== CONTEXTE FACTUEL ===
+      Requête utilisée: ${webContext.query}
+      Faits vérifiés:
+      - ${webContext.facts.join("\n- ")}
+      === FIN CONTEXTE FACTUEL ===
+
+      `
+      : "";
 
     // Assembler le prompt final avec un préambule explicatif
-    const contextPreamble =
-      historyBlock.length > 0
-        ? `Voici l'historique de la conversation, tu dois t'en servir comme contexte. Lis attentivement qui a dit quoi. Ne confonds jamais ce que les utilisateurs ont dit avec ce que tu as dit.\n\n=== HISTORIQUE ===\n\n${historyBlock}\n\n=== FIN HISTORIQUE ===\n\n${webBlock}=== MESSAGE ACTUEL ===\n\n`
-        : webBlock.length > 0
-          ? `${webBlock}=== MESSAGE ACTUEL ===\n\n`
-          : "";
+    const messages = [
+      {
+        role: "system",
+        content: `
+      ${systemPrompt}
 
-    const userMessage = `${contextPreamble}${currentUserBlock}\n\nRéponds maintenant en tant que Netricsa:`;
+      ${webBlock || ""}
+      ${historyBlock.length > 0 ? `=== HISTORIQUE ===\n\n${historyBlock}\n\n=== FIN HISTORIQUE ===` : ""}
+      `,
+      },
+      {
+        role: "user",
+        content: currentUserBlock, // tu peux garder l'ajout des descriptions ici si tu veux
+      },
+    ];
 
     console.log(`[System Prompt Length]: ${systemPrompt.length} chars`);
     console.log(`[Memory]: ${recentTurns.length} turns loaded`);
@@ -285,8 +389,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       console.log(`[Images]: ${imageDescriptions.length} image description(s) included in context`);
     }
 
-    // Toujours utiliser le modèle texte avec l'API generate
-    const url = "http://localhost:11434/api/generate";
+    // Toujours utiliser le modèle texte avec l'API chatr
+    const url = "http://localhost:11434/api/chat";
     const textModelName = process.env.OLLAMA_TEXT_MODEL || "llama3.2";
     const modelName = textModelName;
 
@@ -297,10 +401,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     };
 
     const data = {
-      model: modelName,
-      prompt: userMessage,
-      system: systemPrompt,
-      stream: true,
+      model: textModelName,
+      messages: messages, // le tableau qu'on vient de créer
+      stream: true, // ou false si tu veux réponse complète
       options,
     };
 
@@ -330,11 +433,12 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       let completionTokens = 0;
       let totalTokens = 0;
 
-      const extractAndApplyReaction = async (text: string): Promise<string> => {
+      const extractAndApplyReaction = async (text: string): Promise<{ modifiedText: string; reactions: string[] }> => {
         let modifiedText = text;
 
-        if (replyToMessage && !reactionApplied) {
-          const emojis = extractValidEmojis(modifiedText);
+        if (replyToMessage) {
+          // Cherche tous les emojis dans le texte complet
+          const emojis = Array.from(new Set(extractValidEmojis(modifiedText))); // unique
           for (const emoji of emojis) {
             try {
               await replyToMessage.react(emoji);
@@ -343,13 +447,13 @@ export async function processLLMRequest(request: DirectLLMRequest) {
               console.warn(`[Reaction] Failed to apply ${emoji}:`, error);
             }
           }
-          // Retirer les emojis du message avant l'affichage en préservant les espaces
-          modifiedText = modifiedText.replace(emojiRegex(), "");
-          // Normaliser les espaces multiples mais préserver les sauts de ligne
-          modifiedText = modifiedText.replace(/ {2,}/g, " ");
+
+          // Retirer tous les emojis du texte avant affichage
+          modifiedText = modifiedText.replace(emojiRegex(), "").replace(/ {2,}/g, " ").trim();
+          return { modifiedText, reactions: emojis };
         }
 
-        return modifiedText;
+        return { modifiedText, reactions: [] };
       };
 
       const decodeHtmlEntities = (text: string) =>
@@ -459,7 +563,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                 // Détection améliorée des réponses de refus du bot
                 const isModerationRefusal = assistantText.toLowerCase().includes("je suis désolée") || assistantText.toLowerCase().includes("je ne peux pas répondre") || assistantText.toLowerCase().includes("je ne répondrai pas");
 
-                if (assistantText.length > 0 && !isModerationRefusal) {
+                const { modifiedText: assistantTextFinal, reactions: appliedReactions } = await extractAndApplyReaction(result);
+
+                if (assistantTextFinal.length > 0 && !isModerationRefusal) {
                   await memory.appendTurn(
                     channelKey,
                     {
@@ -467,12 +573,14 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                       discordUid: userId,
                       displayName: userName,
                       userText: prompt,
-                      assistantText,
-                      ...(imageDescriptions.length > 0 ? { imageDescription: imageDescriptions.join(" | ") } : {}),
+                      assistantText: assistantTextFinal,
+                      ...(imageDescriptions.length > 0 ? { imageDescriptions: imageDescriptions.slice(0, 5) } : {}),
+                      ...(webContext ? { webContext } : {}),
+                      ...(appliedReactions.length > 0 ? { assistantReactions: appliedReactions } : {}), // ✅ stocker les emojis
                     },
                     memoryMaxTurns,
                   );
-                  console.log(`[Memory]: Conversation saved${imageDescriptions.length > 0 ? " with image description" : ""}`);
+                  console.log(`[Memory]: Conversation saved${imageDescriptions.length > 0 ? " with image description" : ""}${appliedReactions.length > 0 ? " and reactions" : ""}`);
                 } else if (isModerationRefusal) {
                   console.log(`[Memory]: Moderation refusal detected, NOT saving to memory`);
                 }
@@ -502,8 +610,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                   continue;
                 }
 
-                // Gérer les réponses chat API (message.content) et generate API (response)
-                const chunk = decodedChunk.message?.content || decodedChunk.response || "";
+                // Gérer les réponses chat API (message.content) et chat API (response)
+                const chunk = decodedChunk.message?.delta || decodedChunk.message?.content || "";
 
                 // Extraire les informations de tokens si disponibles
                 if (decodedChunk.prompt_eval_count) {
@@ -523,10 +631,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                 result += chunk;
 
                 // Extraire et appliquer la réaction si présente
-                const cleanedResult = await extractAndApplyReaction(result);
-                if (cleanedResult !== result) {
-                  result = cleanedResult;
-                }
+                const { modifiedText, reactions } = await extractAndApplyReaction(result);
+                result = modifiedText;
 
                 if (result.length > 1800) {
                   // Finaliser le chunk actuel
