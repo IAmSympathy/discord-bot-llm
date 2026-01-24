@@ -2,7 +2,7 @@ import { ChatInputCommandInteraction, GuildMember, MessageFlags, SlashCommandBui
 import { clearMemory } from "../../queue/queue";
 
 module.exports = {
-  data: new SlashCommandBuilder().setName("reset").setDescription("Efface la mémoire de Nettie dans ce salon"),
+  data: new SlashCommandBuilder().setName("forget-here").setDescription("Efface la mémoire de Nettie dans ce salon"),
   async execute(interaction: ChatInputCommandInteraction) {
     // Vérifier les rôles autorisés
     const ALLOWED_ROLES = ["1122751212299767929", "1129445913123880960", "829521404214640671", "828652861218226196"];

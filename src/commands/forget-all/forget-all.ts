@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteracti
 import { clearAllMemory } from "../../queue/queue";
 
 module.exports = {
-  data: new SlashCommandBuilder().setName("resetall").setDescription("Efface TOUTE la mémoire de Nettie (tous les salons)"),
+  data: new SlashCommandBuilder().setName("forget-all").setDescription("Efface TOUTE la mémoire de Nettie (tous les salons)"),
   async execute(interaction: ChatInputCommandInteraction) {
     try {
       // Vérifier le rôle Owner uniquement

@@ -259,7 +259,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
     // Ajouter les descriptions d'images actuelles au message utilisateur
     const imageContext = imageDescriptions.length > 0 ? `\n[L'utilisateur fournit une image. Description générée automatiquement: ${imageDescriptions.join(" | ")}]` : "";
-    const currentUserBlock = `UTILISATEUR (UID Discord: ${userId}, Nom: ${userName}):\n${prompt}${imageContext}\n\n[RAPPEL: Pour mentionner cet utilisateur, utilise exactement: <@${userId}>]`;
+    const currentUserBlock = `UTILISATEUR (UID Discord: ${userId}, Nom: ${userName}):\n${prompt}${imageContext}\n\n[RAPPEL: Pour mentionner cet utilisateur, utilise exactement: <@${userId}>, N’utilise <@${userId}> uniquement lorsque c’est nécessaire pour clarifier le destinataire. Ne commence pas toutes tes réponses par cette mention.]`;
 
     const searchIntentRegex = /(cherche|recherche|rechercher|trouve|trouver|source|sources|lien|liens|actualité|news|site|web|internet|documentation|wiki|wikipédia|prix|review|références|\bquand\b|\bc'?est[-\s]*quoi\b|\bquel(le)?s?\b|\bqu'?est-ce que\b)/i;
     const shouldSearch = !!process.env.BRAVE_SEARCH_API_KEY && searchIntentRegex.test(prompt || "");
@@ -291,9 +291,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     const modelName = textModelName;
 
     const options = {
-      temperature: 0.95,
-      repeat_penalty: 1.3,
-      num_predict: 4000,
+      temperature: 1.0,
+      repeat_penalty: 1.1,
+      num_predict: 600,
     };
 
     const data = {
@@ -321,7 +321,6 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       let responseChunks: Array<string> = [];
       let messages: Array<DiscordMessage> = [];
       let reactionApplied = false;
-      let reactionRefApplied = false;
 
       // Buffer pour gérer les chunks JSON partiels (NDJSON)
       let jsonBuffer = "";
@@ -458,17 +457,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
                 // Ne pas sauvegarder si la réponse est un refus de modération
                 // Détection améliorée des réponses de refus du bot
-                const isModerationRefusal =
-                  (assistantText.toLowerCase().includes("je suis désolé") && assistantText.toLowerCase().includes("ne peux pas")) ||
-                  (assistantText.toLowerCase().includes("i'm sorry") && assistantText.toLowerCase().includes("i cannot")) ||
-                  assistantText.toLowerCase().includes("ne répondrai pas") ||
-                  assistantText.toLowerCase().includes("m'abstiens") ||
-                  assistantText.toLowerCase().includes("cannot respond") ||
-                  assistantText.toLowerCase().includes("refuse to") ||
-                  assistantText.toLowerCase().includes("inappropriate") ||
-                  assistantText.toLowerCase().includes("inapproprié") ||
-                  assistantText.length < 10 || // Réponses très courtes = probablement refus
-                  /^(non|no|désolé|sorry)\.?$/i.test(assistantText); // Réponses ultra-courtes
+                const isModerationRefusal = assistantText.toLowerCase().includes("je suis désolée") || assistantText.toLowerCase().includes("je ne peux pas répondre") || assistantText.toLowerCase().includes("je ne répondrai pas");
 
                 if (assistantText.length > 0 && !isModerationRefusal) {
                   await memory.appendTurn(

@@ -23,11 +23,24 @@ export function registerWatchedChannelResponder(client: Client) {
       // Ignorer les commandes slash-like tapées en texte
       if (message.content?.startsWith("/")) return;
 
+      // Filtrer les messages qui commencent par "!s"
+      if (message.content.trim().startsWith("!s ")) {
+        console.log(`Ignored message from ${message.author} because it starts with "!s"`);
+        return; // Ne rien faire
+      }
+
       const userText = message.content?.trim();
 
       // Vérifier si le bot est mentionné OU si on est dans le channel surveillé
       const isMentioned = message.mentions.has(client.user!.id);
       const isInWatchedChannel = watchedChannelId && isWatchedChannel(message, watchedChannelId);
+
+      // Réagis au message parlant de Nettie seulement si c'Est pas dans un chanel watched ou ping
+      if ((message.content.toLowerCase().includes("nettie") || message.content.toLowerCase().includes("Netricsa")) && !(isMentioned || isInWatchedChannel)) {
+        console.log(`Message from ${message.author} talks about Nettie`);
+        message.react("🤗"); //todo Faire en sorte que l'emoji soit choisit par le LLM
+        return;
+      }
 
       if (!isMentioned && !isInWatchedChannel) return;
 
@@ -105,7 +118,7 @@ export function registerWatchedChannelResponder(client: Client) {
 
       // Ajouter l'instruction de réaction obligatoire si nécessaire
       if (mustReact) {
-        contextPrompt = `[Note: Ajoute une réaction emoji avec [REACT:emoji] pour donner ton avis]\n${contextPrompt}`;
+        contextPrompt = `[Note: Ajoute obligatoirement un emoji au début de ton message pour donner ton avis]\n${contextPrompt}`;
       }
 
       // Indique que le bot "écrit"
