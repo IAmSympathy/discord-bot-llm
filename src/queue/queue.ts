@@ -14,6 +14,7 @@ interface DirectLLMRequest {
   replyToMessage?: DiscordMessage;
   referencedMessage?: DiscordMessage;
   imageUrls?: string[];
+  sendMessage?: boolean;
 }
 
 function extractValidEmojis(str: string): string[] {
@@ -187,7 +188,7 @@ export function abortStream(channelKey: string): boolean {
 
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest) {
-  const { prompt, userId, userName, channel, replyToMessage, referencedMessage, imageUrls } = request;
+  const { prompt, userId, userName, channel, replyToMessage, referencedMessage, imageUrls, sendMessage = true } = request;
 
   // Clé de mémoire unique par channel
   // Si on est dans le watched channel, utiliser son ID fixe
@@ -208,9 +209,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     let analysisInterval: NodeJS.Timeout | null = null;
     if (imageUrls && imageUrls.length > 0) {
       if (replyToMessage) {
-        analysisMessage = await replyToMessage.reply("Analyse en cours.");
+        analysisMessage = await replyToMessage.reply("Analyse de l'image.");
       } else {
-        analysisMessage = await channel.send("Analyse en cours.");
+        analysisMessage = await channel.send("Analyse de l'image.");
       }
 
       // Animer les points
@@ -219,9 +220,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         if (analysisMessage) {
           dotCount = (dotCount % 3) + 1;
           const dots = ".".repeat(dotCount);
-          await analysisMessage.edit(`Analyse en cours${dots}`).catch(() => {});
+          await analysisMessage.edit(`Analyse de l'image${dots}`).catch(() => {});
         }
-      }, 500);
+      }, 1500);
     }
 
     // Télécharger les images et générer leurs descriptions avec le modèle vision
@@ -248,12 +249,23 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
     // Récupérer le prompt de personnalité
     const promptPath = process.env.SYSTEM_PROMPT_PATH;
+    const serverPromptPath = process.env.SERVER_PROMPT_PATH;
 
     if (!promptPath) {
       throw new Error("SYSTEM_PROMPT_PATH n'est pas défini dans le .env");
     }
 
+    if (!serverPromptPath) {
+      throw new Error("SERVER_PROMPT_PATH n'est pas défini dans le .env");
+    }
+
     const systemPrompt = fs.readFileSync(promptPath, "utf8");
+    const serverPrompt =
+      fs.readFileSync(serverPromptPath, "utf8") +
+      `\n\n=== CONTEXTE ACTUEL ===
+        ID du salon actuel: ${channel.id}
+        === ONTEXTE ACTUEL ===`;
+    const finalSystemPrompt = `${serverPrompt}\n\n${systemPrompt}`;
 
     // Récupérer l'historique des conversations précédentes
     const recentTurns = await memory.getRecentTurns(channelKey, memoryMaxTurns);
@@ -269,9 +281,23 @@ export async function processLLMRequest(request: DirectLLMRequest) {
               const imageContext = t.imageDescriptions?.length ? `\n[Images décrites]:\n- ${t.imageDescriptions.join("\n- ")}` : "";
               const webContextBlock = t.webContext ? `\n[Contexte factuel précédemment vérifié : ${t.webContext.facts.join(" | ")}]` : "";
               const reactionContext = t.assistantReactions?.length ? `\n[Réactions appliquées par toi (Netricsa)]: ${t.assistantReactions.join(" ")}` : "";
+              const date = new Date(t.ts);
 
               return `UTILISATEUR (UID: ${t.discordUid}, Nom: ${t.displayName}):
-              ${t.userText}${imageContext}${webContextBlock}
+              [Timestamp Unix: ${t.ts}]
+              [Date ISO: ${date.toISOString()}]
+              [Date locale fr-CA: ${date.toLocaleDateString("fr-CA", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}]
+              [Heure locale fr-CA: ${date.toLocaleTimeString("fr-CA", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })}]
+              Message:
+              ${t.userText}${imageContext}
 
               TOI (Netricsa):
               ${t.assistantText}${reactionContext}`;
@@ -279,8 +305,30 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             .join("\n\n--- Échange suivant ---\n\n");
 
     // Ajouter les descriptions d'images actuelles au message utilisateur
-    const imageContext = imageDescriptions.length > 0 ? `\n[L'utilisateur fournit une image. Description générée automatiquement: ${imageDescriptions.join(" | ")}]` : "";
-    const currentUserBlock = `UTILISATEUR (UID Discord: ${userId}, Nom: ${userName}):\n${prompt}${imageContext}\n\n[RAPPEL: Pour mentionner cet utilisateur, utilise exactement: <@${userId}>, N’utilise <@${userId}> uniquement lorsque c’est nécessaire pour clarifier le destinataire. Ne commence pas toutes tes réponses par cette mention.]`;
+    const imageContext = imageDescriptions.length > 0 ? `\n[Images fournies par l'utilisateur, description générée automatiquement par Netricsa]:\n- ${imageDescriptions.join("\n- ")}` : "";
+    const currentTs = Date.now();
+    const currentDate = new Date(currentTs);
+    const currentUserBlock = `
+      UTILISATEUR (UID Discord: ${userId}, Nom: ${userName}):
+
+      [Timestamp du message actuel: ${currentTs}]
+      [Date ISO: ${currentDate.toISOString()}]
+      [Date locale fr-CA: ${currentDate.toLocaleDateString("fr-CA", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })}]
+      [Heure locale fr-CA: ${currentDate.toLocaleTimeString("fr-CA", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })}]
+
+    Message:
+    ${prompt}
+
+    [RAPPEL: Pour mentionner cet utilisateur, utilise exactement: <@${userId}>]
+`;
 
     //==========================//
     //     RECHERCHE WEB        //
@@ -371,7 +419,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       {
         role: "system",
         content: `
-      ${systemPrompt}
+      ${finalSystemPrompt}
 
       ${webBlock || ""}
       ${historyBlock.length > 0 ? `=== HISTORIQUE ===\n\n${historyBlock}\n\n=== FIN HISTORIQUE ===` : ""}
@@ -379,7 +427,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       },
       {
         role: "user",
-        content: currentUserBlock, // tu peux garder l'ajout des descriptions ici si tu veux
+        content: currentUserBlock + imageContext,
       },
     ];
 
@@ -449,7 +497,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           }
 
           // Retirer tous les emojis du texte avant affichage
-          modifiedText = modifiedText.replace(emojiRegex(), "").replace(/ {2,}/g, " ").trim();
+          // Ne PAS modifier les espaces/sauts de ligne pour préserver le formatage Markdown
+          modifiedText = modifiedText.replace(emojiRegex(), "");
           return { modifiedText, reactions: emojis };
         }
 
@@ -483,27 +532,29 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           const currentContent = wrapLinksNoEmbed(decodeHtmlEntities(rawContent));
 
           // Arrêter l'animation et utiliser le message d'analyse s'il existe
-          if (messages.length === 0 && analysisMessage) {
-            if (analysisInterval) {
-              clearInterval(analysisInterval);
-              analysisInterval = null;
-            }
-            await analysisMessage.edit(currentContent);
-            messages.push(analysisMessage);
-            analysisMessage = null;
-          } else if (messages.length === 0) {
-            // Pas de message d'analyse, créer un nouveau message
-            if (replyToMessage) {
-              const message = await replyToMessage.reply({ content: currentContent, allowedMentions: { repliedUser: true } });
-              messages.push(message);
+          if (sendMessage) {
+            if (messages.length === 0 && analysisMessage) {
+              if (analysisInterval) {
+                clearInterval(analysisInterval);
+                analysisInterval = null;
+              }
+              await analysisMessage.edit(currentContent);
+              messages.push(analysisMessage);
+              analysisMessage = null;
+            } else if (messages.length === 0) {
+              // Pas de message d'analyse, créer un nouveau message
+              if (replyToMessage) {
+                const message = await replyToMessage.reply({ content: currentContent, allowedMentions: { repliedUser: true } });
+                messages.push(message);
+              } else {
+                const message = await channel.send(currentContent);
+                messages.push(message);
+              }
             } else {
+              // Nouveau chunk nécessaire
               const message = await channel.send(currentContent);
               messages.push(message);
             }
-          } else {
-            // Nouveau chunk nécessaire
-            const message = await channel.send(currentContent);
-            messages.push(message);
           }
         }
 
@@ -520,7 +571,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         }
       };
 
-      const throttleResponseInterval = setInterval(() => throttleResponse(), 2000);
+      const throttleResponseInterval = setInterval(() => throttleResponse(), 1500);
 
       return new ReadableStream({
         start(controller) {
@@ -565,7 +616,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
                 const { modifiedText: assistantTextFinal, reactions: appliedReactions } = await extractAndApplyReaction(result);
 
-                if (assistantTextFinal.length > 0 && !isModerationRefusal) {
+                if (sendMessage && assistantTextFinal.length > 0 && !isModerationRefusal) {
                   await memory.appendTurn(
                     channelKey,
                     {
@@ -576,7 +627,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                       assistantText: assistantTextFinal,
                       ...(imageDescriptions.length > 0 ? { imageDescriptions: imageDescriptions.slice(0, 5) } : {}),
                       ...(webContext ? { webContext } : {}),
-                      ...(appliedReactions.length > 0 ? { assistantReactions: appliedReactions } : {}), // ✅ stocker les emojis
+                      ...(appliedReactions.length > 0 ? { assistantReactions: appliedReactions } : {}),
                     },
                     memoryMaxTurns,
                   );

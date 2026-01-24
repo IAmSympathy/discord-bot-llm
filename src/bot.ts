@@ -1,11 +1,22 @@
 require("dotenv").config();
 import path from "path";
 import fs from "fs";
-import { Client, Collection, Events, GatewayIntentBits } from "discord.js";
+import { Client, Collection, Events, GatewayIntentBits, MessageFlags, PresenceStatusData, ActivityType } from "discord.js";
 import { registerWatchedChannelResponder } from "./watchChannel";
 import { registerForumThreadHandler } from "./forumThreadHandler";
 import { registerCitationsThreadHandler } from "./citationsThreadHandler";
 import deployCommands from "./deploy/deployCommands";
+
+export async function setBotPresence(client: Client, status: PresenceStatusData, activityName?: string) {
+  if (!client.user) return;
+
+  if (!activityName) activityName = "";
+
+  await client.user.setPresence({
+    status: status,
+    activities: [{ name: activityName, type: ActivityType.Playing }],
+  });
+}
 
 // Load environment variables
 const BOT_TOKEN = process.env.DISCORD_LLM_BOT_TOKEN;
@@ -52,6 +63,18 @@ client.once(Events.ClientReady, () => {
   console.log("Bot is online!");
 });
 
+if (client.user) {
+  client.user.setPresence({
+    status: "online",
+    activities: [
+      {
+        name: "",
+        type: 3, // WATCHING
+      },
+    ],
+  });
+}
+
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
   const command = interaction.client.commands.get(interaction.commandName);
@@ -66,9 +89,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
   } catch (error) {
     console.error(error);
     if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ content: "There was an error while executing this command!", ephemeral: true });
+      await interaction.followUp({ content: "There was an error while executing this command!", flags: MessageFlags.Ephemeral });
     } else {
-      await interaction.reply({ content: "There was an error while executing this command!", ephemeral: true });
+      await interaction.reply({ content: "There was an error while executing this command!", flags: MessageFlags.Ephemeral });
     }
   }
 });

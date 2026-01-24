@@ -1,8 +1,25 @@
 import { Client, Message, TextChannel, ChannelType } from "discord.js";
 import { processLLMRequest } from "./queue/queue";
+import { setBotPresence } from "./bot";
+import emojiRegex from "emoji-regex";
 
 function isWatchedChannel(message: Message, watchedChannelId?: string) {
   return !!watchedChannelId && message.channelId === watchedChannelId;
+}
+
+async function readStreamAsString(stream: ReadableStream<any>): Promise<string> {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let result = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    result += decoder.decode(value, { stream: true });
+  }
+
+  result += decoder.decode(); // flush
+  return result;
 }
 
 export function registerWatchedChannelResponder(client: Client) {
@@ -29,6 +46,9 @@ export function registerWatchedChannelResponder(client: Client) {
         return; // Ne rien faire
       }
 
+      //Se met en Ne pas déranger
+      await setBotPresence(client, "dnd", "Réfléchit…");
+
       const userText = message.content?.trim();
 
       // Vérifier si le bot est mentionné OU si on est dans le channel surveillé
@@ -36,9 +56,48 @@ export function registerWatchedChannelResponder(client: Client) {
       const isInWatchedChannel = watchedChannelId && isWatchedChannel(message, watchedChannelId);
 
       // Réagis au message parlant de Nettie seulement si c'Est pas dans un chanel watched ou ping
-      if ((message.content.toLowerCase().includes("nettie") || message.content.toLowerCase().includes("Netricsa")) && !(isMentioned || isInWatchedChannel)) {
+      if ((message.content.toLowerCase().includes("nettie") || message.content.toLowerCase().includes("netricsa")) && !(isMentioned || isInWatchedChannel)) {
         console.log(`Message from ${message.author} talks about Nettie`);
-        message.react("🤗"); //todo Faire en sorte que l'emoji soit choisit par le LLM
+
+        // Prompt pour demander au LLM un emoji unique exprimant l'émotion liée au message
+        const emojiPrompt = `Donne uniquement **un seul emoji** qui exprime ton émotion par rapport ce qui est dit sur toi (Nettie/Netricsa) dans ce message :
+        "${message.content}"
+        Ne mets aucun texte, aucun autre emoji.`;
+
+        try {
+          // Appeler le LLM pour générer l'emoji
+          const channel = message.channel as TextChannel; // Discord API compatible
+
+          const llmStream = await processLLMRequest({
+            prompt: emojiPrompt,
+            userId: message.author.id,
+            userName: message.author.username,
+            channel: channel,
+            sendMessage: false, // Pas besoin de reply
+          });
+
+          if (!llmStream) {
+            console.warn("[Emoji] LLM did not return a stream, using fallback emoji 🤗");
+            await message.react("🤗");
+            return;
+          }
+
+          const llmResult = await readStreamAsString(llmStream);
+
+          const regex = emojiRegex();
+          const emojis = Array.from(llmResult.matchAll(regex), (m) => m[0]);
+
+          // On suppose que `processLLMRequest` renvoie le texte final en string (adapter si tu utilises un stream)
+          // Ici on prend le premier caractère Unicode comme emoji
+          const generatedEmoji = emojis.length > 0 ? emojis[0] : "🤗"; // fallback si aucun emoji
+
+          await message.react(generatedEmoji);
+          console.log(`[Emoji] Reacted with: ${generatedEmoji}`);
+        } catch (error) {
+          console.error("[watchChannel] Failed to get emoji from LLM:", error);
+          await message.react("🤗"); // Fallback
+        }
+
         return;
       }
 
@@ -137,6 +196,9 @@ export function registerWatchedChannelResponder(client: Client) {
         referencedMessage: referencedMsg,
         imageUrls,
       });
+
+      //Se met en ligne
+      await setBotPresence(client, "online");
     } catch (err) {
       console.error("[watchChannel] messageCreate error:", err);
       try {

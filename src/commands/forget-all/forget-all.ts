@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, GuildMember, SlashCommandBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, GuildMember, MessageFlags, SlashCommandBuilder } from "discord.js";
 import { clearAllMemory } from "../../queue/queue";
 
 module.exports = {
@@ -10,13 +10,13 @@ module.exports = {
       const member = interaction.member;
 
       if (!member || !(member instanceof GuildMember)) {
-        await interaction.reply({ content: "Vous n'avez pas la permission d'utiliser cette commande.", ephemeral: true });
+        await interaction.reply({ content: "Vous n'avez pas la permission d'utiliser cette commande.", flags: MessageFlags.Ephemeral });
         return;
       }
 
       const hasOwnerRole = OWNER_ROLES.some((roleId) => member.roles.cache.has(roleId));
       if (!hasOwnerRole) {
-        await interaction.reply({ content: "Vous n'avez pas la permission d'utiliser cette commande. (Tah-Um)", ephemeral: true });
+        await interaction.reply({ content: "Vous n'avez pas la permission d'utiliser cette commande. (Tah-Um)", flags: MessageFlags.Ephemeral });
         return;
       }
 
@@ -31,7 +31,7 @@ module.exports = {
       const response = await interaction.reply({
         content: "**ATTENTION** : Ceci va effacer ma mémoire de TOUS les salons. Cette action est irréversible.\n\nÊtes-vous sûr de vouloir continuer ?",
         components: [row],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
 
       // Attendre la réponse de l'utilisateur (10 secondes)
@@ -84,7 +84,7 @@ module.exports = {
       console.error("[ResetAll Command] Error:", error);
       await interaction.reply({
         content: "Une erreur s'est produite lors de la tentative d'effacement de ma mémoire.",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
   },

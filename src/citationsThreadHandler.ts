@@ -1,4 +1,5 @@
 import { Client, Events, Message, ChannelType } from "discord.js";
+import { setBotPresence } from "./bot";
 
 const CITATIONS_THREAD_ID = process.env.CITATIONS_THREAD_ID;
 
@@ -46,6 +47,9 @@ export function registerCitationsThreadHandler(client: Client) {
         return;
       }
 
+      //Se met en Ne pas déranger
+      await setBotPresence(client, "dnd", "Réfléchit…");
+
       const threadName = message.channel.name;
       const parentChannel = message.channel.parent?.name || "Unknown";
 
@@ -60,6 +64,8 @@ export function registerCitationsThreadHandler(client: Client) {
       // Ajouter la réaction au message
       await message.react(emoji);
       console.log(`[CitationsThread] Réaction ${emoji} ajoutée`);
+
+      await setBotPresence(client, "online");
     } catch (error) {
       console.error("[CitationsThread] Erreur lors du traitement du message:", error);
     }
