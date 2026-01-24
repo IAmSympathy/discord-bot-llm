@@ -524,38 +524,48 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
       // Throttle pour ne pas dépasser les limites Discord
       const throttleResponse = async () => {
-        if (messages.length === 0 || messages.length !== responseChunks.length) {
-          const rawContent = responseChunks[responseChunks.length - 1];
+        if (!sendMessage) return;
+
+        // Créer le premier message si nécessaire
+        if (messages.length === 0) {
+          const rawContent = responseChunks[0];
           if (!rawContent || rawContent.trim().length === 0) {
             return; // Ne pas envoyer de message vide
           }
           const currentContent = wrapLinksNoEmbed(decodeHtmlEntities(rawContent));
 
           // Arrêter l'animation et utiliser le message d'analyse s'il existe
-          if (sendMessage) {
-            if (messages.length === 0 && analysisMessage) {
-              if (analysisInterval) {
-                clearInterval(analysisInterval);
-                analysisInterval = null;
-              }
-              await analysisMessage.edit(currentContent);
-              messages.push(analysisMessage);
-              analysisMessage = null;
-            } else if (messages.length === 0) {
-              // Pas de message d'analyse, créer un nouveau message
-              if (replyToMessage) {
-                const message = await replyToMessage.reply({ content: currentContent, allowedMentions: { repliedUser: true } });
-                messages.push(message);
-              } else {
-                const message = await channel.send(currentContent);
-                messages.push(message);
-              }
+          if (analysisMessage) {
+            if (analysisInterval) {
+              clearInterval(analysisInterval);
+              analysisInterval = null;
+            }
+            await analysisMessage.edit(currentContent);
+            messages.push(analysisMessage);
+            analysisMessage = null;
+          } else {
+            // Pas de message d'analyse, créer un nouveau message
+            if (replyToMessage) {
+              const message = await replyToMessage.reply({ content: currentContent, allowedMentions: { repliedUser: true } });
+              messages.push(message);
             } else {
-              // Nouveau chunk nécessaire
               const message = await channel.send(currentContent);
               messages.push(message);
             }
           }
+          return;
+        }
+
+        // Créer des nouveaux messages pour les chunks supplémentaires
+        while (messages.length < responseChunks.length) {
+          const chunkIndex = messages.length;
+          const rawContent = responseChunks[chunkIndex];
+          if (!rawContent || rawContent.trim().length === 0) {
+            break;
+          }
+          const currentContent = wrapLinksNoEmbed(decodeHtmlEntities(rawContent));
+          const message = await channel.send(currentContent);
+          messages.push(message);
         }
 
         // Mettre à jour les messages existants
@@ -685,7 +695,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                 const { modifiedText, reactions } = await extractAndApplyReaction(result);
                 result = modifiedText;
 
-                if (result.length > 1800) {
+                if (result.length > 1900) {
                   // Finaliser le chunk actuel
                   responseChunks[responseChunks.length - 1] = result;
                   // Commencer un nouveau chunk
