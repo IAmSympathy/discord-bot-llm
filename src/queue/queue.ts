@@ -487,13 +487,15 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         if (replyToMessage && !reactionApplied) {
           // Cherche tous les emojis dans le texte complet
           const emojis = Array.from(new Set(extractValidEmojis(modifiedText))); // unique
-          
+
           // N'appliquer que le premier emoji trouvé, une seule fois
           if (emojis.length > 0) {
             const firstEmoji = emojis[0];
             try {
               await replyToMessage.react(firstEmoji);
               reactionApplied = true; // Marquer comme appliqué
+            } catch (error) {
+              console.warn(`[Reaction] Failed to apply ${firstEmoji}:`, error);
             }
           }
 
