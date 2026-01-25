@@ -264,7 +264,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       fs.readFileSync(serverPromptPath, "utf8") +
       `\n\n=== CONTEXTE ACTUEL ===
         ID du salon actuel: ${channel.id}
-        === ONTEXTE ACTUEL ===`;
+        === CONTEXTE ACTUEL ===`;
     const finalSystemPrompt = `${serverPrompt}\n\n${systemPrompt}`;
 
     // Récupérer l'historique des conversations précédentes
@@ -284,8 +284,6 @@ export async function processLLMRequest(request: DirectLLMRequest) {
               const date = new Date(t.ts);
 
               return `UTILISATEUR (UID: ${t.discordUid}, Nom: ${t.displayName}):
-              [Timestamp Unix: ${t.ts}]
-              [Date ISO: ${date.toISOString()}]
               [Date locale fr-CA: ${date.toLocaleDateString("fr-CA", {
                 year: "numeric",
                 month: "long",
@@ -309,10 +307,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     const currentTs = Date.now();
     const currentDate = new Date(currentTs);
     const currentUserBlock = `
+      === MESSAGE ACTUEL ===
       UTILISATEUR (UID Discord: ${userId}, Nom: ${userName}):
-
-      [Timestamp du message actuel: ${currentTs}]
-      [Date ISO: ${currentDate.toISOString()}]
       [Date locale fr-CA: ${currentDate.toLocaleDateString("fr-CA", {
         year: "numeric",
         month: "long",
@@ -326,8 +322,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
     Message:
     ${prompt}
-
-    [RAPPEL: Pour mentionner cet utilisateur, utilise exactement: <@${userId}>]
+    === FIN MESSAGE ACTUEL ===
+    [RAPPEL: Si tu veux mentionner une utilisateur utilise exactement: <@UID>. Ne mentionne pas l'utilisateur du MESSAGE ACTUEL si ce n'est pas pertinent]
 `;
 
     //==========================//
@@ -544,6 +540,16 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         );
       };
 
+      const cleanHtmlComments = (text: string) => {
+        return (
+          text
+            // Supprime tous les commentaires HTML <!-- -->
+            .replace(/<!---->/g, "")
+            // Supprime les espaces invisibles et lignes vides au début
+            .replace(/^[\s\r\n]+/, "")
+        );
+      };
+
       // Throttle pour ne pas dépasser les limites Discord
       const throttleResponse = async () => {
         if (!sendMessage) return;
@@ -554,7 +560,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           if (!rawContent || rawContent.trim().length === 0) {
             return; // Ne pas envoyer de message vide
           }
-          const currentContent = fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(rawContent)));
+          const currentContent = cleanHtmlComments(fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(rawContent))));
 
           // Arrêter l'animation et utiliser le message d'analyse s'il existe
           if (analysisMessage) {
@@ -585,7 +591,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           if (!rawContent || rawContent.trim().length === 0) {
             break;
           }
-          const currentContent = fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(rawContent)));
+          const currentContent = cleanHtmlComments(fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(rawContent))));
           const message = await channel.send(currentContent);
           messages.push(message);
         }
@@ -596,7 +602,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           if (!message) continue;
           const rawChunk = responseChunks[i];
           if (!rawChunk) continue;
-          const nextContent = fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(rawChunk)));
+          const nextContent = cleanHtmlComments(fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(rawChunk))));
           if (message.content !== nextContent) {
             await message.edit(nextContent);
           }
@@ -631,7 +637,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                 await wait(2000);
                 // Mettre à jour le dernier message avec le contenu final
                 if (messages.length > 0) {
-                  const finalContent = fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(responseChunks[responseChunks.length - 1])));
+                  const finalContent = cleanHtmlComments(fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(responseChunks[responseChunks.length - 1]))));
                   await messages[messages.length - 1].edit(finalContent);
                 }
 
