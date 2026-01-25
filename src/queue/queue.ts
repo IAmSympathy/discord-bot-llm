@@ -481,27 +481,27 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       // Fonction pour convertir les smileys textuels en emojis Unicode
       const convertTextEmojisToUnicode = (text: string): string => {
         return text
-          .replace(/:\)/g, "🙂")
-          .replace(/:-\)/g, "🙂")
-          .replace(/:\(/g, "☹️")
-          .replace(/:-\(/g, "☹️")
-          .replace(/:D/g, "😃")
-          .replace(/:-D/g, "😃")
-          .replace(/:O/g, "😮")
-          .replace(/:-O/g, "😮")
-          .replace(/:o/g, "😮")
-          .replace(/:-o/g, "😮")
-          .replace(/;-?\)/g, "😉")
-          .replace(/:P/g, "😛")
-          .replace(/:-P/g, "😛")
-          .replace(/:p/g, "😛")
-          .replace(/:-p/g, "😛")
-          .replace(/:\|/g, "😐")
-          .replace(/:-\|/g, "😐")
-          .replace(/><\)/g, "😁")
-          .replace(/<3/g, "❤️")
-          .replace(/:\*/g, "😘")
-          .replace(/:-\*/g, "😘");
+          .replace(/:\)(?=[ \n])/g, "🙂")
+          .replace(/:-\)(?=[ \n])/g, "🙂")
+          .replace(/:\((?=[ \n])/g, "☹️")
+          .replace(/:-\((?=[ \n])/g, "☹️")
+          .replace(/:D(?=[ \n])/g, "😃")
+          .replace(/:-D(?=[ \n])/g, "😃")
+          .replace(/:O(?=[ \n])/g, "😮")
+          .replace(/:-O(?=[ \n])/g, "😮")
+          .replace(/:o(?=[ \n])/g, "😮")
+          .replace(/:-o(?=[ \n])/g, "😮")
+          .replace(/;-?\)(?=[ \n])/g, "😉")
+          .replace(/:P(?=[ \n])/g, "😛")
+          .replace(/:-P(?=[ \n])/g, "😛")
+          .replace(/:p(?=[ \n])/g, "😛")
+          .replace(/:-p(?=[ \n])/g, "😛")
+          .replace(/:\|(?=[ \n])/g, "😐")
+          .replace(/:-\|(?=[ \n])/g, "😐")
+          .replace(/><\)(?=[ \n])/g, "😁")
+          .replace(/<3(?=[ \n])/g, "❤️")
+          .replace(/:\*(?=[ \n])/g, "😘")
+          .replace(/:-\*(?=[ \n])/g, "😘");
       };
 
       const extractAndApplyReaction = async (text: string): Promise<{ modifiedText: string; reactions: string[] }> => {
