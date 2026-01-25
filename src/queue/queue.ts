@@ -484,15 +484,16 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       const extractAndApplyReaction = async (text: string): Promise<{ modifiedText: string; reactions: string[] }> => {
         let modifiedText = text;
 
-        if (replyToMessage) {
+        if (replyToMessage && !reactionApplied) {
           // Cherche tous les emojis dans le texte complet
           const emojis = Array.from(new Set(extractValidEmojis(modifiedText))); // unique
-          for (const emoji of emojis) {
+          
+          // N'appliquer que le premier emoji trouvé, une seule fois
+          if (emojis.length > 0) {
+            const firstEmoji = emojis[0];
             try {
-              await replyToMessage.react(emoji);
-              console.log(`[Reaction] Applied ${emoji} to user message`);
-            } catch (error) {
-              console.warn(`[Reaction] Failed to apply ${emoji}:`, error);
+              await replyToMessage.react(firstEmoji);
+              reactionApplied = true; // Marquer comme appliqué
             }
           }
 
@@ -506,7 +507,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           // Retirer les emojis Discord au format :emoji:
           modifiedText = modifiedText.replace(/:[a-zA-Z0-9_]+:/g, "");
           // Ne PAS modifier les espaces/sauts de ligne pour préserver le formatage Markdown
-          return { modifiedText, reactions: emojis };
+          return { modifiedText, reactions: emojis.slice(0, 1) };
         }
 
         return { modifiedText, reactions: [] };
