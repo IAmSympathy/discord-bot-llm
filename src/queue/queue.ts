@@ -537,7 +537,6 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         modifiedText = modifiedText.replace(/:(?!zzz)[a-zA-Z0-9_]+:/g, "");
         // Retirer les emojis au format <emoji>
         modifiedText = modifiedText.replace(/<(?!(@|#|:|https?:\/\/))[a-zA-Z0-9_]+>/g, "");
-
         return { modifiedText, reactions: emojis.slice(0, 1) };
       };
 
@@ -581,6 +580,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             // mais garde les mentions (@), channels (#), roles (@&) et emojis (:)
             .replace(/<(?!@|#|@&|a?:)(\d)>/g, "")
             .replace(/(^|\n)[<>]\s+/g, "$1")
+            .replace(/^<>\r?\n/, "")
         );
       };
 
@@ -643,7 +643,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         }
       };
 
-      const throttleResponseInterval = setInterval(() => throttleResponse(), 1500);
+      const throttleResponseInterval = setInterval(() => throttleResponse(), 2000);
 
       return new ReadableStream({
         start(controller) {
