@@ -283,7 +283,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
               const reactionContext = t.assistantReactions?.length ? `\n[Réactions appliquées par toi (Netricsa)]: ${t.assistantReactions.join(" ")}` : "";
               const date = new Date(t.ts);
 
-              return `UTILISATEUR (UID: ${t.discordUid}, Nom: ${t.displayName}):
+              return `UTILISATEUR "${t.displayName}" (UID: ${t.discordUid}):
               [Date locale fr-CA: ${date.toLocaleDateString("fr-CA", {
                 year: "numeric",
                 month: "long",
@@ -308,7 +308,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     const currentDate = new Date(currentTs);
     const currentUserBlock = `
       === MESSAGE ACTUEL ===
-      UTILISATEUR (UID Discord: ${userId}, Nom: ${userName}):
+      UTILISATEUR "${userName}" (UID Discord: ${userId}):
       [Date locale fr-CA: ${currentDate.toLocaleDateString("fr-CA", {
         year: "numeric",
         month: "long",
@@ -323,7 +323,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     Message:
     ${prompt}
     === FIN MESSAGE ACTUEL ===
-    [RAPPEL: Si tu veux mentionner une utilisateur utilise exactement: <@UID>. Ne mentionne pas l'utilisateur du MESSAGE ACTUEL si ce n'est pas pertinent]
+    [RAPPEL: Fais attention aux pronoms comme "il", "elle", "iel" dans le MESSAGE ACTUEL - ils peuvent faire référence à un autre utilisateur mentionné dans l'HISTORIQUE ci-dessus. Vérifie les noms d'utilisateurs et UIDs pour comprendre de qui il s'agit.]
+    [RAPPEL: Si tu veux mentionner un utilisateur utilise exactement: <@UID>. Ne mentionne pas l'utilisateur du MESSAGE ACTUEL si ce n'est pas pertinent.]
 `;
 
     //==========================//
@@ -477,12 +478,40 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       let completionTokens = 0;
       let totalTokens = 0;
 
+      // Fonction pour convertir les smileys textuels en emojis Unicode
+      const convertTextEmojisToUnicode = (text: string): string => {
+        return text
+          .replace(/:\)/g, "🙂")
+          .replace(/:-\)/g, "🙂")
+          .replace(/:\(/g, "☹️")
+          .replace(/:-\(/g, "☹️")
+          .replace(/:D/g, "😃")
+          .replace(/:-D/g, "😃")
+          .replace(/:O/g, "😮")
+          .replace(/:-O/g, "😮")
+          .replace(/:o/g, "😮")
+          .replace(/:-o/g, "😮")
+          .replace(/;-?\)/g, "😉")
+          .replace(/:P/g, "😛")
+          .replace(/:-P/g, "😛")
+          .replace(/:p/g, "😛")
+          .replace(/:-p/g, "😛")
+          .replace(/:\|/g, "😐")
+          .replace(/:-\|/g, "😐")
+          .replace(/><\)/g, "😁")
+          .replace(/<3/g, "❤️")
+          .replace(/:\*/g, "😘")
+          .replace(/:-\*/g, "😘");
+      };
+
       const extractAndApplyReaction = async (text: string): Promise<{ modifiedText: string; reactions: string[] }> => {
-        let modifiedText = text;
+        // Convertir les smileys textuels en emojis Unicode AVANT d'extraire les emojis
+        let modifiedText = convertTextEmojisToUnicode(text);
+        let emojis: string[] = [];
 
         if (replyToMessage && !reactionApplied) {
           // Cherche tous les emojis dans le texte complet
-          const emojis = Array.from(new Set(extractValidEmojis(modifiedText))); // unique
+          emojis = Array.from(new Set(extractValidEmojis(modifiedText))); // unique
 
           // N'appliquer que le premier emoji trouvé, une seule fois
           if (emojis.length > 0) {
@@ -494,21 +523,20 @@ export async function processLLMRequest(request: DirectLLMRequest) {
               console.warn(`[Reaction] Failed to apply ${firstEmoji}:`, error);
             }
           }
-
-          // TOUJOURS retirer tous les emojis du texte avant affichage
-          // Retirer les emojis Unicode
-          modifiedText = modifiedText.replace(emojiRegex(), "");
-          // Retirer les emojis Discord custom au format <:nom:id> et <a:nom:id>
-          modifiedText = modifiedText.replace(/<a?:[a-zA-Z0-9_]+:[0-9]+>/g, "");
-          // Retirer les emojis Discord simples au format <:emoji:> (sans ID)
-          modifiedText = modifiedText.replace(/<:([a-zA-Z0-9_]+):>/g, "");
-          // Retirer les emojis Discord au format :emoji:
-          modifiedText = modifiedText.replace(/:[a-zA-Z0-9_]+:/g, "");
-          // Ne PAS modifier les espaces/sauts de ligne pour préserver le formatage Markdown
-          return { modifiedText, reactions: emojis.slice(0, 1) };
         }
 
-        return { modifiedText, reactions: [] };
+        // TOUJOURS retirer tous les emojis du texte avant affichage (même sans réaction)
+        // SAUF les emojis Discord custom qui commencent par "zzz"
+        // Retirer les emojis Unicode
+        modifiedText = modifiedText.replace(emojiRegex(), "");
+        // Retirer les emojis Discord custom au format <:nom:id> et <a:nom:id> (sauf ceux commençant par zzz)
+        modifiedText = modifiedText.replace(/<a?:(?!zzz)[a-zA-Z0-9_]+:[0-9]+>/g, "");
+        // Retirer les emojis Discord simples au format <:emoji:> sans ID (sauf ceux commençant par zzz)
+        modifiedText = modifiedText.replace(/<:(?!zzz)([a-zA-Z0-9_]+):>/g, "");
+        // Retirer les emojis Discord au format :emoji: (sauf ceux commençant par zzz)
+        modifiedText = modifiedText.replace(/:(?!zzz)[a-zA-Z0-9_]+:/g, "");
+
+        return { modifiedText, reactions: emojis.slice(0, 1) };
       };
 
       const decodeHtmlEntities = (text: string) =>
@@ -547,6 +575,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             .replace(/<!---->/g, "")
             // Supprime les espaces invisibles et lignes vides au début
             .replace(/^[\s\r\n]+/, "")
+            // Supprime les IDs Discord bruts entre chevrons (comme <1099249835111761949>)
+            // mais garde les mentions (@), channels (#), roles (@&) et emojis (:)
+            .replace(/<(?!@|#|@&|a?:)(\d{17,19})>/g, "")
         );
       };
 
@@ -655,7 +686,10 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
                 const { modifiedText: assistantTextFinal, reactions: appliedReactions } = await extractAndApplyReaction(result);
 
-                if (sendMessage && assistantTextFinal.length > 0 && !isModerationRefusal) {
+                // Appliquer toutes les transformations de nettoyage au texte avant de le sauvegarder
+                const cleanedAssistantText = cleanHtmlComments(fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(assistantTextFinal))));
+
+                if (sendMessage && cleanedAssistantText.length > 0 && !isModerationRefusal) {
                   await memory.appendTurn(
                     channelKey,
                     {
@@ -663,7 +697,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                       discordUid: userId,
                       displayName: userName,
                       userText: prompt,
-                      assistantText: assistantTextFinal,
+                      assistantText: cleanedAssistantText,
                       ...(imageDescriptions.length > 0 ? { imageDescriptions: imageDescriptions.slice(0, 5) } : {}),
                       ...(webContext ? { webContext } : {}),
                       ...(appliedReactions.length > 0 ? { assistantReactions: appliedReactions } : {}),

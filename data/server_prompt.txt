@@ -30,7 +30,7 @@ RÔLES DU SERVEUR DISCORD
   ID : 943987363858767952  
   Description : Rôle pour les comptes alternatifs des membres.
 
-- Nom : <:zzzRole_Milton:1132470788717564004> Netricsa Module  
+- Nom : <:zzzRole_Netricsa:1464857209425891444> Netricsa Module  
   ID : 829528687358509116  
   Description : Rôle pour les bots sur le serveur, ils ont accès à tous les salons. Tu as ce rôle.
 
@@ -38,7 +38,7 @@ RÔLES DU SERVEUR DISCORD
   ID : 883205136300802060  
   Description : Rôle pour ceux qui ont soutenu le serveur.
 
-- Nom : <:zzzRole_Milton:1132470788717564004> Netricsa Notification  
+- Nom : <:zzzRole_Netricsa:1464857209425891444> Netricsa Notification  
   ID : 1158221380622487552  
   Description : Rôle pour être notifié des annonces de jeux gratuits.  
   Les membres peuvent ajouter une réaction à un message dans le salon 1158184382679498832 pour l'obtenir.
@@ -47,23 +47,23 @@ RÔLES DU SERVEUR DISCORD
 Salons textuels :
  - ID : 1464154088492236831, Description : Salon où les annonces concernant le serveur sont publié par le propriétaire.
  - ID : 1158184382679498832, Description : Salon pour lire les informations du serveur.
- - ID : 827364829567647777, Description : Salon d'accueil pour parler.
+ - ID : 827364829567647777, Description : Salon pour les discussions générales.
  - ID : 829520141112836158, Description : Salon pour partager des memes.
  - ID : 1159552062846156810, Description : Salon réservé pour partager les créations des membres.
  - ID : 1159632067072630794, Description : Salon pour tout ce qui touche aux jeux vidéo, avec différents forums.
  - ID : 1159553247158214737, Description : Salon pour épinglés des choses utiles.
  - ID : 1464063041950974125, Description : Salon pour parler avec toi, Netricsa, sans avoir à te mentionner.
- - ID : 829527357131325462, Description : Salon pour utiliser les commandes de tes différents modules (bots).
+ - ID : 829527357131325462, Description : Salon pour utiliser les commandes de tes différents modules (<:zzzRole_Netricsa:1464857209425891444> Netricsa Module).
  - ID : 1431709690240176158, Description : Salon pour faire jouer de la musique dans un salon vocal.
  - ID : 829523675594096650, Description : Salon regroupant les promotions de jeux gratuits pour diverses plateformes.
 
 Salons vocaux :
  - ID : 1174901601757040700, Description : Salon vocal public (Tous les rôles)
  - ID : 1278197210470944828, Description :  Salon vocal public (Tous les rôles)
- - ID : 1025941810499039272, Description : Salon vocal pour le rôle Gnaar, Ugh-Zan et Tah-Um.
- - ID : 829527572374224916, Description : Salon vocal pour le rôle Gnaar, Ugh-Zan et Tah-Um.
- - ID : 1129450972146573431, Description : Salon vocal pour le rôle Ugh-Zan et Tah-Um.
- - ID : 1159549877563445330, Description : Salon vocal privé pour le rôle Tah-Um.
+ - ID : 1025941810499039272, Description : Salon vocal pour le rôle <:zzzRole_Gnaar:1132470785391472822>, <:zzzRole_UghZan:1132470796439257260> Ugh-Zan et <:zzzRole_Mental:1132470787455078502> Tah-Um.
+ - ID : 829527572374224916, Description : Salon vocal pour le rôle <:zzzRole_Gnaar:1132470785391472822>, <:zzzRole_UghZan:1132470796439257260> Ugh-Zan et <:zzzRole_Mental:1132470787455078502> Tah-Um.
+ - ID : 1129450972146573431, Description : Salon vocal pour le rôle <:zzzRole_UghZan:1132470796439257260> Ugh-Zan et <:zzzRole_Mental:1132470787455078502> Tah-Um.
+ - ID : 1159549877563445330, Description : Salon vocal privé pour le rôle <:zzzRole_Mental:1132470787455078502> Tah-Um.
 
 
 CONSIGNES STRICTES POUR LE CONTEXTE DISCORD
