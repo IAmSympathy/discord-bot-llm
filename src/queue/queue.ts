@@ -443,8 +443,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     const modelName = textModelName;
 
     const options = {
-      temperature: 0.3,
-      repeat_penalty: 1.3,
+      temperature: 1.0,
+      repeat_penalty: 1.1,
       num_predict: 600,
     };
 
@@ -472,7 +472,6 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       let responseChunks: Array<string> = [];
       let messages: Array<DiscordMessage> = [];
       let reactionApplied = false;
-      let isCreatingMessage = false; // Flag pour éviter les race conditions
 
       // Buffer pour gérer les chunks JSON partiels (NDJSON)
       let jsonBuffer = "";
@@ -484,20 +483,14 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
       const extractAndApplyReaction = async (text: string): Promise<{ modifiedText: string; reactions: string[] }> => {
         let modifiedText = text;
-        const emojis: string[] = [];
 
         if (replyToMessage) {
           // Cherche tous les emojis dans le texte complet
-          const foundEmojis = Array.from(new Set(extractValidEmojis(modifiedText))); // unique
-
-          // Appliquer seulement la première réaction (une seule fois)
-          if (!reactionApplied && foundEmojis.length > 0) {
-            const emoji = foundEmojis[0]; // prend seulement le premier
+          const emojis = Array.from(new Set(extractValidEmojis(modifiedText))); // unique
+          for (const emoji of emojis) {
             try {
               await replyToMessage.react(emoji);
               console.log(`[Reaction] Applied ${emoji} to user message`);
-              reactionApplied = true; // Marquer comme appliqué pour éviter les duplications
-              emojis.push(emoji);
             } catch (error) {
               console.warn(`[Reaction] Failed to apply ${emoji}:`, error);
             }
@@ -551,7 +544,6 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       // Throttle pour ne pas dépasser les limites Discord
       const throttleResponse = async () => {
         if (!sendMessage) return;
-        if (isCreatingMessage) return; // Éviter les appels concurrents
 
         // Créer le premier message si nécessaire
         if (messages.length === 0) {
@@ -559,9 +551,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           if (!rawContent || rawContent.trim().length === 0) {
             return; // Ne pas envoyer de message vide
           }
-
-          isCreatingMessage = true; // Verrouiller pendant la création
-          const currentContent = wrapLinksNoEmbed(decodeHtmlEntities(fixChannelMentions(rawContent)));
+          const currentContent = fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(rawContent)));
 
           // Arrêter l'animation et utiliser le message d'analyse s'il existe
           if (analysisMessage) {
@@ -582,7 +572,6 @@ export async function processLLMRequest(request: DirectLLMRequest) {
               messages.push(message);
             }
           }
-          isCreatingMessage = false; // Déverrouiller
           return;
         }
 
@@ -593,7 +582,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           if (!rawContent || rawContent.trim().length === 0) {
             break;
           }
-          const currentContent = wrapLinksNoEmbed(decodeHtmlEntities(fixChannelMentions(rawContent)));
+          const currentContent = fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(rawContent)));
           const message = await channel.send(currentContent);
           messages.push(message);
         }
@@ -604,7 +593,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           if (!message) continue;
           const rawChunk = responseChunks[i];
           if (!rawChunk) continue;
-          const nextContent = wrapLinksNoEmbed(decodeHtmlEntities(fixChannelMentions(rawChunk)));
+          const nextContent = fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(rawChunk)));
           if (message.content !== nextContent) {
             await message.edit(nextContent);
           }
@@ -639,7 +628,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                 await wait(2000);
                 // Mettre à jour le dernier message avec le contenu final
                 if (messages.length > 0) {
-                  await messages[messages.length - 1].edit(responseChunks[responseChunks.length - 1]);
+                  const finalContent = fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(responseChunks[responseChunks.length - 1])));
+                  await messages[messages.length - 1].edit(finalContent);
                 }
 
                 // Sauvegarder le tour de conversation dans la mémoire persistante
