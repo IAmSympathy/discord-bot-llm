@@ -535,6 +535,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         modifiedText = modifiedText.replace(/<:(?!zzz)([a-zA-Z0-9_]+):>/g, "");
         // Retirer les emojis Discord au format :emoji: (sauf ceux commençant par zzz)
         modifiedText = modifiedText.replace(/:(?!zzz)[a-zA-Z0-9_]+:/g, "");
+        // Retirer les emojis au format <emoji>
+        modifiedText = modifiedText.replace(/<(?!(@|#|:|https?:\/\/))[a-zA-Z0-9_]+>/g, "");
 
         return { modifiedText, reactions: emojis.slice(0, 1) };
       };
@@ -577,7 +579,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             .replace(/^[\s\r\n]+/, "")
             // Supprime les IDs Discord bruts entre chevrons (comme <1099249835111761949>)
             // mais garde les mentions (@), channels (#), roles (@&) et emojis (:)
-            .replace(/<(?!@|#|@&|a?:)(\d{17,19})>/g, "")
+            .replace(/<(?!@|#|@&|a?:)(\d)>/g, "")
+            .replace(/(^|\n)[<>]\s+/g, "$1")
         );
       };
 
