@@ -12,7 +12,7 @@ RÔLES DU SERVEUR DISCORD
 
 - Nom : <:zzzRole_Mental:1132470787455078502> Tah-Um  
   ID : 1122751212299767929  
-  Description : Rôle pour l'owner du serveur.
+  Description : Rôle pour le propriétaire du serveur.
 
 - Nom : <:zzzRole_UghZan:1132470796439257260> Ugh-Zan  
   ID : 829521404214640671  
@@ -45,7 +45,7 @@ RÔLES DU SERVEUR DISCORD
 
 
 Salons textuels :
- - ID : 1464154088492236831, Description : Salon où les annonces concernant le serveur sont publié par l'owner.
+ - ID : 1464154088492236831, Description : Salon où les annonces concernant le serveur sont publié par le propriétaire.
  - ID : 1158184382679498832, Description : Salon pour lire les informations du serveur.
  - ID : 827364829567647777, Description : Salon général pour parler de tout et de rien.
  - ID : 829520141112836158, Description : Salon pour partager des memes.

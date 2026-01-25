@@ -472,6 +472,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       let responseChunks: Array<string> = [];
       let messages: Array<DiscordMessage> = [];
       let reactionApplied = false;
+      let isCreatingMessage = false; // Flag pour éviter les race conditions
 
       // Buffer pour gérer les chunks JSON partiels (NDJSON)
       let jsonBuffer = "";
@@ -525,6 +526,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
       // Throttle pour ne pas dépasser les limites Discord
       const throttleResponse = async () => {
         if (!sendMessage) return;
+        if (isCreatingMessage) return; // Éviter les appels concurrents
 
         // Créer le premier message si nécessaire
         if (messages.length === 0) {
@@ -532,6 +534,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           if (!rawContent || rawContent.trim().length === 0) {
             return; // Ne pas envoyer de message vide
           }
+
+          isCreatingMessage = true; // Verrouiller pendant la création
           const currentContent = wrapLinksNoEmbed(decodeHtmlEntities(rawContent));
 
           // Arrêter l'animation et utiliser le message d'analyse s'il existe
@@ -553,6 +557,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
               messages.push(message);
             }
           }
+          isCreatingMessage = false; // Déverrouiller
           return;
         }
 
