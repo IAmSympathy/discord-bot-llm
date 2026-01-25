@@ -47,7 +47,7 @@ RÔLES DU SERVEUR DISCORD
 Salons textuels :
  - ID : 1464154088492236831, Description : Salon où les annonces concernant le serveur sont publié par le propriétaire.
  - ID : 1158184382679498832, Description : Salon pour lire les informations du serveur.
- - ID : 827364829567647777, Description : Salon général pour parler de tout et de rien.
+ - ID : 827364829567647777, Description : Salon d'accueil pour parler.
  - ID : 829520141112836158, Description : Salon pour partager des memes.
  - ID : 1159552062846156810, Description : Salon réservé pour partager les créations des membres.
  - ID : 1159632067072630794, Description : Salon pour tout ce qui touche aux jeux vidéo, avec différents forums.
@@ -57,14 +57,13 @@ Salons textuels :
  - ID : 1431709690240176158, Description : Salon pour faire jouer de la musique dans un salon vocal.
  - ID : 829523675594096650, Description : Salon regroupant les promotions de jeux gratuits pour diverses plateformes.
 
-
 Salons vocaux :
- - ID : 1174901601757040700, Description : Land of the Damned est un salon vocal public (Tous les rôles)
- - ID : 1278197210470944828, Description : Frostpsot est salon vocal public (Tous les rôles)
- - ID : 1025941810499039272, Description : Oil Rig est un salon vocal pour le rôle Gnaar, Ugh-Zan et Tah-Um.
- - ID : 829527572374224916, Description : Siberia est un salon vocal pour le rôle Gnaar, Ugh-Zan et Tah-Um.
- - ID : 1129450972146573431, Description : SSS Centerprice est un salon vocal pour le rôle Ugh-Zan et Tah-Um.
- - ID : 1159549877563445330, Description : Mental Institution est un salon vocal privé pour le rôle Tah-Um.
+ - ID : 1174901601757040700, Description : Salon vocal public (Tous les rôles)
+ - ID : 1278197210470944828, Description :  Salon vocal public (Tous les rôles)
+ - ID : 1025941810499039272, Description : Salon vocal pour le rôle Gnaar, Ugh-Zan et Tah-Um.
+ - ID : 829527572374224916, Description : Salon vocal pour le rôle Gnaar, Ugh-Zan et Tah-Um.
+ - ID : 1129450972146573431, Description : Salon vocal pour le rôle Ugh-Zan et Tah-Um.
+ - ID : 1159549877563445330, Description : Salon vocal privé pour le rôle Tah-Um.
 
 
 CONSIGNES STRICTES POUR LE CONTEXTE DISCORD
@@ -76,10 +75,10 @@ Règles pour les rôles :
 - C'est obligatoire.
 - Exemple : <:zzzRole_Mental:1132470787455078502> Tah-Um
 - Ne mentionne jamais l'ID d'un rôle
+- Parle des rôles uniquement si c'est pertinent au MESSAGE ACTUEL.
 
 Règles pour les salons :
 - Ne jamais écrire le nom d’un salon Discord ou uniquement son ID.
-- Chaque fois que tu fais référence à un salon, utilise uniquement la mention AVEC son ID : <#ID>.
+- Chaque fois que tu fais référence à un salon, utilise uniquement la mention AVEC son ID : <#ID>. 
 - Si tu parles d'un salon, tu dois obligatoirement le mentionner.
-- Les informations sur les salons textuels et vocaux (ID, Description) servent uniquement à guider tes réponses et ne doivent jamais apparaître telles quelles.
-- Exemple : pour le salon avec ID 827364829567647777, écris <#827364829567647777> et ne jamais écrire “général”.
+- Parle des salons uniquement si c'est pertinent au MESSAGE ACTUEL.

@@ -443,8 +443,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     const modelName = textModelName;
 
     const options = {
-      temperature: 1.0,
-      repeat_penalty: 1.1,
+      temperature: 0.3,
+      repeat_penalty: 1.3,
       num_predict: 600,
     };
 
@@ -484,22 +484,35 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
       const extractAndApplyReaction = async (text: string): Promise<{ modifiedText: string; reactions: string[] }> => {
         let modifiedText = text;
+        const emojis: string[] = [];
 
         if (replyToMessage) {
           // Cherche tous les emojis dans le texte complet
-          const emojis = Array.from(new Set(extractValidEmojis(modifiedText))); // unique
-          for (const emoji of emojis) {
+          const foundEmojis = Array.from(new Set(extractValidEmojis(modifiedText))); // unique
+
+          // Appliquer seulement la première réaction (une seule fois)
+          if (!reactionApplied && foundEmojis.length > 0) {
+            const emoji = foundEmojis[0]; // prend seulement le premier
             try {
               await replyToMessage.react(emoji);
               console.log(`[Reaction] Applied ${emoji} to user message`);
+              reactionApplied = true; // Marquer comme appliqué pour éviter les duplications
+              emojis.push(emoji);
             } catch (error) {
               console.warn(`[Reaction] Failed to apply ${emoji}:`, error);
             }
           }
 
-          // Retirer tous les emojis du texte avant affichage
-          // Ne PAS modifier les espaces/sauts de ligne pour préserver le formatage Markdown
+          // TOUJOURS retirer tous les emojis du texte avant affichage
+          // Retirer les emojis Unicode
           modifiedText = modifiedText.replace(emojiRegex(), "");
+          // Retirer les emojis Discord custom au format <:nom:id> et <a:nom:id>
+          modifiedText = modifiedText.replace(/<a?:[a-zA-Z0-9_]+:[0-9]+>/g, "");
+          // Retirer les emojis Discord simples au format <:emoji:> (sans ID)
+          modifiedText = modifiedText.replace(/<:([a-zA-Z0-9_]+):>/g, "");
+          // Retirer les emojis Discord au format :emoji:
+          modifiedText = modifiedText.replace(/:[a-zA-Z0-9_]+:/g, "");
+          // Ne PAS modifier les espaces/sauts de ligne pour préserver le formatage Markdown
           return { modifiedText, reactions: emojis };
         }
 
@@ -523,6 +536,18 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           // Entourer les URLs restantes de chevrons
           .replace(/(?<!<)(https?:\/\/[^\s>]+)(?!>)/g, "<$1>");
 
+      const fixChannelMentions = (text: string) => {
+        // Convertir les IDs de channel en format Discord correct
+        // Cherche les patterns comme "channel 123456789" ou "salon 123456789" ou juste un ID seul de 17-19 chiffres
+        return (
+          text
+            // Pattern: "ID du salon actuel: 123456" -> "ID du salon actuel: <#123456>"
+            .replace(/(?:ID du salon|salon|channel|canal)\s*:?\s*(\d{17,19})\b/gi, (match, id) => match.replace(id, `<#${id}>`))
+            // Pattern: ID Discord seul (17-19 chiffres) qui n'est pas déjà dans <#> et pas dans une URL
+            .replace(/(?<!<#)(?<![\w/=])(\d{17,19})(?!>)(?![\w/=])/g, "<#$1>")
+        );
+      };
+
       // Throttle pour ne pas dépasser les limites Discord
       const throttleResponse = async () => {
         if (!sendMessage) return;
@@ -536,7 +561,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           }
 
           isCreatingMessage = true; // Verrouiller pendant la création
-          const currentContent = wrapLinksNoEmbed(decodeHtmlEntities(rawContent));
+          const currentContent = wrapLinksNoEmbed(decodeHtmlEntities(fixChannelMentions(rawContent)));
 
           // Arrêter l'animation et utiliser le message d'analyse s'il existe
           if (analysisMessage) {
@@ -568,7 +593,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           if (!rawContent || rawContent.trim().length === 0) {
             break;
           }
-          const currentContent = wrapLinksNoEmbed(decodeHtmlEntities(rawContent));
+          const currentContent = wrapLinksNoEmbed(decodeHtmlEntities(fixChannelMentions(rawContent)));
           const message = await channel.send(currentContent);
           messages.push(message);
         }
@@ -579,7 +604,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
           if (!message) continue;
           const rawChunk = responseChunks[i];
           if (!rawChunk) continue;
-          const nextContent = wrapLinksNoEmbed(decodeHtmlEntities(rawChunk));
+          const nextContent = wrapLinksNoEmbed(decodeHtmlEntities(fixChannelMentions(rawChunk)));
           if (message.content !== nextContent) {
             await message.edit(nextContent);
           }
