@@ -4,7 +4,7 @@ export const MODERATOR_ROLES = ["829521404214640671", "828652861218226196"] as c
 export const ALLOWED_COMMAND_ROLES = [...OWNER_ROLES, ...MODERATOR_ROLES] as const;
 
 // Configuration
-export const MEMORY_MAX_TURNS = Number(process.env.MEMORY_MAX_TURNS || "12");
+export const MEMORY_MAX_TURNS = 12;
 export const MEMORY_FILE_PATH = process.env.MEMORY_FILE || "./data/memory.json";
 
 // Ollama Configuration

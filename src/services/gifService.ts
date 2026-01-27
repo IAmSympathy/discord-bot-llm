@@ -16,6 +16,7 @@ export function extractTenorUrls(text: string): string[] {
     return matches || [];
 }
 
+
 /**
  * Extrait les URLs d'images/GIFs directes d'un message
  */
@@ -26,43 +27,74 @@ export function extractDirectMediaUrls(text: string): string[] {
 }
 
 /**
- * Convertit une URL Tenor en URL de la première frame (image statique)
- * Tenor fournit des URLs au format: https://media.tenor.com/xyz/tenor.gif
- * On peut obtenir l'image statique via l'API ou en modifiant l'URL
+ * Convertit une URL Tenor (page view) en URL du média réel
+ * Scrape la page pour extraire l'URL du GIF/image
  */
 export async function getTenorFirstFrame(tenorUrl: string): Promise<string | null> {
     try {
-        // Méthode 1: Essayer de récupérer directement l'image statique
-        // Tenor propose souvent une version .png ou .jpg de la première frame
+        // Si c'est déjà une URL media.tenor.com directe, la retourner
+        if (tenorUrl.includes('media.tenor.com') || tenorUrl.includes('c.tenor.com') || tenorUrl.includes('media1.tenor.com')) {
+            console.log(`[GifService] Direct media URL: ${tenorUrl}`);
+            return tenorUrl;
+        }
 
-        // Si c'est une URL media.tenor.com
-        if (tenorUrl.includes('media.tenor.com')) {
-            // Tenter de remplacer .gif par .png pour obtenir la frame statique
-            const staticUrl = tenorUrl.replace(/\.gif$/i, '.png');
+        // Si c'est une page tenor.com/view/, extraire l'URL du média
+        if (tenorUrl.includes('tenor.com/view/')) {
+            console.log(`[GifService] Fetching Tenor page to extract media URL: ${tenorUrl}`);
 
-            // Vérifier si l'URL statique existe
             try {
-                const response = await fetch(staticUrl, {method: 'HEAD'});
-                if (response.ok) {
-                    console.log(`[GifService] Found static frame for Tenor GIF: ${staticUrl}`);
-                    return staticUrl;
+                const response = await fetch(tenorUrl);
+                if (!response.ok) {
+                    console.error(`[GifService] Failed to fetch Tenor page: ${response.status}`);
+                    return null;
                 }
-            } catch {
-                // Continue avec l'URL originale
+
+                const html = await response.text();
+
+                // Chercher les URLs de média dans le HTML
+                // Peu importe le format, il sera converti en PNG par imageService
+
+                // Méthode 1: Chercher og:image
+                const ogImageMatch = html.match(/<meta\s+[^>]*property="og:image"\s+content="([^"]+)"/i);
+                if (ogImageMatch && ogImageMatch[1]) {
+                    console.log(`[GifService] Found og:image: ${ogImageMatch[1]}`);
+                    return ogImageMatch[1];
+                }
+
+                // Méthode 2: Chercher n'importe quelle URL media1.tenor.com
+                const media1TenorMatch = html.match(/https:\/\/media1\.tenor\.com\/[^"\s]+\.(?:gif|png|jpg|webp)/i);
+                if (media1TenorMatch && media1TenorMatch[0]) {
+                    console.log(`[GifService] Found media1.tenor.com URL: ${media1TenorMatch[0]}`);
+                    return media1TenorMatch[0];
+                }
+
+                // Méthode 3: Chercher media.tenor.com
+                const mediaTenorMatch = html.match(/https:\/\/media\.tenor\.com\/[^"\s]+\.(?:gif|png|jpg|webp)/i);
+                if (mediaTenorMatch && mediaTenorMatch[0]) {
+                    console.log(`[GifService] Found media.tenor.com URL: ${mediaTenorMatch[0]}`);
+                    return mediaTenorMatch[0];
+                }
+
+                // Méthode 4: Chercher c.tenor.com
+                const cTenorMatch = html.match(/https:\/\/c\.tenor\.com\/[^"\s]+\.(?:gif|png|jpg|webp)/i);
+                if (cTenorMatch && cTenorMatch[0]) {
+                    console.log(`[GifService] Found c.tenor.com URL: ${cTenorMatch[0]}`);
+                    return cTenorMatch[0];
+                }
+
+                console.warn(`[GifService] Could not extract media URL from Tenor page`)
+
+                console.warn(`[GifService] Could not extract media URL from Tenor page`);
+                return null;
+
+            } catch (error) {
+                console.error(`[GifService] Error fetching Tenor page:`, error);
+                return null;
             }
         }
 
-        // Si c'est une URL tenor.com/view/, extraire l'ID et utiliser l'API
-        const viewMatch = tenorUrl.match(/tenor\.com\/view\/[^-]+-(\d+)/);
-        if (viewMatch) {
-            const gifId = viewMatch[1];
-            // On pourrait utiliser l'API Tenor ici avec une clé API
-            // Pour l'instant, on retourne l'URL originale du GIF
-            console.log(`[GifService] Tenor GIF ID: ${gifId}`);
-        }
-
-        // Fallback: retourner l'URL du GIF (sera téléchargé et on extraira la frame)
-        return tenorUrl;
+        console.warn(`[GifService] Unknown Tenor URL format: ${tenorUrl}`);
+        return null;
     } catch (error) {
         console.error(`[GifService] Error processing Tenor URL ${tenorUrl}:`, error);
         return null;
@@ -114,20 +146,25 @@ export async function collectAllMediaUrls(message: any): Promise<string[]> {
         }
     }
 
-    // 2. URLs Tenor dans le message
-    const tenorUrls = extractTenorUrls(message.content || '');
-    for (const tenorUrl of tenorUrls) {
-        const staticUrl = await getTenorFirstFrame(tenorUrl);
-        if (staticUrl) {
-            urls.push(staticUrl);
-            console.log(`[GifService] Found Tenor GIF: ${tenorUrl} -> ${staticUrl}`);
+    const messageContent = message.content || '';
+
+    // 2. Chercher toutes les URLs Tenor (pages view et URLs directes)
+    const allTenorMatches = messageContent.match(/https?:\/\/(?:media\.tenor\.com|tenor\.com|c\.tenor\.com)\/[^\s]+/gi);
+
+    if (allTenorMatches) {
+        for (const tenorUrl of allTenorMatches) {
+            const mediaUrl = await getTenorFirstFrame(tenorUrl);
+            if (mediaUrl && !urls.includes(mediaUrl)) {
+                urls.push(mediaUrl);
+                console.log(`[GifService] Found Tenor media: ${tenorUrl} -> ${mediaUrl}`);
+            }
         }
     }
 
-    // 3. URLs directes d'images/GIFs dans le message
-    const directUrls = extractDirectMediaUrls(message.content || '');
+    // 3. URLs directes d'images/GIFs dans le message (non-Tenor)
+    const directUrls = extractDirectMediaUrls(messageContent);
     for (const url of directUrls) {
-        // Éviter les doublons avec Tenor
+        // Éviter les doublons
         if (!urls.includes(url) && !url.includes('tenor.com')) {
             urls.push(url);
             console.log(`[GifService] Found direct media URL: ${url}`);

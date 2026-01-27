@@ -2,6 +2,7 @@ import {ChannelType, Client, Message, TextChannel} from "discord.js";
 import {processLLMRequest} from "./queue/queue";
 import {setBotPresence} from "./bot";
 import {generateMentionEmoji} from "./services/emojiService";
+import {collectAllMediaUrls} from "./services/gifService";
 
 function isWatchedChannel(message: Message, watchedChannelId?: string): boolean {
     return !!watchedChannelId && message.channelId === watchedChannelId;
@@ -45,13 +46,8 @@ async function extractReferencedMessageContext(message: Message, messageReferenc
         // Si le message référencé est du bot lui-même, ne pas ajouter de contexte car il est déjà dans l'historique
         const isBotMessage = referencedMessage.author.bot;
 
-        const imageUrls: string[] = [];
-        for (const attachment of referencedMessage.attachments.values()) {
-            if (attachment.contentType?.startsWith("image/")) {
-                imageUrls.push(attachment.url);
-                console.log(`[watchChannel] Found image in referenced message: ${attachment.url}`);
-            }
-        }
+        // Collecter tous les médias (images + GIFs + Tenor)
+        const imageUrls = await collectAllMediaUrls(referencedMessage);
 
         let mustReact = false;
         if (message.channel.isThread() && forumChannelId) {
@@ -79,10 +75,10 @@ async function extractReferencedMessageContext(message: Message, messageReferenc
         // Pour les messages d'autres utilisateurs, ajouter le contexte complet
         const refAuthor = referencedMessage.author.displayName || referencedMessage.author.username;
         const refContent = referencedMessage.content || "[message sans texte]";
-        const refImageNotice = referencedMessage.attachments.size > 0 ? " [contient une image]" : "";
+        const refImageNotice = imageUrls.length > 0 ? ` [contient ${imageUrls.length} média(s)]` : "";
         const contextPrompt = `[L'utilisateur répond au message suivant]\n${refAuthor}: ${refContent}${refImageNotice}\n\n[Réponse de l'utilisateur]\n`;
 
-        console.log(`[watchChannel] Message references another message from ${refAuthor}`);
+        console.log(`[watchChannel] Message references another message from ${refAuthor}${refImageNotice}`);
 
         return {contextPrompt, imageUrls, referencedMessage, mustReact};
     } catch (error) {

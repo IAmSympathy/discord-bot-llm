@@ -1,9 +1,40 @@
 import {OLLAMA_API_URL, OLLAMA_VISION_MODEL} from "../utils/constants";
 import fs from "fs";
+import sharp from "sharp";
+
+/**
+ * Convertit un buffer d'image (GIF, WebP, etc.) en PNG
+ * Pour les GIFs animés, extrait la DERNIÈRE frame
+ */
+async function convertToPNG(buffer: Buffer): Promise<Buffer> {
+    try {
+        const image = sharp(buffer);
+        const metadata = await image.metadata();
+
+        // Pour les GIFs animés, sharp a une propriété pages pour le nombre de frames
+        if (metadata.pages && metadata.pages > 1) {
+            // Extraire la dernière frame (pages - 1 car index commence à 0)
+            const lastFrameIndex = metadata.pages - 1;
+            console.log(`[ImageService] GIF has ${metadata.pages} frames, extracting last frame (${lastFrameIndex})`);
+
+            return await sharp(buffer, {page: lastFrameIndex})
+                .png()
+                .toBuffer();
+        } else {
+            // Image statique ou WebP - conversion simple
+            return await sharp(buffer)
+                .png()
+                .toBuffer();
+        }
+    } catch (error) {
+        console.error(`[ImageService] Error converting to PNG:`, error);
+        throw error;
+    }
+}
 
 /**
  * Télécharge une image ou GIF et la convertit en base64
- * Note: Les GIFs seront traités - Ollama prendra automatiquement la première frame
+ * Les GIFs et WebP sont automatiquement convertis en PNG pour compatibilité Ollama
  */
 export async function downloadImageAsBase64(url: string): Promise<string | null> {
     try {
@@ -14,9 +45,28 @@ export async function downloadImageAsBase64(url: string): Promise<string | null>
             return null;
         }
 
-        const buffer = await response.arrayBuffer();
-        const base64 = Buffer.from(buffer).toString("base64");
-        console.log(`[ImageService] Successfully downloaded (${(buffer.byteLength / 1024).toFixed(2)} KB)`);
+        const arrayBuffer = await response.arrayBuffer();
+        let buffer = Buffer.from(arrayBuffer);
+        const sizeKB = (buffer.length / 1024).toFixed(2);
+        console.log(`[ImageService] Successfully downloaded (${sizeKB} KB)`);
+
+        // Détecter le format et convertir les GIFs/WebP en PNG
+        const isGif = url.toLowerCase().includes('.gif');
+        const isWebP = url.toLowerCase().includes('.webp');
+
+        if (isGif || isWebP) {
+            console.log(`[ImageService] Converting ${isGif ? 'GIF' : 'WebP'} to PNG for Ollama compatibility...`);
+            try {
+                buffer = await convertToPNG(buffer);
+                const newSizeKB = (buffer.length / 1024).toFixed(2);
+                console.log(`[ImageService] Converted to PNG (${newSizeKB} KB)`);
+            } catch (conversionError) {
+                console.error(`[ImageService] Conversion failed, using original:`, conversionError);
+                // Continue avec le buffer original si la conversion échoue
+            }
+        }
+
+        const base64 = buffer.toString("base64");
         return base64;
     } catch (error) {
         console.error(`[ImageService] Error downloading ${url}:`, error);

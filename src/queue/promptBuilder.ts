@@ -48,7 +48,7 @@ ${formattedTurns}
 export function buildCurrentUserBlock(userId: string, userName: string, prompt: string, imageDescriptions: string[]): string {
     const currentTs = Date.now();
     const currentDate = new Date(currentTs);
-    const imageContext = imageDescriptions.length > 0 ? `\n[Images fournies par l'utilisateur, description générée automatiquement par Netricsa]:\n- ${imageDescriptions.join("\n- ")}` : "";
+    const imageContext = imageDescriptions.length > 0 ? `\n[Médias fournis par l'utilisateur (GIF ou images), description générée automatiquement]:\n- ${imageDescriptions.join("\n- ")}` : "";
 
     return `
 === MESSAGE ACTUEL ===
@@ -68,7 +68,7 @@ Message:
 ${prompt}
 === FIN MESSAGE ACTUEL ===
 [RAPPEL: Fais attention aux pronoms comme "il", "elle", "iel" dans le MESSAGE ACTUEL - ils peuvent faire référence à un autre utilisateur mentionné dans l'HISTORIQUE ci-dessus. Vérifie les noms d'utilisateurs et UIDs pour comprendre de qui il s'agit.]
-[RAPPEL: Si tu veux mentionner un utilisateur utilise exactement: <@UID>. Ne mentionne pas l'utilisateur du MESSAGE ACTUEL si ce n'est pas pertinent.]
+[RAPPEL: Si le message contient une URL Tenor (tenor.com), utilise le nom du GIF dans l'URL comme contexte supplémentaire (ex: "ok-cat" ou "angry-birds"), mais NE RÉPÈTE JAMAIS l'URL complète dans ta réponse. Parle du GIF en utilisant sa description et le contexte du nom.]
 ${imageContext}`;
 }
 

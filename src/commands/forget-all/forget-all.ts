@@ -73,12 +73,25 @@ module.exports = {
                 });
                 console.log(`[ResetAll Command] Memory clear timeout for ${interaction.user.displayName}`);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("[ResetAll Command] Error:", error);
-            await interaction.reply({
-                content: "Une erreur s'est produite lors de la tentative d'effacement de ma mémoire.",
-                flags: MessageFlags.Ephemeral,
-            });
+
+            // Gérer les interactions expirées
+            if (error?.code === 10062) {
+                console.warn(`[forget-all] Interaction expired - user took too long to confirm`);
+                return;
+            }
+
+            try {
+                await interaction.reply({
+                    content: "Une erreur s'est produite lors de la tentative d'effacement de ma mémoire.",
+                    flags: MessageFlags.Ephemeral,
+                });
+            } catch (replyError: any) {
+                if (replyError?.code !== 10062) {
+                    console.error("[forget-all] Error sending error message:", replyError);
+                }
+            }
         }
     },
 };
