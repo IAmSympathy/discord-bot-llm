@@ -68,7 +68,7 @@ if (client.user) {
     status: "online",
     activities: [
       {
-        name: "",
+        name: " ",
         type: 3, // WATCHING
       },
     ],

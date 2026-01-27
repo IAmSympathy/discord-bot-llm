@@ -46,9 +46,6 @@ export function registerWatchedChannelResponder(client: Client) {
         return; // Ne rien faire
       }
 
-      //Se met en Ne pas déranger
-      await setBotPresence(client, "dnd", "Réfléchit…");
-
       const userText = message.content?.trim();
 
       // Vérifier si le bot est mentionné OU si on est dans le channel surveillé
@@ -58,6 +55,9 @@ export function registerWatchedChannelResponder(client: Client) {
       // Réagis au message parlant de Nettie seulement si c'Est pas dans un chanel watched ou ping
       if ((message.content.toLowerCase().includes("nettie") || message.content.toLowerCase().includes("netricsa")) && !(isMentioned || isInWatchedChannel)) {
         console.log(`Message from ${message.author} talks about Nettie`);
+
+        //Se met en Ne pas déranger
+        await setBotPresence(client, "dnd", "Réfléchit…");
 
         // Prompt pour demander au LLM un emoji unique exprimant l'émotion liée au message
         const emojiPrompt = `Donne uniquement **un seul emoji** qui exprime ton émotion par rapport ce qui est dit sur toi (Nettie/Netricsa) dans ce message :
