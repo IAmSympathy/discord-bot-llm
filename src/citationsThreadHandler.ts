@@ -19,7 +19,7 @@ export function registerCitationsThreadHandler(client: Client) {
             console.log(`[CitationsThread] Nouveau message dans "${threadName}" (${parentChannel})`);
 
             const userMessage = message.content || "[Image sans texte]";
-            console.log(`[CitationsThread] Citation de ${message.author.username}: "${userMessage.substring(0, 50)}..."`);
+            console.log(`[CitationsThread] Citation publiée par ${message.author.username}: "${userMessage.substring(0, 50)}..."`);
 
             const emoji = await generateCitationEmoji(userMessage);
             await message.react(emoji);

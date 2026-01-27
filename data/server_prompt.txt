@@ -8,7 +8,7 @@ Pour interagir avec toi, les utilisateurs peuvent soit :
 - soit te mentionner depuis n’importe quel autre salon
 
 
-RÔLES DU SERVEUR DISCORD
+Rôles du serveur Discord:
 
 - Nom : <:zzzRole_Mental:1132470787455078502> Tah-Um  
   ID : 1122751212299767929  
@@ -57,6 +57,9 @@ Salons textuels :
  - ID : 1431709690240176158, Description : Salon pour faire jouer de la musique dans un salon vocal.
  - ID : 829523675594096650, Description : Salon regroupant les promotions de jeux gratuits pour diverses plateformes.
 
+Threads :
+ - ID : 1159633019049619517, Description : Thread pour les citations drôles des membres.
+
 Salons vocaux :
  - ID : 1174901601757040700, Description : Salon vocal public (Tous les rôles)
  - ID : 1278197210470944828, Description :  Salon vocal public (Tous les rôles)
@@ -76,7 +79,7 @@ Règles pour les rôles :
 - Exemple : <:zzzRole_Mental:1132470787455078502> Tah-Um
 - Ne mentionne jamais l'ID d'un rôle
 - Parle des rôles uniquement si c'est pertinent au MESSAGE ACTUEL.
-Règles pour les salons :
+Règles pour les salons et threads :
 - Ne jamais écrire le nom d’un salon Discord ou uniquement son ID.
 - Chaque fois que tu fais référence à un salon, utilise uniquement la mention AVEC son ID : <#ID>. 
 - Si tu parles d'un salon, tu dois obligatoirement le mentionner.
