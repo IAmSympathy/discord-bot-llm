@@ -166,6 +166,9 @@ export function registerWatchedChannelResponder(client: Client) {
                 contextPrompt = `[Note: Ajoute obligatoirement un emoji au début de ton message pour donner ton avis]\n${contextPrompt}`;
             }
 
+            // Changer le statut du bot pour indiquer qu'il réfléchit
+            await setBotPresence(client, "online", "Réfléchit…");
+
             await message.channel.sendTyping();
 
             const triggerReason = isMentioned ? "mentioned" : "watched channel";
