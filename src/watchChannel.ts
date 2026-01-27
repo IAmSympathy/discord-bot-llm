@@ -24,8 +24,9 @@ async function handleNettieReaction(client: Client, message: Message) {
 
 async function getThreadStarterMessage(thread: any) {
     try {
-        const messages = await thread.messages.fetch({limit: 1, after: "0"});
-        return messages.first();
+        // Utiliser la méthode officielle Discord.js pour récupérer le message starter
+        const starterMessage = await thread.fetchStarterMessage();
+        return starterMessage;
     } catch (error) {
         console.warn("[watchChannel] Failed to fetch thread starter message:", error);
         return null;
@@ -132,18 +133,25 @@ export function registerWatchedChannelResponder(client: Client) {
             let contextPrompt = userText || "[Image envoyée sans texte]";
             let referencedMsg: Message | undefined = undefined;
             let mustReact = false;
+            let threadStarterContext: { content: string; author: string; imageUrls: string[] } | undefined = undefined;
 
-            // Auto-référencer le message starter d'un thread
-            let messageReferenceId = message.reference?.messageId;
-            if (!messageReferenceId && message.channel.isThread()) {
+            // Capturer le contexte du thread starter si on est dans un thread
+            // IMPORTANT: Ceci se fait TOUJOURS dans un thread, indépendamment des replies
+            if (message.channel.isThread()) {
                 const starterMessage = await getThreadStarterMessage(message.channel);
                 if (starterMessage) {
-                    messageReferenceId = starterMessage.id;
-                    console.log(`[watchChannel] Auto-referencing thread starter message in thread "${message.channel.name}"`);
+                    const starterImageUrls = await collectAllMediaUrls(starterMessage);
+                    threadStarterContext = {
+                        content: starterMessage.content || "[Message sans texte]",
+                        author: starterMessage.author.displayName,
+                        imageUrls: starterImageUrls
+                    };
+                    console.log(`[watchChannel] Thread starter context captured from ${starterMessage.author.displayName}`);
                 }
             }
 
-            // Traiter le message référencé
+            // Traiter le message référencé (si reply manuel)
+            const messageReferenceId = message.reference?.messageId;
             if (messageReferenceId) {
                 const refContext = await extractReferencedMessageContext(message, messageReferenceId, forumChannelId);
                 if (refContext) {
@@ -171,6 +179,7 @@ export function registerWatchedChannelResponder(client: Client) {
                 replyToMessage: message,
                 referencedMessage: referencedMsg,
                 imageUrls,
+                threadStarterContext,
             });
 
             await setBotPresence(client, "online");

@@ -43,6 +43,23 @@ ${formattedTurns}
 }
 
 /**
+ * Construit le bloc de contexte du thread starter (message d'origine du thread)
+ */
+export function buildThreadStarterBlock(starterContext: { content: string; author: string; imageUrls: string[] }, imageDescriptions: string[]): string {
+    const imageContext = imageDescriptions.length > 0 ? `\n[Médias dans le message d'origine, description générée automatiquement]:\n- ${imageDescriptions.join("\n- ")}` : "";
+
+    return `=== MESSAGE D'ORIGINE DU THREAD ===
+[IMPORTANT: Ceci est le MESSAGE QUI A DÉMARRÉ CE THREAD. C'est le sujet principal de cette conversation.]
+
+Auteur: ${starterContext.author}
+Message:
+${starterContext.content}${imageContext}
+=== FIN MESSAGE D'ORIGINE DU THREAD ===
+
+`;
+}
+
+/**
  * Construit le bloc de message actuel de l'utilisateur
  */
 export function buildCurrentUserBlock(userId: string, userName: string, prompt: string, imageDescriptions: string[]): string {

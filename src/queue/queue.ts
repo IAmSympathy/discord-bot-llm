@@ -6,7 +6,7 @@ import {getWebContext} from "../services/searchService";
 import {OllamaService} from "../services/ollamaService";
 import {DiscordMessageManager, ImageAnalysisAnimation} from "./discordMessageManager";
 import {EmojiReactionHandler} from "./emojiReactionHandler";
-import {buildCurrentUserBlock, buildHistoryBlock, buildWebContextBlock} from "./promptBuilder";
+import {buildCurrentUserBlock, buildHistoryBlock, buildThreadStarterBlock, buildWebContextBlock} from "./promptBuilder";
 
 const wait = require("node:timers/promises").setTimeout;
 
@@ -19,6 +19,11 @@ interface DirectLLMRequest {
     referencedMessage?: DiscordMessage;
     imageUrls?: string[];
     sendMessage?: boolean;
+    threadStarterContext?: {
+        content: string;
+        author: string;
+        imageUrls: string[];
+    };
 }
 
 // Configuration mémoire persistante
@@ -76,7 +81,7 @@ export function abortStream(channelKey: string): boolean {
 
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest) {
-    const {prompt, userId, userName, channel, replyToMessage, imageUrls, sendMessage = true} = request;
+    const {prompt, userId, userName, channel, replyToMessage, imageUrls, sendMessage = true, threadStarterContext} = request;
 
     // Clé de mémoire unique par channel
     // Si on est dans le watched channel, utiliser son ID fixe
@@ -101,6 +106,13 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         // Traiter les images
         const imageDescriptions = imageUrls && imageUrls.length > 0 ? await processImages(imageUrls) : [];
 
+        // Traiter les images du thread starter si présent
+        let threadStarterImageDescriptions: string[] = [];
+        if (threadStarterContext && threadStarterContext.imageUrls.length > 0) {
+            console.log(`[processLLMRequest] Processing ${threadStarterContext.imageUrls.length} image(s) from thread starter`);
+            threadStarterImageDescriptions = await processImages(threadStarterContext.imageUrls);
+        }
+
         // Charger les prompts système
         const {finalPrompt: finalSystemPrompt} = ollamaService.loadSystemPrompts(channel.id);
 
@@ -114,15 +126,17 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         }
 
         // Construire les blocs de prompt
+        const threadStarterBlock = threadStarterContext ? buildThreadStarterBlock(threadStarterContext, threadStarterImageDescriptions) : "";
         const historyBlock = buildHistoryBlock(recentTurns);
         const webBlock = buildWebContextBlock(webContext);
         const currentUserBlock = buildCurrentUserBlock(userId, userName, prompt, imageDescriptions);
 
         // Assembler les messages pour l'API
+        // Le thread starter va EN PREMIER, avant l'historique
         const messages = [
             {
                 role: "system" as const,
-                content: `${finalSystemPrompt}\n\n${webBlock}${historyBlock.length > 0 ? `\n\n${historyBlock}` : ""}`,
+                content: `${finalSystemPrompt}\n\n${threadStarterBlock}${webBlock}${historyBlock.length > 0 ? `\n\n${historyBlock}` : ""}`,
             },
             {
                 role: "user" as const,
