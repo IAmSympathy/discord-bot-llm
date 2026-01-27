@@ -10,7 +10,7 @@ function isWatchedChannel(message: Message, watchedChannelId?: string): boolean 
 
 async function handleNettieReaction(client: Client, message: Message) {
     console.log(`Message from ${message.author.username} talks about Nettie`);
-    await setBotPresence(client, "dnd", "Réfléchit…");
+    await setBotPresence(client, "online", "Réfléchit…");
 
     try {
         const emoji = await generateMentionEmoji(message.content);

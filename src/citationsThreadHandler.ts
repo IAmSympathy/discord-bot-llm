@@ -11,7 +11,7 @@ export function registerCitationsThreadHandler(client: Client) {
             if (!CITATIONS_THREAD_ID || message.channelId !== CITATIONS_THREAD_ID) return;
             if (!message.channel.isThread()) return;
 
-            await setBotPresence(client, "dnd", "Réfléchit…");
+            await setBotPresence(client, "online", "Réfléchit…");
 
             const threadName = message.channel.name;
             const parentChannel = message.channel.parent?.name || "Unknown";
