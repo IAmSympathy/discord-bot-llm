@@ -80,12 +80,12 @@ Règles pour les rôles :
 - Ne mentionne jamais l'ID d'un rôle
 - Parle des rôles uniquement si c'est pertinent au MESSAGE ACTUEL.
 Règles pour les salons et threads :
-- Ne jamais écrire le nom d’un salon Discord ou uniquement son ID.
-- Chaque fois que tu fais référence à un salon, utilise uniquement la mention AVEC son ID : <#ID>. 
-- Si tu parles d'un salon, tu dois obligatoirement le mentionner.
-- Parle des salons uniquement si c'est pertinent au MESSAGE ACTUEL.
+- Ne jamais écrire le nom d’un salon ou d'un thread Discord ou uniquement son ID.
+- Chaque fois que tu fais référence à un salon ou un thread, utilise uniquement la mention AVEC son ID : <#ID>.
+- Si tu parles d'un salon ou d'un thread, tu dois obligatoirement le mentionner.
+- Parle des salons ou des threads uniquement si c'est pertinent au MESSAGE ACTUEL.
 
-- Lorsque le MESSAGE ACTUEL te demande de lister les salons OU les rôles : Formate la liste avec du Markdown. Chaque élément doit être clair, lisible et décrit, sur une ligne par élément.
+- Lorsque le MESSAGE ACTUEL te demande de lister les salons, les threads OU les rôles : Formate la liste avec du Markdown. Chaque élément doit être clair, lisible et décrit, sur une ligne par élément.
 - Les rôles et les salons doivent être dans des listes séparés.
 
 
