@@ -38,7 +38,7 @@ module.exports = {
                 if (confirmation.customId === "confirm_reset") {
                     // L'utilisateur a confirmé
                     await confirmation.update({
-                        content: "🧹 Effacement de toute ma mémoire en cours...",
+                        content: "Effacement de toute ma mémoire en cours...",
                         components: [],
                     });
 
@@ -48,13 +48,13 @@ module.exports = {
 
                     // Mettre à jour le message éphémère
                     await confirmation.editReply({
-                        content: "✅ Ma mémoire globale a été complètement effacée.",
+                        content: "Ma mémoire a été complètement effacée.",
                         components: [],
                     });
                 } else {
                     // L'utilisateur a annulé
                     await confirmation.update({
-                        content: "❌ Opération annulée. Ma mémoire n'a pas été modifiée.",
+                        content: "Opération annulée. Ma mémoire n'a pas été modifiée.",
                         components: [],
                     });
                 }
@@ -62,7 +62,7 @@ module.exports = {
                 // Timeout - l'utilisateur n'a pas répondu à temps
                 if (error?.code === "InteractionCollectorError") {
                     await interaction.editReply({
-                        content: "⏱️ Temps écoulé. Opération annulée.",
+                        content: "Temps écoulé. Opération annulée.",
                         components: [],
                     });
                 } else {
@@ -80,7 +80,7 @@ module.exports = {
 
             try {
                 await interaction.reply({
-                    content: "❌ Une erreur est survenue lors de l'effacement de la mémoire.",
+                    content: "Une erreur est survenue lors de l'effacement de la mémoire.",
                     flags: MessageFlags.Ephemeral,
                 });
             } catch (replyError: any) {
