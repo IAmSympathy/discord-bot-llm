@@ -8,6 +8,22 @@ function isWatchedChannel(message: Message, watchedChannelId?: string): boolean 
     return !!watchedChannelId && message.channelId === watchedChannelId;
 }
 
+/**
+ * Extrait les informations sur les utilisateurs mentionnés dans le message
+ * et retourne un contexte formaté pour l'IA
+ */
+function extractMentionContext(message: Message): string {
+    if (message.mentions.users.size === 0) return "";
+
+    const mentionedUsers: string[] = [];
+    message.mentions.users.forEach((user) => {
+        const displayName = user.displayName || user.username;
+        mentionedUsers.push(`@${displayName} (Username: ${user.username}, UID: ${user.id})`);
+    });
+
+    return `\n[UTILISATEURS MENTIONNÉS DANS CE MESSAGE]\n${mentionedUsers.join("\n")}\n[Si l'information concerne une personne mentionnée, utilise SON UID, pas celui de ${message.author.displayName}]\n\n`;
+}
+
 async function handleNettieReaction(client: Client, message: Message): Promise<string> {
     console.log(`Message from ${message.author.username} talks about Nettie`);
     await setBotPresence(client, "online", "Réfléchit…");
@@ -129,6 +145,13 @@ export function registerWatchedChannelResponder(client: Client) {
                     const passiveImageUrls = await collectAllMediaUrls(message);
                     const channelName = (message.channel as any).name || `channel-${message.channelId}`;
 
+                    // Extraire les utilisateurs mentionnés
+                    const mentionedUsers = Array.from(message.mentions.users.values()).map(user => ({
+                        id: user.id,
+                        username: user.username,
+                        displayName: user.displayName || user.username
+                    }));
+
                     // Enregistrer avec la réaction du bot
                     await recordPassiveMessage(
                         message.author.id,
@@ -137,7 +160,9 @@ export function registerWatchedChannelResponder(client: Client) {
                         message.channelId,
                         channelName,
                         passiveImageUrls,
-                        reactionEmoji // ← NOUVEAU : passer la réaction
+                        reactionEmoji, // ← NOUVEAU : passer la réaction
+                        undefined, // Pas de isReply pour les mentions Nettie
+                        mentionedUsers // NOUVEAU : passer les utilisateurs mentionnés
                     );
 
                     console.log(`[Nettie Reaction] Message recorded with reaction ${reactionEmoji} in #${channelName}`);
@@ -158,6 +183,13 @@ export function registerWatchedChannelResponder(client: Client) {
                 // Détecter si c'est une réponse à un autre message
                 const isReply = !!message.reference?.messageId;
 
+                // Extraire les utilisateurs mentionnés
+                const mentionedUsers = Array.from(message.mentions.users.values()).map(user => ({
+                    id: user.id,
+                    username: user.username,
+                    displayName: user.displayName || user.username
+                }));
+
                 // Enregistrer passivement (sans répondre)
                 await recordPassiveMessage(
                     message.author.id,
@@ -167,7 +199,8 @@ export function registerWatchedChannelResponder(client: Client) {
                     channelName,
                     passiveImageUrls,
                     undefined, // Pas de réaction
-                    isReply // NOUVEAU : passer le flag reply
+                    isReply, // NOUVEAU : passer le flag reply
+                    mentionedUsers // NOUVEAU : passer les utilisateurs mentionnés
                 );
 
                 return; // Ne pas répondre, juste enregistrer
@@ -214,6 +247,12 @@ export function registerWatchedChannelResponder(client: Client) {
 
             if (mustReact) {
                 contextPrompt = `[Note: Ajoute obligatoirement un emoji au début de ton message pour donner ton avis]\n${contextPrompt}`;
+            }
+
+            // Ajouter le contexte des utilisateurs mentionnés (avec leurs UIDs)
+            const mentionContext = extractMentionContext(message);
+            if (mentionContext) {
+                contextPrompt = mentionContext + contextPrompt;
             }
 
             // Changer le statut du bot pour indiquer qu'il réfléchit

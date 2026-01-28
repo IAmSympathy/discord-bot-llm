@@ -1,5 +1,5 @@
 import {Message as DiscordMessage} from "discord.js";
-import {convertTextEmojisToUnicode, extractValidEmojis, removeEmojis} from "../utils/textTransformers";
+import {convertTextEmojisToUnicode, extractValidEmojis, removeEmojis, removeResponsePrefixes} from "../utils/textTransformers";
 
 /**
  * Gère l'extraction et l'application des réactions emoji
@@ -14,8 +14,11 @@ export class EmojiReactionHandler {
     }
 
     async extractAndApply(text: string): Promise<string> {
-        // Convertir les smileys textuels en emojis Unicode AVANT d'extraire les emojis
-        let modifiedText = convertTextEmojisToUnicode(text);
+        // 1. Nettoyer les préfixes invalides en premier (TOI (Netricsa) répond:, etc.)
+        let modifiedText = removeResponsePrefixes(text);
+
+        // 2. Convertir les smileys textuels en emojis Unicode
+        modifiedText = convertTextEmojisToUnicode(modifiedText);
 
         if (this.replyToMessage && !this.reactionApplied) {
             const emojis = Array.from(new Set(extractValidEmojis(modifiedText)));
@@ -32,7 +35,7 @@ export class EmojiReactionHandler {
             }
         }
 
-        // Retirer tous les emojis du texte
+        // 3. Retirer tous les emojis du texte
         return removeEmojis(modifiedText);
     }
 

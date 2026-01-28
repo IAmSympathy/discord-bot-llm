@@ -1,10 +1,9 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, GuildMember, MessageFlags, SlashCommandBuilder} from "discord.js";
-import {clearAllMemory} from "../../queue/queue";
 import {hasOwnerPermission} from "../../utils/permissions";
 import {UserProfileService} from "../../services/userProfileService";
 
 module.exports = {
-    data: new SlashCommandBuilder().setName("reset").setDescription("Efface TOUT : mémoire globale + profils utilisateurs"),
+    data: new SlashCommandBuilder().setName("reset-profiles").setDescription("Efface UNIQUEMENT les profils utilisateurs (garde la mémoire de conversation)"),
     async execute(interaction: ChatInputCommandInteraction) {
         try {
             const member = interaction.member instanceof GuildMember ? interaction.member : null;
@@ -15,15 +14,15 @@ module.exports = {
             }
 
             // Créer les boutons de confirmation
-            const confirmButton = new ButtonBuilder().setCustomId("confirm_reset").setLabel("✓ Confirmer").setStyle(ButtonStyle.Danger);
+            const confirmButton = new ButtonBuilder().setCustomId("confirm_reset_profiles").setLabel("✓ Confirmer").setStyle(ButtonStyle.Danger);
 
-            const cancelButton = new ButtonBuilder().setCustomId("cancel_reset").setLabel("✕ Annuler").setStyle(ButtonStyle.Secondary);
+            const cancelButton = new ButtonBuilder().setCustomId("cancel_reset_profiles").setLabel("✕ Annuler").setStyle(ButtonStyle.Secondary);
 
             const row = new ActionRowBuilder<ButtonBuilder>().addComponents(confirmButton, cancelButton);
 
             // Envoyer le message de confirmation
             const response = await interaction.reply({
-                content: "**ATTENTION** : Ceci va effacer :\n• Toute ma mémoire globale (tous les salons)\n• Tous les profils utilisateurs\n\nCette action est **irréversible**.\n\nÊtes-vous sûr de vouloir continuer ?",
+                content: "**Effacement des profils utilisateurs**\n\nCeci va effacer :\n• Tous les profils utilisateurs (infos personnelles, intérêts, traits)\n\nÊtes-vous sûr ?",
                 components: [row],
                 flags: MessageFlags.Ephemeral,
             });
@@ -36,27 +35,26 @@ module.exports = {
                     filter: (i) => i.user.id === interaction.user.id,
                 });
 
-                if (confirmation.customId === "confirm_reset") {
+                if (confirmation.customId === "confirm_reset_profiles") {
                     // L'utilisateur a confirmé
                     await confirmation.update({
-                        content: "Effacement de toute ma mémoire et profils en cours...",
+                        content: "Effacement des profils utilisateurs en cours...",
                         components: [],
                     });
 
-                    await clearAllMemory();
-                    const deletedProfiles = UserProfileService.deleteAllProfiles();
+                    const deletedCount = UserProfileService.deleteAllProfiles();
 
-                    console.log(`[Reset Command] Global memory + ${deletedProfiles} profile(s) cleared by ${interaction.user.displayName}`);
+                    console.log(`[Reset-Profiles Command] ${deletedCount} profile(s) deleted by ${interaction.user.displayName}`);
 
                     // Mettre à jour le message éphémère
                     await confirmation.editReply({
-                        content: `Ma mémoire et mes connaissances ont été complètement effacées.\n• Mémoire : Effacée\n• Profils : ${deletedProfiles} supprimé(s)`,
+                        content: `Profils utilisateurs effacés : ${deletedCount} supprimé(s).`,
                         components: [],
                     });
                 } else {
                     // L'utilisateur a annulé
                     await confirmation.update({
-                        content: "Opération annulée. Ma mémoire n'a pas été modifiée.",
+                        content: "Opération annulée. Les profils n'ont pas été modifiés.",
                         components: [],
                     });
                 }
@@ -72,22 +70,22 @@ module.exports = {
                 }
             }
         } catch (error: any) {
-            console.error("[Reset Command] Error:", error);
+            console.error("[Reset-Profiles Command] Error:", error);
 
             // Gérer les erreurs d'interaction expirée
             if (error?.code === 10062) {
-                console.warn("[Reset Command] Interaction expired");
+                console.warn("[Reset-Profiles Command] Interaction expired");
                 return;
             }
 
             try {
                 await interaction.reply({
-                    content: "Une erreur est survenue lors de l'effacement de la mémoire.",
+                    content: "Une erreur est survenue lors de l'effacement des profils.",
                     flags: MessageFlags.Ephemeral,
                 });
             } catch (replyError: any) {
                 if (replyError?.code === 10062) {
-                    console.warn("[Reset Command] Could not send error reply - interaction expired");
+                    console.warn("[Reset-Profiles Command] Could not send error reply - interaction expired");
                 }
             }
         }

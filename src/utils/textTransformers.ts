@@ -93,10 +93,46 @@ export function removeEmojis(text: string): string {
 }
 
 /**
+ * Retire les préfixes de réponse invalides que le modèle pourrait générer
+ * Ex: "TOI (Netricsa) répond:", "Netricsa:", "Réponse:", etc.
+ */
+export function removeResponsePrefixes(text: string): string {
+    // Pattern pour détecter les préfixes courants
+    const prefixPatterns = [
+        /^TOI\s*\(Netricsa\)\s*(répond\s*:?|dit\s*:?)\s*/i,
+        /^Netricsa\s*(répond\s*:?|dit\s*:?)\s*/i,
+        /^Nettie\s*(répond\s*:?|dit\s*:?)\s*/i,
+        /^Réponse\s*:\s*/i,
+        /^Assistant\s*:\s*/i,
+        /^Bot\s*:\s*/i,
+        // Nouveaux patterns pour les préfixes de débogage
+        /^===\s*RÉPONSE\s*===\s*/i,
+        /^===\s*RESPONSE\s*===\s*/i,
+        /^===\s*MESSAGE\s*===\s*/i,
+        /^===\s*[A-Z]+\s*===\s*/,
+        /^\[RÉPONSE\]\s*/i,
+        /^\[MESSAGE\]\s*/i,
+    ];
+
+    let cleaned = text;
+    for (const pattern of prefixPatterns) {
+        cleaned = cleaned.replace(pattern, "");
+    }
+
+    // Nettoyer les artifacts bizarres (ex: "s:\n\"" au début)
+    cleaned = cleaned.replace(/^[a-z]:\s*["\n]+/i, "");
+
+    // Nettoyer les guillemets orphelins au début/fin
+    cleaned = cleaned.replace(/^["'\s]+/, "").replace(/["'\s]+$/, "");
+
+    return cleaned;
+}
+
+/**
  * Applique toutes les transformations de nettoyage de texte
  */
 export function cleanDiscordText(text: string): string {
-    return cleanHtmlComments(fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(text))));
+    return removeResponsePrefixes(cleanHtmlComments(fixChannelMentions(wrapLinksNoEmbed(decodeHtmlEntities(text)))));
 }
 
 /**

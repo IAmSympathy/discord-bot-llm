@@ -1,10 +1,9 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, GuildMember, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {clearAllMemory} from "../../queue/queue";
 import {hasOwnerPermission} from "../../utils/permissions";
-import {UserProfileService} from "../../services/userProfileService";
 
 module.exports = {
-    data: new SlashCommandBuilder().setName("reset").setDescription("Efface TOUT : mémoire globale + profils utilisateurs"),
+    data: new SlashCommandBuilder().setName("reset-memory").setDescription("Efface UNIQUEMENT la mémoire de conversation (garde les profils)"),
     async execute(interaction: ChatInputCommandInteraction) {
         try {
             const member = interaction.member instanceof GuildMember ? interaction.member : null;
@@ -15,15 +14,15 @@ module.exports = {
             }
 
             // Créer les boutons de confirmation
-            const confirmButton = new ButtonBuilder().setCustomId("confirm_reset").setLabel("✓ Confirmer").setStyle(ButtonStyle.Danger);
+            const confirmButton = new ButtonBuilder().setCustomId("confirm_reset_memory").setLabel("✓ Confirmer").setStyle(ButtonStyle.Danger);
 
-            const cancelButton = new ButtonBuilder().setCustomId("cancel_reset").setLabel("✕ Annuler").setStyle(ButtonStyle.Secondary);
+            const cancelButton = new ButtonBuilder().setCustomId("cancel_reset_memory").setLabel("✕ Annuler").setStyle(ButtonStyle.Secondary);
 
             const row = new ActionRowBuilder<ButtonBuilder>().addComponents(confirmButton, cancelButton);
 
             // Envoyer le message de confirmation
             const response = await interaction.reply({
-                content: "**ATTENTION** : Ceci va effacer :\n• Toute ma mémoire globale (tous les salons)\n• Tous les profils utilisateurs\n\nCette action est **irréversible**.\n\nÊtes-vous sûr de vouloir continuer ?",
+                content: "**Effacement de la mémoire de conversation**\n\nCeci va effacer :\n• Toute ma mémoire de conversation (tous les salons)\n\nÊtes-vous sûr ?",
                 components: [row],
                 flags: MessageFlags.Ephemeral,
             });
@@ -36,21 +35,20 @@ module.exports = {
                     filter: (i) => i.user.id === interaction.user.id,
                 });
 
-                if (confirmation.customId === "confirm_reset") {
+                if (confirmation.customId === "confirm_reset_memory") {
                     // L'utilisateur a confirmé
                     await confirmation.update({
-                        content: "Effacement de toute ma mémoire et profils en cours...",
+                        content: "Effacement de la mémoire de conversation en cours...",
                         components: [],
                     });
 
                     await clearAllMemory();
-                    const deletedProfiles = UserProfileService.deleteAllProfiles();
 
-                    console.log(`[Reset Command] Global memory + ${deletedProfiles} profile(s) cleared by ${interaction.user.displayName}`);
+                    console.log(`[Reset-Memory Command] Conversation memory cleared by ${interaction.user.displayName}`);
 
                     // Mettre à jour le message éphémère
                     await confirmation.editReply({
-                        content: `Ma mémoire et mes connaissances ont été complètement effacées.\n• Mémoire : Effacée\n• Profils : ${deletedProfiles} supprimé(s)`,
+                        content: "Ma mémoire de conversation a été effacée.",
                         components: [],
                     });
                 } else {
@@ -72,11 +70,11 @@ module.exports = {
                 }
             }
         } catch (error: any) {
-            console.error("[Reset Command] Error:", error);
+            console.error("[Reset-Memory Command] Error:", error);
 
             // Gérer les erreurs d'interaction expirée
             if (error?.code === 10062) {
-                console.warn("[Reset Command] Interaction expired");
+                console.warn("[Reset-Memory Command] Interaction expired");
                 return;
             }
 
@@ -87,7 +85,7 @@ module.exports = {
                 });
             } catch (replyError: any) {
                 if (replyError?.code === 10062) {
-                    console.warn("[Reset Command] Could not send error reply - interaction expired");
+                    console.warn("[Reset-Memory Command] Could not send error reply - interaction expired");
                 }
             }
         }

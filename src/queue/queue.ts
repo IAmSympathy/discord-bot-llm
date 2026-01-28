@@ -1,13 +1,15 @@
 import {Message as DiscordMessage, TextChannel, ThreadChannel} from "discord.js";
 import {FileMemory} from "../memory/fileMemory";
 import {analyzeMessageType, shouldStoreAssistantMessage, shouldStoreUserMessage} from "../memory/memoryFilter";
-import {DISCORD_TYPING_UPDATE_INTERVAL, MEMORY_FILE_PATH, MEMORY_MAX_TURNS} from "../utils/constants";
+import {DISCORD_TYPING_UPDATE_INTERVAL, FILTER_PATTERNS, MEMORY_FILE_PATH, MEMORY_MAX_TURNS} from "../utils/constants";
 import {processImages} from "../services/imageService";
 import {getWebContext} from "../services/searchService";
 import {OllamaService} from "../services/ollamaService";
 import {DiscordMessageManager, ImageAnalysisAnimation} from "./discordMessageManager";
 import {EmojiReactionHandler} from "./emojiReactionHandler";
 import {buildCurrentUserBlock, buildHistoryBlock, buildThreadStarterBlock, buildWebContextBlock} from "./promptBuilder";
+import {UserProfileService} from "../services/userProfileService";
+import {ToolCallHandler} from "../services/toolCallHandler";
 
 const wait = require("node:timers/promises").setTimeout;
 
@@ -78,7 +80,8 @@ export async function recordPassiveMessage(
     channelName: string,
     imageUrls?: string[],
     botReaction?: string, // Pour enregistrer les réactions du bot (ex: "🤗")
-    isReply?: boolean // NOUVEAU : pour indiquer si c'est une réponse à un autre message
+    isReply?: boolean, // NOUVEAU : pour indiquer si c'est une réponse à un autre message
+    mentionedUsers?: Array<{ id: string; username: string; displayName: string }> // NOUVEAU : utilisateurs mentionnés
 ): Promise<void> {
     const trimmed = messageContent.trim();
 
@@ -97,17 +100,16 @@ export async function recordPassiveMessage(
     }
 
     // NOUVEAU : Vérifier si c'est une réponse courte Oui/Non dans le contexte d'une question récente
-    // Simplifié : cherche si le message contient des variantes de oui/non
-    const isShortResponse = /^(oui|ouais|ouep|yep|yeah|ye|ok|non|nope|nah|nan|ben\s+oui|ben\s+non|bien\s+sur|bien\s+sûr|certainement|évidemment|evidemment|absolument|carrément|carrement|grave|clair)\b/i.test(trimmed) && trimmed.length < 20;
+    const isShortResponse = FILTER_PATTERNS.SHORT_RESPONSE.test(trimmed) && trimmed.length < 20;
 
     // NOUVEAU : Détecter les activités courantes (réponses à "Tu fais quoi?", etc.)
-    const isActivity = /^(je|j'|moi\s+je)\s+(mange|bois|joue|regarde|écoute|lis|dors|travaille|étudie|cours|code|dessine|cuisine)/i.test(trimmed);
+    const isActivity = FILTER_PATTERNS.ACTIVITY.test(trimmed);
 
     // NOUVEAU : Détecter "rien" comme réponse valide
-    const isNothingResponse = /^(rien|nothing|pas grand chose|pas grand-chose|r1|ryn)$/i.test(trimmed);
+    const isNothingResponse = FILTER_PATTERNS.NOTHING_RESPONSE.test(trimmed);
 
     // NOUVEAU : Détecter les nombres seuls (réponses à des questions quantitatives)
-    const isNumericAnswer = /^\d+$/.test(trimmed);
+    const isNumericAnswer = FILTER_PATTERNS.NUMERIC_ANSWER.test(trimmed);
 
     let forceStore = false;
 
@@ -166,6 +168,14 @@ export async function recordPassiveMessage(
         }
     }
 
+    // Vérifier contenu inapproprié AVANT tout (même si forceStore)
+    const isInappropriateContent = /\b(sexe|sex|cul|baiser|porn|nudes?)\b/i.test(messageContent);
+
+    if (isInappropriateContent) {
+        console.log(`[Memory Passive]: 🚫 Inappropriate content skipped from ${userName} in #${channelName}`);
+        return;
+    }
+
     // Filtrer le message avant de l'enregistrer (sauf si forceStore)
     const shouldStore = forceStore || shouldStoreUserMessage(messageContent);
 
@@ -208,12 +218,85 @@ export async function recordPassiveMessage(
     const replyNote = isReply ? " [reply]" : "";
     const contextNote = forceStore ? " [contextual-response]" : "";
     console.log(`[Memory Passive]: 👁️ Recorded from ${userName} in #${channelName} [${messageType.type}]${imageDescriptions.length > 0 ? ` [${imageDescriptions.length} images]` : ""}${reactionNote}${replyNote}${contextNote}`);
+
+    // EXTRACTION PASSIVE : DÉSACTIVÉE DÉFINITIVEMENT
+    // L'extraction automatique a été abandonnée - système 100% manuel maintenant
+    /*
+    (async () => {
+        try {
+            // FILTRES TRÈS STRICTS : Ne faire l'extraction QUE si le message contient des infos IMPORTANTES
+
+            // 1. Filtres de base
+            const isQuestion = FILTER_PATTERNS.QUESTION.test(messageContent);
+            const isFuturePlan = FILTER_PATTERNS.FUTURE_PLAN.test(messageContent);
+            const isRecentEvent = FILTER_PATTERNS.RECENT_EVENT.test(messageContent);
+            const isTemporaryOpinion = FILTER_PATTERNS.TEMPORARY_OPINION.test(messageContent) && messageContent.length < 100;
+
+            // 2. Filtres pour conversations sociales et trolling
+            const isSocialPhrase = /^(pas grand chose|rien de spécial|je voulais juste|choisis|choisi un|parle moi|dis moi|raconte|enfait|en fait|de quoi)/i.test(trimmed);
+            const isInsult = /\b(con|conne|connard|connasse|salope|pute|merde|chier|foutre)\b/i.test(trimmed);
+            const isTemporaryState = /^(ça va|sa va|oui|non|ok|bien|super|cool|génial|nul|bof)$/i.test(trimmed);
+            const isApology = /\b(excuse|désolé|desole|pardon|sorry)\b/i.test(trimmed);
+            const isRequest = /\b(donne|donnes|donne-moi|montre|montres|explique|expliques|dis|raconte|racontes|recette|recettes)\b/i.test(trimmed);
+            const isMoodOrFeeling = /\b(d'humeur|humeur|envie de|envie d'|sentiment|ressens)\b/i.test(trimmed);
+            const isInappropriate = /\b(sexe|sex|cul|baiser|porn|nudes?)\b/i.test(trimmed);
+
+            // 3. Filtres de longueur et mots-clés PERMANENTS
+            const isVeryShort = messageContent.length < 25;
+            const hasPermanentKeywords = /\b(je suis|je travaille|j'habite|je joue depuis|j'adore vraiment|je déteste vraiment|je préfère|je code depuis|je parle couramment)\b/i.test(messageContent);
+
+            // 4. NOUVEAU : Vérifier si c'est une info PERMANENTE
+            const isPermanentInfo = hasPermanentKeywords || (
+                /\b(suis|travaille|habite)\b/i.test(messageContent) &&
+                messageContent.length > 30 &&
+                !isRequest
+            );
+
+            const worthExtracting = messageType.type !== "greeting" &&
+                messageType.type !== "reaction" &&
+                !isModerationRefusal(messageContent) &&
+                !isQuestion &&
+                !isFuturePlan &&
+                !isRecentEvent &&
+                !isTemporaryOpinion &&
+                !isSocialPhrase &&
+                !isInsult &&
+                !isTemporaryState &&
+                !isApology &&
+                !isRequest &&
+                !isMoodOrFeeling && // NOUVEAU : Skip états d'humeur
+                !isInappropriate && // NOUVEAU : Skip contenu inapproprié
+                isPermanentInfo &&
+                messageContent.length > 20;
+
+            if (!worthExtracting) {
+                return;
+            }
+
+            console.log(`[Extraction Passive] Starting background extraction for ${userName}...`);
+
+            await ExtractionService.extractAndSave({
+                userId,
+                userName,
+                userMessage: messageContent,
+                channelId,
+                mentionedUsers,
+                isPassive: true,
+            });
+        } catch (error) {
+            console.error(`[Extraction Passive] Failed for ${userName}:`, error);
+        }
+    })();
+    */
 }
 
-// Fonction pour effacer la mémoire d'un channel spécifique// Fonction pour effacer la mémoire d'un channel spécifique
-export async function clearMemory(channelKey: string): Promise<void> {
-    await memory.clearChannel(channelKey);
-    console.log(`[Memory] Cleared all turns from channel ${channelKey}`);
+// Fonction helper pour détecter les refus de modération
+function isModerationRefusal(text: string): boolean {
+    const lower = text.toLowerCase();
+    return lower.includes("je suis désolée") ||
+        lower.includes("je ne peux pas répondre") ||
+        lower.includes("je ne répondrai pas") ||
+        lower.includes("sorry, i can't");
 }
 
 // Fonction pour effacer TOUTE la mémoire globale
@@ -282,6 +365,14 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             console.log("[SearchService] Web context added to prompt");
         }
 
+        // Récupérer le profil de l'utilisateur actuel
+        const userProfileSummary = UserProfileService.getProfileSummary(userId);
+        let userProfileBlock = "";
+        if (userProfileSummary) {
+            userProfileBlock = `\n\n=== PROFIL DE ${userName.toUpperCase()} ===\n${userProfileSummary}\n=== FIN DU PROFIL ===`;
+            console.log(`[UserProfile] Profile loaded for ${userName}`);
+        }
+
         // Obtenir le nom du channel actuel
         const channelName = (channel as any).name || `channel-${channel.id}`;
 
@@ -293,10 +384,11 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
         // Assembler les messages pour l'API
         // Le thread starter va EN PREMIER, avant l'historique
+        // Le profil utilisateur vient après le prompt système mais avant le reste
         const messages = [
             {
                 role: "system" as const,
-                content: `${finalSystemPrompt}\n\n${threadStarterBlock}${webBlock}${historyBlock.length > 0 ? `\n\n${historyBlock}` : ""}`,
+                content: `${finalSystemPrompt}${userProfileBlock}\n\n${threadStarterBlock}${webBlock}${historyBlock.length > 0 ? `\n\n${historyBlock}` : ""}`,
             },
             {
                 role: "user" as const,
@@ -312,7 +404,10 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         console.log(`[processLLMRequest] Sending request to Ollama`);
 
         try {
-            const response = await ollamaService.chat(messages);
+            // TWO-STEP APPROACH :
+            // 1. Première requête : Générer la réponse SANS tools (pour garantir une réponse textuelle)
+            // 2. Deuxième requête : Analyser avec tools en arrière-plan pour extraire les infos
+            const response = await ollamaService.chat(messages, {}, true, undefined); // Pas de tools pour la première requête
             const reader = response.body?.getReader();
             const decoder = new TextDecoder();
             let result = "";
@@ -326,6 +421,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             let promptTokens = 0;
             let completionTokens = 0;
             let totalTokens = 0;
+            let toolCalls: any[] = []; // Stocker les tool calls (pour la 2e requête)
 
             const throttleResponseInterval = setInterval(() => {
                 if (sendMessage) {
@@ -354,6 +450,41 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
                                 if (totalTokens > 0) {
                                     console.log(`[Tokens] Prompt: ${promptTokens} | Completion: ${completionTokens} | Total: ${totalTokens}`);
+                                }
+
+                                // TWO-STEP APPROACH : DÉSACTIVÉ DÉFINITIVEMENT
+                                // L'extraction automatique a été abandonnée après 11 hotfixes
+                                // Le système est maintenant 100% manuel via la commande /note
+                                // Raison : Le modèle LLM llama3.1:8b ne suit pas assez bien les instructions
+                                /*
+                                {
+                                    (async () => {
+                                        try {
+                                            console.log(`[Extraction] Starting background extraction with tools...`);
+
+                                            await ExtractionService.extractAndSave({
+                                                userId,
+                                                userName,
+                                                userMessage: prompt,
+                                                assistantResponse: result,
+                                                channelId: channel.id,
+                                                isPassive: false,
+                                            });
+                                        } catch (error) {
+                                            console.error(`[Extraction] Background extraction failed:`, error);
+                                        }
+                                    })();
+                                }
+                                */
+
+                                // Traiter les tool calls si présents (garde pour compatibilité, mais ne devrait plus arriver)
+                                if (toolCalls.length > 0) {
+                                    console.log(`[ToolCall] Processing ${toolCalls.length} tool call(s)...`);
+                                    await ToolCallHandler.processToolCalls(toolCalls, {
+                                        currentUserId: userId,
+                                        currentUsername: userName,
+                                        channelId: channel.id,
+                                    });
                                 }
 
                                 await wait(2000);
@@ -441,6 +572,12 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                                 }
 
                                 const chunk = decodedChunk.message?.delta || decodedChunk.message?.content || "";
+
+                                // Détecter les tool calls
+                                if (decodedChunk.message?.tool_calls && decodedChunk.message.tool_calls.length > 0) {
+                                    toolCalls.push(...decodedChunk.message.tool_calls);
+                                    console.log(`[ToolCall] Detected ${decodedChunk.message.tool_calls.length} tool call(s)`);
+                                }
 
                                 if (decodedChunk.prompt_eval_count) promptTokens = decodedChunk.prompt_eval_count;
                                 if (decodedChunk.eval_count) completionTokens = decodedChunk.eval_count;

@@ -1,4 +1,5 @@
 import {OLLAMA_API_URL, OLLAMA_TEXT_MODEL} from "../utils/constants";
+import {Tool} from "./profileTools";
 import fs from "fs";
 
 export interface LLMMessage {
@@ -19,7 +20,7 @@ export class OllamaService {
     /**
      * Envoie une requête de chat à Ollama
      */
-    async chat(messages: LLMMessage[], options: LLMOptions = {}, stream = true): Promise<Response> {
+    async chat(messages: LLMMessage[], options: LLMOptions = {}, stream = true, tools?: Tool[]): Promise<Response> {
         const defaultOptions: LLMOptions = {
             temperature: 1.0,
             repeat_penalty: 1.1,
@@ -27,15 +28,22 @@ export class OllamaService {
             ...options,
         };
 
+        const body: any = {
+            model: OLLAMA_TEXT_MODEL,
+            messages,
+            stream,
+            options: defaultOptions,
+        };
+
+        // Ajouter les tools si fournis
+        if (tools && tools.length > 0) {
+            body.tools = tools;
+        }
+
         const response = await fetch(`${OLLAMA_API_URL}/api/chat`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                model: OLLAMA_TEXT_MODEL,
-                messages,
-                stream,
-                options: defaultOptions,
-            }),
+            body: JSON.stringify(body),
         });
 
         if (!response.ok) {

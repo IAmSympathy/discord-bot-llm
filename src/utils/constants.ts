@@ -12,13 +12,26 @@ export const MEMORY_FILE_PATH = process.env.MEMORY_FILE || "./data/memory.json";
 
 // Ollama Configuration
 export const OLLAMA_API_URL = "http://localhost:11434";
-export const OLLAMA_TEXT_MODEL = process.env.OLLAMA_TEXT_MODEL || "llama3.2";
-export const OLLAMA_VISION_MODEL = process.env.OLLAMA_VISION_MODEL || "qwen2.5vl:7b";
+export const OLLAMA_TEXT_MODEL = process.env.OLLAMA_TEXT_MODEL || "llama3.1:8b-instruct-q8_0";
+export const OLLAMA_VISION_MODEL = process.env.OLLAMA_VISION_MODEL || "qwen2.5-vl:7b";
 
 // Discord limits
 export const DISCORD_MESSAGE_LIMIT = 1900;
-export const DISCORD_TYPING_UPDATE_INTERVAL = 2000;
+export const DISCORD_TYPING_UPDATE_INTERVAL = 1500; // 500ms pour éditions plus réactives (était 2000ms)
 export const IMAGE_ANALYSIS_ANIMATION_INTERVAL = 1500;
 
 // Timeouts
 export const BUTTON_CONFIRMATION_TIMEOUT = 10000;
+
+// Filtres de mémoire et extraction - Regex réutilisables
+export const FILTER_PATTERNS = {
+    QUESTION: /\?/,
+    FUTURE_PLAN: /\b(on va|nous allons|je vais|j'irai|nous irons|demain|samedi|dimanche|lundi|mardi|mercredi|jeudi|vendredi|ce weekend|la semaine prochaine|le mois prochain)\b/i,
+    RECENT_EVENT: /\b(viens de|je viens|vient de|viennent de|venais de|venait de|à l'instant|tout juste|hier|ce matin|cet après-midi|ce soir|récemment)\b/i,
+    TEMPORARY_OPINION: /\b(a l'air|avait l'air|semble|semblait|paraît|paraissait|il est|c'est|c'était|était)\b/i,
+    SHORT_RESPONSE: /^(oui|ouais|ouep|yep|yeah|ye|ok|non|nope|nah|nan|ben\s+oui|ben\s+non|bien\s+sur|bien\s+sûr|certainement|évidemment|evidemment|absolument|carrément|carrement|grave|clair)\b/i,
+    ACTIVITY: /^(je|j'|moi\s+je)\s+(mange|bois|joue|regarde|écoute|lis|dors|travaille|étudie|cours|code|dessine|cuisine)/i,
+    NOTHING_RESPONSE: /^(rien|nothing|pas grand chose|pas grand-chose|r1|ryn)$/i,
+    NUMERIC_ANSWER: /^\d+$/,
+} as const;
+

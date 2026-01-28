@@ -118,15 +118,18 @@ export class DiscordMessageManager {
             this.messages.push(message);
         }
 
-        // Mettre à jour les messages existants
-        for (let i = 0; i < this.messages.length; i++) {
-            const message = this.messages[i];
-            if (!message) continue;
-            const rawChunk = this.responseChunks[i];
-            if (!rawChunk) continue;
-            const nextContent = cleanDiscordText(rawChunk);
-            if (message.content !== nextContent) {
-                await message.edit(nextContent);
+        // OPTIMISATION : Mettre à jour UNIQUEMENT le dernier message (celui en cours d'édition)
+        // Au lieu de mettre à jour TOUS les messages à chaque fois
+        if (this.messages.length > 0 && this.responseChunks.length > 0) {
+            const lastIndex = this.messages.length - 1;
+            const message = this.messages[lastIndex];
+            const rawChunk = this.responseChunks[lastIndex];
+
+            if (message && rawChunk) {
+                const nextContent = cleanDiscordText(rawChunk);
+                if (message.content !== nextContent) {
+                    await message.edit(nextContent);
+                }
             }
         }
     }

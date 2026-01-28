@@ -161,8 +161,9 @@ UTILISATEUR "${userName}" (UID Discord: ${userId}):
 Message:
 ${prompt}
 === FIN MESSAGE ACTUEL ===
-[RAPPEL: Fais attention aux pronoms comme "il", "elle", "iel" dans le MESSAGE ACTUEL - ils peuvent faire référence à un autre utilisateur mentionné dans l'HISTORIQUE ci-dessus. Vérifie les noms d'utilisateurs et UIDs pour comprendre de qui il s'agit.]
-[RAPPEL: Si le message contient une URL Tenor (tenor.com), utilise le nom du GIF dans l'URL comme contexte supplémentaire (ex: "ok-cat" ou "angry-birds"), mais NE RÉPÈTE JAMAIS l'URL complète dans ta réponse. Parle du GIF en utilisant sa description et le contexte du nom.]
+[RAPPEL MENTIONS: Si le message contient "@NomUtilisateur" ou "<@ID>", cela désigne UNE AUTRE PERSONNE. Toute information dans ce message concernant cette personne mentionnée s'applique à ELLE, pas à ${userName}. Cherche l'identité de la personne mentionnée dans l'HISTORIQUE ci-dessus pour trouver son UID.]
+[RAPPEL PRONOMS: Les pronoms "il", "elle", "iel" peuvent référer à quelqu'un mentionné dans l'HISTORIQUE. Vérifie les UIDs pour identifier correctement les personnes.]
+[RAPPEL TENOR: Les URLs Tenor contiennent le nom du GIF. Utilise-le comme contexte mais ne répète JAMAIS l'URL dans ta réponse.]
 ${imageContext}`;
 }
 

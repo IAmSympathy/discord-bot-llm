@@ -1,58 +1,60 @@
 /**
  * Système de filtrage intelligent de la mémoire
- * Ne garde que les messages ayant une vraie valeur conversationnelle
+ * Adapté pour Discord privé entre amis (fautes, troll, langage SMS)
  */
 
-// Messages à ignorer complètement
-// NOTE: oui/non/ouais retirés car gérés intelligemment par le système de contexte temporel
+// Messages à ignorer complètement (bruit pur)
 const NOISE_PATTERNS = [
-    /^(lol|mdr|xd|ptdr|mdrr)$/i, // Rires
+    /^(lol|mdr|xd|ptdr|mdrr|mdrrr)$/i, // Rires seuls
     /^[👍👎😂🤣😭🔥💀🎉❤️😊😅🙄😏]+$/, // Emojis uniquement
     /^[!?.,;:]+$/, // Ponctuation uniquement
-    /^(ah+|oh+|eh+|hm+|um+|uh+)$/i, // Interjections
-    /^(genre|style|bah|bof|mouais)$/i, // Filler words
+    /^(ah+|oh+|eh+|hm+|um+|uh+)$/i, // Interjections pures
     /^[\s\n]+$/, // Espaces uniquement
 ];
 
-// Mots-clés indiquant une valeur conversationnelle (Discord social entre amis)
+// Mots-clés indiquant une valeur conversationnelle (serveur entre amis)
 const HIGH_VALUE_KEYWORDS = [
-    // Salutations et politesse (conversations naturelles)
-    'salut', 'coucou', 'bonjour', 'bonsoir', 'hey', 'yo', 'cc', 'wsh', 'bjr',
-    'ça va', 'ca va', 'cv', 'quoi de neuf', 'quoi de 9',
+    // Salutations (avec fautes et langage SMS)
+    'salut', 'coucou', 'bonjour', 'bonsoir', 'hey', 'yo', 'cc', 'wsh', 'bjr', 'slt',
+    'ça va', 'ca va', 'cv', 'quoi de neuf', 'quoi de 9', 'sa va', 'sava',
 
-    // Plans et événements
+    // Plans et événements (avec fautes)
     'veux', 'dois', 'faut', 'besoin', 'allons', 'irons', 'viendras', 'rendez-vous',
-    'demain', 'aujourd\'hui', 'ce soir', 'week-end', 'semaine',
+    'demain', 'aujourd\'hui', 'ce soir', 'week-end', 'semaine', 'ojd', 'dem1',
+    'veu', 'doi', 'fo', 'bezoin', // Fautes courantes
 
-    // Questions importantes
+    // Questions importantes (avec fautes)
     'comment', 'pourquoi', 'quand', 'où', 'qui', 'quel', 'quelle', 'quels', 'quelles',
-    'est-ce que', 'qu\'est-ce', 'commen', 'pourkoi', 'koi', 'ki',
+    'est-ce que', 'qu\'est-ce', 'commen', 'pourkoi', 'koi', 'ki', 'ou', 'kand',
+    'comen', 'pourkoa', 'keske', 'keskec', // Variantes SMS
 
-    // Opinions et discussions
+    // Opinions et discussions (avec fautes)
     'pense', 'crois', 'trouve', 'opinion', 'avis', 'selon', 'contre', 'pour',
+    'pance', 'croi', 'truv', // Fautes
 
-    // Relations et personnes
+    // Relations et personnes (avec fautes)
     'elle', 'lui', 'eux', 'famille', 'ami', 'copain', 'copine', 'rencontré',
-    'frère', 'sœur', 'mère', 'père', 'parents', 'frer', 'soeur',
+    'frère', 'sœur', 'mère', 'père', 'parents', 'frer', 'soeur', 'pote', 'darons',
 
-    // Préférences et goûts
+    // Préférences et goûts (avec fautes)
     'préfère', 'aime', 'déteste', 'adore', 'kiffe', 'veux pas', 'plutôt', 'mieux',
-    'prefere', 'deteste', 'kiff',
+    'prefere', 'deteste', 'kiff', 'jaime', 'jadore', 'jdeteste',
 
-    // Émotions importantes
+    // Émotions importantes (avec fautes)
     'heureux', 'triste', 'énervé', 'content', 'désolé', 'inquiet', 'stressé',
-    'enerve', 'desole', 'stresse',
+    'enerve', 'desole', 'stresse', 'conten', 'trist',
 
     // Événements importants
     'accident', 'hôpital', 'malade', 'mort', 'cassé', 'blessé',
-    'hopital', 'casse', 'blesse',
+    'hopital', 'casse', 'blesse', 'malad',
 
-    // Demandes à l'IA (génération, analyse, recherche)
+    // Demandes à l'IA (avec fautes)
     'génère', 'génere', 'genere', 'crée', 'cree', 'créer', 'creer',
     'analyse', 'analyser', 'regarde', 'regarder', 'décris', 'decris',
     'cherche', 'recherche', 'trouve', 'trouver', 'google',
     'dessine', 'dessin', 'image', 'photo', 'gif',
     'explique', 'expliquer', 'dis-moi', 'dis moi', 'di moi',
+    'analize', 'regarrd', 'cherch', 'explikes', // Fautes courantes
 ];
 
 // Patterns indiquant du contexte important (conversations sociales)
