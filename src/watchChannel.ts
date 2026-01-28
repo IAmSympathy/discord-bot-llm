@@ -1,5 +1,5 @@
 import {ChannelType, Client, Message, TextChannel} from "discord.js";
-import {processLLMRequest} from "./queue/queue";
+import {processLLMRequest, recordPassiveMessage} from "./queue/queue";
 import {setBotPresence} from "./bot";
 import {generateMentionEmoji} from "./services/emojiService";
 import {collectAllMediaUrls} from "./services/gifService";
@@ -8,7 +8,7 @@ function isWatchedChannel(message: Message, watchedChannelId?: string): boolean 
     return !!watchedChannelId && message.channelId === watchedChannelId;
 }
 
-async function handleNettieReaction(client: Client, message: Message) {
+async function handleNettieReaction(client: Client, message: Message): Promise<string> {
     console.log(`Message from ${message.author.username} talks about Nettie`);
     await setBotPresence(client, "online", "Réfléchit…");
 
@@ -16,9 +16,11 @@ async function handleNettieReaction(client: Client, message: Message) {
         const emoji = await generateMentionEmoji(message.content);
         await message.react(emoji);
         console.log(`[Emoji] Reacted with: ${emoji}`);
+        return emoji;
     } catch (error) {
         console.error("[watchChannel] Failed to get emoji from LLM:", error);
         await message.react("🤗");
+        return "🤗";
     }
 }
 
@@ -119,11 +121,59 @@ export function registerWatchedChannelResponder(client: Client) {
             // Gestion des mentions de Nettie (réaction uniquement)
             const mentionsNettie = message.content.toLowerCase().includes("nettie") || message.content.toLowerCase().includes("netricsa");
             if (mentionsNettie && !isMentioned && !isInWatchedChannel) {
-                await handleNettieReaction(client, message);
-                return;
+                // Ajouter une réaction emoji
+                const reactionEmoji = await handleNettieReaction(client, message);
+
+                // NOUVEAU : Enregistrer aussi en mémoire avec la réaction
+                if (userText) {
+                    const passiveImageUrls = await collectAllMediaUrls(message);
+                    const channelName = (message.channel as any).name || `channel-${message.channelId}`;
+
+                    // Enregistrer avec la réaction du bot
+                    await recordPassiveMessage(
+                        message.author.id,
+                        message.author.displayName,
+                        userText,
+                        message.channelId,
+                        channelName,
+                        passiveImageUrls,
+                        reactionEmoji // ← NOUVEAU : passer la réaction
+                    );
+
+                    console.log(`[Nettie Reaction] Message recorded with reaction ${reactionEmoji} in #${channelName}`);
+                }
+
+                return; // Ne pas répondre avec du texte, juste la réaction
             }
 
-            if (!isMentioned && !isInWatchedChannel) return;
+            // MODE HYBRIDE : Enregistrer TOUS les messages passivement (même sans mention)
+            // L'IA voit tout mais ne répond que quand mentionnée ou dans le canal surveillé
+            if (!isMentioned && !isInWatchedChannel && userText) {
+                // Collecter les médias pour les enregistrer aussi
+                const passiveImageUrls = await collectAllMediaUrls(message);
+
+                // Obtenir le nom du channel
+                const channelName = (message.channel as any).name || `channel-${message.channelId}`;
+
+                // Détecter si c'est une réponse à un autre message
+                const isReply = !!message.reference?.messageId;
+
+                // Enregistrer passivement (sans répondre)
+                await recordPassiveMessage(
+                    message.author.id,
+                    message.author.displayName,
+                    userText,
+                    message.channelId,
+                    channelName,
+                    passiveImageUrls,
+                    undefined, // Pas de réaction
+                    isReply // NOUVEAU : passer le flag reply
+                );
+
+                return; // Ne pas répondre, juste enregistrer
+            }
+
+            // À partir d'ici, le bot VA RÉPONDRE (mention ou canal surveillé)
 
             // Collecter tous les médias (images, GIFs uploadés, GIFs Tenor)
             const imageUrls = await collectAllMediaUrls(message);

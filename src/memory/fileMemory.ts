@@ -1,114 +1,141 @@
-import { promises as fs } from "node:fs";
+import {promises as fs} from "node:fs";
 import * as path from "node:path";
+import {slidingWindowMemory} from "./memoryFilter";
+import {MEMORY_IMPORTANCE_THRESHOLD, MEMORY_IMPORTANT_OLD_TURNS, MEMORY_RECENT_TURNS} from "../utils/constants";
 
 export type WebContext = {
-  query: string;
-  facts: string[];
+    query: string;
+    facts: string[];
 };
 
 export type MemoryTurn = {
-  ts: number;
-  discordUid: string;
-  displayName: string;
-  userText: string;
-  assistantText: string;
+    ts: number;
+    discordUid: string;
+    displayName: string;
+    userText: string;
+    assistantText?: string; // Optionnel pour les messages passifs (Mode Hybride)
 
-  // Image (optionnelle)
-  imageDescriptions?: string[];
+    // Channel où le message a été envoyé
+    channelId: string;
+    channelName: string;
 
-  // Contexte web (optionnel)
-  webContext?: WebContext;
+    // Image (optionnelle)
+    imageDescriptions?: string[];
 
-  // Réactions appliquées par l'assistant (ex: ["😏", "🔥"])
-  assistantReactions?: string[];
-};
+    // Contexte web (optionnel)
+    webContext?: WebContext;
 
-type ChannelMemory = {
-  turns: MemoryTurn[];
+    // Réactions appliquées par l'assistant (ex: ["😏", "🔥"])
+    assistantReactions?: string[];
+
+    // Indique si c'est un message passif (vu mais sans réponse du bot)
+    isPassive?: boolean;
+
+    // Indique si c'est une réponse à un autre message (reply)
+    isReply?: boolean;
 };
 
 type MemoryFile = {
-  version: 1;
-  channels: Record<string, ChannelMemory>;
+    version: 2;
+    globalTurns: MemoryTurn[];
 };
 
 function defaultMemoryFile(): MemoryFile {
-  return { version: 1, channels: {} };
+    return {version: 2, globalTurns: []};
 }
 
 export class FileMemory {
-  private filePath: string;
-  private data: MemoryFile | null = null;
-  private writeChain: Promise<void> = Promise.resolve();
+    private filePath: string;
+    private data: MemoryFile | null = null;
+    private writeChain: Promise<void> = Promise.resolve();
 
-  constructor(filePath: string) {
-    this.filePath = filePath;
-  }
-
-  private async ensureLoaded() {
-    if (this.data) return;
-
-    await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-
-    try {
-      const raw = await fs.readFile(this.filePath, "utf-8");
-      const parsed = JSON.parse(raw) as MemoryFile;
-      this.data = parsed?.version === 1 ? parsed : defaultMemoryFile();
-    } catch {
-      this.data = defaultMemoryFile();
-      await this.flush();
-    }
-  }
-
-  private async flush() {
-    if (!this.data) return;
-
-    const tmp = `${this.filePath}.tmp`;
-    const payload = JSON.stringify(this.data, null, 2);
-    await fs.writeFile(tmp, payload, "utf-8");
-    await fs.rename(tmp, this.filePath);
-  }
-
-  async getRecentTurns(channelKey: string, limit: number): Promise<MemoryTurn[]> {
-    await this.ensureLoaded();
-    const channel = this.data!.channels[channelKey];
-    if (!channel?.turns?.length) return [];
-    return channel.turns.slice(-limit);
-  }
-
-  async appendTurn(channelKey: string, turn: MemoryTurn, maxTurns: number): Promise<void> {
-    await this.ensureLoaded();
-
-    if (!this.data!.channels[channelKey]) {
-      this.data!.channels[channelKey] = { turns: [] };
+    constructor(filePath: string) {
+        this.filePath = filePath;
     }
 
-    this.data!.channels[channelKey].turns.push(turn);
+    async getRecentTurns(limit: number): Promise<MemoryTurn[]> {
+        await this.ensureLoaded();
+        if (!this.data!.globalTurns?.length) return [];
 
-    const turns = this.data!.channels[channelKey].turns;
-    if (turns.length > maxTurns) {
-      this.data!.channels[channelKey].turns = turns.slice(-maxTurns);
+        // Si on a moins de turns que la limite, tout retourner
+        if (this.data!.globalTurns.length <= limit) {
+            return this.data!.globalTurns;
+        }
+
+        // Utiliser le système de Sliding Window
+        // Garde les MEMORY_RECENT_TURNS derniers + MEMORY_IMPORTANT_OLD_TURNS anciens importants
+        return slidingWindowMemory(
+            this.data!.globalTurns,
+            MEMORY_RECENT_TURNS,
+            MEMORY_IMPORTANT_OLD_TURNS,
+            MEMORY_IMPORTANCE_THRESHOLD
+        ) as MemoryTurn[];
     }
 
-    this.writeChain = this.writeChain.then(() => this.flush());
-    await this.writeChain;
-  }
+    async appendTurn(turn: MemoryTurn, maxTurns: number): Promise<void> {
+        await this.ensureLoaded();
 
-  async clearChannel(channelKey: string): Promise<void> {
-    await this.ensureLoaded();
+        this.data!.globalTurns.push(turn);
 
-    if (this.data!.channels[channelKey]) {
-      delete this.data!.channels[channelKey];
-      this.writeChain = this.writeChain.then(() => this.flush());
-      await this.writeChain;
+        // Limiter le nombre total de turns
+        if (this.data!.globalTurns.length > maxTurns) {
+            this.data!.globalTurns = this.data!.globalTurns.slice(-maxTurns);
+        }
+
+        this.writeChain = this.writeChain.then(() => this.flush());
+        await this.writeChain;
     }
-  }
 
-  async clearAll(): Promise<void> {
-    await this.ensureLoaded();
+    async clearChannel(channelKey: string): Promise<void> {
+        await this.ensureLoaded();
 
-    this.data!.channels = {};
-    this.writeChain = this.writeChain.then(() => this.flush());
-    await this.writeChain;
-  }
+        // Filtrer pour retirer tous les turns de ce channel
+        const beforeCount = this.data!.globalTurns.length;
+        this.data!.globalTurns = this.data!.globalTurns.filter(turn => turn.channelId !== channelKey);
+        const afterCount = this.data!.globalTurns.length;
+
+        if (beforeCount !== afterCount) {
+            console.log(`[FileMemory] Removed ${beforeCount - afterCount} turns from channel ${channelKey}`);
+            this.writeChain = this.writeChain.then(() => this.flush());
+            await this.writeChain;
+        }
+    }
+
+    async clearAll(): Promise<void> {
+        await this.ensureLoaded();
+
+        this.data!.globalTurns = [];
+        this.writeChain = this.writeChain.then(() => this.flush());
+        await this.writeChain;
+    }
+
+    private async ensureLoaded() {
+        if (this.data) return;
+
+        await fs.mkdir(path.dirname(this.filePath), {recursive: true});
+
+        try {
+            const raw = await fs.readFile(this.filePath, "utf-8");
+            const parsed = JSON.parse(raw);
+
+            if (parsed?.version === 2) {
+                this.data = parsed as MemoryFile;
+            } else {
+                this.data = defaultMemoryFile();
+                await this.flush();
+            }
+        } catch {
+            this.data = defaultMemoryFile();
+            await this.flush();
+        }
+    }
+
+    private async flush() {
+        if (!this.data) return;
+
+        const tmp = `${this.filePath}.tmp`;
+        const payload = JSON.stringify(this.data, null, 2);
+        await fs.writeFile(tmp, payload, "utf-8");
+        await fs.rename(tmp, this.filePath);
+    }
 }

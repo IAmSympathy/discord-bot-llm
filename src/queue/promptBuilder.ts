@@ -4,13 +4,64 @@ import {WebContext} from "../services/searchService";
 /**
  * Formate un tour de mémoire pour l'historique
  */
-function formatMemoryTurn(turn: MemoryTurn): string {
+function formatMemoryTurn(turn: MemoryTurn, showChannelHeader: boolean = false): string {
     const imageContext = turn.imageDescriptions?.length ? `\n[Images décrites]:\n- ${turn.imageDescriptions.join("\n- ")}` : "";
-    const webContextBlock = turn.webContext ? `\n[Contexte factuel précédemment vérifié : ${turn.webContext.facts.join(" | ")}]` : "";
     const reactionContext = turn.assistantReactions?.length ? `\n[NOTE SYSTÈME - Tu as appliqué ces réactions emoji: ${turn.assistantReactions.join(" ")}]` : "";
     const date = new Date(turn.ts);
 
-    return `UTILISATEUR "${turn.displayName}" (UID: ${turn.discordUid}):
+    const channelHeader = showChannelHeader ? `\n📍 SALON: #${turn.channelName}\n` : "";
+
+    // NOUVEAU : Calculer l'âge du message pour aider l'IA à juger de la pertinence
+    const ageInMs = Date.now() - turn.ts;
+    const ageInMinutes = Math.floor(ageInMs / (1000 * 60));
+    const ageInHours = Math.floor(ageInMs / (1000 * 60 * 60));
+    const ageInDays = Math.floor(ageInMs / (1000 * 60 * 60 * 24));
+
+    let ageNote = "";
+    if (ageInDays > 14) {
+        ageNote = `\n⏰ [ÂGE: ${ageInDays} jours - TRÈS ANCIEN, probablement hors contexte]`;
+    } else if (ageInDays > 7) {
+        ageNote = `\n⏰ [ÂGE: ${ageInDays} jours - ANCIEN, vérifier si toujours pertinent]`;
+    } else if (ageInDays > 3) {
+        ageNote = `\n⏰ [ÂGE: ${ageInDays} jours - QUELQUES JOURS, peut être dépassé]`;
+    } else if (ageInDays > 1) {
+        ageNote = `\n⏰ [ÂGE: ${ageInDays} jours]`;
+    } else if (ageInHours > 12) {
+        ageNote = `\n⏰ [ÂGE: ${ageInHours} heures]`;
+    } else if (ageInHours > 3) {
+        ageNote = `\n⏰ [ÂGE: ${ageInHours} heures]`;
+    } else if (ageInMinutes > 10) {
+        ageNote = `\n⏰ [ÂGE: ${ageInMinutes} minutes]`;
+    }
+    // Moins de 10 minutes = pas de note (très récent)
+
+    // NOUVEAU : Indiquer si c'est un reply (conversation en cours)
+    const replyNote = turn.isReply ? "\n💬 [Ce message est une RÉPONSE à un autre message - conversation en cours]" : "";
+
+    // Si c'est un message passif (sans réponse du bot)
+    if (turn.isPassive || !turn.assistantText) {
+        // Cas spécial : si c'est une réaction emoji seulement
+        const hasReaction = turn.assistantReactions && turn.assistantReactions.length > 0;
+        const reactionNoteText = hasReaction
+            ? `\n[NOTE SYSTÈME: Tu as VU ce message et réagi avec ${turn.assistantReactions!.join(" ")}, mais tu n'as pas répondu en texte car tu n'étais pas mentionné directement. Tu peux utiliser ces informations.]`
+            : `\n[NOTE SYSTÈME: Tu as VU ce message (tu écoutes passivement les conversations), mais tu n'as pas répondu car tu n'étais pas mentionné directement. Tu peux utiliser ces informations.]`;
+
+        return `${channelHeader}👤 ${turn.displayName} (UID: ${turn.discordUid}) dit:
+[Date locale fr-CA: ${date.toLocaleDateString("fr-CA", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        })}]
+[Heure locale fr-CA: ${date.toLocaleTimeString("fr-CA", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+        })}]${ageNote}${replyNote}
+"${turn.userText}"${imageContext}${reactionNoteText}`;
+    }
+
+    // Message normal avec réponse du bot
+    return `${channelHeader}👤 ${turn.displayName} (UID: ${turn.discordUid}) dit:
 [Date locale fr-CA: ${date.toLocaleDateString("fr-CA", {
         year: "numeric",
         month: "long",
@@ -20,26 +71,52 @@ function formatMemoryTurn(turn: MemoryTurn): string {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
-    })}]
-Message:
-${turn.userText}${imageContext}
+    })}]${ageNote}${replyNote}
+"${turn.userText}"${imageContext}
 
-TOI (Netricsa):
-${turn.assistantText}${reactionContext}`;
+🤖 TOI (Netricsa) réponds:
+"${turn.assistantText}"${reactionContext}`;
 }
 
 /**
  * Construit le bloc d'historique de conversation
+ * Groupe les messages par salon et indique les changements de contexte
  */
-export function buildHistoryBlock(recentTurns: MemoryTurn[]): string {
+export function buildHistoryBlock(recentTurns: MemoryTurn[], currentChannelId: string): string {
     if (recentTurns.length === 0) return "";
 
-    const formattedTurns = recentTurns.map(formatMemoryTurn).join("\n\n--- Échange suivant ---\n\n");
-    return `=== HISTORIQUE ===
+    const formattedParts: string[] = [];
+    let lastChannelId: string | null = null;
 
-${formattedTurns}
+    for (let i = 0; i < recentTurns.length; i++) {
+        const turn = recentTurns[i];
+        const channelChanged = lastChannelId !== null && lastChannelId !== turn.channelId;
 
-=== FIN HISTORIQUE ===`;
+        if (channelChanged) {
+            formattedParts.push(`\n⚠️ CHANGEMENT DE SALON - NOUVELLE CONVERSATION ⚠️\n`);
+        }
+
+        formattedParts.push(formatMemoryTurn(turn, i === 0 || channelChanged));
+
+        if (i < recentTurns.length - 1) {
+            formattedParts.push("\n--- Échange suivant ---\n");
+        }
+
+        lastChannelId = turn.channelId;
+    }
+
+    const currentChannelNote = lastChannelId && lastChannelId !== currentChannelId
+        ? `\n\n⚠️ IMPORTANT: Le message actuel provient d'un AUTRE SALON (#${currentChannelId}). C'est potentiellement une NOUVELLE CONVERSATION différente de l'historique ci-dessus. ⚠️`
+        : "";
+
+    return `=== HISTORIQUE GLOBAL (Multi-salons) ===
+[NOTE SYSTÈME IMPORTANTE: Cet historique contient des messages de différents salons Discord que tu as VUS et ENTENDUS passivement. Tu CONNAIS ces informations même si tu n'as pas répondu. Quand on te pose des questions sur les conversations passées, tu DOIS utiliser ces informations pour répondre avec précision. Ne dis PAS "je ne me souviens pas" si l'information est dans cet historique.]
+
+[ATTENTION AUX NOMS: Fais TRÈS ATTENTION au nom de l'utilisateur qui a dit chaque message. Ne confonds PAS les utilisateurs entre eux. Le format est "👤 NomUtilisateur dit: message". Lis bien QUI a dit QUOI.]
+
+${formattedParts.join("\n")}
+
+=== FIN HISTORIQUE ===${currentChannelNote}`;
 }
 
 /**

@@ -1,10 +1,13 @@
 // Role IDs
 export const OWNER_ROLES = ["1122751212299767929", "1129445913123880960"] as const;
-export const MODERATOR_ROLES = ["829521404214640671", "828652861218226196"] as const;
+export const MODERATOR_ROLES = ["829521404214640671"] as const;
 export const ALLOWED_COMMAND_ROLES = [...OWNER_ROLES, ...MODERATOR_ROLES] as const;
 
-// Configuration
-export const MEMORY_MAX_TURNS = 12;
+// Memory Configuration - Sliding Window System
+export const MEMORY_MAX_TURNS = 40; // Total turns to keep in memory
+export const MEMORY_RECENT_TURNS = 20; // Always keep last N turns (recent context)
+export const MEMORY_IMPORTANT_OLD_TURNS = 20; // Keep N "important" old turns (historical context)
+export const MEMORY_IMPORTANCE_THRESHOLD = 2; // Minimum score to keep old turns
 export const MEMORY_FILE_PATH = process.env.MEMORY_FILE || "./data/memory.json";
 
 // Ollama Configuration

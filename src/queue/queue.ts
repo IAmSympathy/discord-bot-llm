@@ -1,5 +1,6 @@
 import {Message as DiscordMessage, TextChannel, ThreadChannel} from "discord.js";
 import {FileMemory} from "../memory/fileMemory";
+import {analyzeMessageType, shouldStoreAssistantMessage, shouldStoreUserMessage} from "../memory/memoryFilter";
 import {DISCORD_TYPING_UPDATE_INTERVAL, MEMORY_FILE_PATH, MEMORY_MAX_TURNS} from "../utils/constants";
 import {processImages} from "../services/imageService";
 import {getWebContext} from "../services/searchService";
@@ -35,6 +36,18 @@ type AsyncJob<T> = () => Promise<T>;
 const channelQueues = new Map<string, Promise<unknown>>();
 const activeStreams = new Map<string, { abortFlag: boolean; channelId: string }>();
 
+// NOUVEAU : Cache des dernières questions par canal pour le contexte conversationnel
+// Permet de garder les "Oui"/"Non" qui répondent à des questions importantes
+interface RecentQuestion {
+    timestamp: number;
+    userId: string;
+    userName: string;
+    question: string;
+}
+
+const recentQuestionsByChannel = new Map<string, RecentQuestion>();
+const QUESTION_CONTEXT_TIMEOUT = 30000; // 30 secondes
+
 function enqueuePerChannel<T>(channelKey: string, job: AsyncJob<T>): Promise<T> {
     const prev = channelQueues.get(channelKey) ?? Promise.resolve();
 
@@ -55,16 +68,158 @@ function enqueuePerChannel<T>(channelKey: string, job: AsyncJob<T>): Promise<T> 
     return next;
 }
 
-// Fonction pour effacer la mémoire d'un channel
-export async function clearMemory(channelKey: string): Promise<void> {
-    await memory.clearChannel(channelKey);
-    console.log(`[Memory] Channel ${channelKey} memory cleared`);
+// Fonction pour enregistrer un message utilisateur passivement (Mode Hybride)
+// L'IA voit le message et le garde en mémoire, mais ne répond pas
+export async function recordPassiveMessage(
+    userId: string,
+    userName: string,
+    messageContent: string,
+    channelId: string,
+    channelName: string,
+    imageUrls?: string[],
+    botReaction?: string, // Pour enregistrer les réactions du bot (ex: "🤗")
+    isReply?: boolean // NOUVEAU : pour indiquer si c'est une réponse à un autre message
+): Promise<void> {
+    const trimmed = messageContent.trim();
+
+    // NOUVEAU : Détecter si c'est une question importante
+    const isImportantQuestion = trimmed.includes('?') &&
+        !(/^(ça va|ca va|cv|quoi de neuf)\s*\??$/i.test(trimmed)); // Exclure les questions sociales basiques
+
+    // Si c'est une question importante, l'enregistrer dans le cache
+    if (isImportantQuestion) {
+        recentQuestionsByChannel.set(channelId, {
+            timestamp: Date.now(),
+            userId: userId,
+            userName: userName,
+            question: messageContent
+        });
+    }
+
+    // NOUVEAU : Vérifier si c'est une réponse courte Oui/Non dans le contexte d'une question récente
+    // Simplifié : cherche si le message contient des variantes de oui/non
+    const isShortResponse = /^(oui|ouais|ouep|yep|yeah|ye|ok|non|nope|nah|nan|ben\s+oui|ben\s+non|bien\s+sur|bien\s+sûr|certainement|évidemment|evidemment|absolument|carrément|carrement|grave|clair)\b/i.test(trimmed) && trimmed.length < 20;
+
+    // NOUVEAU : Détecter les activités courantes (réponses à "Tu fais quoi?", etc.)
+    const isActivity = /^(je|j'|moi\s+je)\s+(mange|bois|joue|regarde|écoute|lis|dors|travaille|étudie|cours|code|dessine|cuisine)/i.test(trimmed);
+
+    // NOUVEAU : Détecter "rien" comme réponse valide
+    const isNothingResponse = /^(rien|nothing|pas grand chose|pas grand-chose|r1|ryn)$/i.test(trimmed);
+
+    // NOUVEAU : Détecter les nombres seuls (réponses à des questions quantitatives)
+    const isNumericAnswer = /^\d+$/.test(trimmed);
+
+    let forceStore = false;
+
+    if (isShortResponse) {
+        const recentQuestion = recentQuestionsByChannel.get(channelId);
+        if (recentQuestion) {
+            const timeSinceQuestion = Date.now() - recentQuestion.timestamp;
+
+            // Si la question a été posée dans les 30 dernières secondes par quelqu'un d'autre
+            if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
+                forceStore = true;
+                console.log(`[Memory Passive]: 💡 Short response "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
+            }
+        }
+    }
+
+    // NOUVEAU : Forcer le stockage des activités même si courtes (réponse à "Tu fais quoi?")
+    if (isActivity) {
+        const recentQuestion = recentQuestionsByChannel.get(channelId);
+        if (recentQuestion) {
+            const timeSinceQuestion = Date.now() - recentQuestion.timestamp;
+
+            // Si une question a été posée récemment (probablement "Tu fais quoi?")
+            if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
+                forceStore = true;
+                console.log(`[Memory Passive]: 💡 Activity "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
+            }
+        }
+    }
+
+    // NOUVEAU : Forcer le stockage des réponses numériques (rank, niveau, âge, etc.)
+    if (isNumericAnswer) {
+        const recentQuestion = recentQuestionsByChannel.get(channelId);
+        if (recentQuestion) {
+            const timeSinceQuestion = Date.now() - recentQuestion.timestamp;
+
+            // Si une question a été posée récemment (probablement quantitative)
+            if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
+                forceStore = true;
+                console.log(`[Memory Passive]: 💡 Numeric answer "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
+            }
+        }
+    }
+
+    // NOUVEAU : Forcer le stockage de "rien" comme réponse valide
+    if (isNothingResponse) {
+        const recentQuestion = recentQuestionsByChannel.get(channelId);
+        if (recentQuestion) {
+            const timeSinceQuestion = Date.now() - recentQuestion.timestamp;
+
+            // Si une question a été posée récemment (probablement "Tu fais quoi?")
+            if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
+                forceStore = true;
+                console.log(`[Memory Passive]: 💡 Nothing response "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
+            }
+        }
+    }
+
+    // Filtrer le message avant de l'enregistrer (sauf si forceStore)
+    const shouldStore = forceStore || shouldStoreUserMessage(messageContent);
+
+    if (!shouldStore) {
+        console.log(`[Memory Passive]: ⏭️ Message skipped from ${userName} in #${channelName}`);
+        return;
+    }
+
+    const messageType = analyzeMessageType(messageContent);
+
+    // Traiter les images si présentes
+    let imageDescriptions: string[] = [];
+    if (imageUrls && imageUrls.length > 0) {
+        try {
+            imageDescriptions = await processImages(imageUrls);
+        } catch (error) {
+            console.error("[Memory Passive] Error processing images:", error);
+        }
+    }
+
+    // Enregistrer le message comme un tour passif (sans réponse du bot)
+    await memory.appendTurn(
+        {
+            ts: Date.now(),
+            discordUid: userId,
+            displayName: userName,
+            channelId: channelId,
+            channelName: channelName,
+            userText: messageContent,
+            assistantText: botReaction ? `[Réaction emoji: ${botReaction}]` : undefined, // Si réaction, on la note
+            isPassive: true, // Marqué comme passif
+            isReply: isReply, // NOUVEAU : indique si c'est un reply
+            ...(imageDescriptions.length > 0 ? {imageDescriptions: imageDescriptions.slice(0, 5)} : {}),
+            ...(botReaction ? {assistantReactions: [botReaction]} : {}), // Enregistrer la réaction
+        },
+        MEMORY_MAX_TURNS
+    );
+
+    const reactionNote = botReaction ? ` [reaction: ${botReaction}]` : "";
+    const replyNote = isReply ? " [reply]" : "";
+    const contextNote = forceStore ? " [contextual-response]" : "";
+    console.log(`[Memory Passive]: 👁️ Recorded from ${userName} in #${channelName} [${messageType.type}]${imageDescriptions.length > 0 ? ` [${imageDescriptions.length} images]` : ""}${reactionNote}${replyNote}${contextNote}`);
 }
 
-// Fonction pour effacer TOUTE la mémoire (tous les channels)
+// Fonction pour effacer la mémoire d'un channel spécifique// Fonction pour effacer la mémoire d'un channel spécifique
+export async function clearMemory(channelKey: string): Promise<void> {
+    await memory.clearChannel(channelKey);
+    console.log(`[Memory] Cleared all turns from channel ${channelKey}`);
+}
+
+// Fonction pour effacer TOUTE la mémoire globale
 export async function clearAllMemory(): Promise<void> {
     await memory.clearAll();
-    console.log(`[Memory] All channels memory cleared`);
+    console.log(`[Memory] Global memory cleared (all channels)`);
 }
 
 // Fonction pour arrêter un stream en cours
@@ -116,8 +271,10 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         // Charger les prompts système
         const {finalPrompt: finalSystemPrompt} = ollamaService.loadSystemPrompts(channel.id);
 
-        // Récupérer l'historique de mémoire
-        const recentTurns = await memory.getRecentTurns(channelKey, MEMORY_MAX_TURNS);
+        // Récupérer l'historique de mémoire GLOBAL avec Sliding Window
+        const recentTurns = await memory.getRecentTurns(MEMORY_MAX_TURNS);
+
+        console.log(`[Memory]: ${recentTurns.length} turns loaded (Sliding Window active)`);
 
         // Obtenir le contexte web si nécessaire
         const webContext = await getWebContext(prompt);
@@ -125,9 +282,12 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             console.log("[SearchService] Web context added to prompt");
         }
 
+        // Obtenir le nom du channel actuel
+        const channelName = (channel as any).name || `channel-${channel.id}`;
+
         // Construire les blocs de prompt
         const threadStarterBlock = threadStarterContext ? buildThreadStarterBlock(threadStarterContext, threadStarterImageDescriptions) : "";
-        const historyBlock = buildHistoryBlock(recentTurns);
+        const historyBlock = buildHistoryBlock(recentTurns, channel.id);
         const webBlock = buildWebContextBlock(webContext);
         const currentUserBlock = buildCurrentUserBlock(userId, userName, prompt, imageDescriptions);
 
@@ -144,7 +304,6 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             },
         ];
 
-        console.log(`[Memory]: ${recentTurns.length} turns loaded`);
         if (imageDescriptions.length > 0) {
             console.log(`[Images]: ${imageDescriptions.length} image description(s) included in context`);
         }
@@ -210,23 +369,50 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                                     cleanedText.toLowerCase().includes("je ne répondrai pas");
 
                                 if (sendMessage && cleanedText.length > 0 && !isModerationRefusal) {
-                                    await memory.appendTurn(
-                                        channelKey,
-                                        {
-                                            ts: Date.now(),
-                                            discordUid: userId,
-                                            displayName: userName,
-                                            userText: prompt,
-                                            assistantText: cleanedText,
-                                            ...(imageDescriptions.length > 0 ? {imageDescriptions: imageDescriptions.slice(0, 5)} : {}),
-                                            ...(webContext ? {webContext} : {}),
-                                            ...(emojiHandler.getAppliedEmojis().length > 0 ? {assistantReactions: emojiHandler.getAppliedEmojis()} : {}),
-                                        },
-                                        MEMORY_MAX_TURNS
-                                    );
-                                    console.log(`[Memory]: Conversation saved${imageDescriptions.length > 0 ? " with images" : ""}${emojiHandler.getAppliedEmojis().length > 0 ? " and reactions" : ""}`);
+                                    // Filtrage intelligent de la mémoire
+                                    const shouldStoreUser = shouldStoreUserMessage(prompt);
+                                    const shouldStoreAssistant = shouldStoreAssistantMessage(cleanedText);
+
+                                    // Forcer la sauvegarde si le message contient des images ou du contexte web
+                                    const hasImportantContext = imageDescriptions.length > 0 || webContext !== null;
+
+                                    if (shouldStoreUser && shouldStoreAssistant || hasImportantContext) {
+                                        const messageType = analyzeMessageType(prompt);
+
+                                        // Détecter si c'est un reply
+                                        const isReply = !!replyToMessage?.reference?.messageId;
+
+                                        await memory.appendTurn(
+                                            {
+                                                ts: Date.now(),
+                                                discordUid: userId,
+                                                displayName: userName,
+                                                channelId: channel.id,
+                                                channelName: channelName,
+                                                userText: prompt,
+                                                assistantText: cleanedText,
+                                                isReply: isReply, // NOUVEAU : enregistrer si c'est un reply
+                                                ...(imageDescriptions.length > 0 ? {imageDescriptions: imageDescriptions.slice(0, 5)} : {}),
+                                                ...(webContext ? {webContext} : {}),
+                                                ...(emojiHandler.getAppliedEmojis().length > 0 ? {assistantReactions: emojiHandler.getAppliedEmojis()} : {}),
+                                            },
+                                            MEMORY_MAX_TURNS
+                                        );
+
+                                        const contextInfo = [];
+                                        if (imageDescriptions.length > 0) contextInfo.push("images");
+                                        if (emojiHandler.getAppliedEmojis().length > 0) contextInfo.push("reactions");
+                                        if (messageType.confidence > 0.7) contextInfo.push(`type:${messageType.type}`);
+                                        if (isReply) contextInfo.push("reply");
+
+                                        console.log(`[Memory]: ✅ Saved in #${channelName}${contextInfo.length > 0 ? ` [${contextInfo.join(", ")}]` : ""}`);
+                                    } else {
+                                        // Message filtré (bruit conversationnel)
+                                        const reason = !shouldStoreUser ? "user message too short/noisy" : "assistant response too short";
+                                        console.log(`[Memory]: ⏭️  Skipped (${reason}) in #${channelName}`);
+                                    }
                                 } else if (isModerationRefusal) {
-                                    console.log(`[Memory]: Moderation refusal detected, NOT saving to memory`);
+                                    console.log(`[Memory]: 🚫 Moderation refusal detected, NOT saving to memory`);
                                 }
 
                                 activeStreams.delete(channelKey);
