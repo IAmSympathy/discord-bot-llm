@@ -1,10 +1,11 @@
 import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
 import {UserProfileService} from "../../services/userProfileService";
+import {logProfile} from "../../utils/discordLogger";
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName("note")
-        .setDescription("Ajoute une note sur un utilisateur dans le profil")
+        .setName("add-note")
+        .setDescription("Ajoute une note sur le profil d'un utilisateur")
         .addUserOption((option) => option.setName("user").setDescription("L'utilisateur concerné").setRequired(true))
         .addStringOption((option) =>
             option
@@ -13,12 +14,11 @@ module.exports = {
                 .setRequired(true)
                 .addChoices(
                     {name: "Fait", value: "fact"},
-                    {name: "Trait de personnalité", value: "trait"},
-                    {name: "Centre d'intérêt", value: "interest"},
-                    {name: "Style de communication", value: "style"}
+                    {name: "Alias (surnom)", value: "alias"},
+                    {name: "Centre d'intérêt", value: "interest"}
                 )
         )
-        .addStringOption((option) => option.setName("content").setDescription("Contenu de la note").setRequired(true)),
+        .addStringOption((option) => option.setName("content").setDescription("Contenu de la add-note").setRequired(true)),
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply({ephemeral: true});
 
@@ -32,16 +32,16 @@ module.exports = {
 
             switch (noteType) {
                 case "fact":
-                    UserProfileService.addFact(userId, username, content, `Ajouté manuellement par ${interaction.user.username}`, 1.0);
+                    UserProfileService.addFact(userId, username, content);
                     await interaction.editReply({
                         content: `Fait ajouté au profil de **${username}**: "${content}"`,
                     });
                     break;
 
-                case "trait":
-                    UserProfileService.addPersonalityTrait(userId, username, content);
+                case "alias":
+                    UserProfileService.addAlias(userId, username, content);
                     await interaction.editReply({
-                        content: `Trait de personnalité ajouté au profil de **${username}**: "${content}"`,
+                        content: `Alias ajouté au profil de **${username}**: "${content}"`,
                     });
                     break;
 
@@ -51,16 +51,16 @@ module.exports = {
                         content: `Centre d'intérêt ajouté au profil de **${username}**: "${content}"`,
                     });
                     break;
-
-                case "style":
-                    UserProfileService.setCommunicationStyle(userId, username, content);
-                    await interaction.editReply({
-                        content: `Style de communication défini pour **${username}**: "${content}"`,
-                    });
-                    break;
             }
 
             console.log(`[Note Command] ${interaction.user.username} added ${noteType} to ${username}: "${content}"`);
+
+            await logProfile(`Note ajoutée`, undefined, [
+                {name: "Par", value: interaction.user.username, inline: true},
+                {name: "Utilisateur", value: username, inline: true},
+                {name: "Type", value: noteType === "fact" ? "Fait" : noteType === "alias" ? "Alias" : "Intérêt", inline: true},
+                {name: "Contenu", value: content.length > 100 ? content.substring(0, 100) + "..." : content}
+            ]);
         } catch (error) {
             console.error("[Note Command] Error:", error);
             await interaction.editReply({

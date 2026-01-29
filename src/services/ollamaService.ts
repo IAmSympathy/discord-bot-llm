@@ -74,7 +74,7 @@ export class OllamaService {
             `\n\n=== CONTEXTE ACTUEL ===
         ID du salon actuel: ${channelId}
         === CONTEXTE ACTUEL ===`;
-        const finalPrompt = `${serverPrompt}\n\n${systemPrompt}`;
+        const finalPrompt = `${systemPrompt}\n\n${serverPrompt}`;
 
         return {systemPrompt, serverPrompt, finalPrompt};
     }

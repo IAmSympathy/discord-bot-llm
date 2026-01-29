@@ -120,6 +120,43 @@ export async function getWebContext(prompt: string): Promise<WebContext | null> 
         return null;
     }
 
+    // IMPORTANT: Ne pas faire de recherche web si on parle de personnes du serveur
+    // Évite de polluer le contexte avec des célébrités qui ont le même nom
+    try {
+        const {UserProfileService} = require("./userProfileService");
+        const allProfiles = UserProfileService.getAllProfiles();
+
+        if (allProfiles.length > 0) {
+            const lowerPrompt = prompt.toLowerCase();
+
+            // Vérifier si on mentionne des personnes du serveur
+            const mentionsPeople = allProfiles.some((profile: any) => {
+                const lowerUsername = profile.username.toLowerCase();
+                const usernameBase = lowerUsername.split(/[0-9_-]/)[0]; // "eddie" de "eddie64"
+
+                if (lowerPrompt.includes(lowerUsername) || lowerPrompt.includes(usernameBase)) {
+                    return true;
+                }
+
+                if (profile.aliases && Array.isArray(profile.aliases)) {
+                    return profile.aliases.some((alias: string) =>
+                        lowerPrompt.includes(alias.toLowerCase())
+                    );
+                }
+
+                return false;
+            });
+
+            if (mentionsPeople) {
+                console.log("[SearchService] Skipping web search - mentions people from server");
+                return null;
+            }
+        }
+    } catch (error) {
+        console.warn("[SearchService] Error checking profiles:", error);
+        // Continuer avec la recherche web en cas d'erreur
+    }
+
     const webResults = await searchBrave(prompt);
     if (!webResults) return null;
 

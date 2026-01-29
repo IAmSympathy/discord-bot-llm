@@ -37,6 +37,17 @@ export function convertTextEmojisToUnicode(text: string): string {
 }
 
 /**
+ * Normalise les accents pour faciliter la comparaison de texte
+ * Ex: "Jérémy" → "jeremy", "café" → "cafe"
+ */
+export function normalizeAccents(text: string): string {
+    return text
+        .toLowerCase()
+        .normalize("NFD") // Décompose les caractères accentués
+        .replace(/[\u0300-\u036f]/g, ""); // Retire les accents
+}
+
+/**
  * Décode les entités HTML
  */
 export function decodeHtmlEntities(text: string): string {

@@ -68,11 +68,16 @@ export class DiscordMessageManager {
         }
 
         const currentChunkIndex = this.responseChunks.length - 1;
-        this.responseChunks[currentChunkIndex] = text;
 
-        // Si le chunk dépasse la limite, créer un nouveau chunk
+        // Si le texte actuel dépasse la limite, diviser proprement
         if (text.length > DISCORD_MESSAGE_LIMIT) {
-            this.responseChunks.push("");
+            // Garder la première partie dans le chunk actuel
+            this.responseChunks[currentChunkIndex] = text.substring(0, DISCORD_MESSAGE_LIMIT);
+            // Créer un nouveau chunk avec le reste
+            this.responseChunks.push(text.substring(DISCORD_MESSAGE_LIMIT));
+        } else {
+            // Sinon, simplement mettre à jour le chunk actuel
+            this.responseChunks[currentChunkIndex] = text;
         }
     }
 

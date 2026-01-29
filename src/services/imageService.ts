@@ -1,6 +1,7 @@
 import {OLLAMA_API_URL, OLLAMA_VISION_MODEL} from "../utils/constants";
 import fs from "fs";
 import sharp from "sharp";
+import {logError} from "../utils/discordLogger";
 
 /**
  * Convertit un buffer d'image (GIF, WebP, etc.) en PNG
@@ -105,6 +106,12 @@ export async function generateImageDescription(imageBase64: string): Promise<str
 
         if (!response.ok) {
             console.error(`[ImageService] Error: ${response.status} ${response.statusText}`);
+
+            await logError("Erreur de génération de description d'image", undefined, [
+                {name: "Status", value: `${response.status} ${response.statusText}`, inline: true},
+                {name: "Modèle", value: OLLAMA_VISION_MODEL, inline: true}
+            ]);
+
             return null;
         }
 

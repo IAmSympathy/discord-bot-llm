@@ -9,7 +9,7 @@ import {DiscordMessageManager, ImageAnalysisAnimation} from "./discordMessageMan
 import {EmojiReactionHandler} from "./emojiReactionHandler";
 import {buildCurrentUserBlock, buildHistoryBlock, buildThreadStarterBlock, buildWebContextBlock} from "./promptBuilder";
 import {UserProfileService} from "../services/userProfileService";
-import {ToolCallHandler} from "../services/toolCallHandler";
+import {logBotImageAnalysis, logBotResponse, logBotWebSearch, logError} from "../utils/discordLogger";
 
 const wait = require("node:timers/promises").setTimeout;
 
@@ -80,8 +80,7 @@ export async function recordPassiveMessage(
     channelName: string,
     imageUrls?: string[],
     botReaction?: string, // Pour enregistrer les réactions du bot (ex: "🤗")
-    isReply?: boolean, // NOUVEAU : pour indiquer si c'est une réponse à un autre message
-    mentionedUsers?: Array<{ id: string; username: string; displayName: string }> // NOUVEAU : utilisateurs mentionnés
+    isReply?: boolean // Pour indiquer si c'est une réponse à un autre message
 ): Promise<void> {
     const trimmed = messageContent.trim();
 
@@ -205,7 +204,7 @@ export async function recordPassiveMessage(
             channelId: channelId,
             channelName: channelName,
             userText: messageContent,
-            assistantText: botReaction ? `[Réaction emoji: ${botReaction}]` : undefined, // Si réaction, on la note
+            assistantText: botReaction ? `[Réaction emoji: ${botReaction}]` : undefined, // Si réaction, on la add-note
             isPassive: true, // Marqué comme passif
             isReply: isReply, // NOUVEAU : indique si c'est un reply
             ...(imageDescriptions.length > 0 ? {imageDescriptions: imageDescriptions.slice(0, 5)} : {}),
@@ -218,85 +217,6 @@ export async function recordPassiveMessage(
     const replyNote = isReply ? " [reply]" : "";
     const contextNote = forceStore ? " [contextual-response]" : "";
     console.log(`[Memory Passive]: 👁️ Recorded from ${userName} in #${channelName} [${messageType.type}]${imageDescriptions.length > 0 ? ` [${imageDescriptions.length} images]` : ""}${reactionNote}${replyNote}${contextNote}`);
-
-    // EXTRACTION PASSIVE : DÉSACTIVÉE DÉFINITIVEMENT
-    // L'extraction automatique a été abandonnée - système 100% manuel maintenant
-    /*
-    (async () => {
-        try {
-            // FILTRES TRÈS STRICTS : Ne faire l'extraction QUE si le message contient des infos IMPORTANTES
-
-            // 1. Filtres de base
-            const isQuestion = FILTER_PATTERNS.QUESTION.test(messageContent);
-            const isFuturePlan = FILTER_PATTERNS.FUTURE_PLAN.test(messageContent);
-            const isRecentEvent = FILTER_PATTERNS.RECENT_EVENT.test(messageContent);
-            const isTemporaryOpinion = FILTER_PATTERNS.TEMPORARY_OPINION.test(messageContent) && messageContent.length < 100;
-
-            // 2. Filtres pour conversations sociales et trolling
-            const isSocialPhrase = /^(pas grand chose|rien de spécial|je voulais juste|choisis|choisi un|parle moi|dis moi|raconte|enfait|en fait|de quoi)/i.test(trimmed);
-            const isInsult = /\b(con|conne|connard|connasse|salope|pute|merde|chier|foutre)\b/i.test(trimmed);
-            const isTemporaryState = /^(ça va|sa va|oui|non|ok|bien|super|cool|génial|nul|bof)$/i.test(trimmed);
-            const isApology = /\b(excuse|désolé|desole|pardon|sorry)\b/i.test(trimmed);
-            const isRequest = /\b(donne|donnes|donne-moi|montre|montres|explique|expliques|dis|raconte|racontes|recette|recettes)\b/i.test(trimmed);
-            const isMoodOrFeeling = /\b(d'humeur|humeur|envie de|envie d'|sentiment|ressens)\b/i.test(trimmed);
-            const isInappropriate = /\b(sexe|sex|cul|baiser|porn|nudes?)\b/i.test(trimmed);
-
-            // 3. Filtres de longueur et mots-clés PERMANENTS
-            const isVeryShort = messageContent.length < 25;
-            const hasPermanentKeywords = /\b(je suis|je travaille|j'habite|je joue depuis|j'adore vraiment|je déteste vraiment|je préfère|je code depuis|je parle couramment)\b/i.test(messageContent);
-
-            // 4. NOUVEAU : Vérifier si c'est une info PERMANENTE
-            const isPermanentInfo = hasPermanentKeywords || (
-                /\b(suis|travaille|habite)\b/i.test(messageContent) &&
-                messageContent.length > 30 &&
-                !isRequest
-            );
-
-            const worthExtracting = messageType.type !== "greeting" &&
-                messageType.type !== "reaction" &&
-                !isModerationRefusal(messageContent) &&
-                !isQuestion &&
-                !isFuturePlan &&
-                !isRecentEvent &&
-                !isTemporaryOpinion &&
-                !isSocialPhrase &&
-                !isInsult &&
-                !isTemporaryState &&
-                !isApology &&
-                !isRequest &&
-                !isMoodOrFeeling && // NOUVEAU : Skip états d'humeur
-                !isInappropriate && // NOUVEAU : Skip contenu inapproprié
-                isPermanentInfo &&
-                messageContent.length > 20;
-
-            if (!worthExtracting) {
-                return;
-            }
-
-            console.log(`[Extraction Passive] Starting background extraction for ${userName}...`);
-
-            await ExtractionService.extractAndSave({
-                userId,
-                userName,
-                userMessage: messageContent,
-                channelId,
-                mentionedUsers,
-                isPassive: true,
-            });
-        } catch (error) {
-            console.error(`[Extraction Passive] Failed for ${userName}:`, error);
-        }
-    })();
-    */
-}
-
-// Fonction helper pour détecter les refus de modération
-function isModerationRefusal(text: string): boolean {
-    const lower = text.toLowerCase();
-    return lower.includes("je suis désolée") ||
-        lower.includes("je ne peux pas répondre") ||
-        lower.includes("je ne répondrai pas") ||
-        lower.includes("sorry, i can't");
 }
 
 // Fonction pour effacer TOUTE la mémoire globale
@@ -344,11 +264,24 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         // Traiter les images
         const imageDescriptions = imageUrls && imageUrls.length > 0 ? await processImages(imageUrls) : [];
 
+        // Logger l'analyse d'images si des images ont été traitées
+        if (imageUrls && imageUrls.length > 0) {
+            await logBotImageAnalysis(userName, imageUrls.length, imageDescriptions.length);
+        }
+
         // Traiter les images du thread starter si présent
         let threadStarterImageDescriptions: string[] = [];
         if (threadStarterContext && threadStarterContext.imageUrls.length > 0) {
             console.log(`[processLLMRequest] Processing ${threadStarterContext.imageUrls.length} image(s) from thread starter`);
             threadStarterImageDescriptions = await processImages(threadStarterContext.imageUrls);
+
+            if (threadStarterContext.imageUrls.length > 0) {
+                await logBotImageAnalysis(
+                    `${userName} (thread starter)`,
+                    threadStarterContext.imageUrls.length,
+                    threadStarterImageDescriptions.length
+                );
+            }
         }
 
         // Charger les prompts système
@@ -363,6 +296,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         const webContext = await getWebContext(prompt);
         if (webContext) {
             console.log("[SearchService] Web context added to prompt");
+
+            // Logger la recherche web
+            await logBotWebSearch(userName, prompt, webContext.facts?.length || 0);
         }
 
         // Récupérer le profil de l'utilisateur actuel
@@ -380,7 +316,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         const threadStarterBlock = threadStarterContext ? buildThreadStarterBlock(threadStarterContext, threadStarterImageDescriptions) : "";
         const historyBlock = buildHistoryBlock(recentTurns, channel.id);
         const webBlock = buildWebContextBlock(webContext);
-        const currentUserBlock = buildCurrentUserBlock(userId, userName, prompt, imageDescriptions);
+        const currentUserBlock = buildCurrentUserBlock(userId, userName, prompt, imageDescriptions, recentTurns);
 
         // Assembler les messages pour l'API
         // Le thread starter va EN PREMIER, avant l'historique
@@ -452,41 +388,6 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                                     console.log(`[Tokens] Prompt: ${promptTokens} | Completion: ${completionTokens} | Total: ${totalTokens}`);
                                 }
 
-                                // TWO-STEP APPROACH : DÉSACTIVÉ DÉFINITIVEMENT
-                                // L'extraction automatique a été abandonnée après 11 hotfixes
-                                // Le système est maintenant 100% manuel via la commande /note
-                                // Raison : Le modèle LLM llama3.1:8b ne suit pas assez bien les instructions
-                                /*
-                                {
-                                    (async () => {
-                                        try {
-                                            console.log(`[Extraction] Starting background extraction with tools...`);
-
-                                            await ExtractionService.extractAndSave({
-                                                userId,
-                                                userName,
-                                                userMessage: prompt,
-                                                assistantResponse: result,
-                                                channelId: channel.id,
-                                                isPassive: false,
-                                            });
-                                        } catch (error) {
-                                            console.error(`[Extraction] Background extraction failed:`, error);
-                                        }
-                                    })();
-                                }
-                                */
-
-                                // Traiter les tool calls si présents (garde pour compatibilité, mais ne devrait plus arriver)
-                                if (toolCalls.length > 0) {
-                                    console.log(`[ToolCall] Processing ${toolCalls.length} tool call(s)...`);
-                                    await ToolCallHandler.processToolCalls(toolCalls, {
-                                        currentUserId: userId,
-                                        currentUsername: userName,
-                                        channelId: channel.id,
-                                    });
-                                }
-
                                 await wait(2000);
                                 if (sendMessage && messageManager.hasMessages()) {
                                     await messageManager.finalizeLastMessage();
@@ -499,7 +400,26 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                                     cleanedText.toLowerCase().includes("je ne peux pas répondre") ||
                                     cleanedText.toLowerCase().includes("je ne répondrai pas");
 
-                                if (sendMessage && cleanedText.length > 0 && !isModerationRefusal) {
+                                // Vérifier qu'il y a du texte en plus de l'emoji
+                                const hasTextContent = cleanedText.trim().length > 0;
+
+                                if (!hasTextContent) {
+                                    console.log(`[processLLMRequest] ⚠️ No text content after emoji extraction, skipping message send`);
+                                }
+
+                                if (sendMessage && hasTextContent && !isModerationRefusal) {
+                                    // Logger la réponse de Netricsa
+                                    await logBotResponse(
+                                        userName,
+                                        userId,
+                                        channelName,
+                                        prompt,
+                                        cleanedText,
+                                        totalTokens,
+                                        imageDescriptions.length > 0,
+                                        webContext !== null
+                                    );
+
                                     // Filtrage intelligent de la mémoire
                                     const shouldStoreUser = shouldStoreUserMessage(prompt);
                                     const shouldStoreAssistant = shouldStoreAssistantMessage(cleanedText);
@@ -597,6 +517,13 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             });
         } catch (error) {
             console.error("[processLLMRequest] Error:", error);
+
+            await logError("Erreur de traitement LLM", undefined, [
+                {name: "Utilisateur", value: userName, inline: true},
+                {name: "Canal", value: channel.name || "Thread", inline: true},
+                {name: "Erreur", value: error instanceof Error ? error.message : String(error)}
+            ]);
+
             if (replyToMessage) {
                 await replyToMessage.reply("An error occurred while processing your message.");
             } else {

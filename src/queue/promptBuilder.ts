@@ -1,5 +1,6 @@
 import {MemoryTurn} from "../memory/fileMemory";
 import {WebContext} from "../services/searchService";
+import {normalizeAccents} from "../utils/textTransformers";
 
 /**
  * Formate un tour de mémoire pour l'historique
@@ -33,7 +34,7 @@ function formatMemoryTurn(turn: MemoryTurn, showChannelHeader: boolean = false):
     } else if (ageInMinutes > 10) {
         ageNote = `\n⏰ [ÂGE: ${ageInMinutes} minutes]`;
     }
-    // Moins de 10 minutes = pas de note (très récent)
+    // Moins de 10 minutes = pas de add-note (très récent)
 
     // NOUVEAU : Indiquer si c'est un reply (conversation en cours)
     const replyNote = turn.isReply ? "\n💬 [Ce message est une RÉPONSE à un autre message - conversation en cours]" : "";
@@ -139,10 +140,14 @@ ${starterContext.content}${imageContext}
 /**
  * Construit le bloc de message actuel de l'utilisateur
  */
-export function buildCurrentUserBlock(userId: string, userName: string, prompt: string, imageDescriptions: string[]): string {
+export function buildCurrentUserBlock(userId: string, userName: string, prompt: string, imageDescriptions: string[], recentTurns: MemoryTurn[] = []): string {
     const currentTs = Date.now();
     const currentDate = new Date(currentTs);
     const imageContext = imageDescriptions.length > 0 ? `\n[Médias fournis par l'utilisateur (GIF ou images), description générée automatiquement]:\n- ${imageDescriptions.join("\n- ")}` : "";
+
+    // NOUVEAU : Chercher des profils d'utilisateurs mentionnés dans le message ET l'historique
+    // Exclure l'utilisateur actuel
+    const mentionedProfilesContext = buildMentionedProfilesContext(prompt, recentTurns, userId);
 
     return `
 === MESSAGE ACTUEL ===
@@ -161,10 +166,85 @@ UTILISATEUR "${userName}" (UID Discord: ${userId}):
 Message:
 ${prompt}
 === FIN MESSAGE ACTUEL ===
+${mentionedProfilesContext}
 [RAPPEL MENTIONS: Si le message contient "@NomUtilisateur" ou "<@ID>", cela désigne UNE AUTRE PERSONNE. Toute information dans ce message concernant cette personne mentionnée s'applique à ELLE, pas à ${userName}. Cherche l'identité de la personne mentionnée dans l'HISTORIQUE ci-dessus pour trouver son UID.]
 [RAPPEL PRONOMS: Les pronoms "il", "elle", "iel" peuvent référer à quelqu'un mentionné dans l'HISTORIQUE. Vérifie les UIDs pour identifier correctement les personnes.]
 [RAPPEL TENOR: Les URLs Tenor contiennent le nom du GIF. Utilise-le comme contexte mais ne répète JAMAIS l'URL dans ta réponse.]
 ${imageContext}`;
+}
+
+/**
+ * Cherche et retourne les profils des utilisateurs mentionnés dans le message ET l'historique
+ * Exclut l'utilisateur actuel pour éviter les confusions
+ */
+function buildMentionedProfilesContext(prompt: string, recentTurns: MemoryTurn[] = [], currentUserId?: string): string {
+    const {UserProfileService} = require("../services/userProfileService");
+    const profilesMap = new Map<string, any>(); // Pour éviter les doublons
+
+    // Récupérer tous les profils existants
+    const allProfiles = UserProfileService.getAllProfiles();
+
+    if (allProfiles.length === 0) return "";
+
+    // Chercher dans le message actuel
+    const lowerPrompt = prompt.toLowerCase();
+    const normalizedPrompt = normalizeAccents(prompt);
+
+    // Chercher dans les displayNames de l'historique (pas dans tout le contenu)
+    // pour éviter de charger des profils juste parce qu'un mot apparaît quelque part
+    const displayNamesInHistory = new Set<string>();
+    recentTurns.forEach(turn => {
+        displayNamesInHistory.add(turn.displayName.toLowerCase());
+    });
+
+    console.log(`[ProfileDetection] Searching in: "${prompt.substring(0, 60)}..."`);
+
+    for (const profile of allProfiles) {
+        // IMPORTANT : Exclure l'utilisateur actuel
+        if (currentUserId && profile.userId === currentUserId) {
+            continue;
+        }
+
+        const lowerUsername = profile.username.toLowerCase();
+        const normalizedUsername = normalizeAccents(profile.username);
+        const usernameBase = lowerUsername.split(/[0-9_-]/)[0]; // "eddie" de "eddie64"
+
+        // Vérifier si le username ou un alias est mentionné dans le message actuel
+        // Utiliser à la fois la comparaison normale ET la comparaison sans accents
+        const isInPrompt = lowerPrompt.includes(lowerUsername) ||
+            normalizedPrompt.includes(normalizedUsername) || // ← NOUVEAU : détecte "jeremy" pour "Jérémy"
+            (usernameBase.length > 2 && lowerPrompt.includes(usernameBase)) || // Éviter les faux positifs avec les chaînes vides ou trop courtes
+            (profile.aliases && profile.aliases.some((alias: string) => {
+                const normalizedAlias = normalizeAccents(alias);
+                return lowerPrompt.includes(alias.toLowerCase()) || normalizedPrompt.includes(normalizedAlias);
+            }));
+
+        // Vérifier si le displayName correspond dans l'historique
+        const isInHistory = displayNamesInHistory.has(lowerUsername) ||
+            (profile.aliases && profile.aliases.some((alias: string) =>
+                displayNamesInHistory.has(alias.toLowerCase())
+            ));
+
+        if (isInPrompt || isInHistory) {
+            // Éviter les doublons
+            if (!profilesMap.has(profile.userId)) {
+                const summary = UserProfileService.getProfileSummary(profile.userId);
+                if (summary) {
+                    console.log(`[ProfileDetection] ✓ Found profile: ${profile.username}`);
+                    profilesMap.set(profile.userId, `[PROFIL DE ${profile.username} (UID: ${profile.userId})]\n${summary}`);
+                }
+            }
+        }
+    }
+
+    if (profilesMap.size === 0) {
+        console.log(`[ProfileDetection] No profiles found`);
+        return "";
+    }
+
+    console.log(`[ProfileDetection] Total: ${profilesMap.size} profile(s) added to context`);
+    const profiles = Array.from(profilesMap.values());
+    return `\n[INFORMATIONS SUR LES PERSONNES MENTIONNÉES DANS LA CONVERSATION]\n${profiles.join("\n\n")}\n`;
 }
 
 /**

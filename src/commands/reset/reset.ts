@@ -1,10 +1,10 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, GuildMember, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {clearAllMemory} from "../../queue/queue";
 import {hasOwnerPermission} from "../../utils/permissions";
-import {UserProfileService} from "../../services/userProfileService";
+import {logCommand} from "../../utils/discordLogger";
 
 module.exports = {
-    data: new SlashCommandBuilder().setName("reset").setDescription("Efface TOUT : mémoire globale + profils utilisateurs"),
+    data: new SlashCommandBuilder().setName("reset").setDescription("Efface la mémoire de conversation de Netricsa"),
     async execute(interaction: ChatInputCommandInteraction) {
         try {
             const member = interaction.member instanceof GuildMember ? interaction.member : null;
@@ -23,7 +23,7 @@ module.exports = {
 
             // Envoyer le message de confirmation
             const response = await interaction.reply({
-                content: "**ATTENTION** : Ceci va effacer :\n• Toute ma mémoire globale (tous les salons)\n• Tous les profils utilisateurs\n\nCette action est **irréversible**.\n\nÊtes-vous sûr de vouloir continuer ?",
+                content: "**Effacement de la mémoire de conversation**\n\nCeci va effacer toute ma mémoire de conversation (tous les salons).\n\nÊtes-vous sûr ?",
                 components: [row],
                 flags: MessageFlags.Ephemeral,
             });
@@ -39,18 +39,22 @@ module.exports = {
                 if (confirmation.customId === "confirm_reset") {
                     // L'utilisateur a confirmé
                     await confirmation.update({
-                        content: "Effacement de toute ma mémoire et profils en cours...",
+                        content: "Effacement de la mémoire de conversation en cours...",
                         components: [],
                     });
 
                     await clearAllMemory();
-                    const deletedProfiles = UserProfileService.deleteAllProfiles();
 
-                    console.log(`[Reset Command] Global memory + ${deletedProfiles} profile(s) cleared by ${interaction.user.displayName}`);
+                    console.log(`[Reset-Memory Command] Conversation memory cleared by ${interaction.user.displayName}`);
+
+                    await logCommand("Mémoire effacée", undefined, [
+                        {name: "Par", value: interaction.user.displayName, inline: true},
+                        {name: "Type", value: "Mémoire de conversation", inline: true}
+                    ]);
 
                     // Mettre à jour le message éphémère
                     await confirmation.editReply({
-                        content: `Ma mémoire et mes connaissances ont été complètement effacées.\n• Mémoire : Effacée\n• Profils : ${deletedProfiles} supprimé(s)`,
+                        content: "Ma mémoire de conversation a été effacée.",
                         components: [],
                     });
                 } else {

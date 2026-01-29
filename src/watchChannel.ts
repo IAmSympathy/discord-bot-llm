@@ -145,13 +145,6 @@ export function registerWatchedChannelResponder(client: Client) {
                     const passiveImageUrls = await collectAllMediaUrls(message);
                     const channelName = (message.channel as any).name || `channel-${message.channelId}`;
 
-                    // Extraire les utilisateurs mentionnés
-                    const mentionedUsers = Array.from(message.mentions.users.values()).map(user => ({
-                        id: user.id,
-                        username: user.username,
-                        displayName: user.displayName || user.username
-                    }));
-
                     // Enregistrer avec la réaction du bot
                     await recordPassiveMessage(
                         message.author.id,
@@ -160,9 +153,8 @@ export function registerWatchedChannelResponder(client: Client) {
                         message.channelId,
                         channelName,
                         passiveImageUrls,
-                        reactionEmoji, // ← NOUVEAU : passer la réaction
-                        undefined, // Pas de isReply pour les mentions Nettie
-                        mentionedUsers // NOUVEAU : passer les utilisateurs mentionnés
+                        reactionEmoji, // ← Passer la réaction
+                        undefined // Pas de isReply pour les mentions Nettie
                     );
 
                     console.log(`[Nettie Reaction] Message recorded with reaction ${reactionEmoji} in #${channelName}`);
@@ -183,13 +175,6 @@ export function registerWatchedChannelResponder(client: Client) {
                 // Détecter si c'est une réponse à un autre message
                 const isReply = !!message.reference?.messageId;
 
-                // Extraire les utilisateurs mentionnés
-                const mentionedUsers = Array.from(message.mentions.users.values()).map(user => ({
-                    id: user.id,
-                    username: user.username,
-                    displayName: user.displayName || user.username
-                }));
-
                 // Enregistrer passivement (sans répondre)
                 await recordPassiveMessage(
                     message.author.id,
@@ -199,8 +184,7 @@ export function registerWatchedChannelResponder(client: Client) {
                     channelName,
                     passiveImageUrls,
                     undefined, // Pas de réaction
-                    isReply, // NOUVEAU : passer le flag reply
-                    mentionedUsers // NOUVEAU : passer les utilisateurs mentionnés
+                    isReply // Passer le flag reply
                 );
 
                 return; // Ne pas répondre, juste enregistrer
@@ -262,6 +246,18 @@ export function registerWatchedChannelResponder(client: Client) {
 
             const triggerReason = isMentioned ? "mentioned" : "watched channel";
             console.log(`[watchChannel] Processing message from ${message.author.displayName} (${triggerReason}): ${userText}${imageUrls.length > 0 ? ` [${imageUrls.length} image(s)]` : ""}`);
+
+            // Mettre à jour les rôles Discord de l'utilisateur dans son profil
+            if (message.member) {
+                const userRoles = message.member.roles.cache
+                    .filter(role => role.name !== "@everyone") // Exclure le rôle @everyone
+                    .map(role => role.name);
+
+                if (userRoles.length > 0) {
+                    const {UserProfileService} = await import("./services/userProfileService");
+                    await UserProfileService.updateRoles(message.author.id, message.author.displayName, userRoles);
+                }
+            }
 
             await processLLMRequest({
                 prompt: contextPrompt,

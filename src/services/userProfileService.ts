@@ -36,28 +36,16 @@ async function withLock<T>(userId: string, operation: () => Promise<T> | T): Pro
 export interface UserFact {
     id: string;
     content: string; // ex: "Préfère TypeScript à JavaScript"
-    context: string; // Contexte de découverte
-    confidence: number; // 0-1, niveau de certitude (0.5 = tier, 1.0 = auto-déclaré)
-    importance: number; // 0-10, score d'importance (calculé automatiquement)
-    source: "self" | "other" | "inferred"; // Source de l'information
     timestamp: Date;
-    lastUpdated: Date;
 }
 
 export interface UserProfile {
     userId: string;
     username: string;
-    personality: {
-        traits: string[]; // ex: ["humoristique", "technique"]
-        communicationStyle: string; // ex: "direct", "amical"
-        interests: string[]; // ex: ["jeux vidéo", "programmation"]
-    };
+    aliases: string[]; // Surnoms : ["Jérémy", "Jay", "MR.Fou"]
+    interests: string[]; // Centres d'intérêt : ["jeux vidéo", "programmation"]
+    roles: string[]; // Rôles Discord : ["Admin", "Modérateur"]
     facts: UserFact[];
-    preferences: {
-        language?: string;
-        responseStyle?: string;
-    };
-    lastInteraction: Date;
 }
 
 /**
@@ -77,16 +65,21 @@ export class UserProfileService {
         try {
             const data = readFileSync(filePath, "utf-8");
             const profile = JSON.parse(data);
+
             // Reconvertir les dates
-            profile.lastInteraction = new Date(profile.lastInteraction);
-            profile.facts = profile.facts.map((f: any) => ({
-                ...f,
-                timestamp: new Date(f.timestamp),
-                lastUpdated: new Date(f.lastUpdated),
-                // Valeurs par défaut pour la rétrocompatibilité
-                importance: f.importance ?? 5,
-                source: f.source ?? "other",
-            }));
+            if (profile.facts) {
+                profile.facts = profile.facts.map((f: any) => ({
+                    ...f,
+                    timestamp: new Date(f.timestamp),
+                }));
+            }
+
+            // Rétrocompatibilité : Initialiser les champs manquants pour les anciens profils
+            if (!profile.aliases) profile.aliases = [];
+            if (!profile.interests) profile.interests = [];
+            if (!profile.roles) profile.roles = [];
+            if (!profile.facts) profile.facts = [];
+
             return profile;
         } catch (error) {
             console.error(`[UserProfile] Error reading profile for ${userId}:`, error);
@@ -116,10 +109,10 @@ export class UserProfileService {
         return {
             userId,
             username,
-            personality: {traits: [], communicationStyle: "", interests: []},
+            aliases: [],
+            interests: [],
+            roles: [],
             facts: [],
-            preferences: {},
-            lastInteraction: new Date(),
         };
     }
 
@@ -129,10 +122,7 @@ export class UserProfileService {
     static async addFact(
         userId: string,
         username: string,
-        fact: string,
-        context: string,
-        confidence: number = 0.8,
-        source: "self" | "other" | "inferred" = "other"
+        fact: string
     ): Promise<void> {
         return withLock(userId, () => {
             let profile = this.getProfile(userId);
@@ -143,38 +133,20 @@ export class UserProfileService {
 
             // Mettre à jour le nom d'utilisateur si nécessaire
             profile.username = username;
-            profile.lastInteraction = new Date();
-
-            // Calculer l'importance
-            const importance = this.calculateImportance(fact, confidence);
 
             // Vérifier si un fait similaire existe déjà (éviter les doublons)
             const existingFact = profile.facts.find((f) => f.content.toLowerCase() === fact.toLowerCase());
 
             if (existingFact) {
-                // Mettre à jour le fait existant
-                existingFact.context = context;
-                // Augmenter la confiance si la nouvelle source est plus fiable
-                if (source === "self" || (source === "other" && existingFact.source === "inferred")) {
-                    existingFact.confidence = Math.max(existingFact.confidence, confidence);
-                    existingFact.source = source;
-                }
-                existingFact.importance = Math.max(existingFact.importance, importance);
-                existingFact.lastUpdated = new Date();
-                console.log(`[UserProfile] 🔄 Updated fact for ${username}: "${fact}" [confidence: ${existingFact.confidence.toFixed(2)}, importance: ${existingFact.importance.toFixed(1)}, source: ${existingFact.source}]`);
+                console.log(`[UserProfile] ⚠️ Fact already exists for ${username}: "${fact}"`);
             } else {
                 // Ajouter un nouveau fait
                 profile.facts.push({
                     id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                     content: fact,
-                    context,
-                    confidence,
-                    importance,
-                    source,
                     timestamp: new Date(),
-                    lastUpdated: new Date(),
                 });
-                console.log(`[UserProfile] ➕ Added fact for ${username}: "${fact}" [confidence: ${confidence.toFixed(2)}, importance: ${importance.toFixed(1)}, source: ${source}]`);
+                console.log(`[UserProfile] ➕ Added fact for ${username}: "${fact}"`);
             }
 
             this.saveProfile(userId, profile);
@@ -188,9 +160,7 @@ export class UserProfileService {
         userId: string,
         username: string,
         oldFactPattern: string,
-        newFact: string,
-        confidence: number = 0.8,
-        source: "self" | "other" | "inferred" = "other"
+        newFact: string
     ): Promise<boolean> {
         return withLock(userId, () => {
             const profile = this.getProfile(userId);
@@ -209,22 +179,16 @@ export class UserProfileService {
             }
 
             const oldFact = profile.facts[factIndex];
-            const importance = this.calculateImportance(newFact, confidence);
 
             // Mettre à jour le fait
             profile.facts[factIndex] = {
                 ...oldFact,
                 content: newFact,
-                confidence: Math.max(oldFact.confidence, confidence),
-                importance,
-                source: source === "self" ? source : oldFact.source, // Garder la source la plus fiable
-                lastUpdated: new Date(),
             };
 
-            profile.lastInteraction = new Date();
             this.saveProfile(userId, profile);
 
-            console.log(`[UserProfile] 🔄 Updated fact for ${username}: "${oldFact.content}" → "${newFact}" [confidence: ${confidence.toFixed(2)}, importance: ${importance.toFixed(1)}]`);
+            console.log(`[UserProfile] 🔄 Updated fact for ${username}: "${oldFact.content}" → "${newFact}"`);
             return true;
         });
     }
@@ -252,7 +216,6 @@ export class UserProfileService {
             const removedFact = profile.facts[factIndex];
             profile.facts.splice(factIndex, 1);
 
-            profile.lastInteraction = new Date();
             this.saveProfile(userId, profile);
 
             console.log(`[UserProfile] 🗑️ Removed fact for ${username}: "${removedFact.content}"`);
@@ -261,9 +224,9 @@ export class UserProfileService {
     }
 
     /**
-     * Ajoute un trait de personnalité
+     * Ajoute un alias (surnom) à un utilisateur
      */
-    static async addPersonalityTrait(userId: string, username: string, trait: string): Promise<void> {
+    static async addAlias(userId: string, username: string, alias: string): Promise<void> {
         return withLock(userId, () => {
             let profile = this.getProfile(userId);
 
@@ -272,11 +235,10 @@ export class UserProfileService {
             }
 
             profile.username = username;
-            profile.lastInteraction = new Date();
 
-            if (!profile.personality.traits.includes(trait)) {
-                profile.personality.traits.push(trait);
-                console.log(`[UserProfile] 🎭 Added personality trait for ${username}: "${trait}"`);
+            if (!profile.aliases.includes(alias)) {
+                profile.aliases.push(alias);
+                console.log(`[UserProfile] 🏷️ Added alias for ${username}: "${alias}"`);
                 this.saveProfile(userId, profile);
             }
         });
@@ -294,10 +256,9 @@ export class UserProfileService {
             }
 
             profile.username = username;
-            profile.lastInteraction = new Date();
 
-            if (!profile.personality.interests.includes(interest)) {
-                profile.personality.interests.push(interest);
+            if (!profile.interests.includes(interest)) {
+                profile.interests.push(interest);
                 console.log(`[UserProfile] 💡 Added interest for ${username}: "${interest}"`);
                 this.saveProfile(userId, profile);
             }
@@ -305,9 +266,68 @@ export class UserProfileService {
     }
 
     /**
-     * Définit le style de communication
+     * Supprime un alias (surnom)
      */
-    static async setCommunicationStyle(userId: string, username: string, style: string): Promise<void> {
+    static async removeAlias(userId: string, username: string, alias: string): Promise<boolean> {
+        return withLock(userId, () => {
+            const profile = this.getProfile(userId);
+
+            if (!profile) {
+                console.log(`[UserProfile] ⚠️ No profile found for ${username} to remove alias`);
+                return false;
+            }
+
+            // Recherche case insensitive
+            const aliasLower = alias.toLowerCase();
+            const index = profile.aliases.findIndex(a => a.toLowerCase() === aliasLower);
+            if (index === -1) {
+                console.log(`[UserProfile] ⚠️ Alias not found: "${alias}"`);
+                return false;
+            }
+
+            const removedAlias = profile.aliases[index];
+            profile.aliases.splice(index, 1);
+            this.saveProfile(userId, profile);
+
+            console.log(`[UserProfile] 🗑️ Removed alias for ${username}: "${removedAlias}"`);
+            return true;
+        });
+    }
+
+    /**
+     * Supprime un centre d'intérêt
+     */
+    static async removeInterest(userId: string, username: string, interest: string): Promise<boolean> {
+        return withLock(userId, () => {
+            const profile = this.getProfile(userId);
+
+            if (!profile) {
+                console.log(`[UserProfile] ⚠️ No profile found for ${username} to remove interest`);
+                return false;
+            }
+
+            // Recherche case insensitive
+            const interestLower = interest.toLowerCase();
+            const index = profile.interests.findIndex(i => i.toLowerCase() === interestLower);
+            if (index === -1) {
+                console.log(`[UserProfile] ⚠️ Interest not found: "${interest}"`);
+                return false;
+            }
+
+            const removedInterest = profile.interests[index];
+            profile.interests.splice(index, 1);
+            this.saveProfile(userId, profile);
+
+            console.log(`[UserProfile] 🗑️ Removed interest for ${username}: "${removedInterest}"`);
+            return true;
+        });
+    }
+
+    /**
+     * Met à jour les rôles Discord d'un utilisateur
+     * Cette fonction est appelée automatiquement quand l'IA voit un message
+     */
+    static async updateRoles(userId: string, username: string, roles: string[]): Promise<void> {
         return withLock(userId, () => {
             let profile = this.getProfile(userId);
 
@@ -316,10 +336,8 @@ export class UserProfileService {
             }
 
             profile.username = username;
-            profile.lastInteraction = new Date();
-            profile.personality.communicationStyle = style;
+            profile.roles = roles;
 
-            console.log(`[UserProfile] 💬 Set communication style for ${username}: "${style}"`);
             this.saveProfile(userId, profile);
         });
     }
@@ -333,38 +351,31 @@ export class UserProfileService {
 
         const lines: string[] = [];
 
-        // Traits de personnalité
-        if (profile.personality.traits.length > 0) {
-            lines.push(`Personnalité: ${profile.personality.traits.join(", ")}`);
+        // Rôles Discord (avec vérification pour compatibilité ancien format)
+        if (profile.roles && profile.roles.length > 0) {
+            lines.push(`Rôles: ${profile.roles.join(", ")}`);
         }
 
-        // Style de communication
-        if (profile.personality.communicationStyle) {
-            lines.push(`Style: ${profile.personality.communicationStyle}`);
+        // Aliases (surnoms) (avec vérification pour compatibilité ancien format)
+        if (profile.aliases && profile.aliases.length > 0) {
+            lines.push(`Surnoms: ${profile.aliases.join(", ")}`);
         }
 
-        // Intérêts
-        if (profile.personality.interests.length > 0) {
-            lines.push(`Intérêts: ${profile.personality.interests.join(", ")}`);
+        // Intérêts (avec vérification pour compatibilité ancien format)
+        if (profile.interests && profile.interests.length > 0) {
+            lines.push(`Intérêts: ${profile.interests.join(", ")}`);
         }
 
-        // Faits récents (max 8) triés par importance ET récence
-        if (profile.facts.length > 0) {
+        // Faits récents (max 8) triés par date
+        if (profile.facts && profile.facts.length > 0) {
             const recentFacts = profile.facts
-                // Calculer un score combiné : importance + récence
-                .map((f) => ({
-                    fact: f,
-                    score: f.importance + (Date.now() - f.lastUpdated.getTime() < 7 * 24 * 60 * 60 * 1000 ? 2 : 0), // Bonus si < 7 jours
-                }))
-                .sort((a, b) => b.score - a.score)
-                .slice(0, 8)
-                .map((item) => item.fact);
+                // Trier par date (les plus récents en premier)
+                .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+                .slice(0, 8); // Garder les 8 plus récents
 
             lines.push(`Faits connus:`);
             recentFacts.forEach((f) => {
-                // Ajouter un indicateur de confiance si faible
-                const confidenceTag = f.confidence < 0.7 ? " [?]" : "";
-                lines.push(`- ${f.content}${confidenceTag}`);
+                lines.push(`- ${f.content}`);
             });
         }
 
@@ -506,48 +517,6 @@ export class UserProfileService {
         if (!existsSync(PROFILES_DIR)) {
             mkdirSync(PROFILES_DIR, {recursive: true});
         }
-    }
-
-    /**
-     * Calcule le score d'importance d'un fait (0-10)
-     * Basé sur la longueur, les mots-clés importants, etc.
-     */
-    private static calculateImportance(fact: string, confidence: number): number {
-        let score = 5; // Score de base
-
-        // Bonus pour la longueur (plus de détails = plus important)
-        if (fact.length > 50) score += 1;
-        if (fact.length > 100) score += 1;
-
-        // Bonus pour les mots-clés importants
-        const importantKeywords = [
-            "préfère",
-            "aime",
-            "déteste",
-            "toujours",
-            "jamais",
-            "travaille",
-            "joue",
-            "étudie",
-            "utilise",
-            "développe",
-            "crée",
-            "niveau",
-            "rank",
-            "expert",
-            "débutant",
-        ];
-
-        const lowerFact = fact.toLowerCase();
-        importantKeywords.forEach((keyword) => {
-            if (lowerFact.includes(keyword)) score += 0.5;
-        });
-
-        // Bonus pour la confiance
-        score += confidence * 2;
-
-        // Limiter entre 0 et 10
-        return Math.min(10, Math.max(0, score));
     }
 }
 
