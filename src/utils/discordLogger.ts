@@ -359,24 +359,6 @@ export async function logServerMessageDelete(username: string, channelName: stri
     });
 }
 
-export async function logServerMessageEdit(username: string, channelName: string, oldContent: string, newContent: string) {
-    const fields = [
-        {name: "👤 Auteur", value: username, inline: true},
-        {name: "📺 Salon", value: `#${channelName}`, inline: true}
-    ];
-
-    if (oldContent && oldContent.length > 0) {
-        const content = oldContent.length > 500 ? oldContent.substring(0, 500) + "..." : oldContent;
-        fields.push({name: "📝 Avant", value: content, inline: false});
-    }
-
-    if (newContent && newContent.length > 0) {
-        const content = newContent.length > 500 ? newContent.substring(0, 500) + "..." : newContent;
-        fields.push({name: "✏️ Après", value: content, inline: false});
-    }
-
-}
-
 export async function logServerMemberTimeout(username: string, userId: string, duration: string, moderator?: string, reason?: string) {
     const fields = [
         {name: "👤 Utilisateur", value: username, inline: true},
@@ -432,35 +414,63 @@ export async function logServerNicknameChange(username: string, userId: string, 
     });
 }
 
-export async function logServerVoiceMove(username: string, userId: string, oldChannel: string, newChannel: string) {
+export async function logServerVoiceMove(username: string, userId: string, oldChannel: string, newChannel: string, moderator?: string) {
+    const fields = [
+        {name: "👤 Utilisateur", value: username, inline: true},
+        {name: "🔊 De", value: oldChannel, inline: true},
+        {name: "🔊 Vers", value: newChannel, inline: true}
+    ];
+
+    if (moderator) {
+        fields.push({name: "👮 Déplacé par", value: moderator, inline: true});
+    }
+
     await logToDiscord({
         level: LogLevel.SERVER_VOICE_MOVE,
         title: "Vocal - Déplacement",
-        fields: [
-            {name: "👤 Utilisateur", value: username, inline: true},
-            {name: "🔊 De", value: oldChannel, inline: true},
-            {name: "🔊 Vers", value: newChannel, inline: true}
-        ]
+        fields
     });
 }
 
-export async function logServerVoiceMute(username: string, userId: string, isMuted: boolean, isSelfMuted: boolean) {
+export async function logServerVoiceMute(username: string, userId: string, isMuted: boolean, isSelfMuted: boolean, moderator?: string) {
+    // Ne pas logger si c'est un self-mute
+    if (isSelfMuted) {
+        return;
+    }
+
+    const fields = [
+        {name: "👤 Utilisateur", value: username, inline: true}
+    ];
+
+    if (moderator) {
+        fields.push({name: "👮 Par", value: moderator, inline: true});
+    }
+
     await logToDiscord({
         level: LogLevel.SERVER_VOICE_MUTE,
         title: isMuted ? "Vocal - Muté par serveur" : "Vocal - Démuté par serveur",
-        fields: [
-            {name: "👤 Utilisateur", value: username, inline: true}
-        ]
+        fields
     });
 }
 
-export async function logServerVoiceDeaf(username: string, userId: string, isDeafened: boolean, isSelfDeafened: boolean) {
+export async function logServerVoiceDeaf(username: string, userId: string, isDeafened: boolean, isSelfDeafened: boolean, moderator?: string) {
+    // Ne pas logger si c'est un self-deaf
+    if (isSelfDeafened) {
+        return;
+    }
+
+    const fields = [
+        {name: "👤 Utilisateur", value: username, inline: true}
+    ];
+
+    if (moderator) {
+        fields.push({name: "👮 Par", value: moderator, inline: true});
+    }
+
     await logToDiscord({
         level: LogLevel.SERVER_VOICE_DEAF,
         title: isDeafened ? "Vocal - Sourd par serveur" : "Vocal - Entend à nouveau",
-        fields: [
-            {name: "👤 Utilisateur", value: username, inline: true}
-        ]
+        fields
     });
 }
 

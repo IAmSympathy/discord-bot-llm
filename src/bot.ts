@@ -6,7 +6,7 @@ import {registerWatchedChannelResponder} from "./watchChannel";
 import {registerForumThreadHandler} from "./forumThreadHandler";
 import {registerCitationsThreadHandler} from "./citationsThreadHandler";
 import deployCommands from "./deploy/deployCommands";
-import {initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerMessageEdit, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
+import {initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
 
 export async function setBotPresence(client: Client, status: PresenceStatusData, activityName?: string) {
     if (!client.user) return;
@@ -32,6 +32,7 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,      // Pour les événements de membres
         GatewayIntentBits.GuildModeration,   // Pour les bans/unbans
         GatewayIntentBits.GuildVoiceStates,  // Pour les événements vocaux
+        GatewayIntentBits.GuildPresences,    // Pour voir les activités (jeux en cours)
     ],
 });
 
@@ -279,64 +280,105 @@ client.on(Events.MessageDelete, async (message) => {
     }
 });
 
-// Message modifié
-client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
-    if (newMessage.author?.bot) return;
-    if (oldMessage.content === newMessage.content) return; // Ignorer si le contenu n'a pas changé
-
-    await logServerMessageEdit(
-        newMessage.author?.username || "Utilisateur inconnu",
-        newMessage.channel.isDMBased() ? "DM" : (newMessage.channel.name || "Salon inconnu"),
-        oldMessage.content || "(vide)",
-        newMessage.content || "(vide)"
-    );
-    console.log(`[Server Event] Message edited by ${newMessage.author?.username || "Unknown"}`);
-});
-
 // État vocal mis à jour (join, leave, move, mute, deaf)
 client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     const member = newState.member;
     if (!member) return;
-    
+
     // Déplacement entre salons vocaux
     else if (oldState.channel && newState.channel && oldState.channel.id !== newState.channel.id) {
-        await logServerVoiceMove(
-            member.user.username,
-            member.user.id,
-            oldState.channel.name,
-            newState.channel.name
-        );
-        console.log(`[Server Event] ${member.user.username} moved from ${oldState.channel.name} to ${newState.channel.name}`);
+        try {
+            const auditLogs = await newState.guild.fetchAuditLogs({
+                type: 26, // MEMBER_MOVE
+                limit: 1
+            });
+            const moveLog = auditLogs.entries.first();
+            const moderator = moveLog?.executor?.username;
+
+            await logServerVoiceMove(
+                member.user.username,
+                member.user.id,
+                oldState.channel.name,
+                newState.channel.name,
+                moderator
+            );
+            console.log(`[Server Event] ${member.user.username} moved from ${oldState.channel.name} to ${newState.channel.name}${moderator ? ` by ${moderator}` : ''}`);
+        } catch (error) {
+            await logServerVoiceMove(
+                member.user.username,
+                member.user.id,
+                oldState.channel.name,
+                newState.channel.name
+            );
+            console.log(`[Server Event] ${member.user.username} moved from ${oldState.channel.name} to ${newState.channel.name}`);
+        }
     }
 
     // Changement de mute (seulement les mutes serveur, pas auto-mute)
-    if (oldState.mute !== newState.mute) {
-        const isMuted = !!newState.mute;
+    if (oldState.serverMute !== newState.serverMute) {
+        const isMuted = !!newState.serverMute;
 
-        await logServerVoiceMute(
-            member.user.username,
-            member.user.id,
-            isMuted,
-            false // Ce n'est pas un self-mute
-        );
-        console.log(`[Server Event] ${member.user.username} ${isMuted ? 'muted' : 'unmuted'} by server`);
+        try {
+            const auditLogs = await newState.guild.fetchAuditLogs({
+                type: 24, // MEMBER_UPDATE
+                limit: 1
+            });
+            const muteLog = auditLogs.entries.first();
+            const moderator = muteLog?.executor?.username;
+
+            await logServerVoiceMute(
+                member.user.username,
+                member.user.id,
+                isMuted,
+                false, // Si on est ici, c'est forcément un server mute
+                moderator
+            );
+            console.log(`[Server Event] ${member.user.username} ${isMuted ? 'muted' : 'unmuted'} by server${moderator ? ` (by ${moderator})` : ''}`);
+        } catch (error) {
+            await logServerVoiceMute(
+                member.user.username,
+                member.user.id,
+                isMuted,
+                false
+            );
+            console.log(`[Server Event] ${member.user.username} ${isMuted ? 'muted' : 'unmuted'} by server`);
+        }
     }
 
     // Changement de deaf (seulement les deafs serveur, pas auto-deaf)
-    if (oldState.deaf !== newState.deaf) {
-        const isDeafened = !!newState.deaf;
+    if (oldState.serverDeaf !== newState.serverDeaf) {
+        const isDeafened = !!newState.serverDeaf;
 
-        await logServerVoiceDeaf(
-            member.user.username,
-            member.user.id,
-            isDeafened,
-            false // Ce n'est pas un self-deaf
-        );
-        console.log(`[Server Event] ${member.user.username} ${isDeafened ? 'deafened' : 'undeafened'} by server`);
+        try {
+            const auditLogs = await newState.guild.fetchAuditLogs({
+                type: 24, // MEMBER_UPDATE
+                limit: 1
+            });
+            const deafLog = auditLogs.entries.first();
+            const moderator = deafLog?.executor?.username;
+
+            await logServerVoiceDeaf(
+                member.user.username,
+                member.user.id,
+                isDeafened,
+                false, // Si on est ici, c'est forcément un server deaf
+                moderator
+            );
+            console.log(`[Server Event] ${member.user.username} ${isDeafened ? 'deafened' : 'undeafened'} by server${moderator ? ` (by ${moderator})` : ''}`);
+        } catch (error) {
+            await logServerVoiceDeaf(
+                member.user.username,
+                member.user.id,
+                isDeafened,
+                false
+            );
+            console.log(`[Server Event] ${member.user.username} ${isDeafened ? 'deafened' : 'undeafened'} by server`);
+        }
     }
 });
 
 // === FIN ÉVÉNEMENTS SERVEUR DISCORD ===
+
 
 if (client.user) {
     client.user.setPresence({

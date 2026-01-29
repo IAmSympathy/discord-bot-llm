@@ -46,6 +46,11 @@ export interface UserProfile {
     interests: string[]; // Centres d'intérêt : ["jeux vidéo", "programmation"]
     roles: string[]; // Rôles Discord : ["Admin", "Modérateur"]
     facts: UserFact[];
+    currentActivity?: {
+        gameName: string;
+        details?: string;
+        timestamp: number;
+    };
 }
 
 /**
@@ -343,6 +348,36 @@ export class UserProfileService {
     }
 
     /**
+     * Met à jour l'activité en cours d'un utilisateur (jeu joué)
+     */
+    static async updateActivity(userId: string, username: string, gameName: string | null, details?: string): Promise<void> {
+        return withLock(userId, () => {
+            let profile = this.getProfile(userId);
+
+            if (!profile) {
+                profile = this.createProfile(userId, username);
+            }
+
+            profile.username = username;
+
+            if (gameName) {
+                profile.currentActivity = {
+                    gameName,
+                    details,
+                    timestamp: Date.now()
+                };
+                console.log(`[UserProfile] 🎮 ${username} is now playing ${gameName}`);
+            } else {
+                // Supprimer l'activité si null
+                delete profile.currentActivity;
+                console.log(`[UserProfile] 🎮 ${username} stopped playing`);
+            }
+
+            this.saveProfile(userId, profile);
+        });
+    }
+
+    /**
      * Récupère un résumé formaté du profil pour l'injecter dans le contexte
      */
     static getProfileSummary(userId: string): string | null {
@@ -359,6 +394,20 @@ export class UserProfileService {
         // Aliases (surnoms) (avec vérification pour compatibilité ancien format)
         if (profile.aliases && profile.aliases.length > 0) {
             lines.push(`Surnoms: ${profile.aliases.join(", ")}`);
+        }
+
+        // Activité en cours (jeu joué) - Vérifier que l'activité n'est pas trop ancienne (max 15 minutes)
+        if (profile.currentActivity) {
+            const activityAge = Date.now() - profile.currentActivity.timestamp;
+            const maxAge = 15 * 60 * 1000; // 15 minutes
+
+            if (activityAge < maxAge) {
+                let activityText = `Joue actuellement à: ${profile.currentActivity.gameName}`;
+                if (profile.currentActivity.details) {
+                    activityText += ` (${profile.currentActivity.details})`;
+                }
+                lines.push(activityText);
+            }
         }
 
         // Intérêts (avec vérification pour compatibilité ancien format)
@@ -396,14 +445,16 @@ export class UserProfileService {
         for (const file of files) {
             const userId = file.replace(".json", "");
             const profile = this.getProfile(userId);
-            if (profile) profiles.push(profile);
+            if (profile) {
+                profiles.push(profile);
+            }
         }
 
         return profiles;
     }
 
     /**
-     * Supprime un profil
+     * Supprime le profil d'un utilisateur
      */
     static deleteProfile(userId: string): boolean {
         this.ensureDirectoryExists();
@@ -412,9 +463,9 @@ export class UserProfileService {
         if (!existsSync(filePath)) return false;
 
         try {
-            const {unlinkSync} = require("fs");
-            unlinkSync(filePath);
-            console.log(`[UserProfile] 🗑️ Profile deleted for ${userId}`);
+            const fs = require("fs");
+            fs.unlinkSync(filePath);
+            console.log(`[UserProfile] 🗑️ Profile deleted for user ${userId}`);
             return true;
         } catch (error) {
             console.error(`[UserProfile] Error deleting profile for ${userId}:`, error);
@@ -423,95 +474,29 @@ export class UserProfileService {
     }
 
     /**
-     * Supprime TOUS les profils utilisateurs
+     * Trouve le meilleur match pour un pattern dans une liste de faits
+     * Utilisé pour la recherche/suppression de faits
      */
-    static deleteAllProfiles(): number {
-        this.ensureDirectoryExists();
+    private static findBestMatch(pattern: string, facts: UserFact[]): number {
+        const patternLower = pattern.toLowerCase();
 
-        try {
-            const files = readdirSync(PROFILES_DIR);
-            let deletedCount = 0;
+        // D'abord chercher une correspondance exacte
+        const exactMatch = facts.findIndex((f) => f.content.toLowerCase() === patternLower);
+        if (exactMatch !== -1) return exactMatch;
 
-            for (const file of files) {
-                if (file.endsWith('.json') && !file.endsWith('.example')) {
-                    const filePath = join(PROFILES_DIR, file);
-                    try {
-                        const {unlinkSync} = require("fs");
-                        unlinkSync(filePath);
-                        deletedCount++;
-                    } catch (error) {
-                        console.error(`[UserProfile] Error deleting profile ${file}:`, error);
-                    }
-                }
-            }
+        // Ensuite chercher si le pattern est contenu dans un fait
+        const containsMatch = facts.findIndex((f) => f.content.toLowerCase().includes(patternLower));
+        if (containsMatch !== -1) return containsMatch;
 
-            console.log(`[UserProfile] 🗑️ Deleted ${deletedCount} profile(s)`);
-            return deletedCount;
-        } catch (error) {
-            console.error(`[UserProfile] Error deleting all profiles:`, error);
-            return 0;
-        }
+        // Enfin chercher si un fait est contenu dans le pattern
+        const reverseMatch = facts.findIndex((f) => patternLower.includes(f.content.toLowerCase()));
+        if (reverseMatch !== -1) return reverseMatch;
+
+        return -1;
     }
 
     /**
-     * Calcule la similarité entre deux textes (0-1)
-     */
-    private static calculateSimilarity(searchTerm: string, factContent: string): number {
-        const searchLower = searchTerm.toLowerCase().trim();
-        const factLower = factContent.toLowerCase().trim();
-
-        // Score 1 : Inclusion exacte (très fort)
-        if (factLower.includes(searchLower) || searchLower.includes(factLower)) {
-            return 1.0;
-        }
-
-        // Score 2 : Mots-clés communs
-        const searchWords = searchLower.split(/\s+/).filter((w) => w.length > 2); // Ignorer mots courts
-        const factWords = factLower.split(/\s+/).filter((w) => w.length > 2);
-
-        if (searchWords.length === 0 || factWords.length === 0) {
-            return 0;
-        }
-
-        const commonWords = searchWords.filter((w) => factWords.some((fw) => fw.includes(w) || w.includes(fw)));
-
-        // Ratio de mots communs
-        const ratio = commonWords.length / Math.max(searchWords.length, factWords.length);
-
-        return ratio;
-    }
-
-    /**
-     * Trouve le meilleur fait correspondant à un pattern
-     */
-    private static findBestMatch(searchPattern: string, facts: UserFact[]): number {
-        let bestIndex = -1;
-        let bestScore = 0;
-
-        facts.forEach((fact, index) => {
-            const score = this.calculateSimilarity(searchPattern, fact.content);
-
-            // Logs pour debugging
-            if (score > 0.2) {
-                console.log(`[UserProfile] Match candidate: "${fact.content}" (score: ${score.toFixed(2)})`);
-            }
-
-            if (score > bestScore && score > 0.4) {
-                // Seuil minimum de 0.4
-                bestScore = score;
-                bestIndex = index;
-            }
-        });
-
-        if (bestIndex !== -1) {
-            console.log(`[UserProfile] Best match found: "${facts[bestIndex].content}" (score: ${bestScore.toFixed(2)})`);
-        }
-
-        return bestIndex;
-    }
-
-    /**
-     * S'assure que le dossier profiles existe
+     * S'assure que le répertoire des profils existe
      */
     private static ensureDirectoryExists(): void {
         if (!existsSync(PROFILES_DIR)) {

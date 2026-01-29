@@ -1,5 +1,6 @@
 import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {UserProfileService} from "../../services/userProfileService";
+import {updateUserActivityFromPresence} from "../../services/activityService";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -16,6 +17,9 @@ module.exports = {
 
         try {
             const targetUser = interaction.options.getUser("user") || interaction.user;
+
+            // Mettre à jour l'activité actuelle de l'utilisateur
+            await updateUserActivityFromPresence(interaction.client, targetUser.id);
 
             // Mettre à jour les rôles Discord de l'utilisateur si possible
             if (interaction.guild) {
@@ -88,6 +92,24 @@ module.exports = {
                     value: rolesText,
                     inline: true
                 });
+            }
+
+            // Activité en cours (jeu joué)
+            if (profile.currentActivity) {
+                const activityAge = Date.now() - profile.currentActivity.timestamp;
+                const maxAge = 15 * 60 * 1000; // 15 minutes
+
+                if (activityAge < maxAge) {
+                    let activityText = `• ${profile.currentActivity.gameName}`;
+                    if (profile.currentActivity.details) {
+                        activityText += `\n• ${profile.currentActivity.details}`;
+                    }
+                    embed.addFields({
+                        name: "🎮 Joue actuellement à",
+                        value: activityText,
+                        inline: false
+                    });
+                }
             }
 
             // Intérêts

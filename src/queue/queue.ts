@@ -305,7 +305,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         const userProfileSummary = UserProfileService.getProfileSummary(userId);
         let userProfileBlock = "";
         if (userProfileSummary) {
-            userProfileBlock = `\n\n=== PROFIL DE ${userName.toUpperCase()} ===\n${userProfileSummary}\n=== FIN DU PROFIL ===`;
+            userProfileBlock = `\n\n═══ PROFIL DE L'UTILISATEUR ACTUEL: ${userName.toUpperCase()} (UID Discord: ${userId}) ═══\n⚠️ Ce profil appartient à la personne qui t'envoie le message actuel.\n${userProfileSummary}\n═══ FIN DU PROFIL DE ${userName.toUpperCase()} ═══`;
             console.log(`[UserProfile] Profile loaded for ${userName}`);
         }
 

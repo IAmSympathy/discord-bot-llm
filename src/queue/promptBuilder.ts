@@ -167,6 +167,12 @@ Message:
 ${prompt}
 === FIN MESSAGE ACTUEL ===
 ${mentionedProfilesContext}
+[RAPPEL CRITIQUE - NE PAS CONFONDRE LES PROFILS]
+Si le message mentionne QUELQU'UN D'AUTRE (ex: "Que fait Nathan?", "Il joue à quoi?"), tu dois:
+1. Chercher le profil de CETTE personne mentionnée (pas celui de ${userName})
+2. Utiliser les informations du PROFIL DE CETTE PERSONNE (avec son UID)
+3. NE JAMAIS utiliser les infos du profil de ${userName} (UID: ${userId}) pour répondre sur quelqu'un d'autre
+
 [RAPPEL MENTIONS: Si le message contient "@NomUtilisateur" ou "<@ID>", cela désigne UNE AUTRE PERSONNE. Toute information dans ce message concernant cette personne mentionnée s'applique à ELLE, pas à ${userName}. Cherche l'identité de la personne mentionnée dans l'HISTORIQUE ci-dessus pour trouver son UID.]
 [RAPPEL PRONOMS: Les pronoms "il", "elle", "iel" peuvent référer à quelqu'un mentionné dans l'HISTORIQUE. Vérifie les UIDs pour identifier correctement les personnes.]
 [RAPPEL TENOR: Les URLs Tenor contiennent le nom du GIF. Utilise-le comme contexte mais ne répète JAMAIS l'URL dans ta réponse.]
@@ -231,7 +237,7 @@ function buildMentionedProfilesContext(prompt: string, recentTurns: MemoryTurn[]
                 const summary = UserProfileService.getProfileSummary(profile.userId);
                 if (summary) {
                     console.log(`[ProfileDetection] ✓ Found profile: ${profile.username}`);
-                    profilesMap.set(profile.userId, `[PROFIL DE ${profile.username} (UID: ${profile.userId})]\n${summary}`);
+                    profilesMap.set(profile.userId, `═══ PROFIL DE ${profile.username.toUpperCase()} (UID Discord: ${profile.userId}) ═══\n${summary}\n═══ FIN PROFIL DE ${profile.username.toUpperCase()} ═══`);
                 }
             }
         }
@@ -244,7 +250,7 @@ function buildMentionedProfilesContext(prompt: string, recentTurns: MemoryTurn[]
 
     console.log(`[ProfileDetection] Total: ${profilesMap.size} profile(s) added to context`);
     const profiles = Array.from(profilesMap.values());
-    return `\n[INFORMATIONS SUR LES PERSONNES MENTIONNÉES DANS LA CONVERSATION]\n${profiles.join("\n\n")}\n`;
+    return `\n\n[INFORMATIONS SUR LES PERSONNES MENTIONNÉES DANS LA CONVERSATION]\n⚠️ ATTENTION: Chaque profil ci-dessous correspond à UNE personne différente. Vérifie l'UID pour ne pas confondre.\n\n${profiles.join("\n\n")}\n`;
 }
 
 /**

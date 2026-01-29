@@ -3,6 +3,7 @@ import {processLLMRequest, recordPassiveMessage} from "./queue/queue";
 import {setBotPresence} from "./bot";
 import {generateMentionEmoji} from "./services/emojiService";
 import {collectAllMediaUrls} from "./services/gifService";
+import {updateUserActivityFromPresence} from "./services/activityService";
 
 function isWatchedChannel(message: Message, watchedChannelId?: string): boolean {
     return !!watchedChannelId && message.channelId === watchedChannelId;
@@ -246,6 +247,9 @@ export function registerWatchedChannelResponder(client: Client) {
 
             const triggerReason = isMentioned ? "mentioned" : "watched channel";
             console.log(`[watchChannel] Processing message from ${message.author.displayName} (${triggerReason}): ${userText}${imageUrls.length > 0 ? ` [${imageUrls.length} image(s)]` : ""}`);
+
+            // Mettre à jour l'activité de l'utilisateur (jeu en cours)
+            await updateUserActivityFromPresence(client, message.author.id);
 
             // Mettre à jour les rôles Discord de l'utilisateur dans son profil
             if (message.member) {
