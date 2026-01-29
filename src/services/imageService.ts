@@ -88,14 +88,34 @@ export async function downloadImageAsBase64(url: string): Promise<string | null>
 
 /**
  * Génère une description d'image avec le modèle vision
+ * @param imageBase64 - Image encodée en base64
+ * @param context - Contexte optionnel pour adapter le prompt ('creation' pour une analyse artistique détaillée)
  */
-export async function generateImageDescription(imageBase64: string): Promise<{ description: string; tokens: number } | null> {
+export async function generateImageDescription(imageBase64: string, context?: 'creation' | 'default'): Promise<{ description: string; tokens: number } | null> {
     const visionPromptPath = process.env.SYSTEM_PROMPT_VISION_PATH;
     if (!visionPromptPath) {
         throw new Error("SYSTEM_PROMPT_VISION_PATH n'est pas défini dans le .env");
     }
 
     const visionSystemPrompt = fs.readFileSync(visionPromptPath, "utf8");
+
+    // Adapter le prompt utilisateur selon le contexte
+    let userPrompt = "Décris cette image.";
+
+    if (context === 'creation') {
+        userPrompt = `Analyse cette création artistique en détail.
+
+IMPORTANT - Tu dois analyser :
+• La COMPOSITION : placement des éléments, équilibre, dynamique visuelle
+• Les COULEURS : palette utilisée, harmonie, contrastes, ambiance créée
+• La TECHNIQUE : style artistique, maîtrise technique visible, médium utilisé
+• Les DÉTAILS : éléments notables, textures, effets, originalité
+• L'AMBIANCE : émotions transmises, atmosphère générale, message visuel
+
+Sois PRÉCIS et DÉTAILLÉ dans ton analyse (minimum 4-5 phrases).
+Identifie ce qui fonctionne BIEN techniquement et artistiquement.
+Donne une analyse CONSTRUCTIVE qui pourra aider l'artiste.`;
+    }
 
     try {
         const response = await fetch(`${OLLAMA_API_URL}/api/chat`, {
@@ -105,12 +125,12 @@ export async function generateImageDescription(imageBase64: string): Promise<{ d
                 model: OLLAMA_VISION_MODEL,
                 messages: [
                     {role: "system", content: visionSystemPrompt},
-                    {role: "user", content: "Décris cette image.", images: [imageBase64]},
+                    {role: "user", content: userPrompt, images: [imageBase64]},
                 ],
                 stream: false,
                 options: {
-                    temperature: 0.2,
-                    num_predict: 500,
+                    temperature: context === 'creation' ? 0.4 : 0.2, // Plus de créativité pour les créations
+                    num_predict: context === 'creation' ? 800 : 500, // Plus de tokens pour analyses détaillées
                 },
             }),
         });
@@ -130,7 +150,7 @@ export async function generateImageDescription(imageBase64: string): Promise<{ d
         const description = result.message?.content || null;
         const tokens = (result.prompt_eval_count || 0) + (result.eval_count || 0);
 
-        console.log(`[ImageService] Generated description (${description?.length || 0} chars, ${tokens} tokens)`);
+        console.log(`[ImageService] Generated description (${description?.length || 0} chars, ${tokens} tokens)${context ? ` [context: ${context}]` : ''}`);
         return description ? {description, tokens} : null;
     } catch (error) {
         console.error(`[ImageService] Error generating description:`, error);
@@ -148,11 +168,13 @@ export async function processImages(imageUrls: string[]): Promise<string[]> {
 
 /**
  * Traite plusieurs images et retourne toutes leurs métadonnées
+ * @param imageUrls - URLs des images à traiter
+ * @param context - Contexte optionnel ('creation' pour une analyse artistique détaillée)
  */
-export async function processImagesWithMetadata(imageUrls: string[]): Promise<ImageAnalysisResult[]> {
+export async function processImagesWithMetadata(imageUrls: string[], context?: 'creation' | 'default'): Promise<ImageAnalysisResult[]> {
     const results: ImageAnalysisResult[] = [];
 
-    console.log(`[ImageService] Processing ${imageUrls.length} image(s) with metadata...`);
+    console.log(`[ImageService] Processing ${imageUrls.length} image(s) with metadata${context ? ` [context: ${context}]` : ''}...`);
 
     for (const url of imageUrls) {
         const startTime = Date.now();
@@ -181,9 +203,9 @@ export async function processImagesWithMetadata(imageUrls: string[]): Promise<Im
                 buffer = await convertToPNG(buffer);
             }
 
-            // Générer la description
+            // Générer la description avec le contexte approprié
             const base64 = buffer.toString("base64");
-            const result = await generateImageDescription(base64);
+            const result = await generateImageDescription(base64, context);
 
             if (result) {
                 const processingTime = Date.now() - startTime;
@@ -208,6 +230,5 @@ export async function processImagesWithMetadata(imageUrls: string[]): Promise<Im
         }
     }
 
-    console.log(`[ImageService] Successfully processed ${results.length}/${imageUrls.length} image(s)`);
     return results;
 }
