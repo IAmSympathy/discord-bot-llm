@@ -47,9 +47,9 @@ module.exports = {
 
                     console.log(`[Reset-Memory Command] Conversation memory cleared by ${interaction.user.displayName}`);
 
-                    await logCommand("Mémoire effacée", undefined, [
-                        {name: "Par", value: interaction.user.displayName, inline: true},
-                        {name: "Type", value: "Mémoire de conversation", inline: true}
+                    // Logger la commande
+                    await logCommand("🗑️ Mémoire effacée", undefined, [
+                        {name: "👤 Par", value: interaction.user.displayName, inline: true},
                     ]);
 
                     // Mettre à jour le message éphémère

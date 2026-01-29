@@ -1,6 +1,6 @@
 import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
 import {UserProfileService} from "../../services/userProfileService";
-import {logProfile} from "../../utils/discordLogger";
+import {logCommand} from "../../utils/discordLogger";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -55,11 +55,11 @@ module.exports = {
 
             console.log(`[Note Command] ${interaction.user.username} added ${noteType} to ${username}: "${content}"`);
 
-            await logProfile(`Note ajoutée`, undefined, [
-                {name: "Par", value: interaction.user.username, inline: true},
-                {name: "Utilisateur", value: username, inline: true},
-                {name: "Type", value: noteType === "fact" ? "Fait" : noteType === "alias" ? "Alias" : "Intérêt", inline: true},
-                {name: "Contenu", value: content.length > 100 ? content.substring(0, 100) + "..." : content}
+            await logCommand(`📝 Note ajoutée`, undefined, [
+                {name: "👤 Par", value: interaction.user.username, inline: true},
+                {name: "👥 Utilisateur", value: username, inline: true},
+                {name: "🏷️ Type", value: noteType === "fact" ? "Fait" : noteType === "alias" ? "Alias" : "Intérêt", inline: true},
+                {name: "📄 Contenu", value: content.length > 100 ? content.substring(0, 100) + "..." : content, inline: false}
             ]);
         } catch (error) {
             console.error("[Note Command] Error:", error);

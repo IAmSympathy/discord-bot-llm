@@ -2,7 +2,7 @@ import {Message as DiscordMessage, TextChannel, ThreadChannel} from "discord.js"
 import {FileMemory} from "../memory/fileMemory";
 import {analyzeMessageType, shouldStoreAssistantMessage, shouldStoreUserMessage} from "../memory/memoryFilter";
 import {DISCORD_TYPING_UPDATE_INTERVAL, FILTER_PATTERNS, MEMORY_FILE_PATH, MEMORY_MAX_TURNS} from "../utils/constants";
-import {processImages} from "../services/imageService";
+import {ImageAnalysisResult, processImages, processImagesWithMetadata} from "../services/imageService";
 import {getWebContext} from "../services/searchService";
 import {OllamaService} from "../services/ollamaService";
 import {DiscordMessageManager, ImageAnalysisAnimation} from "./discordMessageManager";
@@ -249,6 +249,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
     // Mettre en queue pour traiter séquentiellement par channel
     return enqueuePerChannel(channelKey, async () => {
+        const requestStartTime = Date.now();
         console.log(`[processLLMRequest] User ${userId} sent prompt: ${prompt}${imageUrls && imageUrls.length > 0 ? ` with ${imageUrls.length} image(s)` : ""}`);
 
         // Enregistrer ce stream comme actif
@@ -261,26 +262,29 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             await analysisAnimation.start(replyToMessage, channel);
         }
 
-        // Traiter les images
-        const imageDescriptions = imageUrls && imageUrls.length > 0 ? await processImages(imageUrls) : [];
+        // Traiter les images avec métadonnées complètes
+        let imageResults: ImageAnalysisResult[] = [];
+        let imageDescriptions: string[] = [];
 
-        // Logger l'analyse d'images si des images ont été traitées
         if (imageUrls && imageUrls.length > 0) {
-            await logBotImageAnalysis(userName, imageUrls.length, imageDescriptions.length);
+            imageResults = await processImagesWithMetadata(imageUrls);
+            imageDescriptions = imageResults.map(r => r.description);
+
+            // Logger l'analyse d'images avec toutes les métadonnées
+            if (imageResults.length > 0) {
+                await logBotImageAnalysis(userName, imageResults);
+            }
         }
 
         // Traiter les images du thread starter si présent
         let threadStarterImageDescriptions: string[] = [];
         if (threadStarterContext && threadStarterContext.imageUrls.length > 0) {
             console.log(`[processLLMRequest] Processing ${threadStarterContext.imageUrls.length} image(s) from thread starter`);
-            threadStarterImageDescriptions = await processImages(threadStarterContext.imageUrls);
+            const threadImageResults = await processImagesWithMetadata(threadStarterContext.imageUrls);
+            threadStarterImageDescriptions = threadImageResults.map(r => r.description);
 
-            if (threadStarterContext.imageUrls.length > 0) {
-                await logBotImageAnalysis(
-                    `${userName} (thread starter)`,
-                    threadStarterContext.imageUrls.length,
-                    threadStarterImageDescriptions.length
-                );
+            if (threadImageResults.length > 0) {
+                await logBotImageAnalysis(`${userName} (thread starter)`, threadImageResults);
             }
         }
 
@@ -293,12 +297,14 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         console.log(`[Memory]: ${recentTurns.length} turns loaded (Sliding Window active)`);
 
         // Obtenir le contexte web si nécessaire
+        const webSearchStartTime = Date.now();
         const webContext = await getWebContext(prompt);
         if (webContext) {
-            console.log("[SearchService] Web context added to prompt");
+            const webSearchTime = Date.now() - webSearchStartTime;
+            console.log(`[SearchService] Web context added to prompt (${webSearchTime}ms)`);
 
-            // Logger la recherche web
-            await logBotWebSearch(userName, prompt, webContext.facts?.length || 0);
+            // Logger la recherche web avec le temps
+            await logBotWebSearch(userName, prompt, webContext.facts?.length || 0, webSearchTime);
         }
 
         // Récupérer le profil de l'utilisateur actuel
@@ -408,6 +414,13 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                                 }
 
                                 if (sendMessage && hasTextContent && !isModerationRefusal) {
+                                    // Récupérer les réactions appliquées
+                                    const appliedEmojis = emojiHandler.getAppliedEmojis();
+                                    const reactionEmoji = appliedEmojis.length > 0 ? appliedEmojis[0] : undefined;
+
+                                    // Calculer le temps de réponse total
+                                    const responseTime = Date.now() - requestStartTime;
+
                                     // Logger la réponse de Netricsa
                                     await logBotResponse(
                                         userName,
@@ -417,7 +430,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                                         cleanedText,
                                         totalTokens,
                                         imageDescriptions.length > 0,
-                                        webContext !== null
+                                        webContext !== null,
+                                        reactionEmoji,
+                                        responseTime
                                     );
 
                                     // Filtrage intelligent de la mémoire

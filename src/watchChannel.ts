@@ -4,6 +4,7 @@ import {setBotPresence} from "./bot";
 import {generateMentionEmoji} from "./services/emojiService";
 import {collectAllMediaUrls} from "./services/gifService";
 import {updateUserActivityFromPresence} from "./services/activityService";
+import {logBotReaction} from "./utils/discordLogger";
 
 function isWatchedChannel(message: Message, watchedChannelId?: string): boolean {
     return !!watchedChannelId && message.channelId === watchedChannelId;
@@ -33,12 +34,15 @@ async function handleNettieReaction(client: Client, message: Message): Promise<s
         const emoji = await generateMentionEmoji(message.content);
         await message.react(emoji);
         console.log(`[Emoji] Reacted with: ${emoji}`);
+        await setBotPresence(client, "online", "");
         return emoji;
     } catch (error) {
         console.error("[watchChannel] Failed to get emoji from LLM:", error);
+        await setBotPresence(client, "online", "");
         await message.react("🤗");
         return "🤗";
     }
+
 }
 
 async function getThreadStarterMessage(thread: any) {
@@ -141,10 +145,18 @@ export function registerWatchedChannelResponder(client: Client) {
                 // Ajouter une réaction emoji
                 const reactionEmoji = await handleNettieReaction(client, message);
 
+                // Logger la réaction
+                const channelName = (message.channel as any).name || `channel-${message.channelId}`;
+                await logBotReaction(
+                    message.author.username,
+                    channelName,
+                    message.content,
+                    reactionEmoji
+                );
+
                 // NOUVEAU : Enregistrer aussi en mémoire avec la réaction
                 if (userText) {
                     const passiveImageUrls = await collectAllMediaUrls(message);
-                    const channelName = (message.channel as any).name || `channel-${message.channelId}`;
 
                     // Enregistrer avec la réaction du bot
                     await recordPassiveMessage(

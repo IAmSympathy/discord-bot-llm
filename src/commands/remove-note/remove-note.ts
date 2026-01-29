@@ -1,6 +1,6 @@
 import {ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {UserProfileService} from "../../services/userProfileService";
-import {logProfile} from "../../utils/discordLogger";
+import {logCommand} from "../../utils/discordLogger";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -76,11 +76,11 @@ module.exports = {
             console.log(`[Remove Command] ${interaction.user.username} removed ${removeType} from ${username}: "${content}" (success: ${success})`);
 
             if (success) {
-                await logProfile(`Note supprimée`, undefined, [
-                    {name: "Par", value: interaction.user.username, inline: true},
-                    {name: "Utilisateur", value: username, inline: true},
-                    {name: "Type", value: removeType === "fact" ? "Fait" : removeType === "alias" ? "Alias" : "Intérêt", inline: true},
-                    {name: "Contenu", value: content.length > 100 ? content.substring(0, 100) + "..." : content}
+                await logCommand(`🗑️ Note supprimée`, undefined, [
+                    {name: "👤 Par", value: interaction.user.username, inline: true},
+                    {name: "👥 Utilisateur", value: username, inline: true},
+                    {name: "🏷️ Type", value: removeType === "fact" ? "Fait" : removeType === "alias" ? "Alias" : "Intérêt", inline: true},
+                    {name: "📄 Contenu", value: content.length > 100 ? content.substring(0, 100) + "..." : content, inline: false}
                 ]);
             }
         } catch (error) {

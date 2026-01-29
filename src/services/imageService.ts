@@ -3,6 +3,17 @@ import fs from "fs";
 import sharp from "sharp";
 import {logError} from "../utils/discordLogger";
 
+export interface ImageAnalysisResult {
+    url: string;
+    description: string;
+    width: number;
+    height: number;
+    size: number; // en bytes
+    format: string;
+    tokens: number;
+    processingTime: number; // en ms
+}
+
 /**
  * Convertit un buffer d'image (GIF, WebP, etc.) en PNG
  * Pour les GIFs animés, extrait la DERNIÈRE frame
@@ -78,7 +89,7 @@ export async function downloadImageAsBase64(url: string): Promise<string | null>
 /**
  * Génère une description d'image avec le modèle vision
  */
-export async function generateImageDescription(imageBase64: string): Promise<string | null> {
+export async function generateImageDescription(imageBase64: string): Promise<{ description: string; tokens: number } | null> {
     const visionPromptPath = process.env.SYSTEM_PROMPT_VISION_PATH;
     if (!visionPromptPath) {
         throw new Error("SYSTEM_PROMPT_VISION_PATH n'est pas défini dans le .env");
@@ -117,8 +128,10 @@ export async function generateImageDescription(imageBase64: string): Promise<str
 
         const result = await response.json();
         const description = result.message?.content || null;
-        console.log(`[ImageService] Generated description (${description?.length || 0} chars)`);
-        return description;
+        const tokens = (result.prompt_eval_count || 0) + (result.eval_count || 0);
+
+        console.log(`[ImageService] Generated description (${description?.length || 0} chars, ${tokens} tokens)`);
+        return description ? {description, tokens} : null;
     } catch (error) {
         console.error(`[ImageService] Error generating description:`, error);
         return null;
@@ -126,29 +139,75 @@ export async function generateImageDescription(imageBase64: string): Promise<str
 }
 
 /**
- * Traite plusieurs images et retourne leurs descriptions
+ * Traite plusieurs images et retourne leurs descriptions (compatibilité)
  */
 export async function processImages(imageUrls: string[]): Promise<string[]> {
-    const descriptions: string[] = [];
+    const results = await processImagesWithMetadata(imageUrls);
+    return results.map(r => r.description);
+}
 
-    console.log(`[ImageService] Processing ${imageUrls.length} image(s)...`);
+/**
+ * Traite plusieurs images et retourne toutes leurs métadonnées
+ */
+export async function processImagesWithMetadata(imageUrls: string[]): Promise<ImageAnalysisResult[]> {
+    const results: ImageAnalysisResult[] = [];
+
+    console.log(`[ImageService] Processing ${imageUrls.length} image(s) with metadata...`);
 
     for (const url of imageUrls) {
-        const base64 = await downloadImageAsBase64(url);
-        if (base64) {
-            console.log(`[ImageService] Downloaded ${url}, generating description...`);
-            const description = await generateImageDescription(base64);
-            if (description) {
-                descriptions.push(description);
-                console.log(`[ImageService] Description: ${description.substring(0, 100)}...`);
+        const startTime = Date.now();
+
+        try {
+            // Télécharger l'image
+            const response = await fetch(url);
+            if (!response.ok) {
+                console.error(`[ImageService] Failed to download ${url}`);
+                continue;
+            }
+
+            const arrayBuffer = await response.arrayBuffer();
+            let buffer = Buffer.from(arrayBuffer);
+            const originalSize = buffer.length;
+
+            // Obtenir les métadonnées avec sharp
+            const metadata = await sharp(buffer).metadata();
+            const originalFormat = metadata.format || 'unknown';
+
+            // Convertir si nécessaire
+            const isGif = url.toLowerCase().includes('.gif');
+            const isWebP = url.toLowerCase().includes('.webp') || originalFormat === 'webp';
+
+            if (isGif || isWebP) {
+                buffer = await convertToPNG(buffer);
+            }
+
+            // Générer la description
+            const base64 = buffer.toString("base64");
+            const result = await generateImageDescription(base64);
+
+            if (result) {
+                const processingTime = Date.now() - startTime;
+
+                results.push({
+                    url,
+                    description: result.description,
+                    width: metadata.width || 0,
+                    height: metadata.height || 0,
+                    size: originalSize,
+                    format: originalFormat,
+                    tokens: result.tokens,
+                    processingTime
+                });
+
+                console.log(`[ImageService] Processed ${url} in ${processingTime}ms`);
             } else {
                 console.error(`[ImageService] Failed to generate description for ${url}`);
             }
-        } else {
-            console.error(`[ImageService] Failed to download ${url}`);
+        } catch (error) {
+            console.error(`[ImageService] Error processing ${url}:`, error);
         }
     }
 
-    console.log(`[ImageService] Successfully processed ${descriptions.length}/${imageUrls.length} image(s)`);
-    return descriptions;
+    console.log(`[ImageService] Successfully processed ${results.length}/${imageUrls.length} image(s)`);
+    return results;
 }

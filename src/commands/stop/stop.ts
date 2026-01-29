@@ -1,5 +1,6 @@
 import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
 import {abortStream} from "../../queue/queue";
+import {logCommand} from "../../utils/discordLogger";
 
 module.exports = {
     data: new SlashCommandBuilder().setName("stop").setDescription("Arrête de force le raisonnement de Netricsa dans un cas où elle est coincé dans uen boucle"),
@@ -23,6 +24,13 @@ module.exports = {
                     content: "Je suis désolé, j'arrête de parler.",
                 });
                 console.log(`[Stop Command] Stream aborted by ${interaction.user.displayName}`);
+
+                // Logger l'arrêt forcé
+                await logCommand("🛑 Réponse arrêtée", undefined, [
+                    {name: "👤 Par", value: interaction.user.displayName, inline: true},
+                    {name: "⚙️ Action", value: "Arrêt forcé du raisonnement", inline: true},
+                    {name: "✅ Statut", value: "Succès", inline: true}
+                ]);
             } else {
                 await interaction.editReply({
                     content: "Mais... Je ne suis pas en train de parler...",

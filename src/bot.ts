@@ -6,7 +6,7 @@ import {registerWatchedChannelResponder} from "./watchChannel";
 import {registerForumThreadHandler} from "./forumThreadHandler";
 import {registerCitationsThreadHandler} from "./citationsThreadHandler";
 import deployCommands from "./deploy/deployCommands";
-import {initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
+import {initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerMessageEdit, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
 
 export async function setBotPresence(client: Client, status: PresenceStatusData, activityName?: string) {
     if (!client.user) return;
@@ -280,6 +280,26 @@ client.on(Events.MessageDelete, async (message) => {
     }
 });
 
+// Message édité
+client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
+    if (newMessage.author?.bot) return;
+
+    // Ignorer les messages partiels (cache miss)
+    if (oldMessage.partial || newMessage.partial) return;
+
+    // Ignorer si le contenu n'a pas changé (embed auto-génération, etc.)
+    if (oldMessage.content === newMessage.content) return;
+
+    await logServerMessageEdit(
+        newMessage.author?.username || "Utilisateur inconnu",
+        newMessage.channel.isDMBased() ? "DM" : (newMessage.channel.name || "Salon inconnu"),
+        oldMessage.content || "(pas de contenu texte)",
+        newMessage.content || "(pas de contenu texte)",
+        newMessage.attachments.size
+    );
+    console.log(`[Server Event] Message edited by ${newMessage.author?.username || "Unknown"}`);
+});
+
 // État vocal mis à jour (join, leave, move, mute, deaf)
 client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     const member = newState.member;
@@ -314,7 +334,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
         }
     }
 
-    // Changement de mute (seulement les mutes serveur, pas auto-mute)
+    // Changement de mute (seulement les mutes serveur par modérateur)
     if (oldState.serverMute !== newState.serverMute) {
         const isMuted = !!newState.serverMute;
 
@@ -324,28 +344,31 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                 limit: 1
             });
             const muteLog = auditLogs.entries.first();
-            const moderator = muteLog?.executor?.username;
 
-            await logServerVoiceMute(
-                member.user.username,
-                member.user.id,
-                isMuted,
-                false, // Si on est ici, c'est forcément un server mute
-                moderator
-            );
-            console.log(`[Server Event] ${member.user.username} ${isMuted ? 'muted' : 'unmuted'} by server${moderator ? ` (by ${moderator})` : ''}`);
+            // Vérifier que c'est une action récente (dans les 2 dernières secondes) et que ça concerne bien ce membre
+            if (muteLog &&
+                muteLog.target?.id === member.id &&
+                Date.now() - muteLog.createdTimestamp < 2000 &&
+                muteLog.executor?.id !== member.id) { // Pas un self-action
+
+                const moderator = muteLog.executor?.username;
+
+                await logServerVoiceMute(
+                    member.user.username,
+                    member.user.id,
+                    isMuted,
+                    false,
+                    moderator
+                );
+                console.log(`[Server Event] ${member.user.username} ${isMuted ? 'muted' : 'unmuted'} by server (by ${moderator})`);
+            }
+            // Sinon, c'est probablement un changement automatique lors de la connexion - ne pas logger
         } catch (error) {
-            await logServerVoiceMute(
-                member.user.username,
-                member.user.id,
-                isMuted,
-                false
-            );
-            console.log(`[Server Event] ${member.user.username} ${isMuted ? 'muted' : 'unmuted'} by server`);
+            // En cas d'erreur des audit logs, ne pas logger pour éviter les faux positifs
         }
     }
 
-    // Changement de deaf (seulement les deafs serveur, pas auto-deaf)
+    // Changement de deaf (seulement les deafs serveur par modérateur)
     if (oldState.serverDeaf !== newState.serverDeaf) {
         const isDeafened = !!newState.serverDeaf;
 
@@ -355,24 +378,27 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                 limit: 1
             });
             const deafLog = auditLogs.entries.first();
-            const moderator = deafLog?.executor?.username;
 
-            await logServerVoiceDeaf(
-                member.user.username,
-                member.user.id,
-                isDeafened,
-                false, // Si on est ici, c'est forcément un server deaf
-                moderator
-            );
-            console.log(`[Server Event] ${member.user.username} ${isDeafened ? 'deafened' : 'undeafened'} by server${moderator ? ` (by ${moderator})` : ''}`);
+            // Vérifier que c'est une action récente (dans les 2 dernières secondes) et que ça concerne bien ce membre
+            if (deafLog &&
+                deafLog.target?.id === member.id &&
+                Date.now() - deafLog.createdTimestamp < 2000 &&
+                deafLog.executor?.id !== member.id) { // Pas un self-action
+
+                const moderator = deafLog.executor?.username;
+
+                await logServerVoiceDeaf(
+                    member.user.username,
+                    member.user.id,
+                    isDeafened,
+                    false,
+                    moderator
+                );
+                console.log(`[Server Event] ${member.user.username} ${isDeafened ? 'deafened' : 'undeafened'} by server (by ${moderator})`);
+            }
+            // Sinon, c'est probablement un changement automatique lors de la connexion - ne pas logger
         } catch (error) {
-            await logServerVoiceDeaf(
-                member.user.username,
-                member.user.id,
-                isDeafened,
-                false
-            );
-            console.log(`[Server Event] ${member.user.username} ${isDeafened ? 'deafened' : 'undeafened'} by server`);
+            // En cas d'erreur des audit logs, ne pas logger pour éviter les faux positifs
         }
     }
 });
@@ -402,6 +428,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     try {
+
         await command.execute(interaction);
     } catch (error: any) {
         console.error("[Command Error]", error);
