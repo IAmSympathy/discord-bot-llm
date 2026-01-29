@@ -6,7 +6,7 @@ import {registerWatchedChannelResponder} from "./watchChannel";
 import {registerForumThreadHandler} from "./forumThreadHandler";
 import {registerCitationsThreadHandler} from "./citationsThreadHandler";
 import deployCommands from "./deploy/deployCommands";
-import {initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerMessageEdit, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
+import {createErrorEmbed, initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerMessageEdit, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
 
 export async function setBotPresence(client: Client, status: PresenceStatusData, activityName?: string) {
     if (!client.user) return;
@@ -237,12 +237,34 @@ client.on(Events.ChannelCreate, async (channel) => {
         else if (channel.type === ChannelType.GuildAnnouncement) channelType = "Annonces";
         else if (channel.type === ChannelType.GuildForum) channelType = "Forum";
 
+        let createdBy: string | undefined;
+
+        // Tenter de récupérer qui a créé le salon
+        try {
+            const auditLogs = await channel.guild.fetchAuditLogs({
+                type: 10, // CHANNEL_CREATE
+                limit: 1
+            });
+
+            const createLog = auditLogs.entries.first();
+            if (createLog && createLog.targetId === channel.id) {
+                const timeDiff = Date.now() - createLog.createdTimestamp;
+                // Vérifier que le log est récent (moins de 5 secondes)
+                if (timeDiff < 5000) {
+                    createdBy = createLog.executor?.username;
+                }
+            }
+        } catch (error) {
+            console.log(`[Server Event] Could not fetch audit logs for channel creation`);
+        }
+
         await logServerChannelCreate(
             channel.name || "Sans nom",
             channelType,
-            channel.id
+            channel.id,
+            createdBy
         );
-        console.log(`[Server Event] Channel created: ${channel.name}`);
+        console.log(`[Server Event] Channel created: ${channel.name}${createdBy ? ` by ${createdBy}` : ''}`);
     }
 });
 
@@ -256,12 +278,34 @@ client.on(Events.ChannelDelete, async (channel) => {
         else if (channel.type === ChannelType.GuildAnnouncement) channelType = "Annonces";
         else if (channel.type === ChannelType.GuildForum) channelType = "Forum";
 
+        let deletedBy: string | undefined;
+
+        // Tenter de récupérer qui a supprimé le salon
+        try {
+            const auditLogs = await channel.guild.fetchAuditLogs({
+                type: 12, // CHANNEL_DELETE
+                limit: 1
+            });
+
+            const deleteLog = auditLogs.entries.first();
+            if (deleteLog && deleteLog.targetId === channel.id) {
+                const timeDiff = Date.now() - deleteLog.createdTimestamp;
+                // Vérifier que le log est récent (moins de 5 secondes)
+                if (timeDiff < 5000) {
+                    deletedBy = deleteLog.executor?.username;
+                }
+            }
+        } catch (error) {
+            console.log(`[Server Event] Could not fetch audit logs for channel deletion`);
+        }
+
         await logServerChannelDelete(
             channel.name || "Sans nom",
             channelType,
-            channel.id
+            channel.id,
+            deletedBy
         );
-        console.log(`[Server Event] Channel deleted: ${channel.name}`);
+        console.log(`[Server Event] Channel deleted: ${channel.name}${deletedBy ? ` by ${deletedBy}` : ''}`);
     }
 });
 
@@ -270,13 +314,38 @@ client.on(Events.MessageDelete, async (message) => {
     if (message.author?.bot) return;
 
     if (message.content || message.attachments.size > 0) {
+        let deletedBy: string | undefined;
+
+        // Tenter de récupérer qui a supprimé le message
+        if (message.guild) {
+            try {
+                const auditLogs = await message.guild.fetchAuditLogs({
+                    type: 72, // MESSAGE_DELETE
+                    limit: 1
+                });
+
+                const deleteLog = auditLogs.entries.first();
+                if (deleteLog && deleteLog.targetId === message.author?.id) {
+                    const timeDiff = Date.now() - deleteLog.createdTimestamp;
+                    // Vérifier que le log est récent (moins de 5 secondes)
+                    if (timeDiff < 5000) {
+                        deletedBy = deleteLog.executor?.username;
+                    }
+                }
+            } catch (error) {
+                // Si on ne peut pas accéder aux audit logs, on continue sans
+                console.log(`[Server Event] Could not fetch audit logs for message deletion`);
+            }
+        }
+
         await logServerMessageDelete(
             message.author?.username || "Utilisateur inconnu",
             message.channel.isDMBased() ? "DM" : (message.channel.name || "Salon inconnu"),
             message.content || "(pas de contenu texte)",
-            message.attachments.size
+            message.attachments.size,
+            deletedBy
         );
-        console.log(`[Server Event] Message deleted from ${message.author?.username || "Unknown"}`);
+        console.log(`[Server Event] Message deleted from ${message.author?.username || "Unknown"}${deletedBy ? ` by ${deletedBy}` : ''}`);
     }
 });
 
@@ -295,7 +364,8 @@ client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
         newMessage.channel.isDMBased() ? "DM" : (newMessage.channel.name || "Salon inconnu"),
         oldMessage.content || "(pas de contenu texte)",
         newMessage.content || "(pas de contenu texte)",
-        newMessage.attachments.size
+        newMessage.attachments.size,
+        newMessage.author?.username // L'auteur est celui qui édite son propre message
     );
     console.log(`[Server Event] Message edited by ${newMessage.author?.username || "Unknown"}`);
 });
@@ -305,7 +375,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
     const member = newState.member;
     if (!member) return;
 
-    // Déplacement entre salons vocaux
+    // Déplacement entre salons vocaux (seulement les déplacements forcés par un modérateur)
     else if (oldState.channel && newState.channel && oldState.channel.id !== newState.channel.id) {
         try {
             const auditLogs = await newState.guild.fetchAuditLogs({
@@ -313,24 +383,27 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                 limit: 1
             });
             const moveLog = auditLogs.entries.first();
-            const moderator = moveLog?.executor?.username;
 
-            await logServerVoiceMove(
-                member.user.username,
-                member.user.id,
-                oldState.channel.name,
-                newState.channel.name,
-                moderator
-            );
-            console.log(`[Server Event] ${member.user.username} moved from ${oldState.channel.name} to ${newState.channel.name}${moderator ? ` by ${moderator}` : ''}`);
+            // Vérifier si c'est un déplacement forcé (par un modérateur) ou volontaire
+            if (moveLog && moveLog.targetId === member.user.id) {
+                const timeDiff = Date.now() - moveLog.createdTimestamp;
+                const moderator = moveLog.executor?.username;
+
+                // Logger seulement si c'est récent (< 5 secondes) ET par quelqu'un d'autre
+                if (timeDiff < 5000 && moderator && moderator !== member.user.username) {
+                    await logServerVoiceMove(
+                        member.user.username,
+                        member.user.id,
+                        oldState.channel.name,
+                        newState.channel.name,
+                        moderator
+                    );
+                    console.log(`[Server Event] ${member.user.username} moved from ${oldState.channel.name} to ${newState.channel.name} by ${moderator}`);
+                }
+                // Sinon, c'est un déplacement volontaire - ne pas logger
+            }
         } catch (error) {
-            await logServerVoiceMove(
-                member.user.username,
-                member.user.id,
-                oldState.channel.name,
-                newState.channel.name
-            );
-            console.log(`[Server Event] ${member.user.username} moved from ${oldState.channel.name} to ${newState.channel.name}`);
+            // En cas d'erreur des audit logs, ne pas logger pour éviter les faux positifs
         }
     }
 
@@ -441,10 +514,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
         // Essayer de répondre seulement si l'interaction est encore valide
         try {
+            const errorEmbed = createErrorEmbed(
+                "Erreur de commande",
+                "❌ Une erreur s'est produite lors de l'exécution de la commande.\n\n" +
+                "Veuillez réessayer plus tard."
+            );
+
             if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({content: "There was an error while executing this command!", flags: MessageFlags.Ephemeral});
+                await interaction.followUp({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
             } else {
-                await interaction.reply({content: "There was an error while executing this command!", flags: MessageFlags.Ephemeral});
+                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
             }
         } catch (replyError: any) {
             // Si on ne peut pas répondre (interaction expirée), log seulement

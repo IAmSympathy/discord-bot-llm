@@ -1,6 +1,6 @@
 import {ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {UserProfileService} from "../../services/userProfileService";
-import {logCommand} from "../../utils/discordLogger";
+import {createErrorEmbed, createSuccessEmbed, createWarningEmbed, logCommand} from "../../utils/discordLogger";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -31,43 +31,72 @@ module.exports = {
             const username = targetUser.username;
 
             let success = false;
+            let typeLabel = "";
 
             switch (removeType) {
                 case "fact":
                     success = await UserProfileService.removeFact(userId, username, content);
+                    typeLabel = "Fait";
                     if (success) {
+                        const successEmbed = createSuccessEmbed(
+                            "Fait supprimé",
+                            `✅ Un **fait** a été supprimé du profil de Netricsa concernant **${username}**.`
+                        );
                         await interaction.editReply({
-                            content: `Fait supprimé du profil de **${username}**`,
+                            embeds: [successEmbed]
                         });
                     } else {
+                        const warningEmbed = createWarningEmbed(
+                            "Fait non trouvé",
+                            `⚠️ Le fait spécifié n'a pas été trouvé dans le profil de Netricsa concernant **${username}**.\n\n` +
+                            `Essayez avec un texte plus court ou vérifiez le profil avec \`/profile\`.`
+                        );
                         await interaction.editReply({
-                            content: `Fait non trouvé dans le profil de **${username}**. Essayez avec un texte plus court ou vérifiez le profil avec \`/profile\`.`,
+                            embeds: [warningEmbed]
                         });
                     }
                     break;
 
                 case "alias":
                     success = await UserProfileService.removeAlias(userId, username, content);
+                    typeLabel = "Alias";
                     if (success) {
+                        const successEmbed = createSuccessEmbed(
+                            "Alias supprimé",
+                            `✅ L'**alias** "${content}" a été supprimé du profil de Netricsa concernant **${username}**.`
+                        );
                         await interaction.editReply({
-                            content: `Alias supprimé du profil de **${username}**: "${content}"`,
+                            embeds: [successEmbed]
                         });
                     } else {
+                        const warningEmbed = createWarningEmbed(
+                            "Alias non trouvé",
+                            `⚠️ L'alias "${content}" n'a pas été trouvé dans le profil de Netricsa.`
+                        );
                         await interaction.editReply({
-                            content: `Alias non trouvé: "${content}"`,
+                            embeds: [warningEmbed]
                         });
                     }
                     break;
 
                 case "interest":
                     success = await UserProfileService.removeInterest(userId, username, content);
+                    typeLabel = "Intérêt";
                     if (success) {
+                        const successEmbed = createSuccessEmbed(
+                            "Intérêt supprimé",
+                            `✅ Le **centre d'intérêt** "${content}" a été supprimé du profil de Netricsa concernant **${username}**.`
+                        );
                         await interaction.editReply({
-                            content: `Centre d'intérêt supprimé du profil de **${username}**: "${content}"`,
+                            embeds: [successEmbed]
                         });
                     } else {
+                        const warningEmbed = createWarningEmbed(
+                            "Intérêt non trouvé",
+                            `⚠️ Le centre d'intérêt "${content}" n'a pas été trouvé dans le profil de Netricsa.`
+                        );
                         await interaction.editReply({
-                            content: `Centre d'intérêt non trouvé: "${content}"`,
+                            embeds: [warningEmbed]
                         });
                     }
                     break;
@@ -79,14 +108,18 @@ module.exports = {
                 await logCommand(`🗑️ Note supprimée`, undefined, [
                     {name: "👤 Par", value: interaction.user.username, inline: true},
                     {name: "👥 Utilisateur", value: username, inline: true},
-                    {name: "🏷️ Type", value: removeType === "fact" ? "Fait" : removeType === "alias" ? "Alias" : "Intérêt", inline: true},
+                    {name: "🏷️ Type", value: typeLabel, inline: true},
                     {name: "📄 Contenu", value: content.length > 100 ? content.substring(0, 100) + "..." : content, inline: false}
                 ]);
             }
         } catch (error) {
             console.error("[Remove Command] Error:", error);
+            const errorEmbed = createErrorEmbed(
+                "Erreur",
+                "❌ Une erreur s'est produite lors de la suppression de la note du profil de Netricsa."
+            );
             await interaction.editReply({
-                content: "Une erreur s'est produite lors de la suppression.",
+                embeds: [errorEmbed]
             });
         }
     },

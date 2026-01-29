@@ -335,35 +335,51 @@ export async function logServerRoleUpdate(username: string, userId: string, adde
     });
 }
 
-export async function logServerChannelCreate(channelName: string, channelType: string, channelId: string) {
+export async function logServerChannelCreate(channelName: string, channelType: string, channelId: string, createdBy?: string) {
+    const fields = [
+        {name: "📝 Nom", value: channelName, inline: true},
+        {name: "📋 Type", value: channelType, inline: true},
+        {name: "🆔 ID", value: channelId, inline: true}
+    ];
+
+    if (createdBy) {
+        fields.push({name: "👤 Créé par", value: createdBy, inline: true});
+    }
+
     await logToDiscord({
         level: LogLevel.SERVER_CHANNEL_CREATE,
         title: "➕ Salon créé",
-        fields: [
-            {name: "📝 Nom", value: channelName, inline: true},
-            {name: "📋 Type", value: channelType, inline: true},
-            {name: "🆔 ID", value: channelId, inline: true}
-        ]
+        fields
     });
 }
 
-export async function logServerChannelDelete(channelName: string, channelType: string, channelId: string) {
+export async function logServerChannelDelete(channelName: string, channelType: string, channelId: string, deletedBy?: string) {
+    const fields = [
+        {name: "📝 Nom", value: channelName, inline: true},
+        {name: "📋 Type", value: channelType, inline: true},
+        {name: "🆔 ID", value: channelId, inline: true}
+    ];
+
+    if (deletedBy) {
+        fields.push({name: "🗑️ Supprimé par", value: deletedBy, inline: true});
+    }
+
     await logToDiscord({
         level: LogLevel.SERVER_CHANNEL_DELETE,
         title: "🗑️ Salon supprimé",
-        fields: [
-            {name: "📝 Nom", value: channelName, inline: true},
-            {name: "📋 Type", value: channelType, inline: true},
-            {name: "🆔 ID", value: channelId, inline: true}
-        ]
+        fields
     });
 }
 
-export async function logServerMessageDelete(username: string, channelName: string, messageContent: string, attachments: number) {
+export async function logServerMessageDelete(username: string, channelName: string, messageContent: string, attachments: number, deletedBy?: string) {
     const fields = [
         {name: "👤 Utilisateur", value: username, inline: true},
         {name: "📺 Salon", value: `#${channelName}`, inline: true}
     ];
+
+    if (deletedBy) {
+        fields.push({name: "🗑️ Supprimé par", value: deletedBy, inline: true});
+    }
 
     if (attachments > 0) {
         fields.push({name: "📎 Pièces jointes", value: `${attachments}`, inline: true});
@@ -381,11 +397,15 @@ export async function logServerMessageDelete(username: string, channelName: stri
     });
 }
 
-export async function logServerMessageEdit(username: string, channelName: string, oldContent: string, newContent: string, attachments: number) {
+export async function logServerMessageEdit(username: string, channelName: string, oldContent: string, newContent: string, attachments: number, editedBy?: string) {
     const fields = [
         {name: "👤 Utilisateur", value: username, inline: true},
         {name: "📺 Salon", value: `#${channelName}`, inline: true}
     ];
+
+    if (editedBy && editedBy !== username) {
+        fields.push({name: "✏️ Édité par", value: editedBy, inline: true});
+    }
 
     if (attachments > 0) {
         fields.push({name: "📎 Pièces jointes", value: `${attachments}`, inline: true});
@@ -524,21 +544,26 @@ export async function logServerVoiceDeaf(username: string, userId: string, isDea
 }
 
 // Logs de Netricsa (IA)
-export async function logBotResponse(username: string, userId: string, channelName: string, prompt: string, response: string, tokensUsed: number, hasImages: boolean, hasWebSearch: boolean, reaction?: string, responseTime?: number) {
+export async function logBotResponse(username: string, userId: string, channelName: string, prompt: string, response: string, tokensUsed: number, hasImages: boolean, hasWebSearch: boolean, reaction?: string, responseTime?: number, savedInMemory?: boolean) {
     const fields = [
         {name: "👤 Utilisateur", value: username, inline: true},
         {name: "📺 Salon", value: `#${channelName}`, inline: true},
         {name: "🎯 Tokens", value: `${tokensUsed}`, inline: true}
     ];
 
+    // Réaction dans un champ séparé si présente
+    if (reaction) {
+        fields.push({name: "👍 Réaction", value: reaction, inline: true});
+    }
+
     // Temps de réponse si fourni
     if (responseTime !== undefined) {
         fields.push({name: "⏱️ Temps", value: `${(responseTime / 1000).toFixed(2)}s`, inline: true});
     }
 
-    // Réaction dans un champ séparé si présente
-    if (reaction) {
-        fields.push({name: "🙂 Réaction ajoutée", value: reaction, inline: true});
+    // Statut de la mémoire
+    if (savedInMemory !== undefined) {
+        fields.push({name: "💾 Mémoire", value: savedInMemory ? "✅ Enregistré" : "⏭️ Ignoré", inline: true});
     }
 
     // Fonctionnalités utilisées
@@ -623,19 +648,58 @@ export async function logBotCommand(username: string, commandName: string, chann
     });
 }
 
-export async function logBotReaction(username: string, channelName: string, messageContent: string, reaction: string) {
+export async function logBotReaction(username: string, channelName: string, messageContent: string, reaction: string, savedInMemory?: boolean) {
     const fields = [
         {name: "👤 Utilisateur", value: username, inline: true},
         {name: "📺 Salon", value: `#${channelName}`, inline: true},
-        {name: "🙂 Réaction", value: reaction, inline: true}
+        {name: "👍 Réaction", value: reaction, inline: true}
     ];
+
+    // Statut de la mémoire
+    if (savedInMemory !== undefined) {
+        fields.push({name: "💾 Mémoire", value: savedInMemory ? "✅ Enregistré" : "⏭️ Ignoré", inline: true});
+    }
 
     const contentPreview = messageContent.length > 200 ? messageContent.substring(0, 200) + "..." : messageContent;
     fields.push({name: "💬 Message original", value: contentPreview, inline: false});
 
     await logToDiscord({
         level: LogLevel.BOT_RESPONSE,
-        title: "🙂 Réaction de Netricsa (sans réponse)",
+        title: "👍 Réaction de Netricsa (sans réponse)",
         fields
     });
 }
+
+// Fonctions helper pour créer des embeds de réponse éphémères
+export function createSuccessEmbed(title: string, description: string) {
+    return new EmbedBuilder()
+        .setColor(0x2ecc71) // Vert
+        .setTitle(`✅ ${title}`)
+        .setDescription(description)
+        .setTimestamp();
+}
+
+export function createErrorEmbed(title: string, description: string) {
+    return new EmbedBuilder()
+        .setColor(0xe74c3c) // Rouge
+        .setTitle(`❌ ${title}`)
+        .setDescription(description)
+        .setTimestamp();
+}
+
+export function createInfoEmbed(title: string, description: string) {
+    return new EmbedBuilder()
+        .setColor(0x3498db) // Bleu
+        .setTitle(`ℹ️ ${title}`)
+        .setDescription(description)
+        .setTimestamp();
+}
+
+export function createWarningEmbed(title: string, description: string) {
+    return new EmbedBuilder()
+        .setColor(0xf39c12) // Orange
+        .setTitle(`⚠️ ${title}`)
+        .setDescription(description)
+        .setTimestamp();
+}
+

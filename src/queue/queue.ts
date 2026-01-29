@@ -1,4 +1,4 @@
-import {Message as DiscordMessage, TextChannel, ThreadChannel} from "discord.js";
+import {Client, Message as DiscordMessage, TextChannel, ThreadChannel} from "discord.js";
 import {FileMemory} from "../memory/fileMemory";
 import {analyzeMessageType, shouldStoreAssistantMessage, shouldStoreUserMessage} from "../memory/memoryFilter";
 import {DISCORD_TYPING_UPDATE_INTERVAL, FILTER_PATTERNS, MEMORY_FILE_PATH, MEMORY_MAX_TURNS} from "../utils/constants";
@@ -10,6 +10,7 @@ import {EmojiReactionHandler} from "./emojiReactionHandler";
 import {buildCurrentUserBlock, buildHistoryBlock, buildThreadStarterBlock, buildWebContextBlock} from "./promptBuilder";
 import {UserProfileService} from "../services/userProfileService";
 import {logBotImageAnalysis, logBotResponse, logBotWebSearch, logError} from "../utils/discordLogger";
+import {BotStatus, clearStatus, setStatus} from "../services/statusService";
 
 const wait = require("node:timers/promises").setTimeout;
 
@@ -18,6 +19,7 @@ interface DirectLLMRequest {
     userId: string;
     userName: string;
     channel: TextChannel | ThreadChannel;
+    client: Client;
     replyToMessage?: DiscordMessage;
     referencedMessage?: DiscordMessage;
     imageUrls?: string[];
@@ -72,6 +74,7 @@ function enqueuePerChannel<T>(channelKey: string, job: AsyncJob<T>): Promise<T> 
 
 // Fonction pour enregistrer un message utilisateur passivement (Mode Hybride)
 // L'IA voit le message et le garde en mémoire, mais ne répond pas
+// Retourne true si le message a été sauvegardé, false sinon
 export async function recordPassiveMessage(
     userId: string,
     userName: string,
@@ -81,7 +84,7 @@ export async function recordPassiveMessage(
     imageUrls?: string[],
     botReaction?: string, // Pour enregistrer les réactions du bot (ex: "🤗")
     isReply?: boolean // Pour indiquer si c'est une réponse à un autre message
-): Promise<void> {
+): Promise<boolean> {
     const trimmed = messageContent.trim();
 
     // NOUVEAU : Détecter si c'est une question importante
@@ -172,7 +175,7 @@ export async function recordPassiveMessage(
 
     if (isInappropriateContent) {
         console.log(`[Memory Passive]: 🚫 Inappropriate content skipped from ${userName} in #${channelName}`);
-        return;
+        return false;
     }
 
     // Filtrer le message avant de l'enregistrer (sauf si forceStore)
@@ -180,7 +183,7 @@ export async function recordPassiveMessage(
 
     if (!shouldStore) {
         console.log(`[Memory Passive]: ⏭️ Message skipped from ${userName} in #${channelName}`);
-        return;
+        return false;
     }
 
     const messageType = analyzeMessageType(messageContent);
@@ -217,6 +220,7 @@ export async function recordPassiveMessage(
     const replyNote = isReply ? " [reply]" : "";
     const contextNote = forceStore ? " [contextual-response]" : "";
     console.log(`[Memory Passive]: 👁️ Recorded from ${userName} in #${channelName} [${messageType.type}]${imageDescriptions.length > 0 ? ` [${imageDescriptions.length} images]` : ""}${reactionNote}${replyNote}${contextNote}`);
+    return true;
 }
 
 // Fonction pour effacer TOUTE la mémoire globale
@@ -239,7 +243,7 @@ export function abortStream(channelKey: string): boolean {
 
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest) {
-    const {prompt, userId, userName, channel, replyToMessage, imageUrls, sendMessage = true, threadStarterContext} = request;
+    const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext} = request;
 
     // Clé de mémoire unique par channel
     // Si on est dans le watched channel, utiliser son ID fixe
@@ -255,6 +259,13 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         // Enregistrer ce stream comme actif
         const streamInfo = {abortFlag: false, channelId: channel.id};
         activeStreams.set(channelKey, streamInfo);
+
+        // Changer le statut selon l'activité
+        if (imageUrls && imageUrls.length > 0) {
+            await setStatus(client, imageUrls.length === 1 ? BotStatus.ANALYZING_IMAGE : BotStatus.ANALYZING_IMAGES(imageUrls.length));
+        } else {
+            await setStatus(client, BotStatus.READING_MEMORY);
+        }
 
         // Gérer l'animation d'analyse d'image
         const analysisAnimation = new ImageAnalysisAnimation();
@@ -298,6 +309,17 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
         // Obtenir le contexte web si nécessaire
         const webSearchStartTime = Date.now();
+
+        // Détecter si une recherche web est nécessaire
+        const needsWebSearch = prompt.toLowerCase().includes("recherche") ||
+            prompt.toLowerCase().includes("google") ||
+            prompt.toLowerCase().includes("cherche") ||
+            prompt.includes("?");
+
+        if (needsWebSearch) {
+            await setStatus(client, BotStatus.SEARCHING_WEB);
+        }
+
         const webContext = await getWebContext(prompt);
         if (webContext) {
             const webSearchTime = Date.now() - webSearchStartTime;
@@ -305,6 +327,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
             // Logger la recherche web avec le temps
             await logBotWebSearch(userName, prompt, webContext.facts?.length || 0, webSearchTime);
+
+            // Changer le statut après la recherche web
+            await setStatus(client, BotStatus.THINKING);
         }
 
         // Récupérer le profil de l'utilisateur actuel
@@ -342,6 +367,8 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             console.log(`[Images]: ${imageDescriptions.length} image description(s) included in context`);
         }
 
+        // Changer le statut à "écrit"
+        await setStatus(client, BotStatus.WRITING);
 
         console.log(`[processLLMRequest] Sending request to Ollama`);
 
@@ -421,7 +448,15 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                                     // Calculer le temps de réponse total
                                     const responseTime = Date.now() - requestStartTime;
 
-                                    // Logger la réponse de Netricsa
+                                    // Filtrage intelligent de la mémoire
+                                    const shouldStoreUser = shouldStoreUserMessage(prompt);
+                                    const shouldStoreAssistant = shouldStoreAssistantMessage(cleanedText);
+
+                                    // Forcer la sauvegarde si le message contient des images ou du contexte web
+                                    const hasImportantContext = imageDescriptions.length > 0 || webContext !== null;
+                                    const willSaveInMemory = (shouldStoreUser && shouldStoreAssistant) || hasImportantContext;
+
+                                    // Logger la réponse de Netricsa avec l'info de mémoire
                                     await logBotResponse(
                                         userName,
                                         userId,
@@ -432,17 +467,11 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                                         imageDescriptions.length > 0,
                                         webContext !== null,
                                         reactionEmoji,
-                                        responseTime
+                                        responseTime,
+                                        willSaveInMemory
                                     );
 
-                                    // Filtrage intelligent de la mémoire
-                                    const shouldStoreUser = shouldStoreUserMessage(prompt);
-                                    const shouldStoreAssistant = shouldStoreAssistantMessage(cleanedText);
-
-                                    // Forcer la sauvegarde si le message contient des images ou du contexte web
-                                    const hasImportantContext = imageDescriptions.length > 0 || webContext !== null;
-
-                                    if (shouldStoreUser && shouldStoreAssistant || hasImportantContext) {
+                                    if (willSaveInMemory) {
                                         const messageType = analyzeMessageType(prompt);
 
                                         // Détecter si c'est un reply
@@ -480,6 +509,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                                 } else if (isModerationRefusal) {
                                     console.log(`[Memory]: 🚫 Moderation refusal detected, NOT saving to memory`);
                                 }
+
+                                // Réinitialiser le statut
+                                await clearStatus(client);
 
                                 activeStreams.delete(channelKey);
                                 clearInterval(throttleResponseInterval);
@@ -532,6 +564,9 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             });
         } catch (error) {
             console.error("[processLLMRequest] Error:", error);
+
+            // Réinitialiser le statut en cas d'erreur
+            await clearStatus(client);
 
             await logError("Erreur de traitement LLM", undefined, [
                 {name: "Utilisateur", value: userName, inline: true},

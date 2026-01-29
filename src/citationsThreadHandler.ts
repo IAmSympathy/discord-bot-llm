@@ -1,6 +1,6 @@
 import {Client, Events, Message} from "discord.js";
-import {setBotPresence} from "./bot";
 import {generateCitationEmoji} from "./services/emojiService";
+import {BotStatus, clearStatus, setStatus} from "./services/statusService";
 
 const CITATIONS_THREAD_ID = process.env.CITATIONS_THREAD_ID;
 
@@ -11,7 +11,7 @@ export function registerCitationsThreadHandler(client: Client) {
             if (!CITATIONS_THREAD_ID || message.channelId !== CITATIONS_THREAD_ID) return;
             if (!message.channel.isThread()) return;
 
-            await setBotPresence(client, "online", "Réfléchit…");
+            await setStatus(client, BotStatus.GENERATING_CITATION);
 
             const threadName = message.channel.name;
             const parentChannel = message.channel.parent?.name || "Unknown";
@@ -26,9 +26,10 @@ export function registerCitationsThreadHandler(client: Client) {
 
             console.log(`[CitationsThread] Réaction ${emoji} ajoutée`);
 
-            await setBotPresence(client, "online");
+            await clearStatus(client);
         } catch (error) {
             console.error("[CitationsThread] Erreur lors du traitement du message:", error);
+            await clearStatus(client);
         }
     });
 

@@ -5,6 +5,7 @@ import {generateMentionEmoji} from "./services/emojiService";
 import {collectAllMediaUrls} from "./services/gifService";
 import {updateUserActivityFromPresence} from "./services/activityService";
 import {logBotReaction} from "./utils/discordLogger";
+import {BotStatus, clearStatus, setStatus} from "./services/statusService";
 
 function isWatchedChannel(message: Message, watchedChannelId?: string): boolean {
     return !!watchedChannelId && message.channelId === watchedChannelId;
@@ -28,17 +29,17 @@ function extractMentionContext(message: Message): string {
 
 async function handleNettieReaction(client: Client, message: Message): Promise<string> {
     console.log(`Message from ${message.author.username} talks about Nettie`);
-    await setBotPresence(client, "online", "Réfléchit…");
+    await setStatus(client, BotStatus.CHOOSING_REACTION);
 
     try {
         const emoji = await generateMentionEmoji(message.content);
         await message.react(emoji);
         console.log(`[Emoji] Reacted with: ${emoji}`);
-        await setBotPresence(client, "online", "");
+        await clearStatus(client);
         return emoji;
     } catch (error) {
         console.error("[watchChannel] Failed to get emoji from LLM:", error);
-        await setBotPresence(client, "online", "");
+        await clearStatus(client);
         await message.react("🤗");
         return "🤗";
     }
@@ -138,6 +139,7 @@ export function registerWatchedChannelResponder(client: Client) {
             const userText = message.content?.trim();
             const isMentioned = message.mentions.has(client.user!.id);
             const isInWatchedChannel = isWatchedChannel(message, watchedChannelId);
+            const channelName = (message.channel as any).name || `channel-${message.channelId}`;
 
             // Gestion des mentions de Nettie (réaction uniquement)
             const mentionsNettie = message.content.toLowerCase().includes("nettie") || message.content.toLowerCase().includes("netricsa");
@@ -145,21 +147,13 @@ export function registerWatchedChannelResponder(client: Client) {
                 // Ajouter une réaction emoji
                 const reactionEmoji = await handleNettieReaction(client, message);
 
-                // Logger la réaction
-                const channelName = (message.channel as any).name || `channel-${message.channelId}`;
-                await logBotReaction(
-                    message.author.username,
-                    channelName,
-                    message.content,
-                    reactionEmoji
-                );
-
                 // NOUVEAU : Enregistrer aussi en mémoire avec la réaction
+                let savedInMemory = false;
                 if (userText) {
                     const passiveImageUrls = await collectAllMediaUrls(message);
 
                     // Enregistrer avec la réaction du bot
-                    await recordPassiveMessage(
+                    savedInMemory = await recordPassiveMessage(
                         message.author.id,
                         message.author.displayName,
                         userText,
@@ -170,8 +164,17 @@ export function registerWatchedChannelResponder(client: Client) {
                         undefined // Pas de isReply pour les mentions Nettie
                     );
 
-                    console.log(`[Nettie Reaction] Message recorded with reaction ${reactionEmoji} in #${channelName}`);
+                    console.log(`[Nettie Reaction] Message recorded with reaction ${reactionEmoji} in #${channelName}${savedInMemory ? ' (saved in memory)' : ' (not saved)'}`);
                 }
+
+                // Logger la réaction
+                await logBotReaction(
+                    message.author.username,
+                    channelName,
+                    message.content,
+                    reactionEmoji,
+                    savedInMemory
+                );
 
                 return; // Ne pas répondre avec du texte, juste la réaction
             }
@@ -252,10 +255,7 @@ export function registerWatchedChannelResponder(client: Client) {
                 contextPrompt = mentionContext + contextPrompt;
             }
 
-            // Changer le statut du bot pour indiquer qu'il réfléchit
-            await setBotPresence(client, "online", "Réfléchit…");
-
-            await message.channel.sendTyping();
+            // Mettre à jour les rôles Discord si l'utilisateur en a
 
             const triggerReason = isMentioned ? "mentioned" : "watched channel";
             console.log(`[watchChannel] Processing message from ${message.author.displayName} (${triggerReason}): ${userText}${imageUrls.length > 0 ? ` [${imageUrls.length} image(s)]` : ""}`);
@@ -280,6 +280,7 @@ export function registerWatchedChannelResponder(client: Client) {
                 userId: message.author.id,
                 userName: message.author.displayName,
                 channel: message.channel as TextChannel,
+                client: client,
                 replyToMessage: message,
                 referencedMessage: referencedMsg,
                 imageUrls,

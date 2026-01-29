@@ -53,6 +53,7 @@ ${userMessage}`;
                 userId,
                 userName: username,
                 channel: thread,
+                client: client,
                 replyToMessage: starterMessage,
                 imageUrls: images,
             });
