@@ -182,8 +182,8 @@ export function registerWatchedChannelResponder(client: Client) {
             // MODE HYBRIDE : Enregistrer TOUS les messages passivement (même sans mention)
             // L'IA voit tout mais ne répond que quand mentionnée ou dans le canal surveillé
             if (!isMentioned && !isInWatchedChannel && userText) {
-                // Collecter les médias pour les enregistrer aussi
-                const passiveImageUrls = await collectAllMediaUrls(message);
+                // NE PAS collecter les médias pour les messages passifs (sans mention)
+                // Les images ne sont analysées que si le bot est mentionné ou dans le canal surveillé
 
                 // Obtenir le nom du channel
                 const channelName = (message.channel as any).name || `channel-${message.channelId}`;
@@ -191,14 +191,14 @@ export function registerWatchedChannelResponder(client: Client) {
                 // Détecter si c'est une réponse à un autre message
                 const isReply = !!message.reference?.messageId;
 
-                // Enregistrer passivement (sans répondre)
+                // Enregistrer passivement (sans répondre et sans analyser les images)
                 await recordPassiveMessage(
                     message.author.id,
                     message.author.displayName,
                     userText,
                     message.channelId,
                     channelName,
-                    passiveImageUrls,
+                    undefined, // Pas d'images
                     undefined, // Pas de réaction
                     isReply // Passer le flag reply
                 );
