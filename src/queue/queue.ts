@@ -1,4 +1,4 @@
-import {Client, Message as DiscordMessage, TextChannel, ThreadChannel} from "discord.js";
+import {ChannelType, Client, DMChannel, Message as DiscordMessage, TextChannel, ThreadChannel} from "discord.js";
 import {FileMemory} from "../memory/fileMemory";
 import {analyzeMessageType, shouldStoreAssistantMessage, shouldStoreUserMessage} from "../memory/memoryFilter";
 import {DISCORD_TYPING_UPDATE_INTERVAL, FILTER_PATTERNS, MEMORY_FILE_PATH, MEMORY_MAX_TURNS} from "../utils/constants";
@@ -11,6 +11,7 @@ import {buildCurrentUserBlock, buildHistoryBlock, buildThreadStarterBlock, build
 import {UserProfileService} from "../services/userProfileService";
 import {logBotImageAnalysis, logBotResponse, logBotWebSearch, logError} from "../utils/discordLogger";
 import {BotStatus, clearStatus, setStatus} from "../services/statusService";
+import {getDMRecentTurns} from "../services/dmMemoryService";
 
 const wait = require("node:timers/promises").setTimeout;
 
@@ -18,7 +19,7 @@ interface DirectLLMRequest {
     prompt: string;
     userId: string;
     userName: string;
-    channel: TextChannel | ThreadChannel;
+    channel: TextChannel | ThreadChannel | DMChannel;
     client: Client;
     replyToMessage?: DiscordMessage;
     referencedMessage?: DiscordMessage;
@@ -41,9 +42,10 @@ interface DirectLLMRequest {
 const memory = new FileMemory(MEMORY_FILE_PATH);
 const ollamaService = new OllamaService();
 
-// Système de queue par channel pour traiter les requêtes séquentiellement
+// ===== QUEUE GLOBALE UNIQUE =====
+// Avec un seul LLM, toutes les requêtes (DM + Serveur) doivent être traitées séquentiellement
 type AsyncJob<T> = () => Promise<T>;
-const channelQueues = new Map<string, Promise<unknown>>();
+let globalQueue: Promise<unknown> = Promise.resolve();
 const activeStreams = new Map<string, { abortFlag: boolean; channelId: string }>();
 const activeImageAnalysis = new Map<string, ImageAnalysisAnimation>(); // Animations d'analyse d'image actives
 const pendingResponses = new Map<string, { resolve: (value: string) => void; reject: (error: any) => void }>(); // Pour stocker les promesses de réponse
@@ -60,8 +62,12 @@ interface RecentQuestion {
 const recentQuestionsByChannel = new Map<string, RecentQuestion>();
 const QUESTION_CONTEXT_TIMEOUT = 30000; // 30 secondes
 
-function enqueuePerChannel<T>(channelKey: string, job: AsyncJob<T>): Promise<T> {
-    const prev = channelQueues.get(channelKey) ?? Promise.resolve();
+/**
+ * Mettre une tâche en queue globale unique
+ * Garantit que toutes les requêtes LLM (DM + Serveur) sont traitées séquentiellement
+ */
+function enqueueGlobally<T>(job: AsyncJob<T>): Promise<T> {
+    const prev = globalQueue;
 
     const next = prev
         .catch(() => {
@@ -69,13 +75,9 @@ function enqueuePerChannel<T>(channelKey: string, job: AsyncJob<T>): Promise<T> 
         })
         .then(job);
 
-    channelQueues.set(
-        channelKey,
-        next.finally(() => {
-            // Nettoyage si personne n'a enchaîné après
-            if (channelQueues.get(channelKey) === next) channelQueues.delete(channelKey);
-        }),
-    );
+    globalQueue = next.catch(() => {
+        // Capturer les erreurs pour ne pas casser la chaîne
+    });
 
     return next;
 }
@@ -289,9 +291,10 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         });
     }
 
-    // Mettre en queue pour traiter séquentiellement par channel
-    enqueuePerChannel(channelKey, async () => {
+    // Mettre en queue globale unique (un seul LLM pour toutes les requêtes)
+    enqueueGlobally(async () => {
         const requestStartTime = Date.now();
+        console.log(`[GlobalQueue] Processing request from user ${userId} in ${channel.type === ChannelType.DM ? 'DM' : `#${(channel as any).name || channelKey}`}`);
         console.log(`[processLLMRequest] User ${userId} sent prompt: ${prompt}${imageUrls && imageUrls.length > 0 ? ` with ${imageUrls.length} image(s)` : ""}`);
 
 
@@ -348,13 +351,24 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             }
         }
 
-        // Charger les prompts système
-        const {finalPrompt: finalSystemPrompt} = ollamaService.loadSystemPrompts(channel.id);
+        // Déterminer si c'est un DM
+        const isDM = channel.type === ChannelType.DM;
 
-        // Récupérer l'historique de mémoire GLOBAL avec Sliding Window
-        const recentTurns = await memory.getRecentTurns(MEMORY_MAX_TURNS);
+        // Charger les prompts système avec le contexte approprié (DM ou serveur)
+        const {finalPrompt: finalSystemPrompt} = ollamaService.loadSystemPrompts(channel.id, isDM);
 
-        console.log(`[Memory]: ${recentTurns.length} turns loaded (Sliding Window active)`);
+        // Charger la mémoire appropriée
+        let recentTurns;
+
+        if (isDM) {
+            // Charger la mémoire DM de l'utilisateur
+            recentTurns = await getDMRecentTurns(userId, MEMORY_MAX_TURNS);
+            console.log(`[Memory]: ${recentTurns.length} DM turns loaded for ${userName}`);
+        } else {
+            // Charger l'historique de mémoire GLOBAL avec Sliding Window
+            recentTurns = await memory.getRecentTurns(MEMORY_MAX_TURNS);
+            console.log(`[Memory]: ${recentTurns.length} turns loaded (Sliding Window active)`);
+        }
 
         // Obtenir le contexte web si nécessaire
         const webSearchStartTime = Date.now();
@@ -389,8 +403,10 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             console.log(`[UserProfile] Profile loaded for ${userName}`);
         }
 
-        // Obtenir le nom du channel actuel
-        const channelName = (channel as any).name || `channel-${channel.id}`;
+        // Obtenir le nom du channel actuel (ou "DM avec {userName}" si c'est un DM)
+        const channelName = isDM
+            ? `DM avec ${userName}`
+            : ((channel as any).name || `channel-${channel.id}`);
 
         // Construire les blocs de prompt
         const threadStarterBlock = threadStarterContext ? buildThreadStarterBlock(threadStarterContext, threadStarterImageDescriptions) : "";
@@ -665,7 +681,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
             await logError("Erreur de traitement LLM", undefined, [
                 {name: "Utilisateur", value: userName, inline: true},
-                {name: "Canal", value: channel.name || "Thread", inline: true},
+                {name: "Canal", value: (channel as any).name || channel.type === ChannelType.DM ? "DM" : "Thread", inline: true},
                 {name: "Erreur", value: error instanceof Error ? error.message : String(error)}
             ]);
 

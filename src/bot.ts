@@ -38,11 +38,14 @@ const client = new Client({
         GatewayIntentBits.GuildVoiceStates,  // Pour les événements vocaux
         GatewayIntentBits.GuildPresences,    // Pour voir les activités (jeux en cours)
         GatewayIntentBits.GuildMessageReactions, // Pour les réactions aux messages (role reaction)
+        GatewayIntentBits.DirectMessages,    // Pour recevoir les messages privés (DM)
+        GatewayIntentBits.DirectMessageTyping, // Pour voir quand quelqu'un écrit en DM
     ],
     partials: [
         Partials.Message,
         Partials.Reaction,
         Partials.User,
+        Partials.Channel,  // Important pour les DMs
     ],
 });
 

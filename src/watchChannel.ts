@@ -7,6 +7,7 @@ import {updateUserActivityFromPresence} from "./services/activityService";
 import {logBotReaction} from "./utils/discordLogger";
 import {BotStatus, clearStatus, setStatus} from "./services/statusService";
 import {isLowPowerMode} from "./services/botStateService";
+import {appendDMTurn, getDMRecentTurns} from "./services/dmMemoryService";
 
 function isWatchedChannel(message: Message, watchedChannelId?: string): boolean {
     return !!watchedChannelId && message.channelId === watchedChannelId;
@@ -132,6 +133,74 @@ export function registerWatchedChannelResponder(client: Client) {
         try {
             // Ignore bots (évite boucle infinie)
             if (message.author?.bot) return;
+
+            // ===== GESTION DES DMs =====
+            if (message.channel.type === ChannelType.DM) {
+                console.log(`[DM] Message from ${message.author.username}: "${message.content.substring(0, 50)}..."`);
+
+                // Fetch le canal complet si c'est un partial
+                const dmChannel = message.channel.partial ? await message.channel.fetch() : message.channel;
+
+                // Vérifier si en Low Power Mode
+                if (isLowPowerMode()) {
+                    await message.reply(`🔋 Désolée, je suis en mode Low Power pour économiser les ressources. Je ne peux pas effectuer d'analyse LLM pour le moment.\n\n💡 Utilisez \`/lowpower\` pour me réactiver en mode normal.`);
+                    console.log(`[DM] Low Power Mode - sent message to ${message.author.username}`);
+                    return;
+                }
+
+                const userText = message.content?.trim();
+                if (!userText || userText.length === 0) {
+                    console.log(`[DM] Empty message from ${message.author.username}, ignoring`);
+                    return;
+                }
+
+                const userId = message.author.id;
+                const userName = message.author.username;
+
+                // Collecter les médias (images, GIFs)
+                const imageUrls = await collectAllMediaUrls(message);
+
+                // Construire le prompt pour le DM
+                let dmPrompt = `[Conversation privée (DM) avec ${userName}]\n\n${userText}`;
+
+                // Récupérer l'historique de conversation DM
+                const dmMemory = await getDMRecentTurns(userId, 20);
+
+                console.log(`[DM] Processing message from ${userName} (${dmMemory.length} turns in memory)`);
+
+                // Traiter avec processLLMRequest
+                await processLLMRequest({
+                    prompt: dmPrompt,
+                    userId: userId,
+                    userName: userName,
+                    channel: dmChannel,
+                    client: client,
+                    replyToMessage: message,
+                    imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+                    sendMessage: true,
+                    skipMemory: true, // On gère la mémoire DM nous-mêmes
+                    returnResponse: true
+                }).then(async (response) => {
+                    // Enregistrer dans la mémoire DM
+                    if (response) {
+                        await appendDMTurn(userId, {
+                            ts: Date.now(),
+                            discordUid: userId,
+                            displayName: userName,
+                            channelId: message.channelId,
+                            channelName: "DM",
+                            userText: userText,
+                            assistantText: response,
+                            isPassive: false,
+                            ...(imageUrls.length > 0 ? {imageDescriptions: [`${imageUrls.length} image(s)`]} : {})
+                        });
+                        console.log(`[DM] Saved conversation turn for ${userName}`);
+                    }
+                });
+
+                return; // Sortir après traitement DM
+            }
+            // ===== FIN GESTION DES DMs =====
 
             // Vérifier si le bot est en Low Power Mode
             if (isLowPowerMode()) {

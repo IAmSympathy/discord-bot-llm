@@ -545,9 +545,16 @@ export async function logServerVoiceDeaf(username: string, userId: string, isDea
 
 // Logs de Netricsa (IA)
 export async function logBotResponse(username: string, userId: string, channelName: string, prompt: string, response: string, tokensUsed: number, hasImages: boolean, hasWebSearch: boolean, reaction?: string, responseTime?: number, savedInMemory?: boolean) {
+    // Détecter si c'est un DM (commence par "DM avec ")
+    const isDM = channelName.startsWith("DM avec ");
+
     const fields = [
         {name: "👤 Utilisateur", value: username, inline: true},
-        {name: "📺 Salon", value: `#${channelName}`, inline: true},
+        {
+            name: isDM ? "📧 DM" : "📺 Salon",
+            value: isDM ? channelName : `#${channelName}`,
+            inline: true
+        },
         {name: "🎯 Tokens", value: `${tokensUsed}`, inline: true}
     ];
 
