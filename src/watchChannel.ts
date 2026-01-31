@@ -14,15 +14,20 @@ function isWatchedChannel(message: Message, watchedChannelId?: string): boolean 
 /**
  * Extrait les informations sur les utilisateurs mentionnés dans le message
  * et retourne un contexte formaté pour l'IA
- */
-function extractMentionContext(message: Message): string {
+ */function extractMentionContext(message: Message, client: Client): string {
     if (message.mentions.users.size === 0) return "";
 
     const mentionedUsers: string[] = [];
     message.mentions.users.forEach((user) => {
+        // Exclure le bot lui-même des mentions
+        if (user.id === client.user?.id) return;
+
         const displayName = user.displayName || user.username;
         mentionedUsers.push(`@${displayName} (Username: ${user.username}, UID: ${user.id})`);
     });
+
+    // Si aucun utilisateur (sauf le bot) n'a été mentionné, ne pas ajouter de contexte
+    if (mentionedUsers.length === 0) return "";
 
     return `\n[UTILISATEURS MENTIONNÉS DANS CE MESSAGE]\n${mentionedUsers.join("\n")}\n[Si l'information concerne une personne mentionnée, utilise SON UID, pas celui de ${message.author.displayName}]\n\n`;
 }
@@ -142,15 +147,17 @@ export function registerWatchedChannelResponder(client: Client) {
             const channelName = (message.channel as any).name || `channel-${message.channelId}`;
 
             // Gestion des mentions de Nettie (réaction uniquement)
-            const mentionsNettie = message.content.toLowerCase().includes("nettie") || message.content.toLowerCase().includes("netricsa");
+            const contentLower = message.content?.toLowerCase() || "";
+            const mentionsNettie = contentLower.includes("nettie") || contentLower.includes("netricsa");
             if (mentionsNettie && !isMentioned && !isInWatchedChannel) {
+
                 // Ajouter une réaction emoji
                 const reactionEmoji = await handleNettieReaction(client, message);
 
-                // NOUVEAU : Enregistrer aussi en mémoire avec la réaction
+                // NOUVEAU : Enregistrer aussi en mémoire avec la réaction (sans analyser les images)
                 let savedInMemory = false;
                 if (userText) {
-                    const passiveImageUrls = await collectAllMediaUrls(message);
+                    // NE PAS collecter les médias pour les mentions Nettie (juste une réaction, pas d'analyse)
 
                     // Enregistrer avec la réaction du bot
                     savedInMemory = await recordPassiveMessage(
@@ -159,7 +166,7 @@ export function registerWatchedChannelResponder(client: Client) {
                         userText,
                         message.channelId,
                         channelName,
-                        passiveImageUrls,
+                        undefined, // Pas d'images
                         reactionEmoji, // ← Passer la réaction
                         undefined // Pas de isReply pour les mentions Nettie
                     );
@@ -181,29 +188,32 @@ export function registerWatchedChannelResponder(client: Client) {
 
             // MODE HYBRIDE : Enregistrer TOUS les messages passivement (même sans mention)
             // L'IA voit tout mais ne répond que quand mentionnée ou dans le canal surveillé
-            if (!isMentioned && !isInWatchedChannel && userText) {
+            if (!isMentioned && !isInWatchedChannel) {
                 // NE PAS collecter les médias pour les messages passifs (sans mention)
                 // Les images ne sont analysées que si le bot est mentionné ou dans le canal surveillé
 
-                // Obtenir le nom du channel
-                const channelName = (message.channel as any).name || `channel-${message.channelId}`;
+                // Si le message a du texte, l'enregistrer passivement
+                if (userText) {
+                    // Obtenir le nom du channel
+                    const channelName = (message.channel as any).name || `channel-${message.channelId}`;
 
-                // Détecter si c'est une réponse à un autre message
-                const isReply = !!message.reference?.messageId;
+                    // Détecter si c'est une réponse à un autre message
+                    const isReply = !!message.reference?.messageId;
 
-                // Enregistrer passivement (sans répondre et sans analyser les images)
-                await recordPassiveMessage(
-                    message.author.id,
-                    message.author.displayName,
-                    userText,
-                    message.channelId,
-                    channelName,
-                    undefined, // Pas d'images
-                    undefined, // Pas de réaction
-                    isReply // Passer le flag reply
-                );
+                    // Enregistrer passivement (sans répondre et sans analyser les images)
+                    await recordPassiveMessage(
+                        message.author.id,
+                        message.author.displayName,
+                        userText,
+                        message.channelId,
+                        channelName,
+                        undefined, // Pas d'images
+                        undefined, // Pas de réaction
+                        isReply // Passer le flag reply
+                    );
+                }
 
-                return; // Ne pas répondre, juste enregistrer
+                return; // Ne pas répondre, juste enregistrer (ou ignorer si pas de texte)
             }
 
             // À partir d'ici, le bot VA RÉPONDRE (mention ou canal surveillé)
@@ -250,7 +260,7 @@ export function registerWatchedChannelResponder(client: Client) {
             }
 
             // Ajouter le contexte des utilisateurs mentionnés (avec leurs UIDs)
-            const mentionContext = extractMentionContext(message);
+            const mentionContext = extractMentionContext(message, client);
             if (mentionContext) {
                 contextPrompt = mentionContext + contextPrompt;
             }

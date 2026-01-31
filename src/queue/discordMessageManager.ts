@@ -11,20 +11,27 @@ export class ImageAnalysisAnimation {
     private dotCount = 1;
 
     async start(replyToMessage?: DiscordMessage, channel?: any): Promise<void> {
-        if (replyToMessage) {
-            this.message = await replyToMessage.reply("Analyse de l'image.");
-        } else if (channel) {
-            this.message = await channel.send("Analyse de l'image.");
-        }
-
-        this.interval = setInterval(async () => {
-            if (this.message) {
-                this.dotCount = (this.dotCount % 3) + 1;
-                const dots = ".".repeat(this.dotCount);
-                await this.message.edit(`Analyse de l'image${dots}`).catch(() => {
-                });
+        try {
+            if (replyToMessage) {
+                this.message = await replyToMessage.reply("Analyse de l'image.");
+            } else if (channel) {
+                this.message = await channel.send("Analyse de l'image.");
             }
-        }, IMAGE_ANALYSIS_ANIMATION_INTERVAL);
+
+            if (this.message) {
+                this.interval = setInterval(async () => {
+                    if (this.message) {
+                        this.dotCount = (this.dotCount % 3) + 1;
+                        const dots = ".".repeat(this.dotCount);
+                        await this.message.edit(`Analyse de l'image${dots}`).catch(() => {
+                        });
+                    }
+                }, IMAGE_ANALYSIS_ANIMATION_INTERVAL);
+            }
+        } catch (error) {
+            console.error(`[ImageAnalysisAnimation] Erreur lors du démarrage:`, error);
+            throw error;
+        }
     }
 
     async stop(): Promise<void> {

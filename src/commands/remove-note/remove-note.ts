@@ -40,7 +40,7 @@ module.exports = {
                     if (success) {
                         const successEmbed = createSuccessEmbed(
                             "Fait supprimé",
-                            `✅ Un **fait** a été supprimé du profil de Netricsa concernant **${username}**.`
+                            `Un **fait** a été supprimé du profil de Netricsa concernant **${username}**.`
                         );
                         await interaction.editReply({
                             embeds: [successEmbed]
@@ -63,7 +63,7 @@ module.exports = {
                     if (success) {
                         const successEmbed = createSuccessEmbed(
                             "Alias supprimé",
-                            `✅ L'**alias** "${content}" a été supprimé du profil de Netricsa concernant **${username}**.`
+                            `L'**alias** "${content}" a été supprimé du profil de Netricsa concernant **${username}**.`
                         );
                         await interaction.editReply({
                             embeds: [successEmbed]
@@ -71,7 +71,7 @@ module.exports = {
                     } else {
                         const warningEmbed = createWarningEmbed(
                             "Alias non trouvé",
-                            `⚠️ L'alias "${content}" n'a pas été trouvé dans le profil de Netricsa.`
+                            `L'alias "${content}" n'a pas été trouvé dans le profil de Netricsa.`
                         );
                         await interaction.editReply({
                             embeds: [warningEmbed]
@@ -85,7 +85,7 @@ module.exports = {
                     if (success) {
                         const successEmbed = createSuccessEmbed(
                             "Intérêt supprimé",
-                            `✅ Le **centre d'intérêt** "${content}" a été supprimé du profil de Netricsa concernant **${username}**.`
+                            `Le **centre d'intérêt** "${content}" a été supprimé du profil de Netricsa concernant **${username}**.`
                         );
                         await interaction.editReply({
                             embeds: [successEmbed]
@@ -93,7 +93,7 @@ module.exports = {
                     } else {
                         const warningEmbed = createWarningEmbed(
                             "Intérêt non trouvé",
-                            `⚠️ Le centre d'intérêt "${content}" n'a pas été trouvé dans le profil de Netricsa.`
+                            `Le centre d'intérêt "${content}" n'a pas été trouvé dans le profil de Netricsa.`
                         );
                         await interaction.editReply({
                             embeds: [warningEmbed]
@@ -116,7 +116,7 @@ module.exports = {
             console.error("[Remove Command] Error:", error);
             const errorEmbed = createErrorEmbed(
                 "Erreur",
-                "❌ Une erreur s'est produite lors de la suppression de la note du profil de Netricsa."
+                "Une erreur s'est produite lors de la suppression de la note du profil de Netricsa."
             );
             await interaction.editReply({
                 embeds: [errorEmbed]

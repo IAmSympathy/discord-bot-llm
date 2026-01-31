@@ -28,7 +28,7 @@ module.exports = {
             // Créer l'embed de confirmation
             const confirmEmbed = createWarningEmbed(
                 "Effacement de la mémoire",
-                "⚠️ **Attention !** Cette action va effacer **toute la mémoire de conversation de Netricsa** (tous les salons).\n\n" +
+                "**Attention !** Cette action va effacer **toute la mémoire de conversation de Netricsa** (tous les salons).\n\n" +
                 "Netricsa ne se souviendra plus d'aucune conversation précédente.\n\n" +
                 "**Êtes-vous sûr de vouloir continuer ?**"
             );
@@ -72,7 +72,7 @@ module.exports = {
                     // Mettre à jour le message éphémère
                     const successEmbed = createSuccessEmbed(
                         "Mémoire effacée",
-                        "✅ La mémoire de conversation de Netricsa a été **complètement effacée**.\n\n" +
+                        "La mémoire de conversation de Netricsa a été **complètement effacée**.\n\n" +
                         "Netricsa ne se souvient plus d'aucune conversation précédente."
                     );
 

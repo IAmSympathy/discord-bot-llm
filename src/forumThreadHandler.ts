@@ -1,7 +1,9 @@
 import {ChannelType, Client, Events, ThreadChannel} from "discord.js";
-import {processLLMRequest} from "./queue/queue";
+import {cleanupImageAnalysis, processLLMRequest, registerImageAnalysis} from "./queue/queue";
 import {collectAllMediaUrls} from "./services/gifService";
 import {processImagesWithMetadata} from "./services/imageService";
+import {ImageAnalysisAnimation} from "./queue/discordMessageManager";
+import {logBotImageAnalysis} from "./utils/discordLogger";
 
 const FORUM_CHANNEL_ID = process.env.FORUM_CHANNEL_ID;
 
@@ -22,8 +24,8 @@ export function registerForumThreadHandler(client: Client) {
             const postName = thread.name;
             console.log(`[ForumThread] Nouveau post détecté dans "${forumName}": ${postName}`);
 
-            // Attendre un peu pour que le message soit disponible
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            // Attendre 5 secondes pour que Discord charge complètement le message et ses attachments
+            await new Promise((resolve) => setTimeout(resolve, 5000));
 
             // Récupérer les messages du thread (le premier sera le message initial)
             const messages = await thread.messages.fetch({limit: 1});
@@ -34,20 +36,58 @@ export function registerForumThreadHandler(client: Client) {
                 return;
             }
 
-            // Extraire les médias (images et GIFs) du message initial
+            const userMessage = starterMessage.content || "[Image sans texte]";
+            const userId = starterMessage.author.id;
+            const username = starterMessage.author.username;
+
+            // Vérifier rapidement s'il y a des médias
+            const hasAttachments = starterMessage.attachments.size > 0;
+            const messageContent = starterMessage.content || '';
+            const hasTenorUrl = messageContent.includes('tenor.com');
+            const hasDirectMediaUrl = /https?:\/\/[^\s]+\.(?:gif|png|jpg|jpeg|webp)(?:\?[^\s]*)?/i.test(messageContent);
+            const hasMedia = hasAttachments || hasTenorUrl || hasDirectMediaUrl;
+
+            // Démarrer l'animation IMMÉDIATEMENT si des médias sont détectés
+            const analysisAnimation = new ImageAnalysisAnimation();
+            let animationStarted = false;
+
+            if (hasMedia) {
+                console.log(`[ForumThread] ${starterMessage.attachments.size} média(s) détecté(s), démarrage de l'animation...`);
+                try {
+                    await analysisAnimation.start(starterMessage, thread);
+                    animationStarted = true;
+                    // Enregistrer l'animation pour permettre son arrêt via /stop
+                    registerImageAnalysis(thread.id, analysisAnimation);
+                } catch (error) {
+                    console.error(`[ForumThread] Erreur lors de l'envoi du message d'animation:`, error);
+                }
+            }
+
+            // Collecter les médias (peut prendre du temps avec Tenor)
             const imageUrls = await collectAllMediaUrls(starterMessage);
 
             // Analyser les images avec un contexte spécial pour les créations artistiques
             let imageDescriptions: string[] = [];
+            let imageResults: any[] = [];
+
             if (imageUrls.length > 0) {
                 console.log(`[ForumThread] Analysing ${imageUrls.length} image(s) with artistic context...`);
-                const imageResults = await processImagesWithMetadata(imageUrls, 'creation');
-                imageDescriptions = imageResults.map(r => r.description);
-            }
 
-            const userMessage = starterMessage.content || "[Image sans texte]";
-            const userId = starterMessage.author.id;
-            const username = starterMessage.author.username;
+                // Analyser les images
+                imageResults = await processImagesWithMetadata(imageUrls, 'creation');
+                imageDescriptions = imageResults.map(r => r.description);
+
+                // Ne PAS arrêter l'animation ici - elle sera réutilisée par processLLMRequest
+                // et stoppée automatiquement quand le streaming de la réponse commence
+
+                // Logger l'analyse d'images
+                if (imageResults.length > 0) {
+                    await logBotImageAnalysis(username, imageResults);
+                }
+
+                // Nettoyer l'enregistrement de l'animation (elle sera gérée par processLLMRequest maintenant)
+                cleanupImageAnalysis(thread.id);
+            }
 
             // Ajouter le contexte du forum et du post dans le prompt avec instructions spéciales pour les créations
             let contextPrompt = `[Contexte: Forum "${forumName}", Post "${postName}"]
@@ -86,7 +126,7 @@ ${userMessage}`;
 
             console.log(`[ForumThread] Analyse du post de ${username}: "${userMessage.substring(0, 50)}..."${imageUrls.length > 0 ? ` [${imageUrls.length} média(s) analysés]` : ""}`);
 
-            // Envoyer au LLM pour analyse (sans imageUrls car déjà analysées et incluses dans le prompt)
+            // Envoyer au LLM pour analyse avec les images déjà analysées
             await processLLMRequest({
                 prompt: contextPrompt,
                 userId,
@@ -94,7 +134,11 @@ ${userMessage}`;
                 channel: thread,
                 client: client,
                 replyToMessage: starterMessage,
-                // Ne pas passer imageUrls car elles sont déjà analysées avec le contexte 'creation'
+                imageUrls: imageUrls.length > 0 ? imageUrls : undefined, // Passer les URLs pour éviter les erreurs
+                skipImageAnalysis: true, // Toujours true car on analyse avant
+                preAnalyzedImages: imageResults.length > 0 ? imageResults : undefined, // Passer les résultats pré-calculés
+                originalUserMessage: userMessage, // Message original pour les logs
+                preStartedAnimation: animationStarted ? analysisAnimation : undefined, // Passer l'animation pour réutiliser le message
             });
 
             console.log(`[ForumThread] Réponse envoyée dans le thread "${postName}"`);

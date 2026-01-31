@@ -29,6 +29,10 @@ interface DirectLLMRequest {
         author: string;
         imageUrls: string[];
     };
+    skipImageAnalysis?: boolean; // Flag pour indiquer que les images sont déjà analysées
+    preAnalyzedImages?: ImageAnalysisResult[]; // Résultats d'analyse pré-calculés
+    originalUserMessage?: string; // Message original de l'utilisateur (pour les logs, sans les instructions système)
+    preStartedAnimation?: ImageAnalysisAnimation; // Animation déjà démarrée à réutiliser
 }
 
 // Configuration mémoire persistante
@@ -39,6 +43,7 @@ const ollamaService = new OllamaService();
 type AsyncJob<T> = () => Promise<T>;
 const channelQueues = new Map<string, Promise<unknown>>();
 const activeStreams = new Map<string, { abortFlag: boolean; channelId: string }>();
+const activeImageAnalysis = new Map<string, ImageAnalysisAnimation>(); // Animations d'analyse d'image actives
 
 // NOUVEAU : Cache des dernières questions par canal pour le contexte conversationnel
 // Permet de garder les "Oui"/"Non" qui répondent à des questions importantes
@@ -241,9 +246,31 @@ export function abortStream(channelKey: string): boolean {
     return false;
 }
 
+// Fonction pour enregistrer une animation d'analyse d'image
+export function registerImageAnalysis(channelKey: string, animation: ImageAnalysisAnimation): void {
+    activeImageAnalysis.set(channelKey, animation);
+}
+
+// Fonction pour arrêter une analyse d'image en cours
+export async function abortImageAnalysis(channelKey: string): Promise<boolean> {
+    const animation = activeImageAnalysis.get(channelKey);
+    if (animation) {
+        await animation.stop();
+        activeImageAnalysis.delete(channelKey);
+        console.log(`[AbortImageAnalysis] Image analysis aborted for channel ${channelKey}`);
+        return true;
+    }
+    return false;
+}
+
+// Fonction pour nettoyer une animation d'analyse terminée
+export function cleanupImageAnalysis(channelKey: string): void {
+    activeImageAnalysis.delete(channelKey);
+}
+
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest) {
-    const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext} = request;
+    const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext, skipImageAnalysis = false, preAnalyzedImages = [], originalUserMessage, preStartedAnimation} = request;
 
     // Clé de mémoire unique par channel
     // Si on est dans le watched channel, utiliser son ID fixe
@@ -261,15 +288,16 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         activeStreams.set(channelKey, streamInfo);
 
         // Changer le statut selon l'activité
-        if (imageUrls && imageUrls.length > 0) {
+        if (imageUrls && imageUrls.length > 0 && !skipImageAnalysis) {
             await setStatus(client, imageUrls.length === 1 ? BotStatus.ANALYZING_IMAGE : BotStatus.ANALYZING_IMAGES(imageUrls.length));
         } else {
             await setStatus(client, BotStatus.READING_MEMORY);
         }
 
-        // Gérer l'animation d'analyse d'image
-        const analysisAnimation = new ImageAnalysisAnimation();
-        if (imageUrls && imageUrls.length > 0) {
+        // Gérer l'animation d'analyse d'image (seulement si pas déjà analysée)
+        // Si une animation a déjà été démarrée (par forumThreadHandler), la réutiliser
+        const analysisAnimation = preStartedAnimation || new ImageAnalysisAnimation();
+        if (imageUrls && imageUrls.length > 0 && !skipImageAnalysis && !preStartedAnimation) {
             await analysisAnimation.start(replyToMessage, channel);
         }
 
@@ -278,12 +306,21 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         let imageDescriptions: string[] = [];
 
         if (imageUrls && imageUrls.length > 0) {
-            imageResults = await processImagesWithMetadata(imageUrls);
-            imageDescriptions = imageResults.map(r => r.description);
+            // Si les images sont déjà analysées (depuis forumThreadHandler), utiliser les résultats
+            if (skipImageAnalysis && preAnalyzedImages.length > 0) {
+                console.log(`[processLLMRequest] Using pre-analyzed images (${preAnalyzedImages.length})`);
+                imageResults = preAnalyzedImages;
+                imageDescriptions = imageResults.map(r => r.description);
+                // Ne pas logger ici, déjà loggé dans forumThreadHandler
+            } else {
+                // Sinon, analyser les images normalement
+                imageResults = await processImagesWithMetadata(imageUrls);
+                imageDescriptions = imageResults.map(r => r.description);
 
-            // Logger l'analyse d'images avec toutes les métadonnées
-            if (imageResults.length > 0) {
-                await logBotImageAnalysis(userName, imageResults);
+                // Logger l'analyse d'images avec toutes les métadonnées
+                if (imageResults.length > 0) {
+                    await logBotImageAnalysis(userName, imageResults);
+                }
             }
         }
 
@@ -461,7 +498,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                                         userName,
                                         userId,
                                         channelName,
-                                        prompt,
+                                        originalUserMessage || prompt, // Utiliser le message original si fourni, sinon le prompt complet
                                         cleanedText,
                                         totalTokens,
                                         imageDescriptions.length > 0,
