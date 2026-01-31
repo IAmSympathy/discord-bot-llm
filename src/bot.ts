@@ -11,6 +11,7 @@ import {createErrorEmbed, initializeDiscordLogger, logServerBan, logServerChanne
 import {sendGoodbyeMessage, sendWelcomeMessage} from "./services/welcomeService";
 import {isLowPowerMode} from "./services/botStateService";
 import {setLowPowerStatus, setNormalStatus} from "./services/statusService";
+import {initializeMemeScheduler} from "./services/memeScheduler";
 
 export async function setBotPresence(client: Client, status: PresenceStatusData, activityName?: string) {
     if (!client.user) return;
@@ -97,6 +98,9 @@ client.once(Events.ClientReady, async () => {
         await setNormalStatus(client);
         console.log("Bot started in Normal Mode");
     }
+
+    // Initialiser le planificateur de memes automatiques
+    initializeMemeScheduler(client);
 });
 
 // === ÉVÉNEMENTS SERVEUR DISCORD ===
