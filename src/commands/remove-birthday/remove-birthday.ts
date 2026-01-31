@@ -5,7 +5,7 @@ import {createErrorEmbed, createSuccessEmbed, logCommand} from "../../utils/disc
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("remove-birthday")
-        .setDescription("Supprime votre date d'anniversaire"),
+        .setDescription("Supprime ta date d'anniversaire de ton profil NETRICSA"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply({flags: MessageFlags.Ephemeral});

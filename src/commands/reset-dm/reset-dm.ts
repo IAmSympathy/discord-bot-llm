@@ -5,7 +5,7 @@ import {logCommand} from "../../utils/discordLogger";
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("reset-dm")
-        .setDescription("Réinitialise ta mémoire de conversation en DM avec Netricsa"),
+        .setDescription("Réinitialise la mémoire de conversation de Netricsa en DM"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {

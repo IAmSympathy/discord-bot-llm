@@ -5,7 +5,7 @@ import {createErrorEmbed, createSuccessEmbed, logCommand} from "../../utils/disc
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("add-note")
-        .setDescription("Ajoute une note sur le profil d'un utilisateur")
+        .setDescription("Ajoute une note sur le profil NETRICSA d'un utilisateur")
         .addUserOption((option) => option.setName("user").setDescription("L'utilisateur concerné").setRequired(true))
         .addStringOption((option) =>
             option

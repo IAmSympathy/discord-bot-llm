@@ -43,7 +43,7 @@ function saveMemeToHistory(meme: { id: string; title: string; url: string }): vo
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("findmeme")
-        .setDescription("Demande à Netricsa de trouver un meme aléatoire"),
+        .setDescription("Demande à Netricsa de trouver un meme sur internet"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
@@ -67,13 +67,13 @@ module.exports = {
             }
 
             // Réponse immédiate
-            await interaction.reply("🎭 Recherche d'un meme...");
+            await interaction.reply("Recherche d'un meme...");
 
             // Récupérer un meme
             const meme = await getRandomMeme();
 
             if (!meme) {
-                await interaction.editReply("🤷 Désolée, je n'ai plus de nouveaux memes à partager pour le moment !");
+                await interaction.editReply("Désolée, je n'ai plus de nouveaux memes à partager pour le moment !");
                 return;
             }
 

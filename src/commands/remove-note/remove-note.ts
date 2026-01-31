@@ -5,7 +5,7 @@ import {createErrorEmbed, createSuccessEmbed, createWarningEmbed, logCommand} fr
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("remove-note")
-        .setDescription("Supprime une note du profil d'un utilisateur")
+        .setDescription("Supprime une note du profil NETRICSA d'un utilisateur")
         .addUserOption((option) => option.setName("user").setDescription("L'utilisateur concerné").setRequired(true))
         .addStringOption((option) =>
             option

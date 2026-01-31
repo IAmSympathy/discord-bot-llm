@@ -3,7 +3,7 @@ import {abortImageAnalysis, abortStream} from "../../queue/queue";
 import {logCommand} from "../../utils/discordLogger";
 
 module.exports = {
-    data: new SlashCommandBuilder().setName("stop").setDescription("Arrête de force le raisonnement de Netricsa dans un cas où elle est coincé dans uen boucle"),
+    data: new SlashCommandBuilder().setName("stop").setDescription("Arrête de force le raisonnement et/ou l'analyse d'image(s) de Netricsa"),
     async execute(interaction: ChatInputCommandInteraction) {
         try {
             const channelKey = process.env.WATCH_CHANNEL_ID || interaction.channelId;

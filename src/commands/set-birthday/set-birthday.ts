@@ -5,7 +5,7 @@ import {createErrorEmbed, createSuccessEmbed, logCommand} from "../../utils/disc
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("set-birthday")
-        .setDescription("Définit votre date d'anniversaire")
+        .setDescription("Définit ta date d'anniversaire sur ton profil NETRICSA")
         .addIntegerOption((option) =>
             option
                 .setName("jour")

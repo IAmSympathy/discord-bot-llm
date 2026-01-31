@@ -7,7 +7,7 @@ import {hasOwnerPermission} from "../../utils/permissions";
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("lowpower")
-        .setDescription("Active/désactive le mode Low Power (économise les ressources LLM)"),
+        .setDescription("Active/Désactive le Low Power Mode manuellement (désactive l'automatique)"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
@@ -22,7 +22,7 @@ module.exports = {
                 return;
             }
 
-            // Toggle le mode
+            // Toggle le mode (marque automatiquement comme manuel)
             const newState = toggleLowPowerMode();
 
             // Changer le statut Discord en fonction du mode
@@ -34,15 +34,16 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setColor(newState ? 0xffa500 : 0x00ff00) // Orange si activé, vert si désactivé
-                .setTitle(newState ? "🔋 Mode Low Power activé" : "⚡ Mode Low Power désactivé")
+                .setTitle(newState ? "🔋 Mode Low Power activé (MANUEL)" : "⚡ Mode Low Power désactivé (MANUEL)")
                 .setDescription(
                     newState
-                        ? `Netricsa est maintenant en mode économie d'énergie.\n\nElle continuera à écouter et à enregistrer les conversations, mais ne fera pas d'appels LLM coûteux.`
-                        : `Netricsa est de retour en mode normal.\n\nElle va maintenant répondre normalement à tous les messages.`
+                        ? `Netricsa est maintenant en mode économie d'énergie **MANUEL**.\n\nElle continuera à écouter et à enregistrer les conversations, mais ne fera pas d'appels LLM coûteux.\n\n⚠️ **Le mode automatique est désactivé** : elle ne se mettra plus automatiquement en Low Power si tu joues.`
+                        : `Netricsa est de retour en mode normal **MANUEL**.\n\nElle va maintenant répondre normalement à tous les messages.\n\n⚠️ **Le mode automatique est désactivé** : elle ne se mettra plus automatiquement en Low Power si tu joues.`
                 )
+                .setFooter({text: "Utilise /auto-lowpower pour réactiver le mode automatique"})
                 .setTimestamp();
 
-            await interaction.reply({embeds: [embed], ephemeral: true});
+            await interaction.reply({embeds: [embed], flags: MessageFlags.Ephemeral});
 
             // Logger la commande
             await logCommand(newState ? "🔋 Low Power Mode activé" : "⚡ Low Power Mode désactivé", undefined, [

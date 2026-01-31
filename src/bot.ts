@@ -13,6 +13,7 @@ import {isLowPowerMode} from "./services/botStateService";
 import {setLowPowerStatus, setNormalStatus} from "./services/statusService";
 import {initializeMemeScheduler} from "./services/memeScheduler";
 import {initializeBirthdayService} from "./services/birthdayService";
+import {initializeActivityMonitor} from "./services/activityMonitor";
 
 export async function setBotPresence(client: Client, status: PresenceStatusData, activityName?: string) {
     if (!client.user) return;
@@ -105,6 +106,9 @@ client.once(Events.ClientReady, async () => {
 
     // Initialiser le service de vérification des anniversaires
     initializeBirthdayService(client);
+
+    // Initialiser le monitoring d'activité pour le mode automatique Low Power
+    initializeActivityMonitor(client);
 });
 
 // === ÉVÉNEMENTS SERVEUR DISCORD ===

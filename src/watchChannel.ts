@@ -134,6 +134,15 @@ export function registerWatchedChannelResponder(client: Client) {
             // Ignore bots (évite boucle infinie)
             if (message.author?.bot) return;
 
+            // Ignorer les commandes slash-like tapées en texte
+            if (message.content?.startsWith("/")) return;
+
+            // Filtrer les messages qui commencent par "!s"
+            if (message.content.trim().startsWith("!s ")) {
+                console.log(`Ignored message from ${message.author} because it starts with "!s"`);
+                return; // Ne rien faire
+            }
+
             // ===== GESTION DES DMs =====
             if (message.channel.type === ChannelType.DM) {
                 console.log(`[DM] Message from ${message.author.username}: "${message.content.substring(0, 50)}..."`);
@@ -219,14 +228,6 @@ export function registerWatchedChannelResponder(client: Client) {
                     return;
                 }
 
-                // Ignorer les commandes slash-like tapées en texte
-                if (message.content?.startsWith("/")) return;
-
-                // Filtrer les messages qui commencent par "!s"
-                if (message.content.trim().startsWith("!s ")) {
-                    console.log(`Ignored message from ${message.author} because it starts with "!s"`);
-                    return; // Ne rien faire
-                }
 
                 // Pour les autres messages (pas destinés à Netricsa), continuer à enregistrer passivement
                 const userText = message.content?.trim();
