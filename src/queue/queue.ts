@@ -63,6 +63,28 @@ const recentQuestionsByChannel = new Map<string, RecentQuestion>();
 const QUESTION_CONTEXT_TIMEOUT = 30000; // 30 secondes
 
 /**
+ * Filtre les liens GIF (Tenor, Discord CDN et GIF directs) d'un message
+ * @param messageContent Le contenu du message à filtrer
+ * @returns Le message sans les liens GIF
+ */
+export function removeGifLinks(messageContent: string): string {
+    let cleanedContent = messageContent;
+
+    // Supprimer les liens Tenor
+    const tenorRegex = /https?:\/\/(?:media\.tenor\.com|tenor\.com|c\.tenor\.com)\/[^\s]+/gi;
+    cleanedContent = cleanedContent.replace(tenorRegex, '');
+
+    // Supprimer les liens GIF directs (incluant Discord CDN avec paramètres)
+    const gifRegex = /https?:\/\/[^\s]+\.gif(?:\?[^\s]*)?/gi;
+    cleanedContent = cleanedContent.replace(gifRegex, '');
+
+    // Nettoyer les espaces multiples et trim
+    cleanedContent = cleanedContent.replace(/\s+/g, ' ').trim();
+
+    return cleanedContent;
+}
+
+/**
  * Mettre une tâche en queue globale unique
  * Garantit que toutes les requêtes LLM (DM + Serveur) sont traitées séquentiellement
  */
@@ -188,16 +210,6 @@ export async function recordPassiveMessage(
         return false;
     }
 
-    // Filtrer le message avant de l'enregistrer (sauf si forceStore)
-    const shouldStore = forceStore || shouldStoreUserMessage(messageContent);
-
-    if (!shouldStore) {
-        console.log(`[Memory Passive]: ⏭️ Message skipped from ${userName} in #${channelName}`);
-        return false;
-    }
-
-    const messageType = analyzeMessageType(messageContent);
-
     // Traiter les images si présentes
     let imageDescriptions: string[] = [];
     if (imageUrls && imageUrls.length > 0) {
@@ -208,6 +220,43 @@ export async function recordPassiveMessage(
         }
     }
 
+    // Vérifier si le message ne contient QUE des liens GIF (sans autre texte)
+    const cleanedMessageContent = removeGifLinks(messageContent);
+    const isOnlyGifLinks = !cleanedMessageContent && messageContent.trim().length > 0;
+
+    // Si le message ne contient QUE des liens GIF, ne pas l'enregistrer (sauf si forceStore ou images)
+    if (isOnlyGifLinks && !forceStore && imageDescriptions.length === 0) {
+        console.log(`[Memory Passive]: ⏭️ Message was only GIF links, skipped from ${userName} in #${channelName}`);
+        return false;
+    }
+
+    // Si le message contient du texte en plus des GIF, garder le message complet (avec les liens)
+    // Si que des GIF + images, utiliser "[Media attachments]"
+    // Si que des GIF + forceStore, garder le message original
+    let finalMessageContent: string;
+    if (isOnlyGifLinks) {
+        if (imageDescriptions.length > 0) {
+            finalMessageContent = "[Media attachments]";
+        } else if (forceStore) {
+            finalMessageContent = messageContent; // Garder les liens GIF si forceStore
+        } else {
+            finalMessageContent = "";
+        }
+    } else {
+        finalMessageContent = messageContent; // Message normal avec ou sans GIF
+    }
+
+    // Filtrer le message avant de l'enregistrer (sauf si forceStore)
+    // Utiliser finalMessageContent pour que shouldStoreUserMessage évalue le contenu réel
+    const shouldStore = forceStore || shouldStoreUserMessage(finalMessageContent);
+
+    if (!shouldStore) {
+        console.log(`[Memory Passive]: ⏭️ Message skipped from ${userName} in #${channelName}`);
+        return false;
+    }
+
+    const messageType = analyzeMessageType(finalMessageContent);
+
     // Enregistrer le message comme un tour passif (sans réponse du bot)
     await memory.appendTurn(
         {
@@ -216,7 +265,7 @@ export async function recordPassiveMessage(
             displayName: userName,
             channelId: channelId,
             channelName: channelName,
-            userText: messageContent,
+            userText: finalMessageContent,
             assistantText: botReaction ? `[Réaction emoji: ${botReaction}]` : undefined, // Si réaction, on la add-note
             isPassive: true, // Marqué comme passif
             isReply: isReply, // NOUVEAU : indique si c'est un reply

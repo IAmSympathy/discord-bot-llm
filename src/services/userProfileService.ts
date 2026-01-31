@@ -564,6 +564,7 @@ export class UserProfileService {
                 if (profile.birthday.day === today.day && profile.birthday.month === today.month) {
                     let age: number | undefined = undefined;
                     if (profile.birthday.year) {
+                        // Si c'est aujourd'hui l'anniversaire, l'âge est celui de cette année
                         age = now.getFullYear() - profile.birthday.year;
                     }
 

@@ -238,6 +238,7 @@ function getYesterdaySpecialBirthday(): { userId: string; username: string; age?
         if (profile.birthday.day === yesterdayDate.day && profile.birthday.month === yesterdayDate.month) {
             let age: number | undefined = undefined;
             if (profile.birthday.year) {
+                // C'était hier, donc l'âge atteint est celui de cette année
                 age = now.getFullYear() - profile.birthday.year;
             }
 

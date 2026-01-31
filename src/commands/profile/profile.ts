@@ -102,7 +102,7 @@ module.exports = {
                 if (activityAge < maxAge) {
                     let activityText = `• ${profile.currentActivity.gameName}`;
                     if (profile.currentActivity.details) {
-                        activityText += `\n• ${profile.currentActivity.details}`;
+                        activityText += ` (${profile.currentActivity.details})`;
                     }
                     embed.addFields({
                         name: "🎮 Joue actuellement à",
@@ -121,7 +121,15 @@ module.exports = {
                 let birthdayText = `Date: ${profile.birthday.day} ${monthNames[profile.birthday.month - 1]}`;
 
                 if (profile.birthday.year) {
-                    const age = new Date().getFullYear() - profile.birthday.year;
+                    const now = new Date();
+                    let age = now.getFullYear() - profile.birthday.year;
+
+                    // Vérifier si l'anniversaire n'est pas encore passé cette année
+                    const birthdayThisYear = new Date(now.getFullYear(), profile.birthday.month - 1, profile.birthday.day);
+                    if (now < birthdayThisYear) {
+                        age--;
+                    }
+
                     birthdayText += ` ${profile.birthday.year} (${age} ans)`;
                 }
 
