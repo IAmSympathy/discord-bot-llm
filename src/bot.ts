@@ -8,6 +8,8 @@ import {registerCitationsThreadHandler} from "./citationsThreadHandler";
 import deployCommands from "./deploy/deployCommands";
 import {createErrorEmbed, initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerMessageEdit, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
 import {sendGoodbyeMessage, sendWelcomeMessage} from "./services/welcomeService";
+import {isLowPowerMode} from "./services/botStateService";
+import {setLowPowerStatus, setNormalStatus} from "./services/statusService";
 
 export async function setBotPresence(client: Client, status: PresenceStatusData, activityName?: string) {
     if (!client.user) return;
@@ -70,9 +72,18 @@ registerForumThreadHandler(client);
 registerCitationsThreadHandler(client);
 
 // Once the WebSocket is connected, log a message to the console.
-client.once(Events.ClientReady, () => {
+client.once(Events.ClientReady, async () => {
     console.log("Bot is online!");
     initializeDiscordLogger(client);
+
+    // Initialiser le statut Discord en fonction du mode Low Power
+    if (isLowPowerMode()) {
+        await setLowPowerStatus(client);
+        console.log("Bot started in Low Power Mode");
+    } else {
+        await setNormalStatus(client);
+        console.log("Bot started in Normal Mode");
+    }
 });
 
 // === ÉVÉNEMENTS SERVEUR DISCORD ===

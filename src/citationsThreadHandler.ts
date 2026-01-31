@@ -1,6 +1,7 @@
 import {Client, Events, Message} from "discord.js";
 import {generateCitationEmoji} from "./services/emojiService";
 import {BotStatus, clearStatus, setStatus} from "./services/statusService";
+import {isLowPowerMode} from "./services/botStateService";
 
 const CITATIONS_THREAD_ID = process.env.CITATIONS_THREAD_ID;
 
@@ -10,6 +11,11 @@ export function registerCitationsThreadHandler(client: Client) {
             if (message.author.bot) return;
             if (!CITATIONS_THREAD_ID || message.channelId !== CITATIONS_THREAD_ID) return;
             if (!message.channel.isThread()) return;
+
+            // Vérifier si le bot est en Low Power Mode
+            if (isLowPowerMode()) {
+                return;
+            }
 
             await setStatus(client, BotStatus.GENERATING_CITATION);
 

@@ -4,8 +4,9 @@ import {collectAllMediaUrls} from "./services/gifService";
 import {processImagesWithMetadata} from "./services/imageService";
 import {ImageAnalysisAnimation} from "./queue/discordMessageManager";
 import {logBotImageAnalysis} from "./utils/discordLogger";
+import {isLowPowerMode} from "./services/botStateService";
 
-const FORUM_CHANNEL_ID = process.env.FORUM_CHANNEL_ID;
+const CREATION_FORUM_ID = process.env.CREATION_FORUM_ID;
 
 export function registerForumThreadHandler(client: Client) {
     client.on(Events.ThreadCreate, async (thread: ThreadChannel) => {
@@ -15,14 +16,21 @@ export function registerForumThreadHandler(client: Client) {
                 return;
             }
 
-            // Vérifier si c'est le bon forum channel
-            if (!FORUM_CHANNEL_ID || thread.parent.id !== FORUM_CHANNEL_ID) {
+            // Vérifier si c'est le bon forum channel (salon création uniquement)
+            if (!CREATION_FORUM_ID || thread.parent.id !== CREATION_FORUM_ID) {
+                console.log(`[ForumThread] Post dans "${thread.parent.name}" ignoré (pas le salon création)`);
                 return;
             }
 
             const forumName = thread.parent.name;
             const postName = thread.name;
             console.log(`[ForumThread] Nouveau post détecté dans "${forumName}": ${postName}`);
+
+            // Vérifier si le bot est en Low Power Mode
+            if (isLowPowerMode()) {
+                console.log(`[ForumThread] Low Power Mode - doing nothing in creation forum`);
+                return;
+            }
 
             // Attendre 5 secondes pour que Discord charge complètement le message et ses attachments
             await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -89,7 +97,7 @@ export function registerForumThreadHandler(client: Client) {
                 cleanupImageAnalysis(thread.id);
             }
 
-            // Ajouter le contexte du forum et du post dans le prompt avec instructions spéciales pour les créations
+            // Ajouter le contexte du forum et du post dans le prompt avec instructions spéciales
             let contextPrompt = `[Contexte: Forum "${forumName}", Post "${postName}"]
 
 ═══ INSTRUCTIONS SPÉCIALES POUR LES CRÉATIONS ═══
@@ -147,5 +155,5 @@ ${userMessage}`;
         }
     });
 
-    console.log(`[ForumThread] Handler enregistré pour les nouveaux posts (ID: ${FORUM_CHANNEL_ID})`);
+    console.log(`[ForumThread] Handler de création enregistré pour les nouveaux posts (ID: ${CREATION_FORUM_ID})`);
 }

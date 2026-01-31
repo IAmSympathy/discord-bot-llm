@@ -6,6 +6,7 @@ import {collectAllMediaUrls} from "./services/gifService";
 import {updateUserActivityFromPresence} from "./services/activityService";
 import {logBotReaction} from "./utils/discordLogger";
 import {BotStatus, clearStatus, setStatus} from "./services/statusService";
+import {isLowPowerMode} from "./services/botStateService";
 
 function isWatchedChannel(message: Message, watchedChannelId?: string): boolean {
     return !!watchedChannelId && message.channelId === watchedChannelId;
@@ -132,14 +133,51 @@ export function registerWatchedChannelResponder(client: Client) {
             // Ignore bots (évite boucle infinie)
             if (message.author?.bot) return;
 
-            // Ignorer les commandes slash-like tapées en texte
-            if (message.content?.startsWith("/")) return;
+            // Vérifier si le bot est en Low Power Mode
+            if (isLowPowerMode()) {
+                // En mode Low Power, ne répondre que si mentionné ou dans le canal surveillé
+                const isMentioned = message.mentions.has(client.user!.id);
+                const isInWatchedChannel = isWatchedChannel(message, watchedChannelId);
 
-            // Filtrer les messages qui commencent par "!s"
-            if (message.content.trim().startsWith("!s ")) {
-                console.log(`Ignored message from ${message.author} because it starts with "!s"`);
-                return; // Ne rien faire
+                if (isMentioned || isInWatchedChannel) {
+                    const lowPowerMessage = `Désolée, j'ai été mise en mode économie d'énergie par IAmSympathy.\nJe ne peux pas générer de réponses ou analyser des images pour le moment.`;
+
+                    await message.reply(lowPowerMessage);
+                    console.log(`[watchChannel] Low Power Mode - sent message to ${message.author.username}`);
+
+                    // NE PAS enregistrer passivement : l'utilisateur attend une réponse
+                    // Si on enregistrait, on aurait un message sans réponse dans la mémoire
+                    return;
+                }
+
+                // Ignorer les commandes slash-like tapées en texte
+                if (message.content?.startsWith("/")) return;
+
+                // Filtrer les messages qui commencent par "!s"
+                if (message.content.trim().startsWith("!s ")) {
+                    console.log(`Ignored message from ${message.author} because it starts with "!s"`);
+                    return; // Ne rien faire
+                }
+
+                // Pour les autres messages (pas destinés à Netricsa), continuer à enregistrer passivement
+                const userText = message.content?.trim();
+                if (userText && userText.length > 0) {
+                    const channelName = (message.channel as any).name || `channel-${message.channelId}`;
+                    const isReply = !!message.reference?.messageId;
+                    await recordPassiveMessage(
+                        message.author.id,
+                        message.author.displayName,
+                        userText,
+                        message.channelId,
+                        channelName,
+                        undefined,
+                        undefined,
+                        isReply
+                    );
+                }
+                return; // Ne pas traiter plus loin
             }
+
 
             const userText = message.content?.trim();
             const isMentioned = message.mentions.has(client.user!.id);

@@ -2,6 +2,7 @@ import {Client, GuildMember, PartialGuildMember, TextChannel} from "discord.js";
 import {UserProfileService} from "./userProfileService";
 import {processLLMRequest} from "../queue/queue";
 import {FileMemory} from "../memory/fileMemory";
+import {isLowPowerMode} from "./botStateService";
 
 const MEMORY_FILE_PATH = process.env.MEMORY_FILE_PATH || "./data/memory.json";
 const memory = new FileMemory(MEMORY_FILE_PATH);
@@ -56,15 +57,30 @@ async function recordWelcomeGoodbyeInMemory(
  */
 export async function sendWelcomeMessage(member: GuildMember, client: Client): Promise<void> {
     try {
-        const welcomeChannelId = process.env.WELCOME_CHANNEL_ID;
+        const welcomeChannelId = process.env.WATCH_CHANNEL_ID;
         if (!welcomeChannelId) {
-            console.warn("[WelcomeService] WELCOME_CHANNEL_ID not configured");
+            console.warn("[WelcomeService] WATCH_CHANNEL_ID not configured");
             return;
         }
 
         const channel = await member.guild.channels.fetch(welcomeChannelId) as TextChannel;
         if (!channel || !channel.isTextBased()) {
             console.warn("[WelcomeService] Welcome channel not found or not a text channel");
+            return;
+        }
+
+        // Vérifier si le bot est en Low Power Mode
+        if (isLowPowerMode()) {
+            console.log(`[WelcomeService] Low Power Mode - using fallback welcome for ${member.user.username}`);
+            const existingProfile = UserProfileService.getProfile(member.user.id);
+            const isReturning = existingProfile !== null;
+
+            // Utiliser les messages fallback normaux (pas besoin de mentionner le low power)
+            const fallbackMessage = isReturning
+                ? `👋 Bon retour sur le serveur, <@${member.user.id}> ! Content de te revoir. Passe par <#1158184382679498832> si besoin de te remettre à jour. N'hésite pas à venir me parler dans <#1464063041950974125> ou en me mentionnant si tu as besoin de moi !`
+                : `👋 Bienvenue sur le serveur, <@${member.user.id}> ! Va jeter un œil à <#1158184382679498832> pour apprendre à naviguer ici. N'hésite pas à venir me parler dans <#1464063041950974125> ou en me mentionnant si tu veux discuter avec moi !`;
+
+            await channel.send(fallbackMessage);
             return;
         }
 
@@ -169,7 +185,7 @@ Réponds DIRECTEMENT avec ton message qui contient <@${member.user.id}>, rien d'
  */
 export async function sendGoodbyeMessage(member: GuildMember | PartialGuildMember, client: Client): Promise<void> {
     try {
-        const goodbyeChannelId = process.env.WELCOME_CHANNEL_ID;
+        const goodbyeChannelId = process.env.WATCH_CHANNEL_ID;
         if (!goodbyeChannelId) {
             console.warn("[WelcomeService] WELCOME_CHANNEL_ID not configured");
             return;
@@ -178,6 +194,14 @@ export async function sendGoodbyeMessage(member: GuildMember | PartialGuildMembe
         const channel = await member.guild.channels.fetch(goodbyeChannelId) as TextChannel;
         if (!channel || !channel.isTextBased()) {
             console.warn("[WelcomeService] Goodbye channel not found or not a text channel");
+            return;
+        }
+
+        // Vérifier si le bot est en Low Power Mode
+        if (isLowPowerMode()) {
+            console.log(`[WelcomeService] Low Power Mode - using fallback goodbye for ${member.user.username}`);
+            // Utiliser le message fallback normal (pas besoin de mentionner le low power)
+            await channel.send(`👋 ${member.user.username} a quitté le serveur. Bon courage pour la suite !`);
             return;
         }
 

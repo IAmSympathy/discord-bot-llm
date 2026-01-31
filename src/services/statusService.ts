@@ -56,6 +56,52 @@ export async function clearStatus(client: Client) {
 }
 
 /**
+ * Met Netricsa en mode "Ne pas déranger" avec un statut Low Power
+ */
+export async function setLowPowerStatus(client: Client) {
+    if (!client.user) return;
+
+    // Annuler le timeout s'il existe
+    if (statusTimeoutId) {
+        clearTimeout(statusTimeoutId);
+        statusTimeoutId = null;
+    }
+
+    await client.user.setPresence({
+        status: "dnd",
+        activities: [{
+            name: "🔋 Mode économie d'énergie",
+            type: ActivityType.Custom
+        }]
+    });
+
+    console.log("[StatusService] 🔋 Status set to DND - Low Power Mode");
+}
+
+/**
+ * Remet Netricsa en mode normal (online)
+ */
+export async function setNormalStatus(client: Client) {
+    if (!client.user) return;
+
+    // Annuler le timeout s'il existe
+    if (statusTimeoutId) {
+        clearTimeout(statusTimeoutId);
+        statusTimeoutId = null;
+    }
+
+    await client.user.setPresence({
+        status: "online",
+        activities: [{
+            name: " ",
+            type: ActivityType.Watching
+        }]
+    });
+
+    console.log("[StatusService] ⚡ Status set to Online - Normal Mode");
+}
+
+/**
  * Statuts prédéfinis pour différentes activités
  */
 export const BotStatus = {
