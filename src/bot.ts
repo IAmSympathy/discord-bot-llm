@@ -7,6 +7,7 @@ import {registerForumThreadHandler} from "./forumThreadHandler";
 import {registerCitationsThreadHandler} from "./citationsThreadHandler";
 import deployCommands from "./deploy/deployCommands";
 import {createErrorEmbed, initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerMessageEdit, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
+import {sendGoodbyeMessage, sendWelcomeMessage} from "./services/welcomeService";
 
 export async function setBotPresence(client: Client, status: PresenceStatusData, activityName?: string) {
     if (!client.user) return;
@@ -84,6 +85,9 @@ client.on(Events.GuildMemberAdd, async (member) => {
         member.guild.memberCount
     );
     console.log(`[Server Event] ${member.user.username} joined the server`);
+
+    // Générer et envoyer un message de bienvenue personnalisé
+    await sendWelcomeMessage(member, client);
 });
 
 // Membre quitte le serveur
@@ -94,6 +98,9 @@ client.on(Events.GuildMemberRemove, async (member) => {
         member.guild.memberCount
     );
     console.log(`[Server Event] ${member.user.username} left the server`);
+
+    // Générer et envoyer un message d'au revoir personnalisé
+    await sendGoodbyeMessage(member, client);
 });
 
 // Membre banni

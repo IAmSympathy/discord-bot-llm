@@ -33,6 +33,7 @@ interface DirectLLMRequest {
     preAnalyzedImages?: ImageAnalysisResult[]; // Résultats d'analyse pré-calculés
     originalUserMessage?: string; // Message original de l'utilisateur (pour les logs, sans les instructions système)
     preStartedAnimation?: ImageAnalysisAnimation; // Animation déjà démarrée à réutiliser
+    skipMemory?: boolean; // Flag pour ne pas enregistrer dans la mémoire (ex: messages de bienvenue)
 }
 
 // Configuration mémoire persistante
@@ -270,7 +271,7 @@ export function cleanupImageAnalysis(channelKey: string): void {
 
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest) {
-    const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext, skipImageAnalysis = false, preAnalyzedImages = [], originalUserMessage, preStartedAnimation} = request;
+    const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext, skipImageAnalysis = false, preAnalyzedImages = [], originalUserMessage, preStartedAnimation, skipMemory = false} = request;
 
     // Clé de mémoire unique par channel
     // Si on est dans le watched channel, utiliser son ID fixe
@@ -508,7 +509,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                                         willSaveInMemory
                                     );
 
-                                    if (willSaveInMemory) {
+                                    if (willSaveInMemory && !skipMemory) {
                                         const messageType = analyzeMessageType(prompt);
 
                                         // Détecter si c'est un reply

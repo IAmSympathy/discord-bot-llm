@@ -63,7 +63,7 @@ export const BotStatus = {
     ANALYZING_IMAGES: (count: number) => `🖼️ analyse ${count} images...`,
     SEARCHING_WEB: "🌐 recherche sur le web...",
     THINKING: "💭 réfléchit...",
-    WRITING: "✍️ écrit une réponse...",
+    WRITING: "✍️ écrit un message...",
     CHOOSING_REACTION: "🤔 choisit une réaction...",
     CHOOSING_EMOJI: "😊 choisit un emoji...",
     READING_MEMORY: "📚 consulte sa mémoire...",
