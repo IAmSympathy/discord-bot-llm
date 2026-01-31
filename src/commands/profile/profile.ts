@@ -112,6 +112,28 @@ module.exports = {
                 }
             }
 
+            // Anniversaire
+            if (profile.birthday) {
+                const monthNames = [
+                    "janvier", "février", "mars", "avril", "mai", "juin",
+                    "juillet", "août", "septembre", "octobre", "novembre", "décembre"
+                ];
+                let birthdayText = `Date: ${profile.birthday.day} ${monthNames[profile.birthday.month - 1]}`;
+
+                if (profile.birthday.year) {
+                    const age = new Date().getFullYear() - profile.birthday.year;
+                    birthdayText += ` ${profile.birthday.year} (${age} ans)`;
+                }
+
+                birthdayText += `\nNotification: ${profile.birthday.notify ? 'Activée' : 'Désactivée'}`;
+
+                embed.addFields({
+                    name: "🎂 Anniversaire",
+                    value: birthdayText,
+                    inline: false
+                });
+            }
+
             // Intérêts
             if (profile.interests.length > 0) {
                 const interestsText = profile.interests.map(interest => `• ${interest}`).join("\n");

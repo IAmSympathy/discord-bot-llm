@@ -51,6 +51,12 @@ export interface UserProfile {
         details?: string;
         timestamp: number;
     };
+    birthday?: {
+        day: number; // 1-31
+        month: number; // 1-12
+        year?: number; // Optionnel, si l'utilisateur veut partager son année
+        notify: boolean; // Si true, Netricsa souhaite bonne fête et donne un rôle
+    };
 }
 
 /**
@@ -415,6 +421,19 @@ export class UserProfileService {
             lines.push(`Intérêts: ${profile.interests.join(", ")}`);
         }
 
+        // Anniversaire
+        if (profile.birthday) {
+            const monthNames = [
+                "janvier", "février", "mars", "avril", "mai", "juin",
+                "juillet", "août", "septembre", "octobre", "novembre", "décembre"
+            ];
+            let birthdayText = `Anniversaire: ${profile.birthday.day} ${monthNames[profile.birthday.month - 1]}`;
+            if (profile.birthday.year) {
+                birthdayText += ` ${profile.birthday.year}`;
+            }
+            lines.push(birthdayText);
+        }
+
         // Faits récents (max 8) triés par date
         if (profile.facts && profile.facts.length > 0) {
             const recentFacts = profile.facts
@@ -474,6 +493,93 @@ export class UserProfileService {
     }
 
     /**
+     * Définit la date d'anniversaire d'un utilisateur
+     */
+    static async setBirthday(
+        userId: string,
+        username: string,
+        day: number,
+        month: number,
+        year: number | undefined,
+        notify: boolean
+    ): Promise<void> {
+        return withLock(userId, () => {
+            let profile = this.getProfile(userId);
+
+            if (!profile) {
+                profile = this.createProfile(userId, username);
+            }
+
+            profile.username = username;
+            profile.birthday = {
+                day,
+                month,
+                year,
+                notify
+            };
+
+            this.saveProfile(userId, profile);
+            console.log(`[UserProfile] 🎂 Birthday set for ${username}: ${day}/${month}${year ? `/${year}` : ''} (notify: ${notify})`);
+        });
+    }
+
+    /**
+     * Supprime la date d'anniversaire d'un utilisateur
+     */
+    static async removeBirthday(userId: string): Promise<boolean> {
+        return withLock(userId, () => {
+            const profile = this.getProfile(userId);
+
+            if (!profile || !profile.birthday) {
+                return false;
+            }
+
+            delete profile.birthday;
+            this.saveProfile(userId, profile);
+            console.log(`[UserProfile] 🎂 Birthday removed for ${profile.username}`);
+            return true;
+        });
+    }
+
+    /**
+     * Récupère tous les utilisateurs ayant un anniversaire aujourd'hui
+     */
+    static getTodayBirthdays(): Array<{ userId: string; username: string; age?: number }> {
+        this.ensureDirectoryExists();
+
+        const now = new Date();
+        const today = {
+            day: now.getDate(),
+            month: now.getMonth() + 1 // JavaScript months are 0-indexed
+        };
+
+        const files = readdirSync(PROFILES_DIR).filter((f) => f.endsWith(".json"));
+        const birthdays: Array<{ userId: string; username: string; age?: number }> = [];
+
+        for (const file of files) {
+            const userId = file.replace(".json", "");
+            const profile = this.getProfile(userId);
+
+            if (profile?.birthday && profile.birthday.notify) {
+                if (profile.birthday.day === today.day && profile.birthday.month === today.month) {
+                    let age: number | undefined = undefined;
+                    if (profile.birthday.year) {
+                        age = now.getFullYear() - profile.birthday.year;
+                    }
+
+                    birthdays.push({
+                        userId: profile.userId,
+                        username: profile.username,
+                        age
+                    });
+                }
+            }
+        }
+
+        return birthdays;
+    }
+
+    /**
      * Trouve le meilleur match pour un pattern dans une liste de faits
      * Utilisé pour la recherche/suppression de faits
      */
@@ -504,4 +610,3 @@ export class UserProfileService {
         }
     }
 }
-

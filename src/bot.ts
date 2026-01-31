@@ -12,6 +12,7 @@ import {sendGoodbyeMessage, sendWelcomeMessage} from "./services/welcomeService"
 import {isLowPowerMode} from "./services/botStateService";
 import {setLowPowerStatus, setNormalStatus} from "./services/statusService";
 import {initializeMemeScheduler} from "./services/memeScheduler";
+import {initializeBirthdayService} from "./services/birthdayService";
 
 export async function setBotPresence(client: Client, status: PresenceStatusData, activityName?: string) {
     if (!client.user) return;
@@ -101,6 +102,9 @@ client.once(Events.ClientReady, async () => {
 
     // Initialiser le planificateur de memes automatiques
     initializeMemeScheduler(client);
+
+    // Initialiser le service de vérification des anniversaires
+    initializeBirthdayService(client);
 });
 
 // === ÉVÉNEMENTS SERVEUR DISCORD ===
