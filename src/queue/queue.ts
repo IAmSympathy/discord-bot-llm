@@ -34,6 +34,7 @@ interface DirectLLMRequest {
     originalUserMessage?: string; // Message original de l'utilisateur (pour les logs, sans les instructions système)
     preStartedAnimation?: ImageAnalysisAnimation; // Animation déjà démarrée à réutiliser
     skipMemory?: boolean; // Flag pour ne pas enregistrer dans la mémoire (ex: messages de bienvenue)
+    returnResponse?: boolean; // Flag pour retourner le contenu final généré
 }
 
 // Configuration mémoire persistante
@@ -45,6 +46,7 @@ type AsyncJob<T> = () => Promise<T>;
 const channelQueues = new Map<string, Promise<unknown>>();
 const activeStreams = new Map<string, { abortFlag: boolean; channelId: string }>();
 const activeImageAnalysis = new Map<string, ImageAnalysisAnimation>(); // Animations d'analyse d'image actives
+const pendingResponses = new Map<string, { resolve: (value: string) => void; reject: (error: any) => void }>(); // Pour stocker les promesses de réponse
 
 // NOUVEAU : Cache des dernières questions par canal pour le contexte conversationnel
 // Permet de garder les "Oui"/"Non" qui répondent à des questions importantes
@@ -270,8 +272,8 @@ export function cleanupImageAnalysis(channelKey: string): void {
 }
 
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
-export async function processLLMRequest(request: DirectLLMRequest) {
-    const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext, skipImageAnalysis = false, preAnalyzedImages = [], originalUserMessage, preStartedAnimation, skipMemory = false} = request;
+export async function processLLMRequest(request: DirectLLMRequest): Promise<string | void> {
+    const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext, skipImageAnalysis = false, preAnalyzedImages = [], originalUserMessage, preStartedAnimation, skipMemory = false, returnResponse = false} = request;
 
     // Clé de mémoire unique par channel
     // Si on est dans le watched channel, utiliser son ID fixe
@@ -279,10 +281,19 @@ export async function processLLMRequest(request: DirectLLMRequest) {
     const watchedChannelId = process.env.WATCH_CHANNEL_ID;
     const channelKey = channel.id === watchedChannelId ? watchedChannelId : channel.id;
 
+    // Si returnResponse est demandé, créer une promesse pour attendre le résultat
+    let responsePromise: Promise<string> | undefined;
+    if (returnResponse) {
+        responsePromise = new Promise<string>((resolve, reject) => {
+            pendingResponses.set(channelKey, {resolve, reject});
+        });
+    }
+
     // Mettre en queue pour traiter séquentiellement par channel
-    return enqueuePerChannel(channelKey, async () => {
+    enqueuePerChannel(channelKey, async () => {
         const requestStartTime = Date.now();
         console.log(`[processLLMRequest] User ${userId} sent prompt: ${prompt}${imageUrls && imageUrls.length > 0 ? ` with ${imageUrls.length} image(s)` : ""}`);
+
 
         // Enregistrer ce stream comme actif
         const streamInfo = {abortFlag: false, channelId: channel.id};
@@ -408,6 +419,23 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         // Changer le statut à "écrit"
         await setStatus(client, BotStatus.WRITING);
 
+        // Démarrer l'indicateur "est en train d'écrire" de Discord
+        let typingInterval: NodeJS.Timeout | null = null;
+        try {
+            // Envoyer l'indicateur immédiatement
+            await channel.sendTyping();
+            // Renouveler toutes les 5 secondes (l'indicateur expire après 10 secondes)
+            typingInterval = setInterval(async () => {
+                try {
+                    await channel.sendTyping();
+                } catch (error) {
+                    // Ignorer les erreurs (canal supprimé, etc.)
+                }
+            }, 5000);
+        } catch (error) {
+            console.warn("[processLLMRequest] Could not send typing indicator:", error);
+        }
+
         console.log(`[processLLMRequest] Sending request to Ollama`);
 
         try {
@@ -422,6 +450,16 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             // Gestionnaires
             const messageManager = new DiscordMessageManager(channel, replyToMessage);
             messageManager.setAnalysisAnimation(analysisAnimation);
+
+            // Configurer le callback pour arrêter le typing indicator dès le premier message envoyé
+            messageManager.setOnFirstMessageSent(() => {
+                if (typingInterval) {
+                    clearInterval(typingInterval);
+                    typingInterval = null;
+                    console.log("[processLLMRequest] Typing indicator stopped (first message sent)");
+                }
+            });
+
             const emojiHandler = new EmojiReactionHandler(replyToMessage);
 
             let jsonBuffer = "";
@@ -446,6 +484,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
                             if (streamInfo.abortFlag) {
                                 console.log(`[processLLMRequest] Stream aborted by user for channel ${channelKey}`);
                                 clearInterval(throttleResponseInterval);
+                                if (typingInterval) clearInterval(typingInterval);
                                 await analysisAnimation.stop();
                                 activeStreams.delete(channelKey);
                                 controller.close();
@@ -553,7 +592,15 @@ export async function processLLMRequest(request: DirectLLMRequest) {
 
                                 activeStreams.delete(channelKey);
                                 clearInterval(throttleResponseInterval);
+                                if (typingInterval) clearInterval(typingInterval);
                                 controller.close();
+
+                                // Résoudre la promesse avec le contenu si demandé
+                                const pending = pendingResponses.get(channelKey);
+                                if (pending) {
+                                    pending.resolve(cleanedText);
+                                    pendingResponses.delete(channelKey);
+                                }
                                 return;
                             }
 
@@ -603,8 +650,18 @@ export async function processLLMRequest(request: DirectLLMRequest) {
         } catch (error) {
             console.error("[processLLMRequest] Error:", error);
 
+            // Arrêter l'indicateur typing
+            if (typingInterval) clearInterval(typingInterval);
+
             // Réinitialiser le statut en cas d'erreur
             await clearStatus(client);
+
+            // Rejeter la promesse en cas d'erreur
+            const pending = pendingResponses.get(channelKey);
+            if (pending) {
+                pending.reject(error);
+                pendingResponses.delete(channelKey);
+            }
 
             await logError("Erreur de traitement LLM", undefined, [
                 {name: "Utilisateur", value: userName, inline: true},
@@ -619,4 +676,7 @@ export async function processLLMRequest(request: DirectLLMRequest) {
             }
         }
     });
+
+    // Retourner la promesse si returnResponse est demandé
+    return responsePromise;
 }

@@ -59,6 +59,7 @@ export class DiscordMessageManager {
     private replyToMessage?: DiscordMessage;
     private channel: any;
     private analysisAnimation: ImageAnalysisAnimation | null = null;
+    private onFirstMessageSent?: () => void;
 
     constructor(channel: any, replyToMessage?: DiscordMessage) {
         this.channel = channel;
@@ -67,6 +68,10 @@ export class DiscordMessageManager {
 
     setAnalysisAnimation(animation: ImageAnalysisAnimation): void {
         this.analysisAnimation = animation;
+    }
+
+    setOnFirstMessageSent(callback: () => void): void {
+        this.onFirstMessageSent = callback;
     }
 
     addToCurrentChunk(text: string): void {
@@ -115,6 +120,12 @@ export class DiscordMessageManager {
                     this.messages.push(message);
                 }
             }
+
+            // Appeler le callback pour arrêter le typing indicator
+            if (this.onFirstMessageSent) {
+                this.onFirstMessageSent();
+            }
+
             return;
         }
 

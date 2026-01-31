@@ -27,6 +27,10 @@ async function recordWelcomeGoodbyeInMemory(
                 ? `${userName} est revenu sur le serveur`
                 : `${userName} a quitté le serveur`;
 
+        console.log(`[WelcomeService] 💾 Recording ${eventType} in memory:`);
+        console.log(`  - User context: "${userContext}"`);
+        console.log(`  - Response (${netriCSAResponse.length} chars): "${netriCSAResponse.substring(0, 100)}..."`);
+
         await memory.appendTurn(
             {
                 ts: Date.now(),
@@ -41,9 +45,9 @@ async function recordWelcomeGoodbyeInMemory(
             MEMORY_MAX_TURNS
         );
 
-        console.log(`[WelcomeService] ✅ Recorded ${eventType} in memory for ${userName}`);
+        console.log(`[WelcomeService] ✅ Successfully recorded ${eventType} in memory for ${userName}`);
     } catch (error) {
-        console.error(`[WelcomeService] Error recording in memory:`, error);
+        console.error(`[WelcomeService] ❌ Error recording in memory:`, error);
     }
 }
 
@@ -72,52 +76,49 @@ export async function sendWelcomeMessage(member: GuildMember, client: Client): P
 
         // Créer le prompt en fonction du type de message
         const prompt = isReturning
-            ? `<@${member.user.id}> revient sur le serveur !
+            ? `<@${member.user.id}> (${member.user.username}) revient sur le serveur !
 
-Écris DIRECTEMENT ton message de bon retour (sans introduction comme "je vais générer" ou "voici le message"). Ton message DOIT contenir :
+Écris DIRECTEMENT ton message de bon retour. Ton message DOIT ABSOLUMENT contenir la mention <@${member.user.id}> puis le contenu de ton message.
+
+Ton message DOIT contenir :
 - La mention <@${member.user.id}>
 - Un accueil "bon retour" chaleureux (tu le connais déjà !)
-- Le salon <#1158184382679498832> pour se rappeller comment naviguer sur le serveur
-- Une invitation à parler AVEC TOI dans <#1464063041950974125> ou en te mentionnant
+- Le salon <#1158184382679498832> pour se rappeler comment naviguer sur le serveur
+- Une invitation à parler AVEC TOI dans <#1464063041950974125> ou en te mentionnant (ne te mentionne pas toi-même)
 
-Réponds DIRECTEMENT avec ton message de bienvenue, rien d'autre.`
-            : `<@${member.user.id}> vient de rejoindre le serveur !
+Réponds DIRECTEMENT avec ton message qui contient <@${member.user.id}>, rien d'autre.`
+            : `<@${member.user.id}> (${member.user.username}) vient de rejoindre le serveur !
 
-Écris DIRECTEMENT ton message de bienvenue (sans introduction comme "je vais générer" ou "voici le message"). Ton message DOIT contenir :
+Écris DIRECTEMENT ton message de bienvenue. Ton message DOIT ABSOLUMENT contenir la mention <@${member.user.id}> puis le contenu de ton message.
+
+Ton message DOIT contenir :
 - La mention <@${member.user.id}>
 - Un accueil chaleureux
 - Le salon <#1158184382679498832> pour apprendre à naviguer sur le serveur
-- Une invitation à parler AVEC TOI dans <#1464063041950974125> ou en te mentionnant
+- Une invitation à parler AVEC TOI dans <#1464063041950974125> ou en te mentionnant (ne te mentionne pas toi-même)
 
-Réponds DIRECTEMENT avec ton message de bienvenue, rien d'autre.`;
+Réponds DIRECTEMENT avec ton message qui contient <@${member.user.id}>, rien d'autre.`;
 
         // Récupérer le nombre de messages avant l'envoi
         const messagesBefore = await channel.messages.fetch({limit: 1});
         const lastMessageIdBefore = messagesBefore.first()?.id;
 
-        // Utiliser processLLMRequest avec skipMemory pour éviter l'enregistrement automatique
-        await processLLMRequest({
+        // Utiliser processLLMRequest avec skipMemory et returnResponse pour récupérer le contenu final
+        const finalResponse = await processLLMRequest({
             prompt,
             userId: member.user.id,
             userName: member.user.username,
             channel,
             client,
             sendMessage: true,
-            skipMemory: true // Ne pas enregistrer le prompt technique
+            skipMemory: true, // Ne pas enregistrer le prompt technique
+            returnResponse: true // Récupérer le contenu final
         });
 
         console.log(`[WelcomeService] ✅ ${isReturning ? 'Welcome back' : 'Welcome'} message sent for ${member.user.username}`);
 
-        // Attendre un peu pour que le message soit envoyé
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Récupérer le nouveau message envoyé par Netricsa
-        const messagesAfter = await channel.messages.fetch({limit: 5});
-        const newMessage = Array.from(messagesAfter.values()).find(
-            msg => msg.author.id === client.user?.id && msg.id !== lastMessageIdBefore
-        );
-
-        if (newMessage) {
+        if (finalResponse) {
+            console.log(`[WelcomeService] 📝 Response reçue (${finalResponse.length} chars): "${finalResponse.substring(0, 100)}..."`);
             // Enregistrer dans la mémoire avec un contexte propre
             await recordWelcomeGoodbyeInMemory(
                 member.user.id,
@@ -125,8 +126,10 @@ Réponds DIRECTEMENT avec ton message de bienvenue, rien d'autre.`;
                 channel.id,
                 channel.name,
                 isReturning ? 'welcome_back' : 'welcome',
-                newMessage.content
+                finalResponse
             );
+        } else {
+            console.warn(`[WelcomeService] ⚠️ No response received from processLLMRequest`);
         }
     } catch (error) {
         console.error("[WelcomeService] Error sending welcome message:", error);
@@ -200,37 +203,36 @@ export async function sendGoodbyeMessage(member: GuildMember | PartialGuildMembe
         // Créer le prompt pour le message d'au revoir
         const prompt = `${member.user.username} vient de quitter le serveur.
 
-Écris DIRECTEMENT ton message d'au revoir (sans introduction comme "je vais générer"). 1-2 phrases maximum, respectueux et bienveillant.
+Écris DIRECTEMENT ton message d'au revoir. RÈGLES IMPORTANTES:
+1. Parle de ${member.user.username} à la TROISIÈME PERSONNE  car cette personne N'EST PLUS sur le serveur
+2. NE DIS PAS "tu" ou "te" - cette personne ne peut pas te lire
+3. Parle de lui/elle aux autres membres restants
+4. 2-3 phrases, respectueux et bienveillant
 
-Réponds DIRECTEMENT avec ton message, rien d'autre.`;
+Exemple: "${member.user.username} nous quitte... Il va nous manquer."
+
+Réponds DIRECTEMENT avec ton message à la 3ème personne, rien d'autre.`;
 
         // Récupérer le nombre de messages avant l'envoi
         const messagesBefore = await channel.messages.fetch({limit: 1});
         const lastMessageIdBefore = messagesBefore.first()?.id;
 
-        // Utiliser processLLMRequest avec skipMemory pour éviter l'enregistrement automatique
-        await processLLMRequest({
+        // Utiliser processLLMRequest avec skipMemory et returnResponse pour récupérer le contenu final
+        const finalResponse = await processLLMRequest({
             prompt,
             userId: member.user.id,
             userName: member.user.username,
             channel,
             client,
             sendMessage: true,
-            skipMemory: true // Ne pas enregistrer le prompt technique
+            skipMemory: true, // Ne pas enregistrer le prompt technique
+            returnResponse: true // Récupérer le contenu final
         });
 
         console.log(`[WelcomeService] ✅ Goodbye message sent for ${member.user.username}`);
 
-        // Attendre un peu pour que le message soit envoyé
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Récupérer le nouveau message envoyé par Netricsa
-        const messagesAfter = await channel.messages.fetch({limit: 5});
-        const newMessage = Array.from(messagesAfter.values()).find(
-            msg => msg.author.id === client.user?.id && msg.id !== lastMessageIdBefore
-        );
-
-        if (newMessage) {
+        if (finalResponse) {
+            console.log(`[WelcomeService] 📝 Response reçue (${finalResponse.length} chars): "${finalResponse.substring(0, 100)}..."`);
             // Enregistrer dans la mémoire avec un contexte propre
             await recordWelcomeGoodbyeInMemory(
                 member.user.id,
@@ -238,8 +240,10 @@ Réponds DIRECTEMENT avec ton message, rien d'autre.`;
                 channel.id,
                 channel.name,
                 'goodbye',
-                newMessage.content
+                finalResponse
             );
+        } else {
+            console.warn(`[WelcomeService] ⚠️ No response received from processLLMRequest`);
         }
     } catch (error) {
         console.error("[WelcomeService] Error sending goodbye message:", error);
