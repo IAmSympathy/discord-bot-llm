@@ -171,6 +171,42 @@ export async function collectAllMediaUrls(message: any): Promise<string[]> {
         }
     }
 
+    // 4. Vérifier les embeds Discord (GIFs/images envoyés via le sélecteur)
+    if (message.embeds && message.embeds.length > 0) {
+        for (const embed of message.embeds) {
+            // Vérifier l'image de l'embed (prioritaire)
+            if (embed.image?.url) {
+                const imageUrl = embed.image.url;
+                // Ignorer les vidéos (MP4, MOV, etc.)
+                if (!imageUrl.match(/\.(mp4|mov|avi|webm|mkv)(\?|$)/i) && !urls.includes(imageUrl)) {
+                    urls.push(imageUrl);
+                    console.log(`[GifService] Found embed image: ${imageUrl}`);
+                }
+            }
+
+            // Vérifier la thumbnail de l'embed (deuxième priorité, souvent plus fiable que video)
+            if (embed.thumbnail?.url) {
+                const thumbUrl = embed.thumbnail.url;
+                if (!thumbUrl.match(/\.(mp4|mov|avi|webm|mkv)(\?|$)/i) && !urls.includes(thumbUrl)) {
+                    urls.push(thumbUrl);
+                    console.log(`[GifService] Found embed thumbnail: ${thumbUrl}`);
+                }
+            }
+
+            // NE PAS utiliser embed.video.url car c'est souvent une vidéo MP4
+            // qui ne peut pas être traitée par Sharp
+
+            // Vérifier l'URL de l'embed pour Tenor
+            if (embed.url && embed.url.includes('tenor.com')) {
+                const mediaUrl = await getTenorFirstFrame(embed.url);
+                if (mediaUrl && !urls.includes(mediaUrl)) {
+                    urls.push(mediaUrl);
+                    console.log(`[GifService] Found Tenor media from embed URL: ${embed.url} -> ${mediaUrl}`);
+                }
+            }
+        }
+    }
+
     return urls;
 }
 

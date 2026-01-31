@@ -78,8 +78,14 @@ async function extractReferencedMessageContext(message: Message, messageReferenc
         // Si le message référencé est du bot lui-même, ne pas ajouter de contexte car il est déjà dans l'historique
         const isBotMessage = referencedMessage.author.bot;
 
+        console.log(`[watchChannel] Fetching referenced message from ${referencedMessage.author.displayName}`);
+        console.log(`[watchChannel] Referenced message content: "${referencedMessage.content}"`);
+        console.log(`[watchChannel] Referenced message has ${referencedMessage.attachments.size} attachment(s)`);
+
         // Collecter tous les médias (images + GIFs + Tenor)
         const imageUrls = await collectAllMediaUrls(referencedMessage);
+
+        console.log(`[watchChannel] Collected ${imageUrls.length} media URL(s) from referenced message:`, imageUrls);
 
         let mustReact = false;
         if (message.channel.isThread() && forumChannelId) {
@@ -360,6 +366,10 @@ export function registerWatchedChannelResponder(client: Client) {
                     imageUrls.push(...refContext.imageUrls);
                     referencedMsg = refContext.referencedMessage;
                     mustReact = refContext.mustReact;
+
+                    if (refContext.imageUrls.length > 0) {
+                        console.log(`[watchChannel] Added ${refContext.imageUrls.length} image(s) from referenced message to analysis`);
+                    }
                 }
             }
 
@@ -403,6 +413,7 @@ export function registerWatchedChannelResponder(client: Client) {
                 referencedMessage: referencedMsg,
                 imageUrls,
                 threadStarterContext,
+                originalUserMessage: userText || "[Image envoyée sans texte]", // Message original pour la mémoire
             });
 
             await setBotPresence(client, "online");

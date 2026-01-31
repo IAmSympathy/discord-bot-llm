@@ -532,6 +532,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             let completionTokens = 0;
             let totalTokens = 0;
             let toolCalls: any[] = []; // Stocker les tool calls (pour la 2e requête)
+            let firstChunkReceived = false; // Flag pour détecter le premier chunk
 
             const throttleResponseInterval = setInterval(() => {
                 if (sendMessage) {
@@ -614,7 +615,9 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                     );
 
                                     if (willSaveInMemory && !skipMemory) {
-                                        const messageType = analyzeMessageType(prompt);
+                                        // Utiliser le message original pour l'analyse du type
+                                        const messageToAnalyze = originalUserMessage || prompt;
+                                        const messageType = analyzeMessageType(messageToAnalyze);
 
                                         // Détecter si c'est un reply
                                         const isReply = !!replyToMessage?.reference?.messageId;
@@ -626,7 +629,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                                 displayName: userName,
                                                 channelId: channel.id,
                                                 channelName: channelName,
-                                                userText: prompt,
+                                                userText: originalUserMessage || prompt, // Utiliser le message original sans contexte
                                                 assistantText: cleanedText,
                                                 isReply: isReply, // NOUVEAU : enregistrer si c'est un reply
                                                 ...(imageDescriptions.length > 0 ? {imageDescriptions: imageDescriptions.slice(0, 5)} : {}),
@@ -704,6 +707,12 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
                                 const cleanedResult = await emojiHandler.extractAndApply(result);
                                 messageManager.addToCurrentChunk(cleanedResult);
+
+                                // Envoyer le premier message immédiatement pour arrêter le typing indicator
+                                if (!firstChunkReceived && sendMessage && cleanedResult.trim().length > 0) {
+                                    firstChunkReceived = true;
+                                    await messageManager.throttleUpdate().catch((err) => console.error("[FirstChunk] Update error:", err));
+                                }
                             }
 
                             controller.enqueue(value);
