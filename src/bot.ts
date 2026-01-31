@@ -1,10 +1,11 @@
 require("dotenv").config();
 import path from "path";
 import fs from "fs";
-import {ActivityType, ChannelType, Client, Collection, Events, GatewayIntentBits, MessageFlags, PresenceStatusData} from "discord.js";
+import {ActivityType, ChannelType, Client, Collection, Events, GatewayIntentBits, MessageFlags, Partials, PresenceStatusData} from "discord.js";
 import {registerWatchedChannelResponder} from "./watchChannel";
 import {registerForumThreadHandler} from "./forumThreadHandler";
 import {registerCitationsThreadHandler} from "./citationsThreadHandler";
+import {registerRoleReactionHandler} from "./roleReactionHandler";
 import deployCommands from "./deploy/deployCommands";
 import {createErrorEmbed, initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerMessageEdit, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
 import {sendGoodbyeMessage, sendWelcomeMessage} from "./services/welcomeService";
@@ -36,6 +37,12 @@ const client = new Client({
         GatewayIntentBits.GuildModeration,   // Pour les bans/unbans
         GatewayIntentBits.GuildVoiceStates,  // Pour les événements vocaux
         GatewayIntentBits.GuildPresences,    // Pour voir les activités (jeux en cours)
+        GatewayIntentBits.GuildMessageReactions, // Pour les réactions aux messages (role reaction)
+    ],
+    partials: [
+        Partials.Message,
+        Partials.Reaction,
+        Partials.User,
     ],
 });
 
@@ -70,6 +77,9 @@ registerForumThreadHandler(client);
 
 // Register the citations thread handler
 registerCitationsThreadHandler(client);
+
+// Register the role reaction handler
+registerRoleReactionHandler(client);
 
 // Once the WebSocket is connected, log a message to the console.
 client.once(Events.ClientReady, async () => {

@@ -30,7 +30,7 @@ Rôles du serveur Discord:
   ID : 943987363858767952  
   Description : Rôle pour les comptes alternatifs des membres.
 
-- Nom : <:zzzRole_Netricsa:1464857209425891444> Netricsa Module  
+- Nom : <:zzzRole_NetricsaModule:1466997072564584631> Netricsa Module
   ID : 829528687358509116  
   Description : Rôle pour les bots sur le serveur, ils ont accès à tous les salons. Tu as ce rôle.
 
@@ -38,7 +38,7 @@ Rôles du serveur Discord:
   ID : 883205136300802060  
   Description : Rôle pour ceux qui ont soutenu le serveur.
 
-- Nom : <:zzzRole_Netricsa:1464857209425891444> Netricsa Notification  
+- Nom : <:zzzRole_NetricsaNotification:1466997132002197601> Netricsa Notification
   ID : 1158221380622487552  
   Description : Rôle pour être notifié des annonces de jeux gratuits.  
   Les membres peuvent ajouter une réaction à un message dans le salon 1158184382679498832 pour l'obtenir.
@@ -51,9 +51,9 @@ Salons textuels :
  - ID : 829520141112836158, Description : Salon pour partager des memes.
  - ID : 1159552062846156810, Description : Salon réservé pour partager les créations des membres.
  - ID : 1159632067072630794, Description : Salon pour tout ce qui touche aux jeux vidéo, avec différents forums.
- - ID : 1159553247158214737, Description : Salon pour épinglés des choses utiles.
+ - ID : 1159553247158214737, Description : Salon pour épingler des choses utiles.
  - ID : 1464063041950974125, Description : Salon pour parler avec toi, Netricsa, sans avoir à te mentionner.
- - ID : 829527357131325462, Description : Salon pour utiliser les commandes des bots (<:zzzRole_Netricsa:1464857209425891444> Netricsa Module).
+ - ID : 829527357131325462, Description : Salon pour utiliser les commandes des bots (<:zzzRole_NetricsaModule:1466997072564584631> Netricsa Module).
  - ID : 1431709690240176158, Description : Salon pour faire jouer de la musique dans un salon vocal.
  - ID : 829523675594096650, Description : Salon regroupant les promotions de jeux gratuits pour diverses plateformes.
 
