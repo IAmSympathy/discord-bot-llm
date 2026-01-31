@@ -218,7 +218,7 @@ export function registerWatchedChannelResponder(client: Client) {
                 const isInWatchedChannel = isWatchedChannel(message, watchedChannelId);
 
                 if (isMentioned || isInWatchedChannel) {
-                    const lowPowerMessage = `Désolée, j'ai été mise en mode économie d'énergie par le propriétaire du serveur.\nJe ne peux pas générer de réponses ou analyser d'images pour le moment.`;
+                    const lowPowerMessage = `Désolée, j'ai été mise en mode économie d'énergie par Tah-Um.\nJe ne peux pas générer de réponses ou analyser d'images pour le moment.`;
 
                     await message.reply(lowPowerMessage);
                     console.log(`[watchChannel] Low Power Mode - sent message to ${message.author.username}`);
