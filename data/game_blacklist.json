@@ -1,6 +1,7 @@
 {
   "gameBlacklist": [
     "PhpStorm",
-    "Wordle"
+    "Wordle",
+    "WebStorm"
   ]
 }

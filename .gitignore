@@ -3,3 +3,4 @@ node_modules
 dist
 data/memory.json
 data/profiles/
+data/game_blacklist.json
