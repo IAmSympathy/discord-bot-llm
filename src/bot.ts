@@ -513,12 +513,6 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
 if (client.user) {
     client.user.setPresence({
         status: "online",
-        activities: [
-            {
-                name: " ",
-                type: 3, // WATCHING
-            },
-        ],
     });
 }
 

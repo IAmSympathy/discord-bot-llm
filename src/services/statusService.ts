@@ -48,10 +48,7 @@ export async function clearStatus(client: Client) {
 
     await client.user.setPresence({
         status: "online",
-        activities: [{
-            name: " ",
-            type: ActivityType.Watching
-        }]
+        activities: []
     });
 }
 
@@ -92,10 +89,7 @@ export async function setNormalStatus(client: Client) {
 
     await client.user.setPresence({
         status: "online",
-        activities: [{
-            name: " ",
-            type: ActivityType.Watching
-        }]
+        activities: []
     });
 
     console.log("[StatusService] ⚡ Status set to Online - Normal Mode");

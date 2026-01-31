@@ -205,11 +205,11 @@ export function registerWatchedChannelResponder(client: Client) {
             // Vérifier si le bot est en Low Power Mode
             if (isLowPowerMode()) {
                 // En mode Low Power, ne répondre que si mentionné ou dans le canal surveillé
-                const isMentioned = message.mentions.has(client.user!.id);
+                const isMentioned = message.mentions.has(client.user!.id) && !message.mentions.everyone;
                 const isInWatchedChannel = isWatchedChannel(message, watchedChannelId);
 
                 if (isMentioned || isInWatchedChannel) {
-                    const lowPowerMessage = `Désolée, j'ai été mise en mode économie d'énergie par IAmSympathy.\nJe ne peux pas générer de réponses ou analyser des images pour le moment.`;
+                    const lowPowerMessage = `Désolée, j'ai été mise en mode économie d'énergie par le propriétaire du serveur.\nJe ne peux pas générer de réponses ou analyser d'images pour le moment.`;
 
                     await message.reply(lowPowerMessage);
                     console.log(`[watchChannel] Low Power Mode - sent message to ${message.author.username}`);
