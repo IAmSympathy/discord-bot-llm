@@ -165,8 +165,8 @@ export async function postMeme(client: Client, channelId: string): Promise<boole
             return false;
         }
 
-        // Poster le meme avec le titre en citation Discord
-        await channel.send(`> ${meme.title}\n${meme.url}`);
+        // Poster le meme (seulement l'URL)
+        await channel.send(meme.url);
 
         // Enregistrer dans l'historique
         const history = loadMemeHistory();
