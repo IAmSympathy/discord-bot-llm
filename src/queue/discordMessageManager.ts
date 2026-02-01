@@ -99,7 +99,8 @@ export class DiscordMessageManager {
         // Créer le premier message si nécessaire
         if (this.messages.length === 0) {
             const rawContent = this.responseChunks[0];
-            if (!rawContent || rawContent.trim().length === 0) {
+            // Attendre d'avoir au moins 20 caractères avant d'envoyer le premier message
+            if (!rawContent || rawContent.trim().length < 20) {
                 return;
             }
 
