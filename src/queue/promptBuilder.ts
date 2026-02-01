@@ -1,6 +1,9 @@
 import {MemoryTurn} from "../memory/fileMemory";
 import {WebContext} from "../services/searchService";
 import {normalizeAccents} from "../utils/textTransformers";
+import {createLogger} from "../utils/logger";
+
+const logger = createLogger("PromptBuilder");
 
 /**
  * Formate un tour de mémoire pour l'historique
@@ -203,7 +206,7 @@ function buildMentionedProfilesContext(prompt: string, recentTurns: MemoryTurn[]
         displayNamesInHistory.add(turn.displayName.toLowerCase());
     });
 
-    console.log(`[ProfileDetection] Searching in: "${prompt.substring(0, 60)}..."`);
+    logger.info(`[ProfileDetection] Searching in: "${prompt.substring(0, 60)}..."`);
 
     for (const profile of allProfiles) {
         // IMPORTANT : Exclure l'utilisateur actuel
@@ -236,7 +239,7 @@ function buildMentionedProfilesContext(prompt: string, recentTurns: MemoryTurn[]
             if (!profilesMap.has(profile.userId)) {
                 const summary = UserProfileService.getProfileSummary(profile.userId);
                 if (summary) {
-                    console.log(`[ProfileDetection] ✓ Found profile: ${profile.username}`);
+                    logger.info(`[ProfileDetection] ✓ Found profile: ${profile.username}`);
                     profilesMap.set(profile.userId, `═══ PROFIL DE ${profile.username.toUpperCase()} (UID Discord: ${profile.userId}) ═══\n${summary}\n═══ FIN PROFIL DE ${profile.username.toUpperCase()} ═══`);
                 }
             }
@@ -244,11 +247,11 @@ function buildMentionedProfilesContext(prompt: string, recentTurns: MemoryTurn[]
     }
 
     if (profilesMap.size === 0) {
-        console.log(`[ProfileDetection] No profiles found`);
+        logger.info(`[ProfileDetection] No profiles found`);
         return "";
     }
 
-    console.log(`[ProfileDetection] Total: ${profilesMap.size} profile(s) added to context`);
+    logger.info(`[ProfileDetection] Total: ${profilesMap.size} profile(s) added to context`);
     const profiles = Array.from(profilesMap.values());
     return `\n\n[INFORMATIONS SUR LES PERSONNES MENTIONNÉES DANS LA CONVERSATION]\n⚠️ ATTENTION: Chaque profil ci-dessous correspond à UNE personne différente. Vérifie l'UID pour ne pas confondre.\n\n${profiles.join("\n\n")}\n`;
 }

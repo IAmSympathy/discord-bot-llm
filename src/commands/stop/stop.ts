@@ -1,12 +1,14 @@
-import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
+import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
 import {abortImageAnalysis, abortStream} from "../../queue/queue";
 import {logCommand} from "../../utils/discordLogger";
+import {EnvConfig} from "../../utils/envConfig";
+import {createInfoEmbed, handleInteractionError, safeReply} from "../../utils/interactionUtils";
 
 module.exports = {
     data: new SlashCommandBuilder().setName("stop").setDescription("Arrête de force le raisonnement et/ou l'analyse d'image(s) de Netricsa"),
     async execute(interaction: ChatInputCommandInteraction) {
         try {
-            const channelKey = process.env.WATCH_CHANNEL_ID || interaction.channelId;
+            const channelKey = EnvConfig.WATCH_CHANNEL_ID || interaction.channelId;
 
             // Essayer d'arrêter le stream ET l'analyse d'image
             const streamAborted = abortStream(channelKey);
@@ -24,9 +26,7 @@ module.exports = {
                     message += " l'analyse d'image.";
                 }
 
-                await interaction.reply({
-                    content: message,
-                });
+                await safeReply(interaction, message);
 
                 console.log(`[Stop Command] ${streamAborted ? 'Stream' : ''}${streamAborted && imageAnalysisAborted ? ' and ' : ''}${imageAnalysisAborted ? 'Image analysis' : ''} aborted by ${interaction.user.displayName}`);
 
@@ -42,47 +42,15 @@ module.exports = {
                 ]);
             } else {
                 // Créer un embed éphémère quand le bot n'est pas en train de parler
-                const embed = new EmbedBuilder()
-                    .setColor(0xed4245) // Rouge
-                    .setTitle("❌ Aucune réponse en cours")
-                    .setDescription("Netricsa n'est pas actuellement en train de parler.")
-                    .setTimestamp();
+                const embed = createInfoEmbed(
+                    "❌ Aucune réponse en cours",
+                    "Netricsa n'est pas actuellement en train de parler."
+                );
 
-                await interaction.reply({
-                    embeds: [embed],
-                    flags: MessageFlags.Ephemeral
-                });
+                await safeReply(interaction, {embeds: [embed]}, true);
             }
         } catch (error: any) {
-            console.error("[Stop Command] Error:", error);
-
-            if (error?.code === 10062) {
-                console.warn(`[stop] Interaction expired`);
-                return;
-            }
-
-            try {
-                const errorEmbed = new EmbedBuilder()
-                    .setColor(0xed4245)
-                    .setTitle("❌ Erreur")
-                    .setDescription("Une erreur s'est produite lors de l'arrêt.");
-
-                if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({
-                        embeds: [errorEmbed],
-                        flags: MessageFlags.Ephemeral
-                    });
-                } else {
-                    await interaction.reply({
-                        embeds: [errorEmbed],
-                        flags: MessageFlags.Ephemeral
-                    });
-                }
-            } catch (editError: any) {
-                if (editError?.code === 10062) {
-                    console.warn(`[stop] Could not send error message - interaction expired`);
-                }
-            }
+            await handleInteractionError(interaction, error, "Stop");
         }
     },
 };

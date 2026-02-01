@@ -5,8 +5,11 @@ import {processImagesWithMetadata} from "./services/imageService";
 import {ImageAnalysisAnimation} from "./queue/discordMessageManager";
 import {logBotImageAnalysis} from "./utils/discordLogger";
 import {isLowPowerMode} from "./services/botStateService";
+import {EnvConfig} from "./utils/envConfig";
+import {createLogger} from "./utils/logger";
 
-const CREATION_FORUM_ID = process.env.CREATION_FORUM_ID;
+const logger = createLogger("ForumThread");
+const CREATION_FORUM_ID = EnvConfig.CREATION_FORUM_ID;
 
 export function registerForumThreadHandler(client: Client) {
     client.on(Events.ThreadCreate, async (thread: ThreadChannel) => {
@@ -18,17 +21,17 @@ export function registerForumThreadHandler(client: Client) {
 
             // Vérifier si c'est le bon forum channel (salon création uniquement)
             if (!CREATION_FORUM_ID || thread.parent.id !== CREATION_FORUM_ID) {
-                console.log(`[ForumThread] Post dans "${thread.parent.name}" ignoré (pas le salon création)`);
+                logger.info(`Post dans "${thread.parent.name}" ignoré (pas le salon création)`);
                 return;
             }
 
             const forumName = thread.parent.name;
             const postName = thread.name;
-            console.log(`[ForumThread] Nouveau post détecté dans "${forumName}": ${postName}`);
+            logger.info(`Nouveau post détecté dans "${forumName}": ${postName}`);
 
-            // Vérifier si le bot est en Low Power Mode
+            // Vérifier si en Low Power Mode
             if (isLowPowerMode()) {
-                console.log(`[ForumThread] Low Power Mode - doing nothing in creation forum`);
+                logger.info("Low Power Mode - doing nothing in creation forum");
                 return;
             }
 
@@ -40,7 +43,7 @@ export function registerForumThreadHandler(client: Client) {
             const starterMessage = messages.first();
 
             if (!starterMessage) {
-                console.log(`[ForumThread] Aucun message de démarrage trouvé pour ${thread.name}`);
+                logger.warn(`Aucun message de démarrage trouvé pour ${thread.name}`);
                 return;
             }
 
@@ -60,14 +63,14 @@ export function registerForumThreadHandler(client: Client) {
             let animationStarted = false;
 
             if (hasMedia) {
-                console.log(`[ForumThread] ${starterMessage.attachments.size} média(s) détecté(s), démarrage de l'animation...`);
+                logger.info(`${starterMessage.attachments.size} média(s) détecté(s), démarrage de l'animation...`);
                 try {
                     await analysisAnimation.start(starterMessage, thread);
                     animationStarted = true;
                     // Enregistrer l'animation pour permettre son arrêt via /stop
                     registerImageAnalysis(thread.id, analysisAnimation);
                 } catch (error) {
-                    console.error(`[ForumThread] Erreur lors de l'envoi du message d'animation:`, error);
+                    logger.error(`Erreur lors de l'envoi du message d'animation:`, error);
                 }
             }
 
@@ -79,7 +82,7 @@ export function registerForumThreadHandler(client: Client) {
             let imageResults: any[] = [];
 
             if (imageUrls.length > 0) {
-                console.log(`[ForumThread] Analysing ${imageUrls.length} image(s) with artistic context...`);
+                logger.info(`Analysing ${imageUrls.length} image(s) with artistic context...`);
 
                 // Analyser les images
                 imageResults = await processImagesWithMetadata(imageUrls, 'creation');
@@ -132,7 +135,7 @@ ${userMessage}`;
                 contextPrompt += `\n[Utilise cette analyse pour enrichir ton feedback artistique]`;
             }
 
-            console.log(`[ForumThread] Analyse du post de ${username}: "${userMessage.substring(0, 50)}..."${imageUrls.length > 0 ? ` [${imageUrls.length} média(s) analysés]` : ""}`);
+            logger.info(`Analyse du post de ${username}: "${userMessage.substring(0, 50)}..."${imageUrls.length > 0 ? ` [${imageUrls.length} média(s) analysés]` : ""}`);
 
             // Envoyer au LLM pour analyse avec les images déjà analysées
             await processLLMRequest({
@@ -149,11 +152,11 @@ ${userMessage}`;
                 preStartedAnimation: animationStarted ? analysisAnimation : undefined, // Passer l'animation pour réutiliser le message
             });
 
-            console.log(`[ForumThread] Réponse envoyée dans le thread "${postName}"`);
+            logger.info(`Réponse envoyée dans le thread "${postName}"`);
         } catch (error) {
-            console.error("[ForumThread] Erreur lors du traitement du nouveau thread:", error);
+            logger.error("Erreur lors du traitement du nouveau thread:", error);
         }
     });
 
-    console.log(`[ForumThread] Handler de création enregistré pour les nouveaux posts (ID: ${CREATION_FORUM_ID})`);
+    logger.info(`Handler de création enregistré pour les nouveaux posts (ID: ${CREATION_FORUM_ID})`);
 }

@@ -1,9 +1,10 @@
 import {ChatInputCommandInteraction, EmbedBuilder, GuildMember, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {addGameToBlacklist, disableLowPowerModeAuto, enableLowPowerModeAuto, getGameBlacklist, isManualMode, removeGameFromBlacklist} from "../../services/botStateService";
 import {getCurrentGame} from "../../services/activityMonitor";
-import {createErrorEmbed, createSuccessEmbed, logCommand} from "../../utils/discordLogger";
+import {createSuccessEmbed, logCommand} from "../../utils/discordLogger";
 import {hasOwnerPermission} from "../../utils/permissions";
 import {setLowPowerStatus, setNormalStatus} from "../../services/statusService";
+import {createErrorEmbed, handleInteractionError, replyWithError} from "../../utils/interactionUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -47,11 +48,12 @@ module.exports = {
             const member = interaction.member instanceof GuildMember ? interaction.member : null;
 
             if (!hasOwnerPermission(member)) {
-                const errorEmbed = createErrorEmbed(
+                await replyWithError(
+                    interaction,
                     "Permission refusée",
-                    "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*"
+                    "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*",
+                    true
                 );
-                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
                 return;
             }
 
@@ -62,11 +64,12 @@ module.exports = {
                     const currentGame = getCurrentGame();
 
                     if (!currentGame) {
-                        const errorEmbed = createErrorEmbed(
+                        await replyWithError(
+                            interaction,
                             "Aucun jeu détecté",
-                            "Tu ne sembles pas jouer à un jeu actuellement.\n\nUtilise `/blacklist-game add` pour ajouter un jeu manuellement."
+                            "Tu ne sembles pas jouer à un jeu actuellement.\n\nUtilise `/blacklist-game add` pour ajouter un jeu manuellement.",
+                            true
                         );
-                        await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
                         return;
                     }
 
@@ -183,13 +186,8 @@ module.exports = {
                     break;
                 }
             }
-        } catch (error) {
-            console.error("[BlacklistGame] Error executing command:", error);
-            const errorEmbed = createErrorEmbed(
-                "Erreur",
-                "Une erreur s'est produite lors de l'exécution de la commande."
-            );
-            await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral}).catch(console.error);
+        } catch (error: any) {
+            await handleInteractionError(interaction, error, "BlacklistGame");
         }
     },
 };

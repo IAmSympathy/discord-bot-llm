@@ -1,6 +1,7 @@
 import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
 import {UserProfileService} from "../../services/userProfileService";
-import {createErrorEmbed, createSuccessEmbed, logCommand} from "../../utils/discordLogger";
+import {logCommand} from "../../utils/discordLogger";
+import {createErrorEmbed, createSuccessEmbed} from "../../utils/interactionUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -65,9 +66,7 @@ module.exports = {
                     break;
             }
 
-            await interaction.editReply({
-                embeds: [successEmbed!]
-            });
+            await interaction.editReply({embeds: [successEmbed!]});
 
             console.log(`[Note Command] ${interaction.user.username} added ${noteType} to ${username}: "${content}"`);
 
@@ -83,9 +82,7 @@ module.exports = {
                 "Erreur",
                 "Une erreur s'est produite lors de l'ajout de la note au profil de Netricsa."
             );
-            await interaction.editReply({
-                embeds: [errorEmbed]
-            });
+            await interaction.editReply({embeds: [errorEmbed]});
         }
     },
 };

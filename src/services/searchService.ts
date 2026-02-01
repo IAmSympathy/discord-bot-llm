@@ -2,6 +2,11 @@
  * Service de recherche web
  */
 
+import {EnvConfig} from "../utils/envConfig";
+import {createLogger} from "../utils/logger";
+
+const logger = createLogger("SearchService");
+
 export interface WebContext {
     query: string;
     facts: string[];
@@ -20,7 +25,7 @@ function sanitizeSnippet(text: string, maxLength = 240): string {
  * Effectue une recherche avec l'API Brave
  */
 export async function searchBrave(query: string): Promise<string | null> {
-    const apiKey = process.env.BRAVE_SEARCH_API_KEY;
+    const apiKey = EnvConfig.BRAVE_SEARCH_API_KEY;
     if (!apiKey) return null;
 
     const url = new URL("https://api.search.brave.com/res/v1/web/search");
@@ -40,7 +45,7 @@ export async function searchBrave(query: string): Promise<string | null> {
         });
 
         if (!response.ok) {
-            console.warn(`[SearchService] Error ${response.status} ${response.statusText}`);
+            logger.warn(`Error ${response.status} ${response.statusText}`);
             return null;
         }
 
@@ -58,7 +63,7 @@ export async function searchBrave(query: string): Promise<string | null> {
         const joined = lines.join("\n");
         return joined.length > 1200 ? joined.slice(0, 1199) + "…" : joined;
     } catch (error) {
-        console.warn("[SearchService] Request failed:", error);
+        logger.warn("Request failed:", error);
         return null;
     }
 }
@@ -148,12 +153,12 @@ export async function getWebContext(prompt: string): Promise<WebContext | null> 
             });
 
             if (mentionsPeople) {
-                console.log("[SearchService] Skipping web search - mentions people from server");
+                logger.info("Skipping web search - mentions people from server");
                 return null;
             }
         }
     } catch (error) {
-        console.warn("[SearchService] Error checking profiles:", error);
+        logger.warn("Error checking profiles:", error);
         // Continuer avec la recherche web en cas d'erreur
     }
 

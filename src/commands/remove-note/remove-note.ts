@@ -1,6 +1,7 @@
 import {ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {UserProfileService} from "../../services/userProfileService";
-import {createErrorEmbed, createSuccessEmbed, createWarningEmbed, logCommand} from "../../utils/discordLogger";
+import {logCommand} from "../../utils/discordLogger";
+import {createErrorEmbed, createSuccessEmbed, createWarningEmbed} from "../../utils/interactionUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -42,18 +43,14 @@ module.exports = {
                             "Fait supprimé",
                             `Un **fait** a été supprimé du profil de Netricsa concernant **${username}**.`
                         );
-                        await interaction.editReply({
-                            embeds: [successEmbed]
-                        });
+                        await interaction.editReply({embeds: [successEmbed]});
                     } else {
                         const warningEmbed = createWarningEmbed(
                             "Fait non trouvé",
                             `⚠️ Le fait spécifié n'a pas été trouvé dans le profil de Netricsa concernant **${username}**.\n\n` +
                             `Essayez avec un texte plus court ou vérifiez le profil avec \`/profile\`.`
                         );
-                        await interaction.editReply({
-                            embeds: [warningEmbed]
-                        });
+                        await interaction.editReply({embeds: [warningEmbed]});
                     }
                     break;
 
@@ -65,17 +62,13 @@ module.exports = {
                             "Alias supprimé",
                             `L'**alias** "${content}" a été supprimé du profil de Netricsa concernant **${username}**.`
                         );
-                        await interaction.editReply({
-                            embeds: [successEmbed]
-                        });
+                        await interaction.editReply({embeds: [successEmbed]});
                     } else {
                         const warningEmbed = createWarningEmbed(
                             "Alias non trouvé",
                             `L'alias "${content}" n'a pas été trouvé dans le profil de Netricsa.`
                         );
-                        await interaction.editReply({
-                            embeds: [warningEmbed]
-                        });
+                        await interaction.editReply({embeds: [warningEmbed]});
                     }
                     break;
 
@@ -87,17 +80,13 @@ module.exports = {
                             "Intérêt supprimé",
                             `Le **centre d'intérêt** "${content}" a été supprimé du profil de Netricsa concernant **${username}**.`
                         );
-                        await interaction.editReply({
-                            embeds: [successEmbed]
-                        });
+                        await interaction.editReply({embeds: [successEmbed]});
                     } else {
                         const warningEmbed = createWarningEmbed(
                             "Intérêt non trouvé",
                             `Le centre d'intérêt "${content}" n'a pas été trouvé dans le profil de Netricsa.`
                         );
-                        await interaction.editReply({
-                            embeds: [warningEmbed]
-                        });
+                        await interaction.editReply({embeds: [warningEmbed]});
                     }
                     break;
             }

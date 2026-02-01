@@ -1,4 +1,5 @@
 import {OLLAMA_API_URL, OLLAMA_TEXT_MODEL} from "../utils/constants";
+import {EnvConfig} from "../utils/envConfig";
 import {Tool} from "./profileTools";
 import fs from "fs";
 
@@ -57,8 +58,8 @@ export class OllamaService {
      * Charge les prompts système depuis les fichiers
      */
     loadSystemPrompts(channelId: string, isDM: boolean = false): { systemPrompt: string; serverPrompt: string; finalPrompt: string } {
-        const promptPath = process.env.SYSTEM_PROMPT_PATH;
-        const serverPromptPath = process.env.SERVER_PROMPT_PATH;
+        const promptPath = EnvConfig.SYSTEM_PROMPT_PATH;
+        const serverPromptPath = EnvConfig.SERVER_PROMPT_PATH;
 
         if (!promptPath) {
             throw new Error("SYSTEM_PROMPT_PATH n'est pas défini dans le .env");

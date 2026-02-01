@@ -1,5 +1,6 @@
 import {FileMemory, MemoryTurn} from "../memory/fileMemory";
 import {MEMORY_MAX_TURNS} from "../utils/constants";
+import {createLogger} from "../utils/logger";
 import * as path from "path";
 
 /**
@@ -9,6 +10,7 @@ import * as path from "path";
 
 const DM_MEMORY_DIR = "./data/dm_memories";
 const dmMemories = new Map<string, FileMemory>();
+const logger = createLogger("DMMemory");
 
 /**
  * Récupère l'instance de mémoire pour un utilisateur spécifique
@@ -43,7 +45,7 @@ export async function appendDMTurn(userId: string, turn: MemoryTurn): Promise<vo
 export async function clearDMMemory(userId: string): Promise<void> {
     const memory = getDMMemory(userId);
     await memory.clearAll();
-    console.log(`[DMMemory] Cleared DM memory for user ${userId}`);
+    logger.info(`Cleared DM memory for user ${userId}`);
 }
 
 /**

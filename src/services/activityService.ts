@@ -1,5 +1,8 @@
 import {Activity, ActivityType, Client} from "discord.js";
 import {UserProfileService} from "./userProfileService";
+import {createLogger} from "../utils/logger";
+
+const logger = createLogger("ActivityService");
 
 /**
  * Met à jour l'activité d'un utilisateur à partir de ses activités Discord
@@ -48,7 +51,6 @@ export async function updateUserActivityFromPresence(client: Client, userId: str
             }
         }
     } catch (error) {
-        console.error(`[ActivityService] Error updating activity for user ${userId}:`, error);
+        logger.error(`Error updating activity for user ${userId}:`, error);
     }
 }
-

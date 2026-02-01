@@ -1,6 +1,7 @@
 import {ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {UserProfileService} from "../../services/userProfileService";
-import {createErrorEmbed, createSuccessEmbed, logCommand} from "../../utils/discordLogger";
+import {logCommand} from "../../utils/discordLogger";
+import {createErrorEmbed, createSuccessEmbed} from "../../utils/interactionUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()

@@ -1,4 +1,5 @@
 import {OLLAMA_API_URL, OLLAMA_VISION_MODEL} from "../utils/constants";
+import {EnvConfig} from "../utils/envConfig";
 import fs from "fs";
 import sharp from "sharp";
 import {logError} from "../utils/discordLogger";
@@ -92,7 +93,7 @@ export async function downloadImageAsBase64(url: string): Promise<string | null>
  * @param context - Contexte optionnel pour adapter le prompt ('creation' pour une analyse artistique détaillée)
  */
 export async function generateImageDescription(imageBase64: string, context?: 'creation' | 'default'): Promise<{ description: string; tokens: number } | null> {
-    const visionPromptPath = process.env.SYSTEM_PROMPT_VISION_PATH;
+    const visionPromptPath = EnvConfig.SYSTEM_PROMPT_VISION_PATH;
     if (!visionPromptPath) {
         throw new Error("SYSTEM_PROMPT_VISION_PATH n'est pas défini dans le .env");
     }

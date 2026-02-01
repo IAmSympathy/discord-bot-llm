@@ -1,5 +1,8 @@
 import {Message as DiscordMessage} from "discord.js";
 import {convertTextEmojisToUnicode, extractValidEmojis, removeEmojis, removeResponsePrefixes} from "../utils/textTransformers";
+import {createLogger} from "../utils/logger";
+
+const logger = createLogger("EmojiReactionHandler");
 
 /**
  * Gère l'extraction et l'application des réactions emoji
@@ -30,7 +33,7 @@ export class EmojiReactionHandler {
                     this.reactionApplied = true;
                     this.appliedEmojis = [firstEmoji];
                 } catch (error) {
-                    console.warn(`[Reaction] Failed to apply ${firstEmoji}:`, error);
+                    logger.warn(`Failed to apply ${firstEmoji}:`, error);
                 }
             }
         }

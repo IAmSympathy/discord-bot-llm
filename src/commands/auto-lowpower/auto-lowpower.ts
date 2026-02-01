@@ -1,9 +1,10 @@
 import {ChatInputCommandInteraction, EmbedBuilder, GuildMember, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {disableLowPowerModeAuto, isLowPowerMode, resetToAutoMode} from "../../services/botStateService";
-import {createErrorEmbed, logCommand} from "../../utils/discordLogger";
+import {logCommand} from "../../utils/discordLogger";
 import {setNormalStatus} from "../../services/statusService";
 import {hasOwnerPermission} from "../../utils/permissions";
 import {getCurrentGame} from "../../services/activityMonitor";
+import {handleInteractionError, replyWithError, safeReply} from "../../utils/interactionUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,11 +16,12 @@ module.exports = {
             const member = interaction.member instanceof GuildMember ? interaction.member : null;
 
             if (!hasOwnerPermission(member)) {
-                const errorEmbed = createErrorEmbed(
+                await replyWithError(
+                    interaction,
                     "Permission refusée",
-                    "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*"
+                    "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*",
+                    true
                 );
-                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
                 return;
             }
 
@@ -54,19 +56,14 @@ module.exports = {
                 )
                 .setTimestamp();
 
-            await interaction.reply({embeds: [embed], flags: MessageFlags.Ephemeral});
+            await safeReply(interaction, {embeds: [embed], flags: MessageFlags.Ephemeral}, true);
 
             // Logger la commande
             await logCommand("🔄 Mode automatique Low Power réactivé", undefined, [
                 {name: "👤 Par", value: interaction.user.username, inline: true}
             ]);
-        } catch (error) {
-            console.error("[AutoLowPower] Error executing command:", error);
-            const errorEmbed = createErrorEmbed(
-                "Erreur",
-                "Une erreur s'est produite lors de l'exécution de la commande."
-            );
-            await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral}).catch(console.error);
+        } catch (error: any) {
+            await handleInteractionError(interaction, error, "AutoLowPower");
         }
     },
 };

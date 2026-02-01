@@ -2,6 +2,9 @@ import {promises as fs} from "node:fs";
 import * as path from "node:path";
 import {slidingWindowMemory} from "./memoryFilter";
 import {MEMORY_IMPORTANCE_THRESHOLD, MEMORY_IMPORTANT_OLD_TURNS, MEMORY_RECENT_TURNS} from "../utils/constants";
+import {createLogger} from "../utils/logger";
+
+const logger = createLogger("FileMemory");
 
 export type WebContext = {
     query: string;
@@ -53,23 +56,27 @@ export class FileMemory {
         this.filePath = filePath;
     }
 
-    async getRecentTurns(limit: number): Promise<MemoryTurn[]> {
+    async getRecentTurns(maxTurns: number = MEMORY_RECENT_TURNS): Promise<MemoryTurn[]> {
         await this.ensureLoaded();
-        if (!this.data!.globalTurns?.length) return [];
 
-        // Si on a moins de turns que la limite, tout retourner
-        if (this.data!.globalTurns.length <= limit) {
-            return this.data!.globalTurns;
+        // Combiner les turns de tous les channels dans un seul tableau
+        const allTurns: MemoryTurn[] = [];
+        for (const turn of this.data!.globalTurns) {
+            allTurns.push(turn);
         }
 
-        // Utiliser le système de Sliding Window
-        // Garde les MEMORY_RECENT_TURNS derniers + MEMORY_IMPORTANT_OLD_TURNS anciens importants
-        return slidingWindowMemory(
-            this.data!.globalTurns,
-            MEMORY_RECENT_TURNS,
+        // Trier par timestamp
+        allTurns.sort((a, b) => a.ts - b.ts);
+
+        // Appliquer le Sliding Window System
+        const result = slidingWindowMemory(
+            allTurns,
+            maxTurns,
             MEMORY_IMPORTANT_OLD_TURNS,
             MEMORY_IMPORTANCE_THRESHOLD
-        ) as MemoryTurn[];
+        );
+
+        return result as MemoryTurn[];
     }
 
     async appendTurn(turn: MemoryTurn, maxTurns: number): Promise<void> {
@@ -95,7 +102,7 @@ export class FileMemory {
         const afterCount = this.data!.globalTurns.length;
 
         if (beforeCount !== afterCount) {
-            console.log(`[FileMemory] Removed ${beforeCount - afterCount} turns from channel ${channelKey}`);
+            logger.info(`Removed ${beforeCount - afterCount} turns from channel ${channelKey}`);
             this.writeChain = this.writeChain.then(() => this.flush());
             await this.writeChain;
         }

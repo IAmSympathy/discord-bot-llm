@@ -12,8 +12,10 @@ import {UserProfileService} from "../services/userProfileService";
 import {logBotImageAnalysis, logBotResponse, logBotWebSearch, logError} from "../utils/discordLogger";
 import {BotStatus, clearStatus, setStatus} from "../services/statusService";
 import {getDMRecentTurns} from "../services/dmMemoryService";
+import {createLogger} from "../utils/logger";
 
 const wait = require("node:timers/promises").setTimeout;
+const logger = createLogger("Queue");
 
 interface DirectLLMRequest {
     prompt: string;
@@ -155,7 +157,7 @@ export async function recordPassiveMessage(
             // Si la question a été posée dans les 30 dernières secondes par quelqu'un d'autre
             if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
                 forceStore = true;
-                console.log(`[Memory Passive]: 💡 Short response "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
+                logger.info(`💡 Short response "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
             }
         }
     }
@@ -169,7 +171,7 @@ export async function recordPassiveMessage(
             // Si une question a été posée récemment (probablement "Tu fais quoi?")
             if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
                 forceStore = true;
-                console.log(`[Memory Passive]: 💡 Activity "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
+                logger.info(`💡 Activity "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
             }
         }
     }
@@ -183,7 +185,7 @@ export async function recordPassiveMessage(
             // Si une question a été posée récemment (probablement quantitative)
             if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
                 forceStore = true;
-                console.log(`[Memory Passive]: 💡 Numeric answer "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
+                logger.info(`💡 Numeric answer "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
             }
         }
     }
@@ -197,7 +199,7 @@ export async function recordPassiveMessage(
             // Si une question a été posée récemment (probablement "Tu fais quoi?")
             if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
                 forceStore = true;
-                console.log(`[Memory Passive]: 💡 Nothing response "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
+                logger.info(`💡 Nothing response "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
             }
         }
     }
@@ -206,7 +208,7 @@ export async function recordPassiveMessage(
     const isInappropriateContent = /\b(sexe|sex|cul|baiser|porn|nudes?)\b/i.test(messageContent);
 
     if (isInappropriateContent) {
-        console.log(`[Memory Passive]: 🚫 Inappropriate content skipped from ${userName} in #${channelName}`);
+        logger.warn(`🚫 Inappropriate content skipped from ${userName} in #${channelName}`);
         return false;
     }
 
@@ -216,7 +218,7 @@ export async function recordPassiveMessage(
         try {
             imageDescriptions = await processImages(imageUrls);
         } catch (error) {
-            console.error("[Memory Passive] Error processing images:", error);
+            logger.error("Error processing images:", error);
         }
     }
 
@@ -226,7 +228,7 @@ export async function recordPassiveMessage(
 
     // Si le message ne contient QUE des liens GIF, ne pas l'enregistrer (sauf si forceStore ou images)
     if (isOnlyGifLinks && !forceStore && imageDescriptions.length === 0) {
-        console.log(`[Memory Passive]: ⏭️ Message was only GIF links, skipped from ${userName} in #${channelName}`);
+        logger.info(`⏭️ Message was only GIF links, skipped from ${userName} in #${channelName}`);
         return false;
     }
 
@@ -251,7 +253,7 @@ export async function recordPassiveMessage(
     const shouldStore = forceStore || shouldStoreUserMessage(finalMessageContent);
 
     if (!shouldStore) {
-        console.log(`[Memory Passive]: ⏭️ Message skipped from ${userName} in #${channelName}`);
+        logger.info(`⏭️ Message skipped from ${userName} in #${channelName}`);
         return false;
     }
 
@@ -278,14 +280,14 @@ export async function recordPassiveMessage(
     const reactionNote = botReaction ? ` [reaction: ${botReaction}]` : "";
     const replyNote = isReply ? " [reply]" : "";
     const contextNote = forceStore ? " [contextual-response]" : "";
-    console.log(`[Memory Passive]: 👁️ Recorded from ${userName} in #${channelName} [${messageType.type}]${imageDescriptions.length > 0 ? ` [${imageDescriptions.length} images]` : ""}${reactionNote}${replyNote}${contextNote}`);
+    logger.info(`👁️ Recorded from ${userName} in #${channelName} [${messageType.type}]${imageDescriptions.length > 0 ? ` [${imageDescriptions.length} images]` : ""}${reactionNote}${replyNote}${contextNote}`);
     return true;
 }
 
 // Fonction pour effacer TOUTE la mémoire globale
 export async function clearAllMemory(): Promise<void> {
     await memory.clearAll();
-    console.log(`[Memory] Global memory cleared (all channels)`);
+    logger.info(`Global memory cleared (all channels)`);
 }
 
 // Fonction pour arrêter un stream en cours
@@ -294,7 +296,7 @@ export function abortStream(channelKey: string): boolean {
     if (streamInfo) {
         streamInfo.abortFlag = true;
         activeStreams.delete(channelKey);
-        console.log(`[AbortStream] Stream aborted for channel ${channelKey}`);
+        logger.info(`Stream aborted for channel ${channelKey}`);
         return true;
     }
     return false;
@@ -311,7 +313,7 @@ export async function abortImageAnalysis(channelKey: string): Promise<boolean> {
     if (animation) {
         await animation.stop();
         activeImageAnalysis.delete(channelKey);
-        console.log(`[AbortImageAnalysis] Image analysis aborted for channel ${channelKey}`);
+        logger.info(`Image analysis aborted for channel ${channelKey}`);
         return true;
     }
     return false;
@@ -343,8 +345,8 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
     // Mettre en queue globale unique (un seul LLM pour toutes les requêtes)
     enqueueGlobally(async () => {
         const requestStartTime = Date.now();
-        console.log(`[GlobalQueue] Processing request from user ${userId} in ${channel.type === ChannelType.DM ? 'DM' : `#${(channel as any).name || channelKey}`}`);
-        console.log(`[processLLMRequest] User ${userId} sent prompt: ${prompt}${imageUrls && imageUrls.length > 0 ? ` with ${imageUrls.length} image(s)` : ""}`);
+        logger.info(`Processing request from user ${userId} in ${channel.type === ChannelType.DM ? 'DM' : `#${(channel as any).name || channelKey}`}`);
+        logger.info(`User ${userId} sent prompt: ${prompt}${imageUrls && imageUrls.length > 0 ? ` with ${imageUrls.length} image(s)` : ""}`);
 
 
         // Enregistrer ce stream comme actif
@@ -372,7 +374,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         if (imageUrls && imageUrls.length > 0) {
             // Si les images sont déjà analysées (depuis forumThreadHandler), utiliser les résultats
             if (skipImageAnalysis && preAnalyzedImages.length > 0) {
-                console.log(`[processLLMRequest] Using pre-analyzed images (${preAnalyzedImages.length})`);
+                logger.info(`Using pre-analyzed images (${preAnalyzedImages.length})`);
                 imageResults = preAnalyzedImages;
                 imageDescriptions = imageResults.map(r => r.description);
                 // Ne pas logger ici, déjà loggé dans forumThreadHandler
@@ -391,7 +393,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         // Traiter les images du thread starter si présent
         let threadStarterImageDescriptions: string[] = [];
         if (threadStarterContext && threadStarterContext.imageUrls.length > 0) {
-            console.log(`[processLLMRequest] Processing ${threadStarterContext.imageUrls.length} image(s) from thread starter`);
+            logger.info(`Processing ${threadStarterContext.imageUrls.length} image(s) from thread starter`);
             const threadImageResults = await processImagesWithMetadata(threadStarterContext.imageUrls);
             threadStarterImageDescriptions = threadImageResults.map(r => r.description);
 
@@ -412,11 +414,11 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         if (isDM) {
             // Charger la mémoire DM de l'utilisateur
             recentTurns = await getDMRecentTurns(userId, MEMORY_MAX_TURNS);
-            console.log(`[Memory]: ${recentTurns.length} DM turns loaded for ${userName}`);
+            logger.info(`${recentTurns.length} DM turns loaded for ${userName}`);
         } else {
             // Charger l'historique de mémoire GLOBAL avec Sliding Window
             recentTurns = await memory.getRecentTurns(MEMORY_MAX_TURNS);
-            console.log(`[Memory]: ${recentTurns.length} turns loaded (Sliding Window active)`);
+            logger.info(`${recentTurns.length} turns loaded (Sliding Window active)`);
         }
 
         // Obtenir le contexte web si nécessaire
@@ -435,7 +437,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         const webContext = await getWebContext(prompt);
         if (webContext) {
             const webSearchTime = Date.now() - webSearchStartTime;
-            console.log(`[SearchService] Web context added to prompt (${webSearchTime}ms)`);
+            logger.info(`Web context added to prompt (${webSearchTime}ms)`);
 
             // Logger la recherche web avec le temps
             await logBotWebSearch(userName, prompt, webContext.facts?.length || 0, webSearchTime);
@@ -449,7 +451,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         let userProfileBlock = "";
         if (userProfileSummary) {
             userProfileBlock = `\n\n═══ PROFIL DE L'UTILISATEUR ACTUEL: ${userName.toUpperCase()} (UID Discord: ${userId}) ═══\n⚠️ Ce profil appartient à la personne qui t'envoie le message actuel.\n${userProfileSummary}\n═══ FIN DU PROFIL DE ${userName.toUpperCase()} ═══`;
-            console.log(`[UserProfile] Profile loaded for ${userName}`);
+            logger.info(`Profile loaded for ${userName}`);
         }
 
         // Obtenir le nom du channel actuel (ou "DM avec {userName}" si c'est un DM)
@@ -465,7 +467,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
         // Assembler les messages pour l'API
         // Le thread starter va EN PREMIER, avant l'historique
-        // Le profil utilisateur vient après le prompt système mais avant le reste
+        // Le profil utilisateur vient après le reste
         const messages = [
             {
                 role: "system" as const,
@@ -478,7 +480,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         ];
 
         if (imageDescriptions.length > 0) {
-            console.log(`[Images]: ${imageDescriptions.length} image description(s) included in context`);
+            logger.info(`${imageDescriptions.length} image description(s) included in context`);
         }
 
         // Changer le statut à "écrit"
@@ -498,10 +500,10 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                 }
             }, 5000);
         } catch (error) {
-            console.warn("[processLLMRequest] Could not send typing indicator:", error);
+            logger.warn("Could not send typing indicator:", error);
         }
 
-        console.log(`[processLLMRequest] Sending request to Ollama`);
+        logger.info(`Sending request to Ollama`);
 
         try {
             // TWO-STEP APPROACH :
@@ -521,7 +523,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                 if (typingInterval) {
                     clearInterval(typingInterval);
                     typingInterval = null;
-                    console.log("[processLLMRequest] Typing indicator stopped (first message sent)");
+                    logger.info("Typing indicator stopped (first message sent)");
                 }
             });
 
@@ -536,7 +538,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
             const throttleResponseInterval = setInterval(() => {
                 if (sendMessage) {
-                    messageManager.throttleUpdate().catch((err) => console.error("[Throttle] Update error:", err));
+                    messageManager.throttleUpdate().catch((err) => logger.error("[Throttle] Update error:", err));
                 }
             }, DISCORD_TYPING_UPDATE_INTERVAL);
 
@@ -548,7 +550,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                     function pump(): any {
                         return reader?.read().then(async function ({done, value}) {
                             if (streamInfo.abortFlag) {
-                                console.log(`[processLLMRequest] Stream aborted by user for channel ${channelKey}`);
+                                logger.info(`Stream aborted by user for channel ${channelKey}`);
                                 clearInterval(throttleResponseInterval);
                                 if (typingInterval) clearInterval(typingInterval);
                                 await analysisAnimation.stop();
@@ -558,10 +560,10 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                             }
 
                             if (done) {
-                                console.log(`[processLLMRequest] Request complete for user ${userId}`);
+                                logger.info(`Request complete for user ${userId}`);
 
                                 if (totalTokens > 0) {
-                                    console.log(`[Tokens] Prompt: ${promptTokens} | Completion: ${completionTokens} | Total: ${totalTokens}`);
+                                    logger.info(`Tokens - Prompt: ${promptTokens} | Completion: ${completionTokens} | Total: ${totalTokens}`);
                                 }
 
                                 await wait(2000);
@@ -580,7 +582,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                 const hasTextContent = cleanedText.trim().length > 0;
 
                                 if (!hasTextContent) {
-                                    console.log(`[processLLMRequest] ⚠️ No text content after emoji extraction, skipping message send`);
+                                    logger.warn(`⚠️ No text content after emoji extraction, skipping message send`);
                                 }
 
                                 if (sendMessage && hasTextContent && !isModerationRefusal) {
@@ -645,14 +647,14 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                         if (messageType.confidence > 0.7) contextInfo.push(`type:${messageType.type}`);
                                         if (isReply) contextInfo.push("reply");
 
-                                        console.log(`[Memory]: ✅ Saved in #${channelName}${contextInfo.length > 0 ? ` [${contextInfo.join(", ")}]` : ""}`);
+                                        logger.info(`✅ Saved in #${channelName}${contextInfo.length > 0 ? ` [${contextInfo.join(", ")}]` : ""}`);
                                     } else {
                                         // Message filtré (bruit conversationnel)
                                         const reason = !shouldStoreUser ? "user message too short/noisy" : "assistant response too short";
-                                        console.log(`[Memory]: ⏭️  Skipped (${reason}) in #${channelName}`);
+                                        logger.info(`⏭️ Skipped (${reason}) in #${channelName}`);
                                     }
                                 } else if (isModerationRefusal) {
-                                    console.log(`[Memory]: 🚫 Moderation refusal detected, NOT saving to memory`);
+                                    logger.warn(`🚫 Moderation refusal detected, NOT saving to memory`);
                                 }
 
                                 // Réinitialiser le statut
@@ -680,14 +682,14 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                 if (!line.trim()) continue;
 
                                 if (process.env.DEBUG_OLLAMA_RAW === "1") {
-                                    console.log("[Ollama Raw Line]", line);
+                                    logger.info("[Ollama Raw Line]", line);
                                 }
 
                                 let decodedChunk: any;
                                 try {
                                     decodedChunk = JSON.parse(line);
                                 } catch (parseError) {
-                                    console.error("[processLLMRequest] JSON parse error:", parseError);
+                                    logger.error("JSON parse error:", parseError);
                                     continue;
                                 }
 
@@ -696,7 +698,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                 // Détecter les tool calls
                                 if (decodedChunk.message?.tool_calls && decodedChunk.message.tool_calls.length > 0) {
                                     toolCalls.push(...decodedChunk.message.tool_calls);
-                                    console.log(`[ToolCall] Detected ${decodedChunk.message.tool_calls.length} tool call(s)`);
+                                    logger.info(`Detected ${decodedChunk.message.tool_calls.length} tool call(s)`);
                                 }
 
                                 if (decodedChunk.prompt_eval_count) promptTokens = decodedChunk.prompt_eval_count;
@@ -711,7 +713,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                 // Envoyer le premier message immédiatement pour arrêter le typing indicator
                                 if (!firstChunkReceived && sendMessage && cleanedResult.trim().length > 0) {
                                     firstChunkReceived = true;
-                                    await messageManager.throttleUpdate().catch((err) => console.error("[FirstChunk] Update error:", err));
+                                    await messageManager.throttleUpdate().catch((err) => logger.error("[FirstChunk] Update error:", err));
                                 }
                             }
 
@@ -722,7 +724,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                 },
             });
         } catch (error) {
-            console.error("[processLLMRequest] Error:", error);
+            logger.error("Error processing LLM request:", error);
 
             // Arrêter l'indicateur typing
             if (typingInterval) clearInterval(typingInterval);

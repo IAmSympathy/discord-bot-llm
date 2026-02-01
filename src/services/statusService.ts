@@ -1,10 +1,12 @@
 import {ActivityType, Client} from "discord.js";
+import {createLogger} from "../utils/logger";
 
 /**
  * Service pour gérer les statuts dynamiques de Netricsa
  */
 
 let statusTimeoutId: NodeJS.Timeout | null = null;
+const logger = createLogger("StatusService");
 
 /**
  * Change le statut de Netricsa avec réinitialisation automatique
@@ -55,7 +57,7 @@ export async function clearStatus(client: Client) {
 /**
  * Met Netricsa en mode "Ne pas déranger" avec un statut Low Power
  */
-export async function setLowPowerStatus(client: Client) {
+export async function setLowPowerStatus(client: Client): Promise<void> {
     if (!client.user) return;
 
     // Annuler le timeout s'il existe
@@ -66,19 +68,16 @@ export async function setLowPowerStatus(client: Client) {
 
     await client.user.setPresence({
         status: "dnd",
-        activities: [{
-            name: "🔋 Mode économie d'énergie",
-            type: ActivityType.Custom
-        }]
+        activities: []
     });
 
-    console.log("[StatusService] 🔋 Status set to DND - Low Power Mode");
+    logger.info("🔋 Status set to DND - Low Power Mode");
 }
 
 /**
  * Remet Netricsa en mode normal (online)
  */
-export async function setNormalStatus(client: Client) {
+export async function setNormalStatus(client: Client): Promise<void> {
     if (!client.user) return;
 
     // Annuler le timeout s'il existe
@@ -92,7 +91,7 @@ export async function setNormalStatus(client: Client) {
         activities: []
     });
 
-    console.log("[StatusService] ⚡ Status set to Online - Normal Mode");
+    logger.info("⚡ Status set to Online - Normal Mode");
 }
 
 /**

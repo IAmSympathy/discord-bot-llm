@@ -1,10 +1,12 @@
 import {ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {getRandomMeme} from "../../services/memeService";
-import {createErrorEmbed, logCommand} from "../../utils/discordLogger";
+import {logCommand} from "../../utils/discordLogger";
+import {EnvConfig} from "../../utils/envConfig";
+import {handleInteractionError, replyWithError} from "../../utils/interactionUtils";
 import * as fs from "fs";
 import * as path from "path";
 
-const MEME_CHANNEL_ID = process.env.MEME_CHANNEL_ID;
+const MEME_CHANNEL_ID = EnvConfig.MEME_CHANNEL_ID;
 const MEME_HISTORY_FILE = path.join(process.cwd(), "data", "posted_memes.json");
 
 interface PostedMeme {
@@ -48,21 +50,23 @@ module.exports = {
     async execute(interaction: ChatInputCommandInteraction) {
         try {
             if (!MEME_CHANNEL_ID) {
-                const errorEmbed = createErrorEmbed(
+                await replyWithError(
+                    interaction,
                     "Configuration manquante",
-                    "Le salon pour les memes n'est pas configuré (MEME_CHANNEL_ID)."
+                    "Le salon pour les memes n'est pas configuré (MEME_CHANNEL_ID).",
+                    true
                 );
-                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
                 return;
             }
 
             // Vérifier que la commande est utilisée dans le bon salon
             if (interaction.channelId !== MEME_CHANNEL_ID) {
-                const errorEmbed = createErrorEmbed(
+                await replyWithError(
+                    interaction,
                     "Salon incorrect",
-                    `Cette commande ne peut être utilisée que dans <#${MEME_CHANNEL_ID}>.`
+                    `Cette commande ne peut être utilisée que dans <#${MEME_CHANNEL_ID}>.`,
+                    true
                 );
-                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
                 return;
             }
 
@@ -90,17 +94,8 @@ module.exports = {
                 {name: "👤 Demandé par", value: interaction.user.username, inline: true},
                 {name: "📺 Salon", value: `<#${MEME_CHANNEL_ID}>`, inline: true}
             ]);
-        } catch (error) {
-            console.error("[FindMeme] Error executing command:", error);
-            const errorMessage = "❌ Une erreur s'est produite lors de la recherche du meme.";
-
-            if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(errorMessage).catch(console.error);
-            } else {
-                await interaction.reply({content: errorMessage, flags: MessageFlags.Ephemeral}).catch(console.error);
-            }
+        } catch (error: any) {
+            await handleInteractionError(interaction, error, "FindMeme");
         }
     },
 };
-
-

@@ -1,5 +1,7 @@
 import {Client} from "discord.js";
-import {cleanupMemeHistory, postMeme} from "./memeService";
+import {cleanupMemeHistory, postMemeToChannel} from "./memeService";
+import {EnvConfig} from "../utils/envConfig";
+import {createLogger} from "../utils/logger";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -8,8 +10,9 @@ import * as path from "path";
  * Publie 1 fois par jour à 13h00
  */
 
+const logger = createLogger("MemeScheduler");
 const MEME_SCHEDULE_FILE = path.join(process.cwd(), "data", "meme_schedule.json");
-const MEME_CHANNEL_ID = process.env.MEME_CHANNEL_ID;
+const MEME_CHANNEL_ID = EnvConfig.MEME_CHANNEL_ID;
 
 // Publication quotidienne
 const POSTING_HOUR = 13; // 13h00
@@ -30,7 +33,7 @@ function loadScheduleData(): ScheduleData {
             return JSON.parse(data);
         }
     } catch (error) {
-        console.error("[MemeScheduler] Error loading schedule data:", error);
+        logger.error("Error loading schedule data:", error);
     }
     return {
         lastPosted: 0,
@@ -49,7 +52,7 @@ function saveScheduleData(data: ScheduleData): void {
         }
         fs.writeFileSync(MEME_SCHEDULE_FILE, JSON.stringify(data, null, 2), "utf-8");
     } catch (error) {
-        console.error("[MemeScheduler] Error saving schedule data:", error);
+        logger.error("Error saving schedule data:", error);
     }
 }
 
@@ -76,7 +79,7 @@ function getNextPostingDate(): Date {
  */
 async function checkAndPostMeme(client: Client): Promise<void> {
     if (!MEME_CHANNEL_ID) {
-        console.log("[MemeScheduler] MEME_CHANNEL_ID not configured, skipping auto-post");
+        logger.info("MEME_CHANNEL_ID not configured, skipping auto-post");
         return;
     }
 
@@ -85,9 +88,9 @@ async function checkAndPostMeme(client: Client): Promise<void> {
 
     // Si c'est le moment de poster (ou si on est en retard)
     if (scheduleData.nextScheduledPost === 0 || now >= scheduleData.nextScheduledPost) {
-        console.log("[MemeScheduler] 🎭 Time to post a meme!");
+        logger.info("🎭 Time to post a meme!");
 
-        const success = await postMeme(client, MEME_CHANNEL_ID);
+        const success = await postMemeToChannel(client);
 
         if (success) {
             // Mettre à jour la planification
@@ -96,12 +99,12 @@ async function checkAndPostMeme(client: Client): Promise<void> {
             scheduleData.nextScheduledPost = nextPost.getTime();
             saveScheduleData(scheduleData);
 
-            console.log(`[MemeScheduler] ✅ Meme posted! Next post scheduled for: ${nextPost.toLocaleString('fr-FR')}`);
+            logger.info(`✅ Meme posted! Next post scheduled for: ${nextPost.toLocaleString('fr-FR')}`);
         } else {
             // En cas d'échec, réessayer dans 1 heure
             scheduleData.nextScheduledPost = now + (60 * 60 * 1000);
             saveScheduleData(scheduleData);
-            console.log("[MemeScheduler] ❌ Failed to post meme, will retry in 1 hour");
+            logger.warn("❌ Failed to post meme, will retry in 1 hour");
         }
     }
 }
@@ -111,7 +114,7 @@ async function checkAndPostMeme(client: Client): Promise<void> {
  */
 export function initializeMemeScheduler(client: Client): void {
     if (!MEME_CHANNEL_ID) {
-        console.log("[MemeScheduler] MEME_CHANNEL_ID not configured, auto-posting disabled");
+        logger.info("MEME_CHANNEL_ID not configured, auto-posting disabled");
         return;
     }
 
@@ -121,23 +124,23 @@ export function initializeMemeScheduler(client: Client): void {
         const nextPost = getNextPostingDate();
         scheduleData.nextScheduledPost = nextPost.getTime();
         saveScheduleData(scheduleData);
-        console.log(`[MemeScheduler] 📅 First meme post scheduled for: ${nextPost.toLocaleString('fr-FR')}`);
+        logger.info(`📅 First meme post scheduled for: ${nextPost.toLocaleString('fr-FR')}`);
     } else {
         const nextPost = new Date(scheduleData.nextScheduledPost);
-        console.log(`[MemeScheduler] 📅 Next meme post scheduled for: ${nextPost.toLocaleString('fr-FR')}`);
+        logger.info(`📅 Next meme post scheduled for: ${nextPost.toLocaleString('fr-FR')}`);
     }
 
     // Vérifier toutes les 30 minutes si on doit poster
     setInterval(() => {
         checkAndPostMeme(client).catch(error => {
-            console.error("[MemeScheduler] Error checking meme schedule:", error);
+            logger.error("Error checking meme schedule:", error);
         });
     }, 30 * 60 * 1000); // 30 minutes
 
     // Vérification immédiate au démarrage (au cas où on aurait raté un post)
     setTimeout(() => {
         checkAndPostMeme(client).catch(error => {
-            console.error("[MemeScheduler] Error checking meme schedule:", error);
+            logger.error("Error checking meme schedule:", error);
         });
     }, 5000); // Attendre 5 secondes après le démarrage
 
@@ -146,5 +149,5 @@ export function initializeMemeScheduler(client: Client): void {
         cleanupMemeHistory();
     }, 24 * 60 * 60 * 1000); // 24 heures
 
-    console.log("[MemeScheduler] ✅ Meme scheduler initialized (posts daily at 13:00)");
+    logger.info("✅ Meme scheduler initialized (posts daily at 13:00)");
 }

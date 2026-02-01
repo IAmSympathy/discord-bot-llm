@@ -1,6 +1,7 @@
 import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {UserProfileService} from "../../services/userProfileService";
 import {updateUserActivityFromPresence} from "../../services/activityService";
+import {createErrorEmbed} from "../../utils/interactionUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -181,11 +182,10 @@ module.exports = {
         } catch (error) {
             console.error("[Profile Command] Error:", error);
 
-            const errorEmbed = new EmbedBuilder()
-                .setColor(0xFF0000)
-                .setTitle("❌ Erreur")
-                .setDescription("Une erreur s'est produite lors de la récupération du profil.")
-                .setTimestamp();
+            const errorEmbed = createErrorEmbed(
+                "❌ Erreur",
+                "Une erreur s'est produite lors de la récupération du profil."
+            );
 
             await interaction.editReply({embeds: [errorEmbed]});
         }

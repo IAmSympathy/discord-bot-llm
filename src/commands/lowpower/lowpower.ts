@@ -1,8 +1,9 @@
 import {ChatInputCommandInteraction, EmbedBuilder, GuildMember, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {toggleLowPowerMode} from "../../services/botStateService";
-import {createErrorEmbed, logCommand} from "../../utils/discordLogger";
+import {logCommand} from "../../utils/discordLogger";
 import {setLowPowerStatus, setNormalStatus} from "../../services/statusService";
 import {hasOwnerPermission} from "../../utils/permissions";
+import {handleInteractionError, replyWithError, safeReply} from "../../utils/interactionUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,11 +15,12 @@ module.exports = {
             const member = interaction.member instanceof GuildMember ? interaction.member : null;
 
             if (!hasOwnerPermission(member)) {
-                const errorEmbed = createErrorEmbed(
+                await replyWithError(
+                    interaction,
                     "Permission refusée",
-                    "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*"
+                    "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*",
+                    true
                 );
-                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
                 return;
             }
 
@@ -43,7 +45,7 @@ module.exports = {
                 .setFooter({text: "Utilise /auto-lowpower pour réactiver le mode automatique"})
                 .setTimestamp();
 
-            await interaction.reply({embeds: [embed], flags: MessageFlags.Ephemeral});
+            await safeReply(interaction, {embeds: [embed], flags: MessageFlags.Ephemeral}, true);
 
             // Logger la commande
             await logCommand(newState ? "🔋 Low Power Mode activé" : "⚡ Low Power Mode désactivé", undefined, [
@@ -52,29 +54,7 @@ module.exports = {
             ]);
 
         } catch (error: any) {
-            console.error("[LowPower Command] Error:", error);
-
-            if (error?.code === 10062) {
-                console.warn("[LowPower Command] Interaction expired");
-                return;
-            }
-
-            try {
-                const errorEmbed = new EmbedBuilder()
-                    .setColor(0xed4245)
-                    .setTitle("❌ Erreur")
-                    .setDescription("Une erreur s'est produite lors du changement de mode.");
-
-                if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({embeds: [errorEmbed], ephemeral: true});
-                } else {
-                    await interaction.reply({embeds: [errorEmbed], ephemeral: true});
-                }
-            } catch (replyError: any) {
-                if (replyError?.code === 10062) {
-                    console.warn("[LowPower Command] Could not send error message - interaction expired");
-                }
-            }
+            await handleInteractionError(interaction, error, "LowPower");
         }
     },
 };

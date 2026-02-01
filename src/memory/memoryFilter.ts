@@ -1,7 +1,11 @@
+import {createLogger} from "../utils/logger";
+
 /**
  * Système de filtrage intelligent de la mémoire
  * Adapté pour Discord privé entre amis (fautes, troll, langage SMS)
  */
+
+const logger = createLogger("MemoryFilter");
 
 // Messages à ignorer complètement (bruit pur)
 const NOISE_PATTERNS = [
@@ -498,13 +502,10 @@ export function slidingWindowMemory(
     // Étape 4 : Combiner anciens importants + récents
     const result = [...importantOldTurns, ...recentTurns];
 
-    // Log pour debug
-    if (process.env.DEBUG_MEMORY === "1") {
-        console.log(`[Sliding Window] Total: ${turns.length} turns`);
-        console.log(`[Sliding Window] Recent: ${recentTurns.length} turns (always kept)`);
-        console.log(`[Sliding Window] Old: ${oldTurns.length} turns → ${importantOldTurns.length} kept (score >= ${minScore})`);
-        console.log(`[Sliding Window] Result: ${result.length} turns`);
-    }
+    logger.info(`[Sliding Window] Total: ${turns.length} turns`);
+    logger.info(`[Sliding Window] Recent: ${recentTurns.length} turns (always kept)`);
+    logger.info(`[Sliding Window] Old: ${oldTurns.length} turns → ${importantOldTurns.length} kept (score >= ${minScore})`);
+    logger.info(`[Sliding Window] Result: ${result.length} turns`);
 
     return result;
 }

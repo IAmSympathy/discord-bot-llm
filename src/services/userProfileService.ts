@@ -1,6 +1,8 @@
 import {existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync} from "fs";
 import {join} from "path";
+import {createLogger} from "../utils/logger";
 
+const logger = createLogger("UserProfile");
 const PROFILES_DIR = join(process.cwd(), "data", "profiles");
 // Système de locking pour éviter les race conditions lors des écritures parallèles
 const profileLocks = new Map<string, Promise<void>>();
@@ -65,55 +67,6 @@ export interface UserProfile {
  */
 export class UserProfileService {
     /**
-     * Récupère le profil d'un utilisateur
-     */
-    static getProfile(userId: string): UserProfile | null {
-        this.ensureDirectoryExists();
-        const filePath = join(PROFILES_DIR, `${userId}.json`);
-
-        if (!existsSync(filePath)) return null;
-
-        try {
-            const data = readFileSync(filePath, "utf-8");
-            const profile = JSON.parse(data);
-
-            // Reconvertir les dates
-            if (profile.facts) {
-                profile.facts = profile.facts.map((f: any) => ({
-                    ...f,
-                    timestamp: new Date(f.timestamp),
-                }));
-            }
-
-            // Rétrocompatibilité : Initialiser les champs manquants pour les anciens profils
-            if (!profile.aliases) profile.aliases = [];
-            if (!profile.interests) profile.interests = [];
-            if (!profile.roles) profile.roles = [];
-            if (!profile.facts) profile.facts = [];
-
-            return profile;
-        } catch (error) {
-            console.error(`[UserProfile] Error reading profile for ${userId}:`, error);
-            return null;
-        }
-    }
-
-    /**
-     * Sauvegarde le profil d'un utilisateur
-     */
-    static saveProfile(userId: string, profile: UserProfile): void {
-        this.ensureDirectoryExists();
-        const filePath = join(PROFILES_DIR, `${userId}.json`);
-
-        try {
-            writeFileSync(filePath, JSON.stringify(profile, null, 2), "utf-8");
-            console.log(`[UserProfile] ✅ Profile saved for ${profile.username} (${userId})`);
-        } catch (error) {
-            console.error(`[UserProfile] Error saving profile for ${userId}:`, error);
-        }
-    }
-
-    /**
      * Crée un nouveau profil vide pour un utilisateur
      */
     static createProfile(userId: string, username: string): UserProfile {
@@ -149,7 +102,7 @@ export class UserProfileService {
             const existingFact = profile.facts.find((f) => f.content.toLowerCase() === fact.toLowerCase());
 
             if (existingFact) {
-                console.log(`[UserProfile] ⚠️ Fact already exists for ${username}: "${fact}"`);
+                logger.warn(`⚠️ Fact already exists for ${username}: "${fact}"`);
             } else {
                 // Ajouter un nouveau fait
                 profile.facts.push({
@@ -157,7 +110,7 @@ export class UserProfileService {
                     content: fact,
                     timestamp: new Date(),
                 });
-                console.log(`[UserProfile] ➕ Added fact for ${username}: "${fact}"`);
+                logger.info(`➕ Added fact for ${username}: "${fact}"`);
             }
 
             this.saveProfile(userId, profile);
@@ -177,7 +130,7 @@ export class UserProfileService {
             const profile = this.getProfile(userId);
 
             if (!profile) {
-                console.log(`[UserProfile] ⚠️ No profile found for ${username} to update fact`);
+                logger.warn(`⚠️ No profile found for ${username} to update fact`);
                 return false;
             }
 
@@ -185,7 +138,7 @@ export class UserProfileService {
             const factIndex = this.findBestMatch(oldFactPattern, profile.facts);
 
             if (factIndex === -1) {
-                console.log(`[UserProfile] ⚠️ Fact not found for update: "${oldFactPattern}"`);
+                logger.warn(`⚠️ Fact not found for update: "${oldFactPattern}"`);
                 return false;
             }
 
@@ -199,7 +152,7 @@ export class UserProfileService {
 
             this.saveProfile(userId, profile);
 
-            console.log(`[UserProfile] 🔄 Updated fact for ${username}: "${oldFact.content}" → "${newFact}"`);
+            logger.info(`🔄 Updated fact for ${username}: "${oldFact.content}" → "${newFact}"`);
             return true;
         });
     }
@@ -212,7 +165,7 @@ export class UserProfileService {
             const profile = this.getProfile(userId);
 
             if (!profile) {
-                console.log(`[UserProfile] ⚠️ No profile found for ${username} to remove fact`);
+                logger.warn(`⚠️ No profile found for ${username} to remove fact`);
                 return false;
             }
 
@@ -220,7 +173,7 @@ export class UserProfileService {
             const factIndex = this.findBestMatch(factPattern, profile.facts);
 
             if (factIndex === -1) {
-                console.log(`[UserProfile] ⚠️ Fact not found for removal: "${factPattern}"`);
+                logger.warn(`⚠️ Fact not found for removal: "${factPattern}"`);
                 return false;
             }
 
@@ -229,7 +182,7 @@ export class UserProfileService {
 
             this.saveProfile(userId, profile);
 
-            console.log(`[UserProfile] 🗑️ Removed fact for ${username}: "${removedFact.content}"`);
+            logger.info(`🗑️ Removed fact for ${username}: "${removedFact.content}"`);
             return true;
         });
     }
@@ -249,8 +202,8 @@ export class UserProfileService {
 
             if (!profile.aliases.includes(alias)) {
                 profile.aliases.push(alias);
-                console.log(`[UserProfile] 🏷️ Added alias for ${username}: "${alias}"`);
                 this.saveProfile(userId, profile);
+                logger.info(`🏷️ Added alias for ${username}: "${alias}"`);
             }
         });
     }
@@ -270,8 +223,8 @@ export class UserProfileService {
 
             if (!profile.interests.includes(interest)) {
                 profile.interests.push(interest);
-                console.log(`[UserProfile] 💡 Added interest for ${username}: "${interest}"`);
                 this.saveProfile(userId, profile);
+                logger.info(`💡 Added interest for ${username}: "${interest}"`);
             }
         });
     }
@@ -284,7 +237,7 @@ export class UserProfileService {
             const profile = this.getProfile(userId);
 
             if (!profile) {
-                console.log(`[UserProfile] ⚠️ No profile found for ${username} to remove alias`);
+                logger.warn(`⚠️ No profile found for ${username} to remove alias`);
                 return false;
             }
 
@@ -292,7 +245,7 @@ export class UserProfileService {
             const aliasLower = alias.toLowerCase();
             const index = profile.aliases.findIndex(a => a.toLowerCase() === aliasLower);
             if (index === -1) {
-                console.log(`[UserProfile] ⚠️ Alias not found: "${alias}"`);
+                logger.warn(`⚠️ Alias not found: "${alias}"`);
                 return false;
             }
 
@@ -300,7 +253,7 @@ export class UserProfileService {
             profile.aliases.splice(index, 1);
             this.saveProfile(userId, profile);
 
-            console.log(`[UserProfile] 🗑️ Removed alias for ${username}: "${removedAlias}"`);
+            logger.info(`🗑️ Removed alias for ${username}: "${removedAlias}"`);
             return true;
         });
     }
@@ -313,7 +266,7 @@ export class UserProfileService {
             const profile = this.getProfile(userId);
 
             if (!profile) {
-                console.log(`[UserProfile] ⚠️ No profile found for ${username} to remove interest`);
+                logger.warn(`⚠️ No profile found for ${username} to remove interest`);
                 return false;
             }
 
@@ -321,7 +274,7 @@ export class UserProfileService {
             const interestLower = interest.toLowerCase();
             const index = profile.interests.findIndex(i => i.toLowerCase() === interestLower);
             if (index === -1) {
-                console.log(`[UserProfile] ⚠️ Interest not found: "${interest}"`);
+                logger.warn(`⚠️ Interest not found: "${interest}"`);
                 return false;
             }
 
@@ -329,7 +282,7 @@ export class UserProfileService {
             profile.interests.splice(index, 1);
             this.saveProfile(userId, profile);
 
-            console.log(`[UserProfile] 🗑️ Removed interest for ${username}: "${removedInterest}"`);
+            logger.info(`🗑️ Removed interest for ${username}: "${removedInterest}"`);
             return true;
         });
     }
@@ -372,11 +325,11 @@ export class UserProfileService {
                     details,
                     timestamp: Date.now()
                 };
-                console.log(`[UserProfile] 🎮 ${username} is now playing ${gameName}`);
+                logger.info(`🎮 ${username} is now playing ${gameName}`);
             } else {
                 // Supprimer l'activité si null
                 delete profile.currentActivity;
-                console.log(`[UserProfile] 🎮 ${username} stopped playing`);
+                logger.info(`🎮 ${username} stopped playing`);
             }
 
             this.saveProfile(userId, profile);
@@ -484,10 +437,10 @@ export class UserProfileService {
         try {
             const fs = require("fs");
             fs.unlinkSync(filePath);
-            console.log(`[UserProfile] 🗑️ Profile deleted for user ${userId}`);
+            logger.info(`🗑️ Profile deleted for user ${userId}`);
             return true;
         } catch (error) {
-            console.error(`[UserProfile] Error deleting profile for ${userId}:`, error);
+            logger.error(`Error deleting profile for ${userId}:`, error);
             return false;
         }
     }
@@ -519,7 +472,7 @@ export class UserProfileService {
             };
 
             this.saveProfile(userId, profile);
-            console.log(`[UserProfile] 🎂 Birthday set for ${username}: ${day}/${month}${year ? `/${year}` : ''} (notify: ${notify})`);
+            logger.info(`🎂 Birthday set for ${username}: ${day}/${month}${year ? `/${year}` : ''} (notify: ${notify})`);
         });
     }
 
@@ -536,7 +489,7 @@ export class UserProfileService {
 
             delete profile.birthday;
             this.saveProfile(userId, profile);
-            console.log(`[UserProfile] 🎂 Birthday removed for ${profile.username}`);
+            logger.info(`🎂 Birthday removed for ${profile.username}`);
             return true;
         });
     }
@@ -578,6 +531,55 @@ export class UserProfileService {
         }
 
         return birthdays;
+    }
+
+    /**
+     * Récupère le profil d'un utilisateur
+     */
+    static getProfile(userId: string): UserProfile | null {
+        try {
+            this.ensureDirectoryExists();
+            const filePath = join(PROFILES_DIR, `${userId}.json`);
+
+            if (!existsSync(filePath)) return null;
+
+            const data = readFileSync(filePath, "utf-8");
+            const profile = JSON.parse(data);
+
+            // Reconvertir les dates
+            if (profile.facts) {
+                profile.facts = profile.facts.map((f: any) => ({
+                    ...f,
+                    timestamp: new Date(f.timestamp),
+                }));
+            }
+
+            // Rétrocompatibilité : Initialiser les champs manquants pour les anciens profils
+            if (!profile.aliases) profile.aliases = [];
+            if (!profile.interests) profile.interests = [];
+            if (!profile.roles) profile.roles = [];
+            if (!profile.facts) profile.facts = [];
+
+            return profile;
+        } catch (error) {
+            logger.error(`Error reading profile for ${userId}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Sauvegarde le profil d'un utilisateur
+     */
+    private static saveProfile(userId: string, profile: UserProfile): void {
+        try {
+            this.ensureDirectoryExists();
+            const filePath = join(PROFILES_DIR, `${userId}.json`);
+
+            writeFileSync(filePath, JSON.stringify(profile, null, 2), "utf-8");
+            logger.info(`✅ Profile saved for ${profile.username} (${userId})`);
+        } catch (error) {
+            logger.error(`Error saving profile for ${userId}:`, error);
+        }
     }
 
     /**

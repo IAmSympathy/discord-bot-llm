@@ -1,4 +1,6 @@
 import {Client, EmbedBuilder, TextChannel} from "discord.js";
+import {EnvConfig} from "./envConfig";
+import {createErrorEmbed, createInfoEmbed, createSuccessEmbed, createWarningEmbed} from "./embedBuilder";
 
 let clientInstance: Client | null = null;
 
@@ -46,7 +48,7 @@ export interface LogOptions {
 
 export function initializeDiscordLogger(client: Client) {
     clientInstance = client;
-    const logChannelId = process.env.LOG_CHANNEL_ID;
+    const logChannelId = EnvConfig.LOG_CHANNEL_ID;
     console.log("[DiscordLogger] Initialized with LOG_CHANNEL_ID:", logChannelId || "(not set)");
 }
 
@@ -56,8 +58,8 @@ export async function logToDiscord(options: LogOptions) {
 
     // Choisir le bon canal selon le type de log
     const LOG_CHANNEL_ID = isServerEvent
-        ? process.env.LOG_CHANNEL_ID
-        : (isBotLog ? process.env.NETRICSA_LOG_CHANNEL_ID : process.env.LOG_CHANNEL_ID);
+        ? EnvConfig.LOG_CHANNEL_ID
+        : (isBotLog ? EnvConfig.NETRICSA_LOG_CHANNEL_ID : EnvConfig.LOG_CHANNEL_ID);
 
     if (!LOG_CHANNEL_ID) {
         console.log("[DiscordLogger] Appropriate LOG_CHANNEL_ID not configured, skipping log");
@@ -677,36 +679,6 @@ export async function logBotReaction(username: string, channelName: string, mess
     });
 }
 
-// Fonctions helper pour créer des embeds de réponse éphémères
-export function createSuccessEmbed(title: string, description: string) {
-    return new EmbedBuilder()
-        .setColor(0x2ecc71) // Vert
-        .setTitle(`✅ ${title}`)
-        .setDescription(description)
-        .setTimestamp();
-}
-
-export function createErrorEmbed(title: string, description: string) {
-    return new EmbedBuilder()
-        .setColor(0xe74c3c) // Rouge
-        .setTitle(`❌ ${title}`)
-        .setDescription(description)
-        .setTimestamp();
-}
-
-export function createInfoEmbed(title: string, description: string) {
-    return new EmbedBuilder()
-        .setColor(0x3498db) // Bleu
-        .setTitle(`ℹ️ ${title}`)
-        .setDescription(description)
-        .setTimestamp();
-}
-
-export function createWarningEmbed(title: string, description: string) {
-    return new EmbedBuilder()
-        .setColor(0xf39c12) // Orange
-        .setTitle(`⚠️ ${title}`)
-        .setDescription(description)
-        .setTimestamp();
-}
-
+// Note: Les fonctions createSuccessEmbed, createErrorEmbed, createInfoEmbed, createWarningEmbed
+// sont maintenant centralisées dans ./embedBuilder.ts et ré-exportées ici pour compatibilité
+export {createSuccessEmbed, createErrorEmbed, createInfoEmbed, createWarningEmbed} from "./embedBuilder";

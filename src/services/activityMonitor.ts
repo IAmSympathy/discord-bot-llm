@@ -1,6 +1,9 @@
 import {Client, Events} from "discord.js";
-import {disableLowPowerModeAuto, enableLowPowerModeAuto, isGameBlacklisted, OWNER_ID} from "./botStateService";
+import {disableLowPowerModeAuto, enableLowPowerModeAuto, isGameBlacklisted, isManualMode, OWNER_ID} from "./botStateService";
 import {setLowPowerStatus, setNormalStatus} from "./statusService";
+import {createLogger} from "../utils/logger";
+
+const logger = createLogger("ActivityMonitor");
 
 /**
  * Service pour surveiller l'activité de l'owner et gérer automatiquement le Low Power Mode
@@ -13,22 +16,28 @@ let currentGameName: string | null = null;
 /**
  * Vérifie si l'owner est en train de jouer à un jeu
  */
-function checkOwnerActivity(client: Client): void {
+async function checkOwnerActivity(client: Client): Promise<void> {
+    if (!OWNER_ID) return;
+
     try {
         const guild = client.guilds.cache.first();
         if (!guild) return;
 
-        guild.members.fetch(OWNER_ID).then(async member => {
-            const presence = member.presence;
+        try {
+            const owner = await guild.members.fetch(OWNER_ID);
+            const presence = owner.presence;
+
             if (!presence) {
                 // Pas de présence = pas de jeu
                 if (currentGameName) {
-                    console.log(`[ActivityMonitor] Owner stopped playing "${currentGameName}"`);
+                    logger.info(`Owner stopped playing "${currentGameName}"`);
                     currentGameName = null;
-                    const disabled = disableLowPowerModeAuto();
-                    if (disabled) {
+
+                    // Si mode automatique et pas de jeu, désactiver Low Power
+                    if (!isManualMode()) {
+                        await disableLowPowerModeAuto();
                         await setNormalStatus(client);
-                        console.log(`[ActivityMonitor] ⚡ Disabled Low Power Mode (Owner stopped gaming)`);
+                        logger.info(`⚡ Disabled Low Power Mode (Owner stopped gaming)`);
                     }
                 }
                 return;
@@ -42,44 +51,44 @@ function checkOwnerActivity(client: Client): void {
 
                 // Si c'est un nouveau jeu
                 if (gameName !== currentGameName) {
-                    console.log(`[ActivityMonitor] Owner started playing "${gameName}"`);
+                    logger.info(`Owner started playing "${gameName}"`);
 
                     // Vérifier si le jeu est blacklisté
                     if (isGameBlacklisted(gameName)) {
-                        console.log(`[ActivityMonitor] ⚠️ "${gameName}" is blacklisted, NOT enabling Low Power Mode`);
-                        currentGameName = gameName;
-                        return;
-                    }
-
-                    currentGameName = gameName;
-
-                    // Activer le Low Power Mode automatiquement (si pas en mode manuel)
-                    const enabled = enableLowPowerModeAuto();
-                    if (enabled) {
-                        await setLowPowerStatus(client);
-                        console.log(`[ActivityMonitor] 🎮 Enabled Low Power Mode (Owner playing "${gameName}")`);
+                        logger.info(`⚠️ "${gameName}" is blacklisted, NOT enabling Low Power Mode`);
                     } else {
-                        console.log(`[ActivityMonitor] 🎮 Owner playing "${gameName}" but Low Power Mode is in manual mode`);
+                        currentGameName = gameName;
+
+                        // Activer le Low Power Mode automatiquement (si pas en mode manuel)
+                        if (!isManualMode()) {
+                            const enabled = enableLowPowerModeAuto();
+                            if (enabled) {
+                                await setLowPowerStatus(client);
+                                logger.info(`🎮 Enabled Low Power Mode (Owner playing "${gameName}")`);
+                            } else {
+                                logger.info(`🎮 Owner playing "${gameName}" but Low Power Mode is in manual mode`);
+                            }
+                        }
                     }
                 }
             } else {
                 // Plus de jeu en cours
                 if (currentGameName) {
-                    console.log(`[ActivityMonitor] Owner stopped playing "${currentGameName}"`);
+                    logger.info(`Owner stopped playing "${currentGameName}"`);
                     currentGameName = null;
 
                     const disabled = disableLowPowerModeAuto();
                     if (disabled) {
                         await setNormalStatus(client);
-                        console.log(`[ActivityMonitor] ⚡ Disabled Low Power Mode (Owner stopped gaming)`);
+                        logger.info(`⚡ Disabled Low Power Mode (Owner stopped gaming)`);
                     }
                 }
             }
-        }).catch(error => {
-            console.error("[ActivityMonitor] Error fetching owner:", error);
-        });
+        } catch (error) {
+            logger.error("Error fetching owner:", error);
+        }
     } catch (error) {
-        console.error("[ActivityMonitor] Error checking owner activity:", error);
+        logger.error("Error checking owner activity:", error);
     }
 }
 
@@ -87,21 +96,20 @@ function checkOwnerActivity(client: Client): void {
  * Initialise le monitoring de l'activité de l'owner
  */
 export function initializeActivityMonitor(client: Client): void {
-    console.log("[ActivityMonitor] ✅ Activity monitor initialized");
-    console.log(`[ActivityMonitor] Watching owner: ${OWNER_ID}`);
+    logger.info("✅ Activity monitor initialized");
+    logger.info(`Watching owner: ${OWNER_ID}`);
 
     // Écouter les changements de présence
-    client.on(Events.PresenceUpdate, (oldPresence, newPresence) => {
-        // Vérifier uniquement les changements de l'owner
+    client.on(Events.PresenceUpdate, async (oldPresence, newPresence) => {
         if (newPresence.userId === OWNER_ID) {
-            console.log(`[ActivityMonitor] Owner presence updated`);
-            checkOwnerActivity(client);
+            logger.info(`Owner presence updated`);
+            await checkOwnerActivity(client);
         }
     });
 
     // Vérification initiale après 10 secondes
     setTimeout(() => {
-        console.log("[ActivityMonitor] Initial activity check...");
+        logger.info("Initial activity check...");
         checkOwnerActivity(client);
     }, 10000);
 

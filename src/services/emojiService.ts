@@ -1,4 +1,5 @@
 import {OLLAMA_API_URL, OLLAMA_TEXT_MODEL} from "../utils/constants";
+import {EnvConfig} from "../utils/envConfig";
 import {convertTextEmojisToUnicode, extractValidEmojis} from "../utils/textTransformers";
 import fs from "fs";
 
@@ -6,7 +7,7 @@ import fs from "fs";
  * Génère un emoji de réaction en utilisant le LLM
  */
 export async function generateEmojiReaction(context: string, promptTemplate: string): Promise<string> {
-    const systemPromptPath = process.env.SYSTEM_PROMPT_PATH;
+    const systemPromptPath = EnvConfig.SYSTEM_PROMPT_PATH;
     if (!systemPromptPath) {
         console.warn("[EmojiService] SYSTEM_PROMPT_PATH not defined, using default");
         return "🤗";

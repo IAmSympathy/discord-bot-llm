@@ -6,7 +6,9 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import {createLogger} from "../utils/logger";
 
+const logger = createLogger("BotState");
 const BLACKLIST_FILE = path.join(process.cwd(), "data", "game_blacklist.json");
 const OWNER_USER_ID = "288799652902469633"; // Tah-Um
 
@@ -31,10 +33,10 @@ function loadGameBlacklist(): void {
             const data = fs.readFileSync(BLACKLIST_FILE, "utf-8");
             const parsed = JSON.parse(data);
             botState.gameBlacklist = parsed.gameBlacklist || [];
-            console.log(`[BotState] Loaded ${botState.gameBlacklist.length} game(s) in blacklist`);
+            logger.info(`Loaded ${botState.gameBlacklist.length} game(s) in blacklist`);
         }
     } catch (error) {
-        console.error("[BotState] Error loading game blacklist:", error);
+        logger.error("Error loading game blacklist:", error);
         botState.gameBlacklist = [];
     }
 }
@@ -49,9 +51,9 @@ function saveGameBlacklist(): void {
             fs.mkdirSync(dir, {recursive: true});
         }
         fs.writeFileSync(BLACKLIST_FILE, JSON.stringify({gameBlacklist: botState.gameBlacklist}, null, 2), "utf-8");
-        console.log(`[BotState] Saved game blacklist (${botState.gameBlacklist.length} game(s))`);
+        logger.info(`Saved game blacklist (${botState.gameBlacklist.length} game(s))`);
     } catch (error) {
-        console.error("[BotState] Error saving game blacklist:", error);
+        logger.error("Error saving game blacklist:", error);
     }
 }
 
@@ -77,7 +79,7 @@ export function getGameBlacklist(): string[] {
 export function toggleLowPowerMode(): boolean {
     botState.lowPowerMode = !botState.lowPowerMode;
     botState.isManualMode = true; // Marquer comme manuel
-    console.log(`[BotState] ${botState.lowPowerMode ? '🔋' : '⚡'} Low Power Mode ${botState.lowPowerMode ? 'ENABLED' : 'DISABLED'} (MANUAL)`);
+    logger.info(`${botState.lowPowerMode ? '🔋' : '⚡'} Low Power Mode ${botState.lowPowerMode ? 'ENABLED' : 'DISABLED'} (MANUAL)`);
     return botState.lowPowerMode;
 }
 
@@ -87,13 +89,13 @@ export function toggleLowPowerMode(): boolean {
  */
 export function enableLowPowerModeAuto(): boolean {
     if (botState.isManualMode) {
-        console.log(`[BotState] ⚠️ Low Power Mode is in MANUAL mode, ignoring auto-enable`);
+        logger.info(`⚠️ Low Power Mode is in MANUAL mode, ignoring auto-enable`);
         return false;
     }
 
     if (!botState.lowPowerMode) {
         botState.lowPowerMode = true;
-        console.log(`[BotState] 🔋 Low Power Mode ENABLED (AUTO - gaming detected)`);
+        logger.info(`🔋 Low Power Mode ENABLED (AUTO - gaming detected)`);
     }
     return true;
 }
@@ -104,13 +106,13 @@ export function enableLowPowerModeAuto(): boolean {
  */
 export function disableLowPowerModeAuto(): boolean {
     if (botState.isManualMode) {
-        console.log(`[BotState] ⚠️ Low Power Mode is in MANUAL mode, ignoring auto-disable`);
+        logger.info(`⚠️ Low Power Mode is in MANUAL mode, ignoring auto-disable`);
         return false;
     }
 
     if (botState.lowPowerMode) {
         botState.lowPowerMode = false;
-        console.log(`[BotState] ⚡ Low Power Mode DISABLED (AUTO - gaming stopped)`);
+        logger.info(`⚡ Low Power Mode DISABLED (AUTO - gaming stopped)`);
     }
     return true;
 }
@@ -120,7 +122,7 @@ export function disableLowPowerModeAuto(): boolean {
  */
 export function resetToAutoMode(): void {
     botState.isManualMode = false;
-    console.log(`[BotState] 🔄 Low Power Mode reset to AUTO mode`);
+    logger.info(`🔄 Low Power Mode reset to AUTO mode`);
 }
 
 /**
@@ -131,9 +133,9 @@ export function addGameToBlacklist(gameName: string): void {
     if (!botState.gameBlacklist.includes(normalized)) {
         botState.gameBlacklist.push(normalized);
         saveGameBlacklist();
-        console.log(`[BotState] ➕ Added "${normalized}" to game blacklist`);
+        logger.info(`➕ Added "${normalized}" to game blacklist`);
     } else {
-        console.log(`[BotState] ⚠️ "${normalized}" already in blacklist`);
+        logger.info(`⚠️ "${normalized}" already in blacklist`);
     }
 }
 
@@ -146,10 +148,10 @@ export function removeGameFromBlacklist(gameName: string): boolean {
     if (index !== -1) {
         botState.gameBlacklist.splice(index, 1);
         saveGameBlacklist();
-        console.log(`[BotState] ➖ Removed "${normalized}" from game blacklist`);
+        logger.info(`➖ Removed "${normalized}" from game blacklist`);
         return true;
     }
-    console.log(`[BotState] ⚠️ "${normalized}" not found in blacklist`);
+    logger.info(`⚠️ "${normalized}" not found in blacklist`);
     return false;
 }
 

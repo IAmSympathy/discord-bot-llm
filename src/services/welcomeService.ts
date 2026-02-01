@@ -1,182 +1,47 @@
 import {Client, GuildMember, PartialGuildMember, TextChannel} from "discord.js";
 import {UserProfileService} from "./userProfileService";
-import {processLLMRequest} from "../queue/queue";
-import {FileMemory} from "../memory/fileMemory";
-import {isLowPowerMode} from "./botStateService";
+import {LLMMessageService, LLMMessageType} from "./llmMessageService";
+import {EnvConfig} from "../utils/envConfig";
+import {createLogger} from "../utils/logger";
 
-const MEMORY_FILE_PATH = process.env.MEMORY_FILE_PATH || "./data/memory.json";
-const memory = new FileMemory(MEMORY_FILE_PATH);
-const MEMORY_MAX_TURNS = parseInt(process.env.MEMORY_MAX_TURNS || "50", 10);
-
-/**
- * Enregistre un message de bienvenue/au revoir dans la mémoire de manière propre
- * (sans les instructions techniques)
- */
-async function recordWelcomeGoodbyeInMemory(
-    userId: string,
-    userName: string,
-    channelId: string,
-    channelName: string,
-    eventType: 'welcome' | 'welcome_back' | 'goodbye',
-    netriCSAResponse: string
-): Promise<void> {
-    try {
-        // Créer un contexte simple et lisible pour la mémoire
-        const userContext = eventType === 'welcome'
-            ? `${userName} a rejoint le serveur pour la première fois`
-            : eventType === 'welcome_back'
-                ? `${userName} est revenu sur le serveur`
-                : `${userName} a quitté le serveur`;
-
-        console.log(`[WelcomeService] 💾 Recording ${eventType} in memory:`);
-        console.log(`  - User context: "${userContext}"`);
-        console.log(`  - Response (${netriCSAResponse.length} chars): "${netriCSAResponse.substring(0, 100)}..."`);
-
-        await memory.appendTurn(
-            {
-                ts: Date.now(),
-                discordUid: userId,
-                displayName: userName,
-                channelId: channelId,
-                channelName: channelName,
-                userText: userContext,
-                assistantText: netriCSAResponse,
-                isPassive: false
-            },
-            MEMORY_MAX_TURNS
-        );
-
-        console.log(`[WelcomeService] ✅ Successfully recorded ${eventType} in memory for ${userName}`);
-    } catch (error) {
-        console.error(`[WelcomeService] ❌ Error recording in memory:`, error);
-    }
-}
+const logger = createLogger("WelcomeService");
 
 /**
  * Génère et envoie un message de bienvenue personnalisé pour un nouveau membre
  */
 export async function sendWelcomeMessage(member: GuildMember, client: Client): Promise<void> {
     try {
-        const welcomeChannelId = process.env.WATCH_CHANNEL_ID;
+        const welcomeChannelId = EnvConfig.WATCH_CHANNEL_ID;
         if (!welcomeChannelId) {
-            console.warn("[WelcomeService] WATCH_CHANNEL_ID not configured");
+            logger.warn("WATCH_CHANNEL_ID not configured");
             return;
         }
 
         const channel = await member.guild.channels.fetch(welcomeChannelId) as TextChannel;
         if (!channel || !channel.isTextBased()) {
-            console.warn("[WelcomeService] Welcome channel not found or not a text channel");
+            logger.warn("Welcome channel not found or not a text channel");
             return;
         }
-
-        // Vérifier si le bot est en Low Power Mode
-        if (isLowPowerMode()) {
-            console.log(`[WelcomeService] Low Power Mode - using fallback welcome for ${member.user.username}`);
-            const existingProfile = UserProfileService.getProfile(member.user.id);
-            const isReturning = existingProfile !== null;
-
-            // Utiliser les messages fallback normaux (pas besoin de mentionner le low power)
-            const fallbackMessage = isReturning
-                ? `👋 Bon retour sur le serveur, <@${member.user.id}> ! Content de te revoir. Passe par <#1158184382679498832> si besoin de te remettre à jour. N'hésite pas à venir me parler dans <#1464063041950974125> ou en me mentionnant si tu as besoin de moi !`
-                : `👋 Bienvenue sur le serveur, <@${member.user.id}> ! Va jeter un œil à <#1158184382679498832> pour apprendre à naviguer ici. N'hésite pas à venir me parler dans <#1464063041950974125> ou en me mentionnant si tu veux discuter avec moi !`;
-
-            await channel.send(fallbackMessage);
-            return;
-        }
-
-        console.log(`[WelcomeService] Generating welcome message for ${member.user.username}...`);
 
         // Vérifier si l'utilisateur a déjà un profil (c'est un retour)
         const existingProfile = UserProfileService.getProfile(member.user.id);
         const isReturning = existingProfile !== null;
 
-        // Créer le prompt en fonction du type de message
-        const prompt = isReturning
-            ? `<@${member.user.id}> (${member.user.username}) revient sur le serveur !
+        // Déterminer le type de message
+        const messageType = isReturning ? LLMMessageType.WELCOME_BACK : LLMMessageType.WELCOME;
 
-Écris DIRECTEMENT ton message de bon retour. Ton message DOIT ABSOLUMENT contenir la mention <@${member.user.id}> puis le contenu de ton message.
-
-Ton message DOIT contenir :
-- La mention <@${member.user.id}>
-- Un accueil "bon retour" chaleureux (tu le connais déjà !)
-- Le salon <#1158184382679498832> pour se rappeler comment naviguer sur le serveur
-- Une invitation à parler AVEC TOI dans <#1464063041950974125> ou en te mentionnant (ne te mentionne pas toi-même)
-
-Réponds DIRECTEMENT avec ton message qui contient <@${member.user.id}>, rien d'autre.`
-            : `<@${member.user.id}> (${member.user.username}) vient de rejoindre le serveur !
-
-Écris DIRECTEMENT ton message de bienvenue. Ton message DOIT ABSOLUMENT contenir la mention <@${member.user.id}> puis le contenu de ton message.
-
-Ton message DOIT contenir :
-- La mention <@${member.user.id}>
-- Un accueil chaleureux
-- Le salon <#1158184382679498832> pour apprendre à naviguer sur le serveur
-- Une invitation à parler AVEC TOI dans <#1464063041950974125> ou en te mentionnant (ne te mentionne pas toi-même)
-
-Réponds DIRECTEMENT avec ton message qui contient <@${member.user.id}>, rien d'autre.`;
-
-        // Récupérer le nombre de messages avant l'envoi
-        const messagesBefore = await channel.messages.fetch({limit: 1});
-        const lastMessageIdBefore = messagesBefore.first()?.id;
-
-        // Utiliser processLLMRequest avec skipMemory et returnResponse pour récupérer le contenu final
-        const finalResponse = await processLLMRequest({
-            prompt,
+        // Générer et envoyer le message via LLMMessageService
+        await LLMMessageService.generateMessage({
+            type: messageType,
             userId: member.user.id,
             userName: member.user.username,
             channel,
             client,
-            sendMessage: true,
-            skipMemory: true, // Ne pas enregistrer le prompt technique
-            returnResponse: true // Récupérer le contenu final
+            mentionUser: true
         });
 
-        console.log(`[WelcomeService] ✅ ${isReturning ? 'Welcome back' : 'Welcome'} message sent for ${member.user.username}`);
-
-        if (finalResponse) {
-            console.log(`[WelcomeService] 📝 Response reçue (${finalResponse.length} chars): "${finalResponse.substring(0, 100)}..."`);
-            // Enregistrer dans la mémoire avec un contexte propre
-            await recordWelcomeGoodbyeInMemory(
-                member.user.id,
-                member.user.username,
-                channel.id,
-                channel.name,
-                isReturning ? 'welcome_back' : 'welcome',
-                finalResponse
-            );
-        } else {
-            console.warn(`[WelcomeService] ⚠️ No response received from processLLMRequest`);
-        }
     } catch (error) {
-        console.error("[WelcomeService] Error sending welcome message:", error);
-
-        // Fallback en cas d'erreur
-        try {
-            const welcomeChannelId = process.env.WELCOME_CHANNEL_ID;
-            if (welcomeChannelId) {
-                const channel = await member.guild.channels.fetch(welcomeChannelId) as TextChannel;
-                const existingProfile = UserProfileService.getProfile(member.user.id);
-                const isReturning = existingProfile !== null;
-
-                const fallbackMessage = isReturning
-                    ? `👋 Bon retour sur le serveur, <@${member.user.id}> ! Content de te revoir. Passe par <#1158184382679498832> si besoin de te remettre à jour. N'hésite pas à venir me parler dans <#1464063041950974125> ou en me mentionnant si tu as besoin de moi !`
-                    : `👋 Bienvenue sur le serveur, <@${member.user.id}> ! Va jeter un œil à <#1158184382679498832> pour apprendre à naviguer ici. N'hésite pas à venir me parler dans <#1464063041950974125> ou en me mentionnant si tu veux discuter avec moi !`;
-
-                // Dans le fallback, enregistrer aussi
-                const sentMessage = await channel.send(fallbackMessage);
-                await recordWelcomeGoodbyeInMemory(
-                    member.user.id,
-                    member.user.username,
-                    channel.id,
-                    channel.name,
-                    isReturning ? 'welcome_back' : 'welcome',
-                    sentMessage.content
-                );
-                console.log(`[WelcomeService] ⚠️ Fallback welcome message sent for ${member.user.username}`);
-            }
-        } catch (fallbackError) {
-            console.error("[WelcomeService] Error sending fallback message:", fallbackError);
-        }
+        logger.error("Error sending welcome message:", error);
     }
 }
 
@@ -185,27 +50,17 @@ Réponds DIRECTEMENT avec ton message qui contient <@${member.user.id}>, rien d'
  */
 export async function sendGoodbyeMessage(member: GuildMember | PartialGuildMember, client: Client): Promise<void> {
     try {
-        const goodbyeChannelId = process.env.WATCH_CHANNEL_ID;
+        const goodbyeChannelId = EnvConfig.WATCH_CHANNEL_ID;
         if (!goodbyeChannelId) {
-            console.warn("[WelcomeService] WELCOME_CHANNEL_ID not configured");
+            logger.warn("WATCH_CHANNEL_ID not configured");
             return;
         }
 
         const channel = await member.guild.channels.fetch(goodbyeChannelId) as TextChannel;
         if (!channel || !channel.isTextBased()) {
-            console.warn("[WelcomeService] Goodbye channel not found or not a text channel");
+            logger.warn("Goodbye channel not found or not a text channel");
             return;
         }
-
-        // Vérifier si le bot est en Low Power Mode
-        if (isLowPowerMode()) {
-            console.log(`[WelcomeService] Low Power Mode - using fallback goodbye for ${member.user.username}`);
-            // Utiliser le message fallback normal (pas besoin de mentionner le low power)
-            await channel.send(`👋 ${member.user.username} a quitté le serveur. Bon courage pour la suite !`);
-            return;
-        }
-
-        console.log(`[WelcomeService] Generating goodbye message for ${member.user.username}...`);
 
         // Ajouter un fait au profil de l'utilisateur pour indiquer qu'il a quitté le serveur
         try {
@@ -219,78 +74,21 @@ export async function sendGoodbyeMessage(member: GuildMember | PartialGuildMembe
                 member.user.username,
                 `A quitté le serveur le ${currentDate}`
             );
-            console.log(`[WelcomeService] ✅ Added departure fact to profile for ${member.user.username}`);
+            logger.info(`✅ Added departure fact to profile for ${member.user.username}`);
         } catch (error) {
-            console.error(`[WelcomeService] Error adding departure fact to profile:`, error);
+            logger.error(`Error adding departure fact to profile:`, error);
         }
 
-        // Créer le prompt pour le message d'au revoir
-        const prompt = `${member.user.username} vient de quitter le serveur.
-
-Écris DIRECTEMENT ton message d'au revoir. RÈGLES IMPORTANTES:
-1. Parle de ${member.user.username} à la TROISIÈME PERSONNE  car cette personne N'EST PLUS sur le serveur
-2. NE DIS PAS "tu" ou "te" - cette personne ne peut pas te lire
-3. Parle de lui/elle aux autres membres restants
-4. 2-3 phrases, respectueux et bienveillant
-
-Exemple: "${member.user.username} nous quitte... Il va nous manquer."
-
-Réponds DIRECTEMENT avec ton message à la 3ème personne, rien d'autre.`;
-
-        // Récupérer le nombre de messages avant l'envoi
-        const messagesBefore = await channel.messages.fetch({limit: 1});
-        const lastMessageIdBefore = messagesBefore.first()?.id;
-
-        // Utiliser processLLMRequest avec skipMemory et returnResponse pour récupérer le contenu final
-        const finalResponse = await processLLMRequest({
-            prompt,
+        // Générer et envoyer le message via LLMMessageService
+        await LLMMessageService.generateMessage({
+            type: LLMMessageType.GOODBYE,
             userId: member.user.id,
             userName: member.user.username,
             channel,
-            client,
-            sendMessage: true,
-            skipMemory: true, // Ne pas enregistrer le prompt technique
-            returnResponse: true // Récupérer le contenu final
+            client
         });
 
-        console.log(`[WelcomeService] ✅ Goodbye message sent for ${member.user.username}`);
-
-        if (finalResponse) {
-            console.log(`[WelcomeService] 📝 Response reçue (${finalResponse.length} chars): "${finalResponse.substring(0, 100)}..."`);
-            // Enregistrer dans la mémoire avec un contexte propre
-            await recordWelcomeGoodbyeInMemory(
-                member.user.id,
-                member.user.username,
-                channel.id,
-                channel.name,
-                'goodbye',
-                finalResponse
-            );
-        } else {
-            console.warn(`[WelcomeService] ⚠️ No response received from processLLMRequest`);
-        }
     } catch (error) {
-        console.error("[WelcomeService] Error sending goodbye message:", error);
-
-        // Fallback en cas d'erreur
-        try {
-            const goodbyeChannelId = process.env.WELCOME_CHANNEL_ID;
-            if (goodbyeChannelId) {
-                const channel = await member.guild.channels.fetch(goodbyeChannelId) as TextChannel;
-                const sentMessage = await channel.send(`👋 ${member.user.username} a quitté le serveur. Bon courage pour la suite !`);
-                // Dans le fallback, enregistrer aussi
-                await recordWelcomeGoodbyeInMemory(
-                    member.user.id,
-                    member.user.username,
-                    channel.id,
-                    channel.name,
-                    'goodbye',
-                    sentMessage.content
-                );
-                console.log(`[WelcomeService] ⚠️ Fallback goodbye message sent for ${member.user.username}`);
-            }
-        } catch (fallbackError) {
-            console.error("[WelcomeService] Error sending fallback message:", fallbackError);
-        }
+        logger.error("Error sending goodbye message:", error);
     }
 }

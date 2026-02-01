@@ -7,13 +7,18 @@ import {registerForumThreadHandler} from "./forumThreadHandler";
 import {registerCitationsThreadHandler} from "./citationsThreadHandler";
 import {registerRoleReactionHandler} from "./roleReactionHandler";
 import deployCommands from "./deploy/deployCommands";
-import {createErrorEmbed, initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerMessageEdit, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
+import {initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerMessageEdit, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
+import {createErrorEmbed} from "./utils/interactionUtils";
 import {sendGoodbyeMessage, sendWelcomeMessage} from "./services/welcomeService";
 import {isLowPowerMode} from "./services/botStateService";
 import {setLowPowerStatus, setNormalStatus} from "./services/statusService";
 import {initializeMemeScheduler} from "./services/memeScheduler";
 import {initializeBirthdayService} from "./services/birthdayService";
 import {initializeActivityMonitor} from "./services/activityMonitor";
+import {EnvConfig} from "./utils/envConfig";
+import {createLogger} from "./utils/logger";
+
+const logger = createLogger("Bot");
 
 export async function setBotPresence(client: Client, status: PresenceStatusData, activityName?: string) {
     if (!client.user) return;
@@ -27,7 +32,7 @@ export async function setBotPresence(client: Client, status: PresenceStatusData,
 }
 
 // Load environment variables
-const BOT_TOKEN = process.env.DISCORD_LLM_BOT_TOKEN;
+const BOT_TOKEN = EnvConfig.DISCORD_BOT_TOKEN;
 
 // Create an instance of Client and set the intents to listen for messages.
 const client = new Client({
@@ -54,6 +59,7 @@ const client = new Client({
 
 client.commands = new Collection();
 
+// Load commands
 const foldersPath = path.join(__dirname, "commands");
 const commandFolders = fs.readdirSync(foldersPath);
 
@@ -67,7 +73,7 @@ for (const folder of commandFolders) {
         if ("data" in command && "execute" in command) {
             client.commands.set(command.data.name, command);
         } else {
-            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+            logger.warn(`The command at ${filePath} is missing a required "data" or "execute" property.`);
         }
     }
 }
@@ -89,16 +95,16 @@ registerRoleReactionHandler(client);
 
 // Once the WebSocket is connected, log a message to the console.
 client.once(Events.ClientReady, async () => {
-    console.log("Bot is online!");
+    logger.info("Bot is online!");
     initializeDiscordLogger(client);
 
     // Initialiser le statut Discord en fonction du mode Low Power
     if (isLowPowerMode()) {
         await setLowPowerStatus(client);
-        console.log("Bot started in Low Power Mode");
+        logger.info("Bot started in Low Power Mode");
     } else {
         await setNormalStatus(client);
-        console.log("Bot started in Normal Mode");
+        logger.info("Bot started in Normal Mode");
     }
 
     // Initialiser le planificateur de memes automatiques
@@ -115,28 +121,38 @@ client.once(Events.ClientReady, async () => {
 
 // Nouveau membre rejoint le serveur
 client.on(Events.GuildMemberAdd, async (member) => {
-    await logServerMemberJoin(
-        member.user.username,
-        member.user.id,
-        member.guild.memberCount
-    );
-    console.log(`[Server Event] ${member.user.username} joined the server`);
+    try {
+        logger.info(`${member.user.username} joined the server`);
+        await logServerMemberJoin(
+            member.user.username,
+            member.user.id,
+            member.guild.memberCount
+        );
+        console.log(`[Server Event] ${member.user.username} joined the server`);
 
-    // Générer et envoyer un message de bienvenue personnalisé
-    await sendWelcomeMessage(member, client);
+        // Générer et envoyer un message de bienvenue personnalisé
+        await sendWelcomeMessage(member, client);
+    } catch (error) {
+        logger.error(`Error processing GuildMemberAdd event for ${member.user.username}: ${error}`);
+    }
 });
 
 // Membre quitte le serveur
 client.on(Events.GuildMemberRemove, async (member) => {
-    await logServerMemberLeave(
-        member.user.username,
-        member.user.id,
-        member.guild.memberCount
-    );
-    console.log(`[Server Event] ${member.user.username} left the server`);
+    try {
+        logger.info(`${member.user.username} left the server`);
+        await logServerMemberLeave(
+            member.user.username,
+            member.user.id,
+            member.guild.memberCount
+        );
+        console.log(`[Server Event] ${member.user.username} left the server`);
 
-    // Générer et envoyer un message d'au revoir personnalisé
-    await sendGoodbyeMessage(member, client);
+        // Générer et envoyer un message d'au revoir personnalisé
+        await sendGoodbyeMessage(member, client);
+    } catch (error) {
+        logger.error(`Error processing GuildMemberRemove event for ${member.user.username}: ${error}`);
+    }
 });
 
 // Membre banni
@@ -157,10 +173,15 @@ client.on(Events.GuildBanAdd, async (ban) => {
             moderator,
             reason
         );
+        if (moderator) {
+            logger.info(`${ban.user.username} was banned by ${moderator}`);
+        } else {
+            logger.info(`${ban.user.username} was banned`);
+        }
         console.log(`[Server Event] ${ban.user.username} was banned by ${moderator || "Unknown"}`);
     } catch (error) {
         await logServerBan(ban.user.username, ban.user.id);
-        console.log(`[Server Event] ${ban.user.username} was banned`);
+        logger.error(`Error processing GuildBanAdd event for ${ban.user.username}: ${error}`);
     }
 });
 
@@ -180,195 +201,177 @@ client.on(Events.GuildBanRemove, async (ban) => {
             ban.user.id,
             moderator
         );
+        if (moderator) {
+            logger.info(`${ban.user.username} was unbanned by ${moderator}`);
+        } else {
+            logger.info(`${ban.user.username} was unbanned`);
+        }
         console.log(`[Server Event] ${ban.user.username} was unbanned by ${moderator || "Unknown"}`);
     } catch (error) {
         await logServerUnban(ban.user.username, ban.user.id);
-        console.log(`[Server Event] ${ban.user.username} was unbanned`);
+        logger.error(`Error processing GuildBanRemove event for ${ban.user.username}: ${error}`);
     }
 });
 
 // Membre mis à jour (rôles, timeout, nickname)
 client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
-    const oldRoles = oldMember.roles.cache;
-    const newRoles = newMember.roles.cache;
+    try {
+        const oldRoles = oldMember.roles.cache;
+        const newRoles = newMember.roles.cache;
 
-    const addedRoles = newRoles.filter(role => !oldRoles.has(role.id)).map(role => role.name);
-    const removedRoles = oldRoles.filter(role => !newRoles.has(role.id)).map(role => role.name);
+        const addedRoles = newRoles.filter(role => !oldRoles.has(role.id)).map(role => role.name);
+        const removedRoles = oldRoles.filter(role => !newRoles.has(role.id)).map(role => role.name);
 
-    // Changement de rôles
-    if (addedRoles.length > 0 || removedRoles.length > 0) {
-        await logServerRoleUpdate(
-            newMember.user.username,
-            newMember.user.id,
-            addedRoles,
-            removedRoles
-        );
-        console.log(`[Server Event] Roles updated for ${newMember.user.username}`);
-    }
-
-    // Changement de timeout
-    const oldTimeout = oldMember.communicationDisabledUntilTimestamp;
-    const newTimeout = newMember.communicationDisabledUntilTimestamp;
-
-    if (oldTimeout !== newTimeout) {
-        if (newTimeout && newTimeout > Date.now()) {
-            // Timeout ajouté
-            const duration = Math.floor((newTimeout - Date.now()) / 1000 / 60); // en minutes
-            const durationStr = duration > 60 ? `${Math.floor(duration / 60)}h ${duration % 60}min` : `${duration}min`;
-
-            try {
-                const auditLogs = await newMember.guild.fetchAuditLogs({
-                    type: 24, // MEMBER_UPDATE (timeout)
-                    limit: 1
-                });
-                const timeoutLog = auditLogs.entries.first();
-                const moderator = timeoutLog?.executor?.username;
-                const reason = timeoutLog?.reason;
-
-                await logServerMemberTimeout(
-                    newMember.user.username,
-                    newMember.user.id,
-                    durationStr,
-                    moderator,
-                    reason || undefined
-                );
-            } catch (error) {
-                await logServerMemberTimeout(newMember.user.username, newMember.user.id, durationStr);
-            }
-            console.log(`[Server Event] ${newMember.user.username} timed out for ${durationStr}`);
-        } else if (oldTimeout && (!newTimeout || newTimeout <= Date.now())) {
-            // Timeout retiré
-            try {
-                const auditLogs = await newMember.guild.fetchAuditLogs({
-                    type: 24,
-                    limit: 1
-                });
-                const timeoutLog = auditLogs.entries.first();
-                const moderator = timeoutLog?.executor?.username;
-
-                await logServerMemberTimeoutRemove(
-                    newMember.user.username,
-                    newMember.user.id,
-                    moderator
-                );
-            } catch (error) {
-                await logServerMemberTimeoutRemove(newMember.user.username, newMember.user.id);
-            }
-            console.log(`[Server Event] ${newMember.user.username} timeout removed`);
+        // Changement de rôles
+        if (addedRoles.length > 0 || removedRoles.length > 0) {
+            await logServerRoleUpdate(
+                newMember.user.username,
+                newMember.user.id,
+                addedRoles,
+                removedRoles
+            );
+            logger.info(`Roles updated for ${newMember.user.username}`);
+            console.log(`[Server Event] Roles updated for ${newMember.user.username}`);
         }
-    }
 
-    // Changement de surnom
-    if (oldMember.nickname !== newMember.nickname) {
-        await logServerNicknameChange(
-            newMember.user.username,
-            newMember.user.id,
-            oldMember.nickname,
-            newMember.nickname
-        );
-        console.log(`[Server Event] Nickname changed for ${newMember.user.username}`);
+        // Changement de timeout
+        const oldTimeout = oldMember.communicationDisabledUntilTimestamp;
+        const newTimeout = newMember.communicationDisabledUntilTimestamp;
+
+        if (oldTimeout !== newTimeout) {
+            if (newTimeout && newTimeout > Date.now()) {
+                // Timeout ajouté
+                const duration = Math.floor((newTimeout - Date.now()) / 1000 / 60); // en minutes
+                const durationStr = duration > 60 ? `${Math.floor(duration / 60)}h ${duration % 60}min` : `${duration}min`;
+
+                try {
+                    const auditLogs = await newMember.guild.fetchAuditLogs({
+                        type: 24, // MEMBER_UPDATE (timeout)
+                        limit: 1
+                    });
+                    const timeoutLog = auditLogs.entries.first();
+                    const moderator = timeoutLog?.executor?.username;
+                    const reason = timeoutLog?.reason;
+
+                    await logServerMemberTimeout(
+                        newMember.user.username,
+                        newMember.user.id,
+                        durationStr,
+                        moderator,
+                        reason || undefined
+                    );
+                } catch (error) {
+                    await logServerMemberTimeout(newMember.user.username, newMember.user.id, durationStr);
+                }
+                logger.info(`${newMember.user.username} timed out for ${durationStr}`);
+                console.log(`[Server Event] ${newMember.user.username} timed out for ${durationStr}`);
+            } else if (oldTimeout && (!newTimeout || newTimeout <= Date.now())) {
+                // Timeout retiré
+                try {
+                    const auditLogs = await newMember.guild.fetchAuditLogs({
+                        type: 24,
+                        limit: 1
+                    });
+                    const timeoutLog = auditLogs.entries.first();
+                    const moderator = timeoutLog?.executor?.username;
+
+                    await logServerMemberTimeoutRemove(
+                        newMember.user.username,
+                        newMember.user.id,
+                        moderator
+                    );
+                } catch (error) {
+                    await logServerMemberTimeoutRemove(newMember.user.username, newMember.user.id);
+                }
+                logger.info(`${newMember.user.username} timeout removed`);
+                console.log(`[Server Event] ${newMember.user.username} timeout removed`);
+            }
+        }
+
+        // Changement de surnom
+        if (oldMember.nickname !== newMember.nickname) {
+            await logServerNicknameChange(
+                newMember.user.username,
+                newMember.user.id,
+                oldMember.nickname,
+                newMember.nickname
+            );
+            logger.info(`Nickname changed for ${newMember.user.username}`);
+            console.log(`[Server Event] Nickname changed for ${newMember.user.username}`);
+        }
+    } catch (error) {
+        logger.error(`Error processing GuildMemberUpdate event for ${newMember.user.username}: ${error}`);
     }
 });
 
 // Salon créé
 client.on(Events.ChannelCreate, async (channel) => {
-    if (!channel.isDMBased()) {
-        let channelType = "Inconnu";
-        if (channel.type === ChannelType.GuildText) channelType = "Textuel";
-        else if (channel.type === ChannelType.GuildVoice) channelType = "Vocal";
-        else if (channel.type === ChannelType.GuildCategory) channelType = "Catégorie";
-        else if (channel.type === ChannelType.GuildAnnouncement) channelType = "Annonces";
-        else if (channel.type === ChannelType.GuildForum) channelType = "Forum";
+    try {
+        if (!channel.isDMBased()) {
+            let channelType = "Inconnu";
+            if (channel.type === ChannelType.GuildText) channelType = "Textuel";
+            else if (channel.type === ChannelType.GuildVoice) channelType = "Vocal";
+            else if (channel.type === ChannelType.GuildCategory) channelType = "Catégorie";
+            else if (channel.type === ChannelType.GuildAnnouncement) channelType = "Annonces";
+            else if (channel.type === ChannelType.GuildForum) channelType = "Forum";
 
-        let createdBy: string | undefined;
+            let createdBy: string | undefined;
 
-        // Tenter de récupérer qui a créé le salon
-        try {
-            const auditLogs = await channel.guild.fetchAuditLogs({
-                type: 10, // CHANNEL_CREATE
-                limit: 1
-            });
+            // Tenter de récupérer qui a créé le salon
+            try {
+                const auditLogs = await channel.guild.fetchAuditLogs({
+                    type: 10, // CHANNEL_CREATE
+                    limit: 1
+                });
 
-            const createLog = auditLogs.entries.first();
-            if (createLog && createLog.targetId === channel.id) {
-                const timeDiff = Date.now() - createLog.createdTimestamp;
-                // Vérifier que le log est récent (moins de 5 secondes)
-                if (timeDiff < 5000) {
-                    createdBy = createLog.executor?.username;
+                const createLog = auditLogs.entries.first();
+                if (createLog && createLog.targetId === channel.id) {
+                    const timeDiff = Date.now() - createLog.createdTimestamp;
+                    // Vérifier que le log est récent (moins de 5 secondes)
+                    if (timeDiff < 5000) {
+                        createdBy = createLog.executor?.username;
+                    }
                 }
+            } catch (error) {
+                logger.warn(`Could not fetch audit logs for channel creation`);
             }
-        } catch (error) {
-            console.log(`[Server Event] Could not fetch audit logs for channel creation`);
-        }
 
-        await logServerChannelCreate(
-            channel.name || "Sans nom",
-            channelType,
-            channel.id,
-            createdBy
-        );
-        console.log(`[Server Event] Channel created: ${channel.name}${createdBy ? ` by ${createdBy}` : ''}`);
+            await logServerChannelCreate(
+                channel.name || "Sans nom",
+                channelType,
+                channel.id,
+                createdBy
+            );
+            logger.info(`Channel created: ${channel.name}${createdBy ? ` by ${createdBy}` : ''}`);
+            console.log(`[Server Event] Channel created: ${channel.name}${createdBy ? ` by ${createdBy}` : ''}`);
+        }
+    } catch (error) {
+        logger.error(`Error processing ChannelCreate event for ${channel.name}: ${error}`);
     }
 });
 
 // Salon supprimé
 client.on(Events.ChannelDelete, async (channel) => {
-    if (!channel.isDMBased()) {
-        let channelType = "Inconnu";
-        if (channel.type === ChannelType.GuildText) channelType = "Textuel";
-        else if (channel.type === ChannelType.GuildVoice) channelType = "Vocal";
-        else if (channel.type === ChannelType.GuildCategory) channelType = "Catégorie";
-        else if (channel.type === ChannelType.GuildAnnouncement) channelType = "Annonces";
-        else if (channel.type === ChannelType.GuildForum) channelType = "Forum";
+    try {
+        if (!channel.isDMBased()) {
+            let channelType = "Inconnu";
+            if (channel.type === ChannelType.GuildText) channelType = "Textuel";
+            else if (channel.type === ChannelType.GuildVoice) channelType = "Vocal";
+            else if (channel.type === ChannelType.GuildCategory) channelType = "Catégorie";
+            else if (channel.type === ChannelType.GuildAnnouncement) channelType = "Annonces";
+            else if (channel.type === ChannelType.GuildForum) channelType = "Forum";
 
-        let deletedBy: string | undefined;
+            let deletedBy: string | undefined;
 
-        // Tenter de récupérer qui a supprimé le salon
-        try {
-            const auditLogs = await channel.guild.fetchAuditLogs({
-                type: 12, // CHANNEL_DELETE
-                limit: 1
-            });
-
-            const deleteLog = auditLogs.entries.first();
-            if (deleteLog && deleteLog.targetId === channel.id) {
-                const timeDiff = Date.now() - deleteLog.createdTimestamp;
-                // Vérifier que le log est récent (moins de 5 secondes)
-                if (timeDiff < 5000) {
-                    deletedBy = deleteLog.executor?.username;
-                }
-            }
-        } catch (error) {
-            console.log(`[Server Event] Could not fetch audit logs for channel deletion`);
-        }
-
-        await logServerChannelDelete(
-            channel.name || "Sans nom",
-            channelType,
-            channel.id,
-            deletedBy
-        );
-        console.log(`[Server Event] Channel deleted: ${channel.name}${deletedBy ? ` by ${deletedBy}` : ''}`);
-    }
-});
-
-// Message supprimé
-client.on(Events.MessageDelete, async (message) => {
-    if (message.author?.bot) return;
-
-    if (message.content || message.attachments.size > 0) {
-        let deletedBy: string | undefined;
-
-        // Tenter de récupérer qui a supprimé le message
-        if (message.guild) {
+            // Tenter de récupérer qui a supprimé le salon
             try {
-                const auditLogs = await message.guild.fetchAuditLogs({
-                    type: 72, // MESSAGE_DELETE
+                const auditLogs = await channel.guild.fetchAuditLogs({
+                    type: 12, // CHANNEL_DELETE
                     limit: 1
                 });
 
                 const deleteLog = auditLogs.entries.first();
-                if (deleteLog && deleteLog.targetId === message.author?.id) {
+                if (deleteLog && deleteLog.targetId === channel.id) {
                     const timeDiff = Date.now() - deleteLog.createdTimestamp;
                     // Vérifier que le log est récent (moins de 5 secondes)
                     if (timeDiff < 5000) {
@@ -376,41 +379,92 @@ client.on(Events.MessageDelete, async (message) => {
                     }
                 }
             } catch (error) {
-                // Si on ne peut pas accéder aux audit logs, on continue sans
-                console.log(`[Server Event] Could not fetch audit logs for message deletion`);
+                logger.warn(`Could not fetch audit logs for channel deletion`);
             }
-        }
 
-        await logServerMessageDelete(
-            message.author?.username || "Utilisateur inconnu",
-            message.channel.isDMBased() ? "DM" : (message.channel.name || "Salon inconnu"),
-            message.content || "(pas de contenu texte)",
-            message.attachments.size,
-            deletedBy
-        );
-        console.log(`[Server Event] Message deleted from ${message.author?.username || "Unknown"}${deletedBy ? ` by ${deletedBy}` : ''}`);
+            await logServerChannelDelete(
+                channel.name || "Sans nom",
+                channelType,
+                channel.id,
+                deletedBy
+            );
+            logger.info(`Channel deleted: ${channel.name}${deletedBy ? ` by ${deletedBy}` : ''}`);
+            console.log(`[Server Event] Channel deleted: ${channel.name}${deletedBy ? ` by ${deletedBy}` : ''}`);
+        }
+    } catch (error) {
+        const channelName = 'name' in channel ? channel.name : 'DM';
+        logger.error(`Error processing ChannelDelete event for ${channelName}: ${error}`);
+    }
+});
+
+// Message supprimé
+client.on(Events.MessageDelete, async (message) => {
+    try {
+        if (message.author?.bot) return;
+
+        if (message.content || message.attachments.size > 0) {
+            let deletedBy: string | undefined;
+
+            // Tenter de récupérer qui a supprimé le message
+            if (message.guild) {
+                try {
+                    const auditLogs = await message.guild.fetchAuditLogs({
+                        type: 72, // MESSAGE_DELETE
+                        limit: 1
+                    });
+
+                    const deleteLog = auditLogs.entries.first();
+                    if (deleteLog && deleteLog.targetId === message.author?.id) {
+                        const timeDiff = Date.now() - deleteLog.createdTimestamp;
+                        // Vérifier que le log est récent (moins de 5 secondes)
+                        if (timeDiff < 5000) {
+                            deletedBy = deleteLog.executor?.username;
+                        }
+                    }
+                } catch (error) {
+                    logger.warn(`Could not fetch audit logs for message deletion`);
+                }
+            }
+
+            await logServerMessageDelete(
+                message.author?.username || "Utilisateur inconnu",
+                message.channel.isDMBased() ? "DM" : (message.channel.name || "Salon inconnu"),
+                message.content || "(pas de contenu texte)",
+                message.attachments.size,
+                deletedBy
+            );
+            logger.info(`Message deleted from ${message.author?.username || "Unknown"}${deletedBy ? ` by ${deletedBy}` : ''}`);
+            console.log(`[Server Event] Message deleted from ${message.author?.username || "Unknown"}${deletedBy ? ` by ${deletedBy}` : ''}`);
+        }
+    } catch (error) {
+        logger.error(`Error processing MessageDelete event: ${error}`);
     }
 });
 
 // Message édité
 client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
-    if (newMessage.author?.bot) return;
+    try {
+        if (newMessage.author?.bot) return;
 
-    // Ignorer les messages partiels (cache miss)
-    if (oldMessage.partial || newMessage.partial) return;
+        // Ignorer les messages partiels (cache miss)
+        if (oldMessage.partial || newMessage.partial) return;
 
-    // Ignorer si le contenu n'a pas changé (embed auto-génération, etc.)
-    if (oldMessage.content === newMessage.content) return;
+        // Ignorer si le contenu n'a pas changé (embed auto-génération, etc.)
+        if (oldMessage.content === newMessage.content) return;
 
-    await logServerMessageEdit(
-        newMessage.author?.username || "Utilisateur inconnu",
-        newMessage.channel.isDMBased() ? "DM" : (newMessage.channel.name || "Salon inconnu"),
-        oldMessage.content || "(pas de contenu texte)",
-        newMessage.content || "(pas de contenu texte)",
-        newMessage.attachments.size,
-        newMessage.author?.username // L'auteur est celui qui édite son propre message
-    );
-    console.log(`[Server Event] Message edited by ${newMessage.author?.username || "Unknown"}`);
+        await logServerMessageEdit(
+            newMessage.author?.username || "Utilisateur inconnu",
+            newMessage.channel.isDMBased() ? "DM" : (newMessage.channel.name || "Salon inconnu"),
+            oldMessage.content || "(pas de contenu texte)",
+            newMessage.content || "(pas de contenu texte)",
+            newMessage.attachments.size,
+            newMessage.author?.username // L'auteur est celui qui édite son propre message
+        );
+        logger.info(`Message edited by ${newMessage.author?.username || "Unknown"}`);
+        console.log(`[Server Event] Message edited by ${newMessage.author?.username || "Unknown"}`);
+    } catch (error) {
+        logger.error(`Error processing MessageUpdate event: ${error}`);
+    }
 });
 
 // État vocal mis à jour (join, leave, move, mute, deaf)
@@ -441,6 +495,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                         newState.channel.name,
                         moderator
                     );
+                    logger.info(`${member.user.username} moved from ${oldState.channel.name} to ${newState.channel.name} by ${moderator}`);
                     console.log(`[Server Event] ${member.user.username} moved from ${oldState.channel.name} to ${newState.channel.name} by ${moderator}`);
                 }
                 // Sinon, c'est un déplacement volontaire - ne pas logger
@@ -476,6 +531,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                     false,
                     moderator
                 );
+                logger.info(`${member.user.username} ${isMuted ? 'muted' : 'unmuted'} by server (by ${moderator})`);
                 console.log(`[Server Event] ${member.user.username} ${isMuted ? 'muted' : 'unmuted'} by server (by ${moderator})`);
             }
             // Sinon, c'est probablement un changement automatique lors de la connexion - ne pas logger
@@ -510,6 +566,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                     false,
                     moderator
                 );
+                logger.info(`${member.user.username} ${isDeafened ? 'deafened' : 'undeafened'} by server (by ${moderator})`);
                 console.log(`[Server Event] ${member.user.username} ${isDeafened ? 'deafened' : 'undeafened'} by server (by ${moderator})`);
             }
             // Sinon, c'est probablement un changement automatique lors de la connexion - ne pas logger

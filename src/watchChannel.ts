@@ -8,6 +8,10 @@ import {logBotReaction} from "./utils/discordLogger";
 import {BotStatus, clearStatus, setStatus} from "./services/statusService";
 import {isLowPowerMode} from "./services/botStateService";
 import {appendDMTurn, getDMRecentTurns} from "./services/dmMemoryService";
+import {EnvConfig} from "./utils/envConfig";
+import {createLogger} from "./utils/logger";
+
+const logger = createLogger("WatchChannel");
 
 function isWatchedChannel(message: Message, watchedChannelId?: string): boolean {
     return !!watchedChannelId && message.channelId === watchedChannelId;
@@ -35,17 +39,17 @@ function isWatchedChannel(message: Message, watchedChannelId?: string): boolean 
 }
 
 async function handleNettieReaction(client: Client, message: Message): Promise<string> {
-    console.log(`Message from ${message.author.username} talks about Nettie`);
+    logger.info(`Message from ${message.author.username} talks about Nettie`);
     await setStatus(client, BotStatus.CHOOSING_REACTION);
 
     try {
         const emoji = await generateMentionEmoji(message.content);
         await message.react(emoji);
-        console.log(`[Emoji] Reacted with: ${emoji}`);
+        logger.info(`Reacted with: ${emoji}`);
         await clearStatus(client);
         return emoji;
     } catch (error) {
-        console.error("[watchChannel] Failed to get emoji from LLM:", error);
+        logger.error("Failed to get emoji from LLM:", error);
         await clearStatus(client);
         await message.react("🤗");
         return "🤗";
@@ -59,7 +63,7 @@ async function getThreadStarterMessage(thread: any) {
         const starterMessage = await thread.fetchStarterMessage();
         return starterMessage;
     } catch (error) {
-        console.warn("[watchChannel] Failed to fetch thread starter message:", error);
+        logger.warn("Failed to fetch thread starter message:", error);
         return null;
     }
 }
@@ -78,14 +82,14 @@ async function extractReferencedMessageContext(message: Message, messageReferenc
         // Si le message référencé est du bot lui-même, ne pas ajouter de contexte car il est déjà dans l'historique
         const isBotMessage = referencedMessage.author.bot;
 
-        console.log(`[watchChannel] Fetching referenced message from ${referencedMessage.author.displayName}`);
-        console.log(`[watchChannel] Referenced message content: "${referencedMessage.content}"`);
-        console.log(`[watchChannel] Referenced message has ${referencedMessage.attachments.size} attachment(s)`);
+        logger.info(`Fetching referenced message from ${referencedMessage.author.displayName}`);
+        logger.info(`Referenced message content: "${referencedMessage.content}"`);
+        logger.info(`Referenced message has ${referencedMessage.attachments.size} attachment(s)`);
 
         // Collecter tous les médias (images + GIFs + Tenor)
         const imageUrls = await collectAllMediaUrls(referencedMessage);
 
-        console.log(`[watchChannel] Collected ${imageUrls.length} media URL(s) from referenced message:`, imageUrls);
+        logger.info(`Collected ${imageUrls.length} media URL(s) from referenced message:`, imageUrls);
 
         let mustReact = false;
         if (message.channel.isThread() && forumChannelId) {
@@ -94,14 +98,14 @@ async function extractReferencedMessageContext(message: Message, messageReferenc
                 const firstMessage = await getThreadStarterMessage(thread);
                 if (firstMessage && firstMessage.id === referencedMessage.id) {
                     mustReact = true;
-                    console.log(`[watchChannel] Detected reply to original post in Création forum - must react`);
+                    logger.info(`Detected reply to original post in Création forum - must react`);
                 }
             }
         }
 
         // Si c'est un message du bot, retourner seulement les images et mustReact, sans ajouter de contexte textuel
         if (isBotMessage) {
-            console.log(`[watchChannel] Message references bot's own message - skipping context (already in history)`);
+            logger.info(`Message references bot's own message - skipping context (already in history)`);
             return {
                 contextPrompt: "",
                 imageUrls,
@@ -116,24 +120,24 @@ async function extractReferencedMessageContext(message: Message, messageReferenc
         const refImageNotice = imageUrls.length > 0 ? ` [contient ${imageUrls.length} média(s)]` : "";
         const contextPrompt = `[L'utilisateur répond au message suivant]\n${refAuthor}: ${refContent}${refImageNotice}\n\n[Réponse de l'utilisateur]\n`;
 
-        console.log(`[watchChannel] Message references another message from ${refAuthor}${refImageNotice}`);
+        logger.info(`Message references another message from ${refAuthor}${refImageNotice}`);
 
         return {contextPrompt, imageUrls, referencedMessage, mustReact};
     } catch (error) {
-        console.warn("[watchChannel] Failed to fetch referenced message:", error);
+        logger.warn("Failed to fetch referenced message:", error);
         return null;
     }
 }
 
 export function registerWatchedChannelResponder(client: Client) {
-    const watchedChannelId = process.env.WATCH_CHANNEL_ID;
-    const forumChannelId = process.env.FORUM_CHANNEL_ID;
+    const watchedChannelId = EnvConfig.WATCH_CHANNEL_ID;
+    const forumChannelId = EnvConfig.FORUM_CHANNEL_ID;
 
     if (watchedChannelId) {
-        console.log(`[watchChannel] Watching channel: ${watchedChannelId}`);
+        logger.info(`Watching channel: ${watchedChannelId}`);
     }
 
-    console.log(`[watchChannel] Bot mention detection enabled in all channels`);
+    logger.info(`Bot mention detection enabled in all channels`);
 
     client.on("messageCreate", async (message) => {
         try {
@@ -145,13 +149,13 @@ export function registerWatchedChannelResponder(client: Client) {
 
             // Filtrer les messages qui commencent par "!s"
             if (message.content.trim().startsWith("!s ")) {
-                console.log(`Ignored message from ${message.author} because it starts with "!s"`);
+                logger.info(`Ignored message from ${message.author} because it starts with "!s"`);
                 return; // Ne rien faire
             }
 
             // ===== GESTION DES DMs =====
             if (message.channel.type === ChannelType.DM) {
-                console.log(`[DM] Message from ${message.author.username}: "${message.content.substring(0, 50)}..."`);
+                logger.info(`[DM] Message from ${message.author.username}: "${message.content.substring(0, 50)}..."`);
 
                 // Fetch le canal complet si c'est un partial
                 const dmChannel = message.channel.partial ? await message.channel.fetch() : message.channel;
@@ -159,13 +163,13 @@ export function registerWatchedChannelResponder(client: Client) {
                 // Vérifier si en Low Power Mode
                 if (isLowPowerMode()) {
                     await message.reply(`🔋 Désolée, je suis en mode Low Power pour économiser les ressources. Je ne peux pas effectuer d'analyse LLM pour le moment.\n\n💡 Utilisez \`/lowpower\` pour me réactiver en mode normal.`);
-                    console.log(`[DM] Low Power Mode - sent message to ${message.author.username}`);
+                    logger.info(`[DM] Low Power Mode - sent message to ${message.author.username}`);
                     return;
                 }
 
                 const userText = message.content?.trim();
                 if (!userText || userText.length === 0) {
-                    console.log(`[DM] Empty message from ${message.author.username}, ignoring`);
+                    logger.info(`[DM] Empty message from ${message.author.username}, ignoring`);
                     return;
                 }
 
@@ -181,7 +185,7 @@ export function registerWatchedChannelResponder(client: Client) {
                 // Récupérer l'historique de conversation DM
                 const dmMemory = await getDMRecentTurns(userId, 20);
 
-                console.log(`[DM] Processing message from ${userName} (${dmMemory.length} turns in memory)`);
+                logger.info(`[DM] Processing message from ${userName} (${dmMemory.length} turns in memory)`);
 
                 // Traiter avec processLLMRequest
                 await processLLMRequest({
@@ -209,7 +213,7 @@ export function registerWatchedChannelResponder(client: Client) {
                             isPassive: false,
                             ...(imageUrls.length > 0 ? {imageDescriptions: [`${imageUrls.length} image(s)`]} : {})
                         });
-                        console.log(`[DM] Saved conversation turn for ${userName}`);
+                        logger.info(`[DM] Saved conversation turn for ${userName}`);
                     }
                 });
 
@@ -227,7 +231,7 @@ export function registerWatchedChannelResponder(client: Client) {
                     const lowPowerMessage = `Désolée, j'ai été mise en mode économie d'énergie par Tah-Um.\nJe ne peux pas générer de réponses ou analyser d'images pour le moment.`;
 
                     await message.reply(lowPowerMessage);
-                    console.log(`[watchChannel] Low Power Mode - sent message to ${message.author.username}`);
+                    logger.info(`Low Power Mode - sent message to ${message.author.username}`);
 
                     // NE PAS enregistrer passivement : l'utilisateur attend une réponse
                     // Si on enregistrait, on aurait un message sans réponse dans la mémoire
@@ -285,7 +289,7 @@ export function registerWatchedChannelResponder(client: Client) {
                         undefined // Pas de isReply pour les mentions Nettie
                     );
 
-                    console.log(`[Nettie Reaction] Message recorded with reaction ${reactionEmoji} in #${channelName}${savedInMemory ? ' (saved in memory)' : ' (not saved)'}`);
+                    logger.info(`[Nettie Reaction] Message recorded with reaction ${reactionEmoji} in #${channelName}${savedInMemory ? ' (saved in memory)' : ' (not saved)'}`);
                 }
 
                 // Logger la réaction
@@ -353,7 +357,7 @@ export function registerWatchedChannelResponder(client: Client) {
                         author: starterMessage.author.displayName,
                         imageUrls: starterImageUrls
                     };
-                    console.log(`[watchChannel] Thread starter context captured from ${starterMessage.author.displayName}`);
+                    logger.info(`Thread starter context captured from ${starterMessage.author.displayName}`);
                 }
             }
 
@@ -368,7 +372,7 @@ export function registerWatchedChannelResponder(client: Client) {
                     mustReact = refContext.mustReact;
 
                     if (refContext.imageUrls.length > 0) {
-                        console.log(`[watchChannel] Added ${refContext.imageUrls.length} image(s) from referenced message to analysis`);
+                        logger.info(`Added ${refContext.imageUrls.length} image(s) from referenced message to analysis`);
                     }
                 }
             }
@@ -386,7 +390,7 @@ export function registerWatchedChannelResponder(client: Client) {
             // Mettre à jour les rôles Discord si l'utilisateur en a
 
             const triggerReason = isMentioned ? "mentioned" : "watched channel";
-            console.log(`[watchChannel] Processing message from ${message.author.displayName} (${triggerReason}): ${userText}${imageUrls.length > 0 ? ` [${imageUrls.length} image(s)]` : ""}`);
+            logger.info(`Processing message from ${message.author.displayName} (${triggerReason}): ${userText}${imageUrls.length > 0 ? ` [${imageUrls.length} image(s)]` : ""}`);
 
             // Mettre à jour l'activité de l'utilisateur (jeu en cours)
             await updateUserActivityFromPresence(client, message.author.id);
@@ -418,11 +422,11 @@ export function registerWatchedChannelResponder(client: Client) {
 
             await setBotPresence(client, "online");
         } catch (err) {
-            console.error("[watchChannel] messageCreate error:", err);
+            logger.error("messageCreate error:", err);
             try {
                 await message.reply({content: "An error occurred while processing your message."});
             } catch (replyErr) {
-                console.error("[watchChannel] Failed to send error message:", replyErr);
+                logger.error("Failed to send error message:", replyErr);
             }
         }
     });

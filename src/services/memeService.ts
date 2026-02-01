@@ -1,4 +1,6 @@
 import {Client, TextChannel} from "discord.js";
+import {EnvConfig} from "../utils/envConfig";
+import {createLogger} from "../utils/logger";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -8,10 +10,9 @@ import * as path from "path";
  * Supporte plusieurs subreddits configurables
  */
 
+const logger = createLogger("MemeService");
 const MEME_HISTORY_FILE = path.join(process.cwd(), "data", "posted_memes.json");
-// Subreddits séparés par des virgules dans la variable d'environnement
-// Exemple: "shitposting,memes,dankmemes"
-const SUBREDDITS = process.env.MEME_SUBREDDITS?.split(',').map(s => s.trim()) || ['shitposting'];
+const SUBREDDITS = EnvConfig.MEME_SUBREDDITS;
 
 interface PostedMeme {
     id: string;
@@ -41,7 +42,7 @@ function loadMemeHistory(): PostedMeme[] {
             return JSON.parse(data);
         }
     } catch (error) {
-        console.error("[MemeService] Error loading meme history:", error);
+        logger.error("Error loading meme history:", error);
     }
     return [];
 }
@@ -57,29 +58,49 @@ function saveMemeHistory(history: PostedMeme[]): void {
         }
         fs.writeFileSync(MEME_HISTORY_FILE, JSON.stringify(history, null, 2), "utf-8");
     } catch (error) {
-        console.error("[MemeService] Error saving meme history:", error);
+        logger.error("Error saving meme history:", error);
     }
 }
 
 /**
- * Récupère les memes depuis un subreddit spécifique
+ * Récupère les posts d'un subreddit
  */
-async function fetchMemesFromSubreddit(subreddit: string): Promise<RedditPost[]> {
+async function fetchSubredditPosts(subreddit: string): Promise<RedditPost[]> {
     try {
-        const url = `https://www.reddit.com/r/${subreddit}/hot.json?limit=100`;
-        const response = await fetch(url, {
+        const response = await fetch(`https://www.reddit.com/r/${subreddit}/hot.json?limit=100`, {
             headers: {
-                "User-Agent": "DiscordBot:Netricsa:v1.0.0 (by /u/NetricsaBot)"
+                "User-Agent": "DiscordBot/1.0"
             }
         });
 
         if (!response.ok) {
-            console.error(`[MemeService] Reddit API error for r/${subreddit}: ${response.status}`);
+            logger.error(`Reddit API error for r/${subreddit}: ${response.status}`);
             return [];
         }
 
-        const data = await response.json();
-        return data.data.children.filter((post: RedditPost) => {
+        const json = await response.json();
+        return json.data?.children || [];
+    } catch (error) {
+        logger.error(`Error fetching memes from r/${subreddit}:`, error);
+        return [];
+    }
+}
+
+/**
+ * Récupère tous les memes disponibles de tous les subreddits
+ */
+export async function fetchMemesFromReddit(): Promise<RedditPost[]> {
+    try {
+        // Fetch de tous les subreddits en parallèle
+        const allPostsArrays = await Promise.all(
+            SUBREDDITS.map(subreddit => fetchSubredditPosts(subreddit))
+        );
+
+        // Combiner tous les posts
+        const allPosts = allPostsArrays.flat();
+
+        // Filtrer pour garder seulement les images et vidéos non stickied
+        return allPosts.filter(post => {
             const postData = post.data;
             // Filtrer pour garder les images et vidéos (pas les posts épinglés)
             return (
@@ -92,35 +113,13 @@ async function fetchMemesFromSubreddit(subreddit: string): Promise<RedditPost[]>
             );
         });
     } catch (error) {
-        console.error(`[MemeService] Error fetching memes from r/${subreddit}:`, error);
+        logger.error("Error fetching memes from Reddit:", error);
         return [];
     }
 }
 
 /**
- * Récupère les memes depuis tous les subreddits configurés
- */
-async function fetchMemesFromReddit(): Promise<RedditPost[]> {
-    try {
-        console.log(`[MemeService] Fetching memes from subreddits: ${SUBREDDITS.join(', ')}`);
-
-        // Récupérer les memes de tous les subreddits en parallèle
-        const allMemesPromises = SUBREDDITS.map(subreddit => fetchMemesFromSubreddit(subreddit));
-        const allMemesArrays = await Promise.all(allMemesPromises);
-
-        // Fusionner tous les memes
-        const allMemes = allMemesArrays.flat();
-
-        console.log(`[MemeService] Found ${allMemes.length} total memes from all subreddits`);
-        return allMemes;
-    } catch (error) {
-        console.error("[MemeService] Error fetching memes from Reddit:", error);
-        return [];
-    }
-}
-
-/**
- * Sélectionne un meme aléatoire non encore posté
+ * Récupère un meme aléatoire qui n'a pas encore été posté
  */
 export async function getRandomMeme(): Promise<{ id: string; title: string; url: string } | null> {
     try {
@@ -131,7 +130,7 @@ export async function getRandomMeme(): Promise<{ id: string; title: string; url:
         const availableMemes = memes.filter(post => !postedIds.has(post.data.id));
 
         if (availableMemes.length === 0) {
-            console.log("[MemeService] No new memes available, all have been posted");
+            logger.warn("No new memes available (all have been posted)");
             return null;
         }
 
@@ -144,29 +143,36 @@ export async function getRandomMeme(): Promise<{ id: string; title: string; url:
             url: memeData.url
         };
     } catch (error) {
-        console.error("[MemeService] Error getting random meme:", error);
+        logger.error("Error getting random meme:", error);
         return null;
     }
 }
 
 /**
- * Poste un meme dans le salon spécifié
+ * Poste un meme automatiquement dans le salon configuré
  */
-export async function postMeme(client: Client, channelId: string): Promise<boolean> {
+export async function postMemeToChannel(client: Client): Promise<boolean> {
     try {
-        const channel = await client.channels.fetch(channelId);
+        const memeChannelId = EnvConfig.MEME_CHANNEL_ID;
+        if (!memeChannelId) {
+            logger.error("Invalid channel or channel not found");
+            return false;
+        }
+
+        const channel = await client.channels.fetch(memeChannelId);
         if (!channel || !(channel instanceof TextChannel)) {
-            console.error("[MemeService] Invalid channel or channel not found");
+            logger.error("Invalid channel or channel not found");
             return false;
         }
 
         const meme = await getRandomMeme();
         if (!meme) {
+            logger.warn("No new memes available to post");
             return false;
         }
 
-        // Poster le meme (seulement l'URL)
-        await channel.send(meme.url);
+        await channel.send(`> ${meme.title}\n${meme.url}`);
+        logger.info(`Posted meme: "${meme.title}" (${meme.id})`);
 
         // Enregistrer dans l'historique
         const history = loadMemeHistory();
@@ -178,10 +184,9 @@ export async function postMeme(client: Client, channelId: string): Promise<boole
         });
         saveMemeHistory(history);
 
-        console.log(`[MemeService] Posted meme: "${meme.title}" (${meme.id})`);
         return true;
     } catch (error) {
-        console.error("[MemeService] Error posting meme:", error);
+        logger.error("Error posting meme:", error);
         return false;
     }
 }
@@ -195,9 +200,9 @@ export function cleanupMemeHistory(): void {
         if (history.length > 500) {
             const cleaned = history.slice(-500); // Garder les 500 derniers
             saveMemeHistory(cleaned);
-            console.log(`[MemeService] Cleaned up meme history: ${history.length} -> ${cleaned.length}`);
+            logger.info(`Cleaned up meme history: ${history.length} -> ${cleaned.length}`);
         }
     } catch (error) {
-        console.error("[MemeService] Error cleaning up meme history:", error);
+        logger.error("Error cleaning up meme history:", error);
     }
 }

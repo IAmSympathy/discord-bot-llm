@@ -1,7 +1,8 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, GuildMember, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {clearAllMemory} from "../../queue/queue";
 import {hasOwnerPermission} from "../../utils/permissions";
-import {createErrorEmbed, createInfoEmbed, createSuccessEmbed, createWarningEmbed, logCommand} from "../../utils/discordLogger";
+import {createInfoEmbed, createSuccessEmbed, createWarningEmbed, logCommand} from "../../utils/discordLogger";
+import {handleInteractionError, replyWithError} from "../../utils/interactionUtils";
 
 module.exports = {
     data: new SlashCommandBuilder().setName("reset").setDescription("Efface la mémoire de conversation de Netricsa sur le serveur"),
@@ -10,11 +11,12 @@ module.exports = {
             const member = interaction.member instanceof GuildMember ? interaction.member : null;
 
             if (!hasOwnerPermission(member)) {
-                const errorEmbed = createErrorEmbed(
+                await replyWithError(
+                    interaction,
                     "Permission refusée",
-                    "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*"
+                    "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*",
+                    true
                 );
-                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
                 return;
             }
 
@@ -110,29 +112,7 @@ module.exports = {
                 }
             }
         } catch (error: any) {
-            console.error("[Reset Command] Error:", error);
-
-            // Gérer les erreurs d'interaction expirée
-            if (error?.code === 10062) {
-                console.warn("[Reset Command] Interaction expired");
-                return;
-            }
-
-            try {
-                const errorEmbed = createErrorEmbed(
-                    "Erreur",
-                    "Une erreur est survenue lors de l'effacement de la mémoire de Netricsa."
-                );
-
-                await interaction.reply({
-                    embeds: [errorEmbed],
-                    flags: MessageFlags.Ephemeral,
-                });
-            } catch (replyError: any) {
-                if (replyError?.code === 10062) {
-                    console.warn("[Reset Command] Could not send error reply - interaction expired");
-                }
-            }
+            await handleInteractionError(interaction, error, "Reset");
         }
     },
 };

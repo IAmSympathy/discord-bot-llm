@@ -1,16 +1,19 @@
-import {Message as DiscordMessage} from "discord.js";
+import {DMChannel, Message, TextChannel, ThreadChannel} from "discord.js";
 import {DISCORD_MESSAGE_LIMIT, IMAGE_ANALYSIS_ANIMATION_INTERVAL} from "../utils/constants";
 import {cleanDiscordText} from "../utils/textTransformers";
+import {createLogger} from "../utils/logger";
+
+const logger = createLogger("DiscordMessageManager");
 
 /**
  * Gère l'animation d'un message d'analyse d'image
  */
 export class ImageAnalysisAnimation {
-    private message: DiscordMessage | null = null;
+    private message: Message | null = null;
     private interval: NodeJS.Timeout | null = null;
     private dotCount = 1;
 
-    async start(replyToMessage?: DiscordMessage, channel?: any): Promise<void> {
+    async start(replyToMessage?: Message, channel?: TextChannel | ThreadChannel | DMChannel): Promise<void> {
         try {
             if (replyToMessage) {
                 this.message = await replyToMessage.reply("Analyse de l'image.");
@@ -29,8 +32,7 @@ export class ImageAnalysisAnimation {
                 }, IMAGE_ANALYSIS_ANIMATION_INTERVAL);
             }
         } catch (error) {
-            console.error(`[ImageAnalysisAnimation] Erreur lors du démarrage:`, error);
-            throw error;
+            logger.error(`[ImageAnalysisAnimation] Erreur lors du démarrage:`, error);
         }
     }
 
@@ -41,7 +43,7 @@ export class ImageAnalysisAnimation {
         }
     }
 
-    getMessage(): DiscordMessage | null {
+    getMessage(): Message | null {
         return this.message;
     }
 
@@ -54,14 +56,14 @@ export class ImageAnalysisAnimation {
  * Gère les messages Discord pour les réponses du bot en plusieurs chunks
  */
 export class DiscordMessageManager {
-    private messages: DiscordMessage[] = [];
+    private messages: Message[] = [];
     private responseChunks: string[] = [];
-    private replyToMessage?: DiscordMessage;
+    private replyToMessage?: Message;
     private channel: any;
     private analysisAnimation: ImageAnalysisAnimation | null = null;
     private onFirstMessageSent?: () => void;
 
-    constructor(channel: any, replyToMessage?: DiscordMessage) {
+    constructor(channel: any, replyToMessage?: Message) {
         this.channel = channel;
         this.replyToMessage = replyToMessage;
     }
