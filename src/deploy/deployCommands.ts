@@ -40,5 +40,4 @@ const deployCommands = async () => {
         logger.error("Error deploying commands:", error);
     }
 };
-
 export default deployCommands;

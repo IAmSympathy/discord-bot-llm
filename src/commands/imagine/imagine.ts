@@ -1,0 +1,200 @@
+import {ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder} from "discord.js";
+import {generateImage} from "../../services/imageGenerationService";
+import {logBotImageGeneration} from "../../utils/discordLogger";
+import {createErrorEmbed} from "../../utils/embedBuilder";
+import {createLogger} from "../../utils/logger";
+import {registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
+import {formatTime} from "../../utils/timeFormat";
+import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
+import {FileMemory} from "../../memory/fileMemory";
+import {MEMORY_FILE_PATH, MEMORY_MAX_TURNS, TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
+import {isLowPowerMode} from "../../services/botStateService";
+
+const logger = createLogger("GenerateImageCmd");
+const memory = new FileMemory(MEMORY_FILE_PATH);
+
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName("imagine")
+        .setDescription("Demande à Netricsa de générer une image")
+        .addStringOption((option) =>
+            option
+                .setName("prompt")
+                .setDescription("Description de l'image à générer (EN ANGLAIS)")
+                .setRequired(true)
+        )
+        .addStringOption((option) =>
+            option
+                .setName("negative")
+                .setDescription("Ce que tu NE veux PAS dans l'image (optionnel, EN ANGLAIS)")
+                .setRequired(false)
+        )
+        .addIntegerOption((option) =>
+            option
+                .setName("amount")
+                .setDescription("Nombre d'images à générer")
+                .setRequired(false)
+                .addChoices(
+                    {name: "1", value: 1},
+                    {name: "2", value: 2},
+                    {name: "3", value: 3}
+                )
+        ),
+
+    async execute(interaction: ChatInputCommandInteraction) {
+
+        // Vérifier le mode low power (l'owner peut quand même utiliser)
+        if (isLowPowerMode()) {
+            const errorEmbed = createErrorEmbed(
+                "⚡ Mode Économie d'Énergie",
+                "Netricsa est en mode économie d'énergie et ne peut pas générer d'images pour le moment.\n\nCe mode se désactive automatiquement quand tu es actif."
+            );
+            await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+            return;
+        }
+
+        let progressMessage: any = null;
+
+        try {
+            const prompt = interaction.options.getString("prompt", true);
+            const negativePrompt = interaction.options.getString("negative");
+            const amount = interaction.options.getInteger("amount") || 1;
+
+            const width = 1024;
+            const height = 1024;
+            const steps = 22;
+            const cfgScale = 7.5;
+
+            logger.info(`Generating image for ${interaction.user.username}: "${prompt.substring(0, 50)}..."`);
+
+            // Définir le statut Discord (10 minutes pour les générations longues)
+            await setStatus(interaction.client, BotStatus.GENERATING_IMAGE, 600000); // 10 minutes
+
+            // Message de progression avec animation de points
+            progressMessage = await interaction.reply({
+                content: "Génération de l'image."
+            });
+
+            // Animation des points
+            let dotCount = 1;
+            const animationInterval = setInterval(async () => {
+                dotCount = (dotCount % 3) + 1;
+                const dots = ".".repeat(dotCount);
+                await progressMessage.edit(`Génération de l'image${dots}\n`).catch(() => {
+                });
+            }, TYPING_ANIMATION_INTERVAL);
+
+            // Enregistrer la génération dans le tracker
+            registerImageGeneration(
+                interaction.user.id,
+                interaction.channelId,
+                "imagine",
+                animationInterval
+            );
+
+            // Générer 3 images
+            const startTime = Date.now();
+            const results = [];
+
+            for (let i = 0; i < amount; i++) {
+                const result = await generateImage({
+                    prompt,
+                    negativePrompt: negativePrompt || undefined,
+                    width,
+                    height,
+                    steps,
+                    cfgScale,
+                    seed: -1, // Seed aléatoire pour chaque image
+                });
+
+                // Mettre à jour le job_id dans le tracker pour permettre l'annulation
+                if (result.jobId) {
+                    updateJobId(interaction.user.id, result.jobId);
+                }
+
+                results.push(result);
+            }
+
+            const generationTime = ((Date.now() - startTime) / 1000).toFixed(1);
+
+            // Arrêter l'animation
+            clearInterval(animationInterval);
+
+            // Désenregistrer la génération du tracker
+            unregisterImageGeneration(interaction.user.id);
+
+            let content =
+                amount === 1
+                    ? `Voici l'image que tu m'as demandé d'imaginer :\n> ${prompt}\n`
+                    : `Voici ${amount} versions de l'image que tu m'as demandé d'imaginer :\n> ${prompt}\n`;
+
+            if (negativePrompt) {
+                content += `Négatif :\n> ${negativePrompt}`;
+            }
+
+            // Envoyer les images avec prompt en quote Discord
+            const finalMessage = await progressMessage.edit({
+                content: content,
+                files: results.map(r => r.attachment)
+            });
+
+            const imageUrls = Array.from(finalMessage.attachments.values()).map((att: any) => att.url);
+
+            // Logger les 3 images en une seule entrée
+            await logBotImageGeneration(
+                interaction.user.username,
+                prompt,
+                formatTime(parseFloat(generationTime)),
+                imageUrls
+            );
+
+            // Ajouter à la mémoire que Netricsa a généré une image
+            logger.info("Saving to memory: /imagine command");
+            await memory.appendTurn({
+                ts: Date.now(),
+                discordUid: interaction.user.id,
+                displayName: interaction.user.username,
+                userText: `/imagine ${prompt}`,
+                assistantText: `Voici l'image que tu m'as demandé d'imaginer : "${prompt}"`,
+                channelId: interaction.channelId,
+                channelName: interaction.channel?.isDMBased() ? "DM" : (interaction.channel as any)?.name || "unknown"
+            }, MEMORY_MAX_TURNS);
+            logger.info("Memory saved successfully for /imagine command");
+
+            // Réinitialiser le statut Discord tout à la fin
+            await clearStatus(interaction.client);
+
+        } catch (error) {
+            logger.error("Error generating image:", error);
+
+            // Désenregistrer la génération en cas d'erreur
+            unregisterImageGeneration(interaction.user.id);
+
+            // Réinitialiser le statut Discord
+            await clearStatus(interaction.client);
+
+            // Si c'est une annulation, éditer le message pour indiquer l'annulation
+            if (error instanceof Error && error.message === "CANCELLED") {
+                logger.info("Generation cancelled by user");
+                if (progressMessage) {
+                    await progressMessage.edit("🛑 Génération annulée.").catch(() => {
+                    });
+                }
+                return;
+            }
+
+            const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+            const errorEmbed = createErrorEmbed(
+                "Erreur de Génération",
+                `Impossible de générer l'image.\n\n**Erreur:** ${errorMessage}`
+            );
+
+            // Si l'interaction a déjà été répondue, utiliser editReply, sinon reply
+            if (interaction.replied || interaction.deferred) {
+                await interaction.editReply({embeds: [errorEmbed]});
+            } else {
+                await interaction.reply({embeds: [errorEmbed], ephemeral: true});
+            }
+        }
+    },
+};

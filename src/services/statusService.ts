@@ -12,7 +12,10 @@ const logger = createLogger("StatusService");
  * Change le statut de Netricsa avec réinitialisation automatique
  */
 export async function setStatus(client: Client, status: string, durationMs: number = 30000) {
-    if (!client.user) return;
+    if (!client.user) {
+        logger.warn("Client user not available, cannot set status");
+        return;
+    }
 
     // Annuler le timeout précédent s'il existe
     if (statusTimeoutId) {
@@ -21,13 +24,19 @@ export async function setStatus(client: Client, status: string, durationMs: numb
     }
 
     // Définir le nouveau statut
-    await client.user.setPresence({
-        status: "online",
-        activities: [{
-            name: status,
-            type: ActivityType.Custom
-        }]
-    });
+    try {
+        await client.user.setPresence({
+            status: "online",
+            activities: [{
+                name: status,
+                type: ActivityType.Playing  // Changed from Custom to Playing for better compatibility
+            }]
+        });
+        logger.info(`Status set: ${status}`);
+    } catch (error) {
+        logger.error(`Error setting status: ${error}`);
+        return;
+    }
 
     // Réinitialiser après le délai
     statusTimeoutId = setTimeout(async () => {
@@ -40,7 +49,10 @@ export async function setStatus(client: Client, status: string, durationMs: numb
  * Réinitialise le statut à vide
  */
 export async function clearStatus(client: Client) {
-    if (!client.user) return;
+    if (!client.user) {
+        logger.warn("Client user not available, cannot clear status");
+        return;
+    }
 
     // Annuler le timeout s'il existe
     if (statusTimeoutId) {
@@ -48,10 +60,15 @@ export async function clearStatus(client: Client) {
         statusTimeoutId = null;
     }
 
-    await client.user.setPresence({
-        status: "online",
-        activities: []
-    });
+    try {
+        await client.user.setPresence({
+            status: "online",
+            activities: []
+        });
+        logger.info("Status cleared");
+    } catch (error) {
+        logger.error(`Error clearing status: ${error}`);
+    }
 }
 
 /**
@@ -100,6 +117,9 @@ export async function setNormalStatus(client: Client): Promise<void> {
 export const BotStatus = {
     ANALYZING_IMAGE: "🖼️ analyse une image...",
     ANALYZING_IMAGES: (count: number) => `🖼️ analyse ${count} images...`,
+    GENERATING_IMAGE: "🎨 génère une image...",
+    REIMAGINING_IMAGE: "🌀 réimagine une image...",
+    UPSCALING_IMAGE: "🔍 upscale une image...",
     SEARCHING_WEB: "🌐 recherche sur le web...",
     THINKING: "💭 réfléchit...",
     WRITING: "✍️ écrit un message...",

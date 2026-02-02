@@ -2,6 +2,7 @@
   "gameBlacklist": [
     "PhpStorm",
     "Wordle",
-    "WebStorm"
+    "WebStorm",
+    "Visual Studio Code"
   ]
 }

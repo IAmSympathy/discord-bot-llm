@@ -68,7 +68,7 @@ export function registerForumThreadHandler(client: Client) {
                     await analysisAnimation.start(starterMessage, thread);
                     animationStarted = true;
                     // Enregistrer l'animation pour permettre son arrêt via /stop
-                    registerImageAnalysis(thread.id, analysisAnimation);
+                    registerImageAnalysis(thread.id, analysisAnimation, starterMessage.author.id);
                 } catch (error) {
                     logger.error(`Erreur lors de l'envoi du message d'animation:`, error);
                 }

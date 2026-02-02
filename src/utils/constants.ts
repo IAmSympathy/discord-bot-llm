@@ -19,8 +19,8 @@ export const OLLAMA_VISION_MODEL = EnvConfig.OLLAMA_VISION_MODEL;
 
 // Discord limits
 export const DISCORD_MESSAGE_LIMIT = 1900;
-export const DISCORD_TYPING_UPDATE_INTERVAL = 1500; // 500ms pour éditions plus réactives (était 2000ms)
-export const IMAGE_ANALYSIS_ANIMATION_INTERVAL = 1500;
+export const DISCORD_TYPING_UPDATE_INTERVAL = 800; // 500ms pour éditions plus réactives (était 2000ms)
+export const TYPING_ANIMATION_INTERVAL = 800;
 
 // Timeouts
 export const BUTTON_CONFIRMATION_TIMEOUT = 10000;

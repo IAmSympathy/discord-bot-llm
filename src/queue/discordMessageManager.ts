@@ -1,5 +1,5 @@
 import {DMChannel, Message, TextChannel, ThreadChannel} from "discord.js";
-import {DISCORD_MESSAGE_LIMIT, IMAGE_ANALYSIS_ANIMATION_INTERVAL} from "../utils/constants";
+import {DISCORD_MESSAGE_LIMIT, TYPING_ANIMATION_INTERVAL} from "../utils/constants";
 import {cleanDiscordText} from "../utils/textTransformers";
 import {createLogger} from "../utils/logger";
 
@@ -29,7 +29,7 @@ export class ImageAnalysisAnimation {
                         await this.message.edit(`Analyse de l'image${dots}`).catch(() => {
                         });
                     }
-                }, IMAGE_ANALYSIS_ANIMATION_INTERVAL);
+                }, TYPING_ANIMATION_INTERVAL);
             }
         } catch (error) {
             logger.error(`[ImageAnalysisAnimation] Erreur lors du démarrage:`, error);

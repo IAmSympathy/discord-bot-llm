@@ -11,6 +11,11 @@ export type WebContext = {
     facts: string[];
 };
 
+export type ImageGenerationInfo = {
+    type: "imagine" | "reimagine" | "upscale";
+    prompt?: string; // Juste pour se souvenir du sujet
+};
+
 export type MemoryTurn = {
     ts: number;
     discordUid: string;
@@ -30,6 +35,9 @@ export type MemoryTurn = {
 
     // Réactions appliquées par l'assistant (ex: ["😏", "🔥"])
     assistantReactions?: string[];
+
+    // Génération d'image (optionnel)
+    imageGeneration?: ImageGenerationInfo;
 
     // Indique si c'est un message passif (vu mais sans réponse du bot)
     isPassive?: boolean;

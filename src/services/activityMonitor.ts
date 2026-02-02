@@ -51,7 +51,7 @@ async function checkOwnerActivity(client: Client): Promise<void> {
 
                 // Si c'est un nouveau jeu
                 if (gameName !== currentGameName) {
-                    logger.info(`Owner started playing "${gameName}"`);
+                    logger.info(`Owner is playing "${gameName}"`);
 
                     // Vérifier si le jeu est blacklisté
                     if (isGameBlacklisted(gameName)) {

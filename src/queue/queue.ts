@@ -48,9 +48,10 @@ const ollamaService = new OllamaService();
 // Avec un seul LLM, toutes les requêtes (DM + Serveur) doivent être traitées séquentiellement
 type AsyncJob<T> = () => Promise<T>;
 let globalQueue: Promise<unknown> = Promise.resolve();
-const activeStreams = new Map<string, { abortFlag: boolean; channelId: string }>();
-const activeImageAnalysis = new Map<string, ImageAnalysisAnimation>(); // Animations d'analyse d'image actives
+const activeStreams = new Map<string, { abortFlag: boolean; channelId: string; userId: string }>();
+const activeImageAnalysis = new Map<string, ImageAnalysisAnimation & { userId: string }>(); // Animations d'analyse d'image actives
 const pendingResponses = new Map<string, { resolve: (value: string) => void; reject: (error: any) => void }>(); // Pour stocker les promesses de réponse
+const usersInQueue = new Set<string>(); // Utilisateurs actuellement dans la queue
 
 // NOUVEAU : Cache des dernières questions par canal pour le contexte conversationnel
 // Permet de garder les "Oui"/"Non" qui répondent à des questions importantes
@@ -90,7 +91,7 @@ export function removeGifLinks(messageContent: string): string {
  * Mettre une tâche en queue globale unique
  * Garantit que toutes les requêtes LLM (DM + Serveur) sont traitées séquentiellement
  */
-function enqueueGlobally<T>(job: AsyncJob<T>): Promise<T> {
+export function enqueueGlobally<T>(job: AsyncJob<T>): Promise<T> {
     const prev = globalQueue;
 
     const next = prev
@@ -291,9 +292,14 @@ export async function clearAllMemory(): Promise<void> {
 }
 
 // Fonction pour arrêter un stream en cours
-export function abortStream(channelKey: string): boolean {
+export function abortStream(channelKey: string, requestingUserId?: string, isAdminOrOwner: boolean = false): boolean {
     const streamInfo = activeStreams.get(channelKey);
     if (streamInfo) {
+        // Vérifier si l'utilisateur a le droit d'arrêter ce stream
+        if (!isAdminOrOwner && requestingUserId && streamInfo.userId !== requestingUserId) {
+            return false; // Pas autorisé
+        }
+
         streamInfo.abortFlag = true;
         activeStreams.delete(channelKey);
         logger.info(`Stream aborted for channel ${channelKey}`);
@@ -303,14 +309,20 @@ export function abortStream(channelKey: string): boolean {
 }
 
 // Fonction pour enregistrer une animation d'analyse d'image
-export function registerImageAnalysis(channelKey: string, animation: ImageAnalysisAnimation): void {
-    activeImageAnalysis.set(channelKey, animation);
+export function registerImageAnalysis(channelKey: string, animation: ImageAnalysisAnimation, userId: string): void {
+    const animationWithUserId = Object.assign({}, animation, {userId});
+    activeImageAnalysis.set(channelKey, animationWithUserId);
 }
 
 // Fonction pour arrêter une analyse d'image en cours
-export async function abortImageAnalysis(channelKey: string): Promise<boolean> {
+export async function abortImageAnalysis(channelKey: string, requestingUserId?: string, isAdminOrOwner: boolean = false): Promise<boolean> {
     const animation = activeImageAnalysis.get(channelKey);
     if (animation) {
+        // Vérifier si l'utilisateur a le droit d'arrêter cette analyse
+        if (!isAdminOrOwner && requestingUserId && animation.userId !== requestingUserId) {
+            return false; // Pas autorisé
+        }
+
         await animation.stop();
         activeImageAnalysis.delete(channelKey);
         logger.info(`Image analysis aborted for channel ${channelKey}`);
@@ -327,6 +339,37 @@ export function cleanupImageAnalysis(channelKey: string): void {
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest): Promise<string | void> {
     const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext, skipImageAnalysis = false, preAnalyzedImages = [], originalUserMessage, preStartedAnimation, skipMemory = false, returnResponse = false} = request;
+
+    // Vérifier si l'utilisateur est déjà dans la queue
+    if (usersInQueue.has(userId)) {
+        logger.info(`User ${userId} (${userName}) tried to add another request while already in queue`);
+
+        // Supprimer le message de l'utilisateur s'il existe
+        if (replyToMessage && replyToMessage.deletable) {
+            await replyToMessage.delete().catch((err) => logger.error("Failed to delete duplicate message:", err));
+        }
+
+        // Envoyer un message éphémère
+        if (channel.type !== ChannelType.DM) {
+            try {
+                const warningMessage = await channel.send({
+                    content: `<@${userId}> ⏳ Tu es déjà dans la file d'attente. Attends que ta requête actuelle soit terminée.`,
+                });
+                // Supprimer le message après 5 secondes
+                setTimeout(() => {
+                    warningMessage.delete().catch(() => {
+                    });
+                }, 5000);
+            } catch (err) {
+                logger.error("Failed to send queue warning:", err);
+            }
+        }
+        return;
+    }
+
+    // Ajouter l'utilisateur à la queue
+    usersInQueue.add(userId);
+    logger.info(`User ${userId} added to queue. Current queue size: ${usersInQueue.size}`);
 
     // Clé de mémoire unique par channel
     // Si on est dans le watched channel, utiliser son ID fixe
@@ -350,7 +393,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
 
         // Enregistrer ce stream comme actif
-        const streamInfo = {abortFlag: false, channelId: channel.id};
+        const streamInfo = {abortFlag: false, channelId: channel.id, userId};
         activeStreams.set(channelKey, streamInfo);
 
         // Changer le statut selon l'activité
@@ -555,6 +598,11 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                 if (typingInterval) clearInterval(typingInterval);
                                 await analysisAnimation.stop();
                                 activeStreams.delete(channelKey);
+
+                                // Retirer l'utilisateur de la queue lors de l'annulation
+                                usersInQueue.delete(userId);
+                                logger.info(`User ${userId} removed from queue (aborted). Current queue size: ${usersInQueue.size}`);
+
                                 controller.close();
                                 return;
                             }
@@ -665,6 +713,10 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                 if (typingInterval) clearInterval(typingInterval);
                                 controller.close();
 
+                                // Retirer l'utilisateur de la queue
+                                usersInQueue.delete(userId);
+                                logger.info(`User ${userId} removed from queue. Current queue size: ${usersInQueue.size}`);
+
                                 // Résoudre la promesse avec le contenu si demandé
                                 const pending = pendingResponses.get(channelKey);
                                 if (pending) {
@@ -725,6 +777,10 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             });
         } catch (error) {
             logger.error("Error processing LLM request:", error);
+
+            // Retirer l'utilisateur de la queue en cas d'erreur
+            usersInQueue.delete(userId);
+            logger.info(`User ${userId} removed from queue (error). Current queue size: ${usersInQueue.size}`);
 
             // Arrêter l'indicateur typing
             if (typingInterval) clearInterval(typingInterval);

@@ -1,6 +1,7 @@
 import {Client, EmbedBuilder, TextChannel} from "discord.js";
 import {EnvConfig} from "./envConfig";
 import {createErrorEmbed, createInfoEmbed, createSuccessEmbed, createWarningEmbed} from "./embedBuilder";
+import {formatTimeFromMs} from "./timeFormat";
 
 let clientInstance: Client | null = null;
 
@@ -34,7 +35,10 @@ export enum LogLevel {
     BOT_RESPONSE = "BOT_RESPONSE",
     BOT_IMAGE_ANALYSIS = "BOT_IMAGE_ANALYSIS",
     BOT_WEB_SEARCH = "BOT_WEB_SEARCH",
-    BOT_COMMAND = "BOT_COMMAND"
+    BOT_COMMAND = "BOT_COMMAND",
+    BOT_IMAGE_GENERATION = "BOT_IMAGE_GENERATION",
+    BOT_IMAGE_REIMAGINE = "BOT_IMAGE_REIMAGINE",
+    BOT_IMAGE_UPSCALE = "BOT_IMAGE_UPSCALE"
 }
 
 export interface LogOptions {
@@ -171,6 +175,15 @@ export async function logToDiscord(options: LogOptions) {
             case LogLevel.BOT_COMMAND:
                 embed.setColor(0x5865f2); // Blurple Discord
                 break;
+            case LogLevel.BOT_IMAGE_GENERATION:
+                embed.setColor(0x9b59b6); // Violet
+                break;
+            case LogLevel.BOT_IMAGE_REIMAGINE:
+                embed.setColor(0x3498db); // Cyan/Bleu
+                break;
+            case LogLevel.BOT_IMAGE_UPSCALE:
+                embed.setColor(0xe67e22); // Orange
+                break;
         }
 
         if (options.description) {
@@ -228,8 +241,8 @@ export async function logProfile(title: string, description?: string, fields?: {
     await logToDiscord({level: LogLevel.PROFILE, title, description, fields});
 }
 
-export async function logCommand(title: string, description?: string, fields?: { name: string; value: string; inline?: boolean }[]) {
-    await logToDiscord({level: LogLevel.BOT_COMMAND, title, description, fields});
+export async function logCommand(title: string, description?: string, fields?: { name: string; value: string; inline?: boolean }[], imageUrl?: string) {
+    await logToDiscord({level: LogLevel.BOT_COMMAND, title, description, fields, imageUrl});
 }
 
 // Fonctions helper pour les événements serveur Discord
@@ -567,7 +580,7 @@ export async function logBotResponse(username: string, userId: string, channelNa
 
     // Temps de réponse si fourni
     if (responseTime !== undefined) {
-        fields.push({name: "⏱️ Temps", value: `${(responseTime / 1000).toFixed(2)}s`, inline: true});
+        fields.push({name: "⏱️ Temps", value: formatTimeFromMs(responseTime), inline: true});
     }
 
     // Statut de la mémoire
@@ -607,7 +620,7 @@ export async function logBotImageAnalysis(username: string, imageResults: any[])
             {name: "📦 Taille", value: `${sizeKB} KB${sizeMB}`, inline: true},
             {name: "🎨 Format", value: result.format.toUpperCase(), inline: true},
             {name: "🎯 Tokens", value: `${result.tokens}`, inline: true},
-            {name: "⏱️ Temps", value: `${(result.processingTime / 1000).toFixed(2)}s`, inline: true},
+            {name: "⏱️ Temps", value: formatTimeFromMs(result.processingTime), inline: true},
             {name: "📝 Description générée", value: result.description.length > 500 ? result.description.substring(0, 500) + "..." : result.description, inline: false}
         ];
 
@@ -627,7 +640,7 @@ export async function logBotWebSearch(username: string, query: string, resultsCo
     ];
 
     if (searchTime !== undefined) {
-        fields.push({name: "⏱️ Temps", value: `${(searchTime / 1000).toFixed(2)}s`, inline: true});
+        fields.push({name: "⏱️ Temps", value: formatTimeFromMs(searchTime), inline: true});
     }
 
     fields.push({name: "🔍 Requête", value: query.length > 100 ? query.substring(0, 100) + "..." : query, inline: false});
@@ -636,6 +649,72 @@ export async function logBotWebSearch(username: string, query: string, resultsCo
         level: LogLevel.BOT_WEB_SEARCH,
         title: "🌐 Recherche web",
         fields
+    });
+}
+
+export async function logBotImageGeneration(username: string, prompt: string, generationTime: string, imageUrls?: string[]) {
+    const imageCount = imageUrls?.length || 1;
+    const fields = [
+        {name: "👤 Utilisateur", value: username, inline: true},
+        {name: "🎨 Mode", value: "txt2img", inline: true},
+        {name: "⏱️ Temps", value: generationTime, inline: true},
+        {name: "🖼️ Images", value: `${imageCount} image${imageCount > 1 ? 's' : ''}`, inline: true},
+        {name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1024) + "..." : prompt, inline: false}
+    ];
+
+    // Si plusieurs images, créer un message avec toutes les URLs
+    let description = undefined;
+    if (imageUrls && imageUrls.length > 1) {
+        description = imageUrls.map((url, i) => `[Image ${i + 1}](${url})`).join(" • ");
+    }
+
+    await logToDiscord({
+        level: LogLevel.BOT_IMAGE_GENERATION,
+        title: "🎨 Images générées",
+        description,
+        fields,
+        imageUrl: imageUrls?.[0] // Afficher la première image comme preview
+    });
+}
+
+export async function logBotImageReimagine(username: string, prompt: string, generationTime: string, imageUrls?: string[]) {
+    const imageCount = imageUrls?.length || 1;
+    const fields = [
+        {name: "👤 Utilisateur", value: username, inline: true},
+        {name: "🎨 Mode", value: "img2img", inline: true},
+        {name: "⏱️ Temps", value: generationTime, inline: true},
+        {name: "🖼️ Images", value: `${imageCount} image${imageCount > 1 ? 's' : ''}`, inline: true},
+        {name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1024) + "..." : prompt, inline: false}
+    ];
+
+    // Si plusieurs images, créer un message avec toutes les URLs
+    let description = undefined;
+    if (imageUrls && imageUrls.length > 1) {
+        description = imageUrls.map((url, i) => `[Image ${i + 1}](${url})`).join(" • ");
+    }
+
+    await logToDiscord({
+        level: LogLevel.BOT_IMAGE_REIMAGINE,
+        title: "🎨 Images réimaginées",
+        description,
+        fields,
+        imageUrl: imageUrls?.[0] // Afficher la première image comme preview
+    });
+}
+
+export async function logBotImageUpscale(username: string, method: string, scale: number, generationTime: string, imageUrl?: string) {
+    const fields = [
+        {name: "👤 Utilisateur", value: username, inline: true},
+        {name: "🔍 Méthode", value: method.toUpperCase(), inline: true},
+        {name: "📏 Échelle", value: `x${scale}`, inline: true},
+        {name: "⏱️ Temps", value: generationTime, inline: true}
+    ];
+
+    await logToDiscord({
+        level: LogLevel.BOT_IMAGE_UPSCALE,
+        title: "🔍 Image upscalée",
+        fields,
+        imageUrl
     });
 }
 
