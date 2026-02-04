@@ -3,7 +3,7 @@ import {generateImage} from "../../services/imageGenerationService";
 import {logBotImageReimagine} from "../../utils/discordLogger";
 import {createErrorEmbed} from "../../utils/embedBuilder";
 import {createLogger} from "../../utils/logger";
-import {registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
+import {hasActiveGeneration, registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
 import {formatTime} from "../../utils/timeFormat";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {FileMemory} from "../../memory/fileMemory";
@@ -35,10 +35,16 @@ module.exports = {
                 .setDescription("Ce que tu NE veux PAS dans l'image (optionnel, EN ANGLAIS)")
                 .setRequired(false)
         )
+        .addStringOption((option) =>
+            option
+                .setName("force")
+                .setDescription("Force de la transformation (0.1 à 0.9, par défaut 0.55)")
+                .setRequired(false)
+        )
         .addIntegerOption((option) =>
             option
                 .setName("amount")
-                .setDescription("Nombre de versions à générer")
+                .setDescription("Nombre de versions à générer (par défaut 3)")
                 .setRequired(false)
                 .addChoices(
                     {name: "1", value: 1},
@@ -52,6 +58,16 @@ module.exports = {
         let progressMessage: any = null;
 
         try {
+            // Vérifier si l'utilisateur a déjà une génération en cours
+            if (hasActiveGeneration(interaction.user.id)) {
+                const errorEmbed = createErrorEmbed(
+                    "⏳ Génération en Cours",
+                    "Tu as déjà une génération d'image en cours. Attends qu'elle soit terminée avant d'en lancer une nouvelle."
+                );
+                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+                return;
+            }
+
             // Vérifier le mode low power
             if (isLowPowerMode()) {
                 const errorEmbed = createErrorEmbed(
@@ -66,12 +82,11 @@ module.exports = {
             const referenceAttachment = interaction.options.getAttachment("image", true);
             const negativePrompt = interaction.options.getString("negative") || "";
             const amount = interaction.options.getInteger("amount") || 3;
+            const strengthInput = interaction.options.getString("strength");
+            const strength = strengthInput ? Math.min(Math.max(parseFloat(strengthInput), 0.1), 0.9) : 0.55;
 
-            const width = 1024;
-            const height = 1024;
             const steps = 18;
             const cfgScale = 5.5;
-            const strength = 0.55;
 
             logger.info(`Reimagining image for ${interaction.user.username}: "${prompt.substring(0, 50)}..."`);
 
@@ -149,7 +164,37 @@ module.exports = {
                 });
             });
 
-            // Générer 3 images
+            // Lire les dimensions de l'image de référence pour garder le même ratio
+            const sharp = require("sharp");
+            const metadata = await sharp(tempFilePath).metadata();
+            const originalWidth = metadata.width;
+            const originalHeight = metadata.height;
+
+            // Calculer les nouvelles dimensions en gardant le ratio et en respectant les contraintes SDXL
+            // SDXL fonctionne mieux avec des multiples de 64
+            let width: number, height: number;
+            const aspectRatio = originalWidth / originalHeight;
+
+            // Définir une dimension de base (1024 comme avant)
+            const baseDimension = 1024;
+
+            if (aspectRatio > 1) {
+                // Image horizontale
+                width = baseDimension;
+                height = Math.round((baseDimension / aspectRatio) / 64) * 64; // Arrondir au multiple de 64 le plus proche
+            } else if (aspectRatio < 1) {
+                // Image verticale
+                height = baseDimension;
+                width = Math.round((baseDimension * aspectRatio) / 64) * 64; // Arrondir au multiple de 64 le plus proche
+            } else {
+                // Image carrée
+                width = baseDimension;
+                height = baseDimension;
+            }
+
+            logger.info(`Original dimensions: ${originalWidth}x${originalHeight}, Output dimensions: ${width}x${height} (ratio preserved)`);
+
+            // Générer les images
             const startTime = Date.now();
 
             // Ajouter des mots-clés de qualité au prompt pour éviter les images floues
@@ -186,17 +231,30 @@ module.exports = {
             // Désenregistrer la génération du tracker
             unregisterImageGeneration(interaction.user.id);
 
-            let content =
-                amount === 1
-                    ? `Voici l'image que tu m'as demandé d'imaginer :\n> ${prompt}\n`
-                    : `Voici ${amount} versions de l'image que tu m'as demandé d'imaginer :\n> ${prompt}\n`;
+            // Créer un embed pour afficher les informations de manière compacte
+            const {EmbedBuilder} = require("discord.js");
+            const embed = new EmbedBuilder()
+                .setColor(0x3498db) // Violet pour réimagination
+                .addFields(
+                    {name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1021) + "..." : prompt}
+                )
+                .setFooter({text: `Temps: ${generationTime}s • 💪 Force : ${strength}`})
+                .setTimestamp();
 
             if (negativePrompt) {
-                content += `Négatif :\n> ${negativePrompt}`;
+                embed.addFields({
+                    name: "🚫 Negative Prompt",
+                    value: negativePrompt.length > 1024 ? negativePrompt.substring(0, 1021) + "..." : negativePrompt
+                });
             }
 
+            let baseContent = amount === 1
+                ? `Voici l'image que tu m'as demandé de réimaginer`
+                : `Voici ${amount} versions de l'image que tu m'as demandé de réimaginer`;
+
             const finalMessage = await progressMessage.edit({
-                content,
+                content: baseContent,
+                embeds: [embed],
                 files: results.map(r => r.attachment),
             });
 
@@ -211,13 +269,13 @@ module.exports = {
                 imageUrls
             );
 
-            // Ajouter à la mémoire que Netricsa a réimaginé une image
+            // Ajouter à la mémoire une version simplifiée (pas besoin du prompt complet)
             await memory.appendTurn({
                 ts: Date.now(),
                 discordUid: interaction.user.id,
                 displayName: interaction.user.username,
-                userText: `/reimagine ${prompt}`,
-                assistantText: `Voici l'image que tu m'as demandé de réimaginer : "${prompt}"`,
+                userText: `/reimagine`,
+                assistantText: `J'ai réimaginé une image`,
                 channelId: interaction.channelId,
                 channelName: interaction.channel?.isDMBased() ? "DM" : (interaction.channel as any)?.name || "unknown"
             }, MEMORY_MAX_TURNS);

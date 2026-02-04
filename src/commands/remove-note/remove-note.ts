@@ -15,7 +15,7 @@ module.exports = {
                 .setRequired(true)
                 .addChoices(
                     {name: "Fait", value: "fact"},
-                    {name: "Alias (surnom)", value: "alias"},
+                    {name: "Surnom", value: "alias"},
                     {name: "Centre d'intérêt", value: "interest"}
                 )
         )
@@ -56,17 +56,17 @@ module.exports = {
 
                 case "alias":
                     success = await UserProfileService.removeAlias(userId, username, content);
-                    typeLabel = "Alias";
+                    typeLabel = "Surnom";
                     if (success) {
                         const successEmbed = createSuccessEmbed(
-                            "Alias supprimé",
-                            `L'**alias** "${content}" a été supprimé du profil de Netricsa concernant **${username}**.`
+                            "Surnom supprimé",
+                            `Le **surnom** "${content}" a été supprimé du profil de Netricsa concernant **${username}**.`
                         );
                         await interaction.editReply({embeds: [successEmbed]});
                     } else {
                         const warningEmbed = createWarningEmbed(
-                            "Alias non trouvé",
-                            `L'alias "${content}" n'a pas été trouvé dans le profil de Netricsa.`
+                            "Surnom non trouvé",
+                            `Le surnom "${content}" n'a pas été trouvé dans le profil de Netricsa.`
                         );
                         await interaction.editReply({embeds: [warningEmbed]});
                     }

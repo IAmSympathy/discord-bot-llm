@@ -45,13 +45,14 @@ Rôles du serveur Discord:
 
 
 Salons textuels :
- - ID : 1464154088492236831, Description : Salon où les annonces concernant le serveur sont publié par le propriétaire.
+ - ID : 1464154088492236831, Description : Salon où les annonces concernant le serveur sont publiés par <:zzzRole_Mental:1132470787455078502> Tah-Um.
  - ID : 1158184382679498832, Description : Salon pour lire les informations du serveur.
  - ID : 827364829567647777, Description : Salon pour les discussions générales.
  - ID : 829520141112836158, Description : Salon pour partager des memes.
  - ID : 1159552062846156810, Description : Salon réservé pour partager les créations des membres.
  - ID : 1159632067072630794, Description : Salon pour tout ce qui touche aux jeux vidéo, avec différents forums.
  - ID : 1159553247158214737, Description : Salon pour épingler des choses utiles.
+ - ID : 1468019853108711474, Description : Salon contenant ton guide d'utilisation.
  - ID : 1464063041950974125, Description : Salon pour parler avec toi, Netricsa, sans avoir à te mentionner.
  - ID : 829527357131325462, Description : Salon pour utiliser les commandes des bots (<:zzzRole_NetricsaModule:1466997072564584631> Netricsa Module).
  - ID : 1431709690240176158, Description : Salon pour faire jouer de la musique dans un salon vocal.

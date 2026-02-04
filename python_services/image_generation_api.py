@@ -53,7 +53,7 @@ esrgan_models = {}  # Dictionnaire pour stocker différents modèles ESRGAN
 
 # Système d'auto-unload après inactivité
 last_model_usage = time.time()  # Timestamp du dernier usage
-AUTO_UNLOAD_DELAY = 60  # 5 minutes en secondes
+AUTO_UNLOAD_DELAY = 120  # 2 minutes en secondes
 auto_unload_task = None  # Task asyncio pour l'auto-unload
 
 # Système d'annulation des jobs

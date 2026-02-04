@@ -23,6 +23,12 @@ module.exports = {
                 .setMinValue(1)
                 .setMaxValue(12)
         )
+        .addBooleanOption((option) =>
+            option
+                .setName("notify")
+                .setDescription("Recevoir un rôle et un message de Netricsa le jour de votre anniversaire")
+                .setRequired(true)
+        )
         .addIntegerOption((option) =>
             option
                 .setName("annee")
@@ -30,12 +36,6 @@ module.exports = {
                 .setRequired(false)
                 .setMinValue(1900)
                 .setMaxValue(new Date().getFullYear())
-        )
-        .addBooleanOption((option) =>
-            option
-                .setName("notify")
-                .setDescription("Recevoir un rôle et un message de Netricsa le jour de votre anniversaire")
-                .setRequired(false)
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {

@@ -85,7 +85,10 @@ export async function setLowPowerStatus(client: Client): Promise<void> {
 
     await client.user.setPresence({
         status: "dnd",
-        activities: []
+        activities: [{
+            name: "🔋 Mode économie d'énergie",
+            type: ActivityType.Playing
+        }]
     });
 
     logger.info("🔋 Status set to DND - Low Power Mode");
@@ -121,6 +124,7 @@ export const BotStatus = {
     REIMAGINING_IMAGE: "🌀 réimagine une image...",
     UPSCALING_IMAGE: "🔍 upscale une image...",
     SEARCHING_WEB: "🌐 recherche sur le web...",
+    GENERATING_PROMPT: "📝 crée un prompt...",
     THINKING: "💭 réfléchit...",
     WRITING: "✍️ écrit un message...",
     CHOOSING_REACTION: "🤔 choisit une réaction...",

@@ -3,7 +3,7 @@ import {generateImage} from "../../services/imageGenerationService";
 import {logBotImageGeneration} from "../../utils/discordLogger";
 import {createErrorEmbed} from "../../utils/embedBuilder";
 import {createLogger} from "../../utils/logger";
-import {registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
+import {hasActiveGeneration, registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
 import {formatTime} from "../../utils/timeFormat";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {FileMemory} from "../../memory/fileMemory";
@@ -43,6 +43,16 @@ module.exports = {
 
     async execute(interaction: ChatInputCommandInteraction) {
 
+        // Vérifier si l'utilisateur a déjà une génération en cours
+        if (hasActiveGeneration(interaction.user.id)) {
+            const errorEmbed = createErrorEmbed(
+                "⏳ Génération en Cours",
+                "Tu as déjà une génération d'image en cours. Attends qu'elle soit terminée avant d'en lancer une nouvelle."
+            );
+            await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+            return;
+        }
+
         // Vérifier le mode low power (l'owner peut quand même utiliser)
         if (isLowPowerMode()) {
             const errorEmbed = createErrorEmbed(
@@ -80,8 +90,13 @@ module.exports = {
             const animationInterval = setInterval(async () => {
                 dotCount = (dotCount % 3) + 1;
                 const dots = ".".repeat(dotCount);
-                await progressMessage.edit(`Génération de l'image${dots}\n`).catch(() => {
-                });
+
+                const label = amount === 1 ? "image" : "images";
+
+                await progressMessage
+                    .edit(`Génération de ${amount === 1 ? "l’" : `${amount} `}${label}${dots}\n`)
+                    .catch(() => {
+                    });
             }, TYPING_ANIMATION_INTERVAL);
 
             // Enregistrer la génération dans le tracker
@@ -123,18 +138,31 @@ module.exports = {
             // Désenregistrer la génération du tracker
             unregisterImageGeneration(interaction.user.id);
 
-            let content =
-                amount === 1
-                    ? `Voici l'image que tu m'as demandé d'imaginer :\n> ${prompt}\n`
-                    : `Voici ${amount} versions de l'image que tu m'as demandé d'imaginer :\n> ${prompt}\n`;
+            // Créer un embed pour afficher les informations de manière compacte
+            const {EmbedBuilder} = require("discord.js");
+            const embed = new EmbedBuilder()
+                .setColor(0x9b59b6) // Bleu pour génération
+                .addFields(
+                    {name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1021) + "..." : prompt}
+                )
+                .setFooter({text: `Temps: ${generationTime}s`})
+                .setTimestamp();
 
             if (negativePrompt) {
-                content += `Négatif :\n> ${negativePrompt}`;
+                embed.addFields({
+                    name: "🚫 Negative Prompt",
+                    value: negativePrompt.length > 1024 ? negativePrompt.substring(0, 1021) + "..." : negativePrompt
+                });
             }
 
-            // Envoyer les images avec prompt en quote Discord
+            let baseContent = amount === 1
+                ? `Voici l'image que tu m'as demandé d'imaginer`
+                : `Voici ${amount} versions de l'image que tu m'as demandé d'imaginer`;
+
+            // Envoyer les images avec l'embed
             const finalMessage = await progressMessage.edit({
-                content: content,
+                content: baseContent,
+                embeds: [embed],
                 files: results.map(r => r.attachment)
             });
 
@@ -148,14 +176,14 @@ module.exports = {
                 imageUrls
             );
 
-            // Ajouter à la mémoire que Netricsa a généré une image
+            // Ajouter à la mémoire une version simplifiée (pas besoin du prompt complet)
             logger.info("Saving to memory: /imagine command");
             await memory.appendTurn({
                 ts: Date.now(),
                 discordUid: interaction.user.id,
                 displayName: interaction.user.username,
-                userText: `/imagine ${prompt}`,
-                assistantText: `Voici l'image que tu m'as demandé d'imaginer : "${prompt}"`,
+                userText: `/imagine`,
+                assistantText: `J'ai généré une image`,
                 channelId: interaction.channelId,
                 channelName: interaction.channel?.isDMBased() ? "DM" : (interaction.channel as any)?.name || "unknown"
             }, MEMORY_MAX_TURNS);

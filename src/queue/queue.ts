@@ -1,4 +1,4 @@
-import {ChannelType, Client, DMChannel, Message as DiscordMessage, TextChannel, ThreadChannel} from "discord.js";
+import {ChannelType, ChatInputCommandInteraction, Client, DMChannel, Message as DiscordMessage, TextChannel, ThreadChannel} from "discord.js";
 import {FileMemory} from "../memory/fileMemory";
 import {analyzeMessageType, shouldStoreAssistantMessage, shouldStoreUserMessage} from "../memory/memoryFilter";
 import {DISCORD_TYPING_UPDATE_INTERVAL, FILTER_PATTERNS, MEMORY_FILE_PATH, MEMORY_MAX_TURNS} from "../utils/constants";
@@ -38,6 +38,7 @@ interface DirectLLMRequest {
     preStartedAnimation?: ImageAnalysisAnimation; // Animation déjà démarrée à réutiliser
     skipMemory?: boolean; // Flag pour ne pas enregistrer dans la mémoire (ex: messages de bienvenue)
     returnResponse?: boolean; // Flag pour retourner le contenu final généré
+    interaction?: ChatInputCommandInteraction; // Interaction optionnelle pour les messages éphémères
 }
 
 // Configuration mémoire persistante
@@ -338,7 +339,7 @@ export function cleanupImageAnalysis(channelKey: string): void {
 
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest): Promise<string | void> {
-    const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext, skipImageAnalysis = false, preAnalyzedImages = [], originalUserMessage, preStartedAnimation, skipMemory = false, returnResponse = false} = request;
+    const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext, skipImageAnalysis = false, preAnalyzedImages = [], originalUserMessage, preStartedAnimation, skipMemory = false, returnResponse = false, interaction} = request;
 
     // Vérifier si l'utilisateur est déjà dans la queue
     if (usersInQueue.has(userId)) {
@@ -352,14 +353,22 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         // Envoyer un message éphémère
         if (channel.type !== ChannelType.DM) {
             try {
-                const warningMessage = await channel.send({
-                    content: `<@${userId}> ⏳ Tu es déjà dans la file d'attente. Attends que ta requête actuelle soit terminée.`,
-                });
-                // Supprimer le message après 5 secondes
-                setTimeout(() => {
-                    warningMessage.delete().catch(() => {
+                // Si on a une interaction, utiliser followUp éphémère
+                if (interaction) {
+                    await interaction.followUp({
+                        content: `Tu es déjà dans la file d'attente. Attends que ta requête actuelle soit terminée.`,
+                        ephemeral: true
                     });
-                }, 5000);
+                } else {
+                    // Sinon, envoyer un message normal et le supprimer après 5 secondes
+                    const warningMessage = await channel.send({
+                        content: `Tu es déjà dans la file d'attente. Attends que ta requête actuelle soit terminée.`,
+                    });
+                    setTimeout(() => {
+                        warningMessage.delete().catch(() => {
+                        });
+                    }, 5000);
+                }
             } catch (err) {
                 logger.error("Failed to send queue warning:", err);
             }

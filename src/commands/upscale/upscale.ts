@@ -3,7 +3,7 @@ import {upscaleImage} from "../../services/imageGenerationService";
 import {logBotImageUpscale} from "../../utils/discordLogger";
 import {createErrorEmbed} from "../../utils/embedBuilder";
 import {createLogger} from "../../utils/logger";
-import {registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
+import {hasActiveGeneration, registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
 import {formatTime} from "../../utils/timeFormat";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {FileMemory} from "../../memory/fileMemory";
@@ -62,8 +62,8 @@ module.exports = {
                 .setDescription("Type d'image")
                 .setRequired(true)
                 .addChoices(
-                    {name: "Photos", value: "general"},
-                    {name: "Illustrations", value: "anime"}
+                    {name: "Photo", value: "general"},
+                    {name: "Illustration", value: "anime"}
                 )
         )
         .addIntegerOption((option) =>
@@ -83,6 +83,16 @@ module.exports = {
         let progressMessage: any = null;
 
         try {
+            // Vérifier si l'utilisateur a déjà une génération en cours
+            if (hasActiveGeneration(interaction.user.id)) {
+                const errorEmbed = createErrorEmbed(
+                    "⏳ Génération en Cours",
+                    "Tu as déjà une génération d'image en cours. Attends qu'elle soit terminée avant d'en lancer une nouvelle."
+                );
+                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+                return;
+            }
+
             // Vérifier le mode low power
             if (isLowPowerMode()) {
                 const errorEmbed = createErrorEmbed(
@@ -107,7 +117,7 @@ module.exports = {
                 return;
             }
 
-            const modelName = model === "anime" ? "Illustrations" : "Photos";
+            const modelName = model === "anime" ? "Illustration" : "Photo";
             logger.info(`Upscaling image for ${interaction.user.username} with model ${model}, scale: x${scale}`);
 
             // Définir le statut Discord (15 minutes pour l'upscaling)
@@ -176,13 +186,13 @@ module.exports = {
                 imageUrl
             );
 
-            // Ajouter à la mémoire que Netricsa a upscalé une image
+            // Ajouter à la mémoire une version simplifiée (pas besoin des détails techniques)
             await memory.appendTurn({
                 ts: Date.now(),
                 discordUid: interaction.user.id,
                 displayName: interaction.user.username,
-                userText: `/upscale (méthode: ${modelName}, échelle: x${scale})`,
-                assistantText: `Voici l'image que tu m'as demandé d'upscaler avec la méthode ${modelName} (x${scale})`,
+                userText: `/upscale`,
+                assistantText: `J'ai upscalé une image`,
                 channelId: interaction.channelId,
                 channelName: interaction.channel?.isDMBased() ? "DM" : (interaction.channel as any)?.name || "unknown"
             }, MEMORY_MAX_TURNS);
