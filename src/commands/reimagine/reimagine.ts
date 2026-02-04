@@ -37,7 +37,7 @@ module.exports = {
         )
         .addStringOption((option) =>
             option
-                .setName("force")
+                .setName("strength")
                 .setDescription("Force de la transformation (0.1 à 0.9, par défaut 0.55)")
                 .setRequired(false)
         )
@@ -238,7 +238,7 @@ module.exports = {
                 .addFields(
                     {name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1021) + "..." : prompt}
                 )
-                .setFooter({text: `Temps: ${generationTime}s • 💪 Force : ${strength}`})
+                .setFooter({text: `Temps: ${generationTime}s • 💪 Strength : ${strength}`})
                 .setTimestamp();
 
             if (negativePrompt) {

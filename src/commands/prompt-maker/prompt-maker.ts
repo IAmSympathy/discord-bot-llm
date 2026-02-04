@@ -273,7 +273,7 @@ module.exports = {
             // Ajouter le strength uniquement pour img2img
             if (isImg2Img) {
                 embed.addFields({
-                    name: "💪 Force de tranformation suggéré",
+                    name: "💪 Strength suggéré",
                     value: `\`${result.strength}\``,
                     inline: false
                 });
@@ -306,7 +306,7 @@ module.exports = {
             const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
             const errorEmbed = createErrorEmbed(
                 "Erreur de Génération de Prompt",
-                `Impossible de générer le prompt optimisé.\n\n**Erreur:** ${errorMessage}\n\n**Causes possibles:**\n• Le service LLM n'est pas disponible\n• Erreur de parsing de la réponse`
+                `Impossible de générer le prompt optimisé.\n\n**Erreur:** ${errorMessage}`
             );
 
             if (interaction.deferred) {
