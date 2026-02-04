@@ -1,6 +1,6 @@
 import {ChannelType, ChatInputCommandInteraction, Client, DMChannel, Message as DiscordMessage, TextChannel, ThreadChannel} from "discord.js";
 import {FileMemory} from "../memory/fileMemory";
-import {analyzeMessageType, shouldStoreAssistantMessage, shouldStoreUserMessage} from "../memory/memoryFilter";
+import {analyzeMessageType} from "../memory/memoryFilter";
 import {DISCORD_TYPING_UPDATE_INTERVAL, FILTER_PATTERNS, MEMORY_FILE_PATH, MEMORY_MAX_TURNS} from "../utils/constants";
 import {ImageAnalysisResult, processImages, processImagesWithMetadata} from "../services/imageService";
 import {getWebContext} from "../services/searchService";
@@ -121,11 +121,11 @@ export async function recordPassiveMessage(
     botReaction?: string, // Pour enregistrer les réactions du bot (ex: "🤗")
     isReply?: boolean // Pour indiquer si c'est une réponse à un autre message
 ): Promise<boolean> {
-    const trimmed = messageContent.trim();
+    const trimmedMessage = messageContent.trim();
 
     // NOUVEAU : Détecter si c'est une question importante
-    const isImportantQuestion = trimmed.includes('?') &&
-        !(/^(ça va|ca va|cv|quoi de neuf)\s*\??$/i.test(trimmed)); // Exclure les questions sociales basiques
+    const isImportantQuestion = trimmedMessage.includes('?') &&
+        !(/^(ça va|ca va|cv|quoi de neuf)\s*\??$/i.test(trimmedMessage)); // Exclure les questions sociales basiques
 
     // Si c'est une question importante, l'enregistrer dans le cache
     if (isImportantQuestion) {
@@ -138,16 +138,16 @@ export async function recordPassiveMessage(
     }
 
     // NOUVEAU : Vérifier si c'est une réponse courte Oui/Non dans le contexte d'une question récente
-    const isShortResponse = FILTER_PATTERNS.SHORT_RESPONSE.test(trimmed) && trimmed.length < 20;
+    const isShortResponse = FILTER_PATTERNS.SHORT_RESPONSE.test(trimmedMessage) && trimmedMessage.length < 20;
 
     // NOUVEAU : Détecter les activités courantes (réponses à "Tu fais quoi?", etc.)
-    const isActivity = FILTER_PATTERNS.ACTIVITY.test(trimmed);
+    const isActivity = FILTER_PATTERNS.ACTIVITY.test(trimmedMessage);
 
     // NOUVEAU : Détecter "rien" comme réponse valide
-    const isNothingResponse = FILTER_PATTERNS.NOTHING_RESPONSE.test(trimmed);
+    const isNothingResponse = FILTER_PATTERNS.NOTHING_RESPONSE.test(trimmedMessage);
 
     // NOUVEAU : Détecter les nombres seuls (réponses à des questions quantitatives)
-    const isNumericAnswer = FILTER_PATTERNS.NUMERIC_ANSWER.test(trimmed);
+    const isNumericAnswer = FILTER_PATTERNS.NUMERIC_ANSWER.test(trimmedMessage);
 
     let forceStore = false;
 
@@ -159,7 +159,7 @@ export async function recordPassiveMessage(
             // Si la question a été posée dans les 30 dernières secondes par quelqu'un d'autre
             if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
                 forceStore = true;
-                logger.info(`💡 Short response "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
+                logger.info(`💡 Short response "${trimmedMessage}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
             }
         }
     }
@@ -173,7 +173,7 @@ export async function recordPassiveMessage(
             // Si une question a été posée récemment (probablement "Tu fais quoi?")
             if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
                 forceStore = true;
-                logger.info(`💡 Activity "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
+                logger.info(`💡 Activity "${trimmedMessage}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
             }
         }
     }
@@ -187,7 +187,7 @@ export async function recordPassiveMessage(
             // Si une question a été posée récemment (probablement quantitative)
             if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
                 forceStore = true;
-                logger.info(`💡 Numeric answer "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
+                logger.info(`💡 Numeric answer "${trimmedMessage}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
             }
         }
     }
@@ -201,7 +201,7 @@ export async function recordPassiveMessage(
             // Si une question a été posée récemment (probablement "Tu fais quoi?")
             if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
                 forceStore = true;
-                logger.info(`💡 Nothing response "${trimmed}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
+                logger.info(`💡 Nothing response "${trimmedMessage}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
             }
         }
     }
@@ -249,19 +249,22 @@ export async function recordPassiveMessage(
     } else {
         finalMessageContent = messageContent; // Message normal avec ou sans GIF
     }
+    // Filtrer SEULEMENT le spam pur et les messages vraiment vides
+    // Le filtrage d'importance se fera dans slidingWindowMemory() qui garde TOUJOURS les 6 derniers
+    const trimmed = finalMessageContent.trim();
 
-    // Filtrer le message avant de l'enregistrer (sauf si forceStore)
-    // Utiliser finalMessageContent pour que shouldStoreUserMessage évalue le contenu réel
-    const shouldStore = forceStore || shouldStoreUserMessage(finalMessageContent);
+    // Skip uniquement si c'est vraiment vide ou du spam pur (emojis seuls, etc.)
+    const isPureNoise = !trimmed || /^[👍👎😂🤣😭🔥💀🎉❤️😊😅🙄😏]+$/.test(trimmed);
 
-    if (!shouldStore) {
-        logger.info(`⏭️ Message skipped from ${userName} in #${channelName}`);
+    if (!forceStore && isPureNoise) {
+        logger.info(`⏭️ Message skipped (pure noise) from ${userName} in #${channelName}`);
         return false;
     }
 
     const messageType = analyzeMessageType(finalMessageContent);
 
     // Enregistrer le message comme un tour passif (sans réponse du bot)
+    // TOUS les messages sont stockés (sauf spam pur), le filtrage d'importance se fait dans slidingWindowMemory()
     await memory.appendTurn(
         {
             ts: Date.now(),
@@ -650,13 +653,8 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                     // Calculer le temps de réponse total
                                     const responseTime = Date.now() - requestStartTime;
 
-                                    // Filtrage intelligent de la mémoire
-                                    const shouldStoreUser = shouldStoreUserMessage(prompt);
-                                    const shouldStoreAssistant = shouldStoreAssistantMessage(cleanedText);
-
-                                    // Forcer la sauvegarde si le message contient des images ou du contexte web
-                                    const hasImportantContext = imageDescriptions.length > 0 || webContext !== null;
-                                    const willSaveInMemory = (shouldStoreUser && shouldStoreAssistant) || hasImportantContext;
+                                    // Tous les messages avec réponse sont stockés (le filtrage se fait dans slidingWindowMemory)
+                                    const willSaveInMemory = true;
 
                                     // Logger la réponse de Netricsa avec l'info de mémoire
                                     await logBotResponse(
@@ -705,10 +703,6 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                         if (isReply) contextInfo.push("reply");
 
                                         logger.info(`✅ Saved in #${channelName}${contextInfo.length > 0 ? ` [${contextInfo.join(", ")}]` : ""}`);
-                                    } else {
-                                        // Message filtré (bruit conversationnel)
-                                        const reason = !shouldStoreUser ? "user message too short/noisy" : "assistant response too short";
-                                        logger.info(`⏭️ Skipped (${reason}) in #${channelName}`);
                                     }
                                 } else if (isModerationRefusal) {
                                     logger.warn(`🚫 Moderation refusal detected, NOT saving to memory`);
