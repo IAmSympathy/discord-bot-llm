@@ -15,6 +15,7 @@ interface GameState {
     player2TotalWins: number;
     player1HighestWinstreak: number;
     player2HighestWinstreak: number;
+    draws: number;
 }
 
 const activeGames = new Map<string, GameState>();
@@ -32,7 +33,7 @@ module.exports = {
         .addStringOption(option =>
             option
                 .setName("mode")
-                .setDescription("Jouer contre Netricsa ou un autre joueur")
+                .setDescription("Jouer contre un autre joueur ou contre Netricsa")
                 .setRequired(true)
                 .addChoices(
                     {name: "👤 Contre un joueur", value: "player"},
@@ -71,7 +72,8 @@ async function waitForPlayer(interaction: ChatInputCommandInteraction, player1Id
         player1TotalWins: 0,
         player2TotalWins: 0,
         player1HighestWinstreak: 0,
-        player2HighestWinstreak: 0
+        player2HighestWinstreak: 0,
+        draws: 0
     };
 
     activeGames.set(gameId, gameState);
@@ -173,7 +175,8 @@ async function startGameAgainstAI(interaction: ChatInputCommandInteraction, play
         player1TotalWins: 0,
         player2TotalWins: 0,
         player1HighestWinstreak: 0,
-        player2HighestWinstreak: 0
+        player2HighestWinstreak: 0,
+        draws: 0
     };
 
     activeGames.set(gameId, gameState);
@@ -253,7 +256,7 @@ function createChoiceButtons(gameId: string, playerId: string): ActionRowBuilder
 }
 
 function getStatsDescription(gameState: GameState): string {
-    const totalGames = gameState.player1TotalWins + gameState.player2TotalWins;
+    const totalGames = gameState.player1TotalWins + gameState.player2TotalWins + gameState.draws;
     if (totalGames === 0) return "";
 
     let stats = `\n\n**Statistiques:**\n`;
@@ -269,14 +272,18 @@ function getStatsDescription(gameState: GameState): string {
         }
     }
 
+    if (gameState.draws > 0) {
+        stats += `🤝 Égalités : **${gameState.draws}**`;
+    }
+
     return stats;
 }
 
 function getStatsFooter(gameState: GameState): string {
-    const totalGames = gameState.player1TotalWins + gameState.player2TotalWins;
+    const totalGames = gameState.player1TotalWins + gameState.player2TotalWins + gameState.draws;
     if (totalGames === 0) return "";
 
-    return `Score total : ${gameState.player1TotalWins} - ${gameState.player2TotalWins}`;
+    return `Score : ${gameState.player1TotalWins} - ${gameState.player2TotalWins} (${gameState.draws} égalités)`;
 }
 
 function setupGameCollector(message: any, gameState: GameState, gameId: string) {
@@ -393,9 +400,10 @@ async function displayResult(message: any, gameState: GameState) {
     if (p1Choice === p2Choice) {
         result = "🤝 Égalité !";
         color = 0xFEE75C;
-        // Égalité : reset des winstreaks
+        // Égalité : reset des winstreaks et incrémenter draws
         gameState.player1Winstreak = 0;
         gameState.player2Winstreak = 0;
+        gameState.draws++;
     } else if (choices[p1Choice as keyof typeof choices].beats === p2Choice) {
         result = `🎉 <@${gameState.player1}> gagne !`;
         color = 0x57F287;
