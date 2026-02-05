@@ -40,7 +40,7 @@ module.exports = {
                     typeLabel = "Fait";
                     successEmbed = createSuccessEmbed(
                         "Fait ajouté au profil",
-                        `Un **fait** a été ajouté au profil de Netricsa concernant **${username}** :\n\n` +
+                        `Un **fait** a été ajouté au profil NETRICSA de **${username}** :\n\n` +
                         `💡 "${content}"`
                     );
                     break;
@@ -50,7 +50,7 @@ module.exports = {
                     typeLabel = "Alias";
                     successEmbed = createSuccessEmbed(
                         "Alias ajouté au profil",
-                        `Un **alias** a été ajouté au profil de Netricsa concernant **${username}** :\n\n` +
+                        `Un **alias** a été ajouté au profil NETRICSA de **${username}** :\n\n` +
                         `🏷️ "${content}"`
                     );
                     break;
@@ -60,7 +60,7 @@ module.exports = {
                     typeLabel = "Intérêt";
                     successEmbed = createSuccessEmbed(
                         "Intérêt ajouté au profil",
-                        `Un **centre d'intérêt** a été ajouté au profil de Netricsa concernant **${username}** :\n\n` +
+                        `Un **centre d'intérêt** a été ajouté au profil NETRICSA de **${username}** :\n\n` +
                         `❤️ "${content}"`
                     );
                     break;

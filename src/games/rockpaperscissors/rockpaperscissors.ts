@@ -1,5 +1,7 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, SlashCommandBuilder} from "discord.js";
 import {handleInteractionError} from "../../utils/interactionUtils";
+import {createBackToMenuButton} from "../common/gameUtils";
+import {recordDraw, recordLoss, recordWin} from "../common/globalStats";
 
 interface GameState {
     player1: string;
@@ -16,6 +18,7 @@ interface GameState {
     player1HighestWinstreak: number;
     player2HighestWinstreak: number;
     draws: number;
+    originalUserId?: string; // Celui qui a lancé /games
 }
 
 const activeGames = new Map<string, GameState>();
@@ -49,18 +52,22 @@ module.exports = {
 
             if (mode === "ai") {
                 // Mode IA : démarrer directement
-                await startGameAgainstAI(interaction, player1Id, gameId);
+                await startGameAgainstAI(interaction, player1Id, gameId, player1Id);
             } else {
                 // Mode joueur : attendre un adversaire
-                await waitForPlayer(interaction, player1Id, gameId);
+                await waitForPlayer(interaction, player1Id, gameId, player1Id);
             }
         } catch (error: any) {
             await handleInteractionError(interaction, error, "RockPaperScissors");
         }
     },
+
+    // Exporter les fonctions pour le menu principal
+    startGameAgainstAI,
+    waitForPlayer
 };
 
-async function waitForPlayer(interaction: ChatInputCommandInteraction, player1Id: string, gameId: string) {
+async function waitForPlayer(interaction: ChatInputCommandInteraction, player1Id: string, gameId: string, originalUserId: string) {
     const gameState: GameState = {
         player1: player1Id,
         player2: null,
@@ -73,13 +80,14 @@ async function waitForPlayer(interaction: ChatInputCommandInteraction, player1Id
         player2TotalWins: 0,
         player1HighestWinstreak: 0,
         player2HighestWinstreak: 0,
-        draws: 0
+        draws: 0,
+        originalUserId: originalUserId
     };
 
     activeGames.set(gameId, gameState);
 
     const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x2494DB)
         .setTitle("🎮 Roche-Papier-Ciseaux")
         .setDescription(`<@${player1Id}> cherche un adversaire !\n\nClique sur le bouton pour rejoindre la partie.`)
         .setTimestamp();
@@ -163,7 +171,7 @@ async function waitForPlayer(interaction: ChatInputCommandInteraction, player1Id
     });
 }
 
-async function startGameAgainstAI(interaction: ChatInputCommandInteraction, playerId: string, gameId: string) {
+async function startGameAgainstAI(interaction: ChatInputCommandInteraction, playerId: string, gameId: string, originalUserId: string) {
     const gameState: GameState = {
         player1: playerId,
         player2: "AI",
@@ -176,13 +184,14 @@ async function startGameAgainstAI(interaction: ChatInputCommandInteraction, play
         player2TotalWins: 0,
         player1HighestWinstreak: 0,
         player2HighestWinstreak: 0,
-        draws: 0
+        draws: 0,
+        originalUserId: originalUserId
     };
 
     activeGames.set(gameId, gameState);
 
     const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x2494DB)
         .setTitle("🎮 Roche-Papier-Ciseaux vs <:zzzRole_NetricsaModule:1466997072564584631> Netricsa")
         .setDescription("Fais ton choix !")
         .setTimestamp();
@@ -200,7 +209,7 @@ async function startGameAgainstAI(interaction: ChatInputCommandInteraction, play
 
 async function startPvPGame(interaction: any, gameState: GameState, gameId: string) {
     const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x2494DB)
         .setTitle("🎮 Roche-Papier-Ciseaux")
         .setDescription(`⚔️ <@${gameState.player1}> vs <@${gameState.player2}>\n\nFaites vos choix ! (invisible pour l'adversaire)`)
         .setTimestamp();
@@ -216,7 +225,7 @@ async function startPvPGame(interaction: any, gameState: GameState, gameId: stri
 
 async function sendChoiceButtons(interaction: any, gameState: GameState, gameId: string) {
     const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x2494DB)
         .setTitle("🎮 Fais ton choix")
         .setDescription("Clique sur un bouton pour faire ton choix !")
         .setTimestamp();
@@ -404,6 +413,11 @@ async function displayResult(message: any, gameState: GameState) {
         gameState.player1Winstreak = 0;
         gameState.player2Winstreak = 0;
         gameState.draws++;
+        // Enregistrer dans stats globales
+        recordDraw(gameState.player1, 'rockpaperscissors');
+        if (gameState.player2 && !gameState.isAI) {
+            recordDraw(gameState.player2, 'rockpaperscissors');
+        }
     } else if (choices[p1Choice as keyof typeof choices].beats === p2Choice) {
         result = `🎉 <@${gameState.player1}> gagne !`;
         color = 0x57F287;
@@ -411,6 +425,11 @@ async function displayResult(message: any, gameState: GameState) {
         gameState.player1Winstreak++;
         gameState.player1TotalWins++;
         gameState.player2Winstreak = 0;
+        // Enregistrer dans stats globales
+        recordWin(gameState.player1, 'rockpaperscissors');
+        if (gameState.player2 && !gameState.isAI) {
+            recordLoss(gameState.player2, 'rockpaperscissors');
+        }
 
         // Mettre à jour la plus haute winstreak
         if (gameState.player1Winstreak > gameState.player1HighestWinstreak) {
@@ -428,6 +447,11 @@ async function displayResult(message: any, gameState: GameState) {
         gameState.player1Winstreak = 0;
         gameState.player2Winstreak++;
         gameState.player2TotalWins++;
+        // Enregistrer dans stats globales
+        recordLoss(gameState.player1, 'rockpaperscissors');
+        if (gameState.player2 && !gameState.isAI) {
+            recordWin(gameState.player2, 'rockpaperscissors');
+        }
 
         // Mettre à jour la plus haute winstreak
         if (gameState.player2Winstreak > gameState.player2HighestWinstreak) {
@@ -458,14 +482,16 @@ async function displayResult(message: any, gameState: GameState) {
         embed.setFooter({text: footerText});
     }
 
-    // Créer le bouton Rematch
+    // Créer les boutons Rematch et Retour au menu
     const rematchButton = new ButtonBuilder()
         .setCustomId(`rps_rematch_${message.channelId}_${Date.now()}`)
         .setLabel("Rematch")
         .setStyle(ButtonStyle.Primary)
         .setEmoji("🔄");
 
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton);
+    const backButton = createBackToMenuButton();
+
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton, backButton);
 
     await message.edit({embeds: [embed], components: [row]});
 
@@ -485,6 +511,19 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
 
     collector.on("collect", async (i: any) => {
         try {
+            // Gestion du bouton Retour au menu
+            if (i.customId.startsWith("game_back_to_menu_")) {
+                if (gameState.originalUserId && i.user.id !== gameState.originalUserId) {
+                    await i.reply({content: "❌ Seul celui qui a lancé le menu peut y retourner !", ephemeral: true});
+                    return;
+                }
+
+                collector.stop("back_to_menu");
+                const gamesModule = require("../../commands/games/games");
+                await gamesModule.showGameMenu(i, gameState.originalUserId);
+                return;
+            }
+
             if (!i.customId.startsWith("rps_rematch_")) return;
 
             const clickerId = i.user.id;
@@ -512,7 +551,7 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
 
                 // Créer une nouvelle partie
                 const embed = new EmbedBuilder()
-                    .setColor(0x5865F2)
+                    .setColor(0x2494DB)
                     .setTitle("🎮 Roche-Papier-Ciseaux vs <:zzzRole_NetricsaModule:1466997072564584631> Netricsa")
                     .setDescription("🔄 **Nouvelle partie !**\n\nFais ton choix !")
                     .setTimestamp();
@@ -534,7 +573,7 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
 
                 // Mettre à jour l'embed pour indiquer que la partie recommence
                 const embed = new EmbedBuilder()
-                    .setColor(0x5865F2)
+                    .setColor(0x2494DB)
                     .setTitle("🎮 Roche-Papier-Ciseaux")
                     .setDescription("🔄 **Les deux joueurs ont accepté ! Nouvelle partie !**\n\nFaites vos choix !")
                     .setTimestamp();

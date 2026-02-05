@@ -1,5 +1,8 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, SlashCommandBuilder} from "discord.js";
 import {handleInteractionError} from "../../utils/interactionUtils";
+import {GameStats, getStatsDescription, getStatsFooter, getWinstreakDisplay, initializeStats, updateStatsOnDraw, updateStatsOnWin} from "../common/gameStats";
+import {canJoinGame, COLLECTOR_CONFIG, createBackToMenuButton, createCancelButton, createJoinButton, createRematchButton, createTimeoutEmbed, createWaitingEmbed, handleGameCancellation} from "../common/gameUtils";
+import {recordDraw, recordLoss, recordWin} from "../common/globalStats";
 
 interface GameState {
     player1: string;
@@ -9,18 +12,15 @@ interface GameState {
     currentTurn: string;
     player1Symbol: string;
     player2Symbol: string;
-    player1Wins: number;
-    player2Wins: number;
-    draws: number;
+    stats: GameStats;
     player1WantsRematch?: boolean;
     player2WantsRematch?: boolean;
-    player1Winstreak: number;
-    player2Winstreak: number;
-    player1HighestWinstreak: number;
-    player2HighestWinstreak: number;
+    originalUserId?: string; // Celui qui a lancé /games
 }
 
 const activeGames = new Map<string, GameState>();
+const GAME_TITLE = "Tic-Tac-Toe";
+const GAME_PREFIX = "ttt";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -44,17 +44,21 @@ module.exports = {
             const gameId = interaction.channelId + "_" + Date.now();
 
             if (mode === "ai") {
-                await startGameAgainstAI(interaction, player1Id, gameId);
+                await startGameAgainstAI(interaction, player1Id, gameId, player1Id);
             } else {
-                await waitForPlayer(interaction, player1Id, gameId);
+                await waitForPlayer(interaction, player1Id, gameId, player1Id);
             }
         } catch (error: any) {
             await handleInteractionError(interaction, error, "TicTacToe");
         }
     },
+
+    // Exporter les fonctions pour le menu principal
+    startGameAgainstAI,
+    waitForPlayer
 };
 
-async function waitForPlayer(interaction: ChatInputCommandInteraction, player1Id: string, gameId: string) {
+async function waitForPlayer(interaction: ChatInputCommandInteraction, player1Id: string, gameId: string, originalUserId: string) {
     const gameState: GameState = {
         player1: player1Id,
         player2: null,
@@ -63,35 +67,15 @@ async function waitForPlayer(interaction: ChatInputCommandInteraction, player1Id
         currentTurn: player1Id,
         player1Symbol: "❌",
         player2Symbol: "⭕",
-        player1Wins: 0,
-        player2Wins: 0,
-        draws: 0,
-        player1Winstreak: 0,
-        player2Winstreak: 0,
-        player1HighestWinstreak: 0,
-        player2HighestWinstreak: 0
+        stats: initializeStats(),
+        originalUserId: originalUserId
     };
 
     activeGames.set(gameId, gameState);
 
-    const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
-        .setTitle("🎮 Tic-Tac-Toe")
-        .setDescription(`<@${player1Id}> cherche un adversaire !\n\nClique sur le bouton pour rejoindre la partie.`)
-        .setTimestamp();
-
-    const joinButton = new ButtonBuilder()
-        .setCustomId(`ttt_join_${gameId}`)
-        .setLabel("Rejoindre la partie")
-        .setStyle(ButtonStyle.Success)
-        .setEmoji("⚔️");
-
-    const cancelButton = new ButtonBuilder()
-        .setCustomId(`ttt_cancel_${gameId}`)
-        .setLabel("Annuler")
-        .setStyle(ButtonStyle.Danger)
-        .setEmoji("❌");
-
+    const embed = createWaitingEmbed(player1Id, GAME_TITLE);
+    const joinButton = createJoinButton(gameId, GAME_PREFIX);
+    const cancelButton = createCancelButton(gameId, GAME_PREFIX);
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(joinButton, cancelButton);
 
     const message = await interaction.reply({
@@ -102,62 +86,43 @@ async function waitForPlayer(interaction: ChatInputCommandInteraction, player1Id
 
     const collector = message.createMessageComponentCollector({
         componentType: ComponentType.Button,
-        time: 60000
+        time: COLLECTOR_CONFIG.WAITING_TIME
     });
 
     collector.on("collect", async (i: any) => {
         try {
-            if (i.customId === `ttt_cancel_${gameId}`) {
-                if (i.user.id !== player1Id) {
-                    await i.reply({content: "❌ Seul le créateur peut annuler la partie.", ephemeral: true});
-                    return;
-                }
-
-                activeGames.delete(gameId);
-                collector.stop("cancelled");
-
-                const cancelEmbed = new EmbedBuilder()
-                    .setColor(0xED4245)
-                    .setTitle("🎮 Tic-Tac-Toe")
-                    .setDescription("❌ Partie annulée.")
-                    .setTimestamp();
-
-                await i.update({embeds: [cancelEmbed], components: []});
+            if (i.customId === `${GAME_PREFIX}_cancel_${gameId}`) {
+                const cancelled = await handleGameCancellation(i, player1Id, activeGames, gameId, GAME_TITLE);
+                if (cancelled) collector.stop("cancelled");
                 return;
             }
 
-            if (i.customId === `ttt_join_${gameId}`) {
-                if (i.user.id === player1Id) {
-                    await i.reply({content: "❌ Tu ne peux pas jouer contre toi-même !", ephemeral: true});
+            if (i.customId === `${GAME_PREFIX}_join_${gameId}`) {
+                const {canJoin, error} = canJoinGame(i.user.id, player1Id);
+                if (!canJoin) {
+                    await i.reply({content: error, ephemeral: true});
                     return;
                 }
 
                 gameState.player2 = i.user.id;
                 collector.stop("joined");
-
                 await startPvPGame(i, gameState, gameId, message);
             }
         } catch (error) {
-            console.error("[TicTacToe] Error handling button:", error);
+            console.error(`[${GAME_TITLE}] Error handling button:`, error);
         }
     });
 
     collector.on("end", async (_collected: any, reason: string) => {
         if (reason === "time") {
             activeGames.delete(gameId);
-
-            const timeoutEmbed = new EmbedBuilder()
-                .setColor(0xED4245)
-                .setTitle("🎮 Tic-Tac-Toe")
-                .setDescription("⏱️ Temps écoulé ! Aucun joueur n'a rejoint.")
-                .setTimestamp();
-
+            const timeoutEmbed = createTimeoutEmbed(GAME_TITLE);
             await interaction.editReply({embeds: [timeoutEmbed], components: []});
         }
     });
 }
 
-async function startGameAgainstAI(interaction: ChatInputCommandInteraction, playerId: string, gameId: string) {
+async function startGameAgainstAI(interaction: ChatInputCommandInteraction, playerId: string, gameId: string, originalUserId: string) {
     const gameState: GameState = {
         player1: playerId,
         player2: "AI",
@@ -166,13 +131,8 @@ async function startGameAgainstAI(interaction: ChatInputCommandInteraction, play
         currentTurn: playerId,
         player1Symbol: "❌",
         player2Symbol: "⭕",
-        player1Wins: 0,
-        player2Wins: 0,
-        draws: 0,
-        player1Winstreak: 0,
-        player2Winstreak: 0,
-        player1HighestWinstreak: 0,
-        player2HighestWinstreak: 0
+        stats: initializeStats(),
+        originalUserId: originalUserId
     };
 
     activeGames.set(gameId, gameState);
@@ -213,15 +173,14 @@ function createGameEmbed(gameState: GameState): EmbedBuilder {
     }
 
     const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
-        .setTitle("🎮 Tic-Tac-Toe")
+        .setColor(0x2494DB)
+        .setTitle(`🎮 ${GAME_TITLE}`)
         .setDescription(description)
         .setTimestamp();
 
-    // Ajouter le footer avec les scores
-    const totalGames = gameState.player1Wins + gameState.player2Wins + gameState.draws;
-    if (totalGames > 0) {
-        embed.setFooter({text: `Score : ${gameState.player1Wins} - ${gameState.player2Wins} (${gameState.draws} égalités)`});
+    const footerText = getStatsFooter(gameState.stats);
+    if (footerText) {
+        embed.setFooter({text: footerText});
     }
 
     return embed;
@@ -340,13 +299,15 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
         if (reason === "time") {
             activeGames.delete(gameId);
 
+            const description = `⏱️ Temps écoulé ! La partie est annulée.${getStatsDescription(gameState.stats, gameState.player1, gameState.player2, gameState.isAI)}`;
+
             const timeoutEmbed = new EmbedBuilder()
                 .setColor(0xED4245)
                 .setTitle("🎮 Tic-Tac-Toe")
-                .setDescription("⏱️ Temps écoulé ! La partie est annulée." + getStatsDescription(gameState))
+                .setDescription(description)
                 .setTimestamp();
 
-            const footerText = getStatsFooter(gameState);
+            const footerText = getStatsFooter(gameState.stats);
             if (footerText) {
                 timeoutEmbed.setFooter({text: footerText});
             }
@@ -472,21 +433,20 @@ async function displayResult(message: any, gameState: GameState, winner: string 
     if (winner === null) {
         result = "🤝 Égalité !";
         color = 0xFEE75C;
-        gameState.draws++;
-        // Égalité : reset des winstreaks
-        gameState.player1Winstreak = 0;
-        gameState.player2Winstreak = 0;
+        updateStatsOnDraw(gameState.stats);
+        // Enregistrer dans stats globales
+        recordDraw(gameState.player1, 'tictactoe');
+        if (gameState.player2 && !gameState.isAI) {
+            recordDraw(gameState.player2, 'tictactoe');
+        }
     } else if (winner === gameState.player1) {
         result = `🎉 <@${gameState.player1}> gagne !`;
         color = 0x57F287;
-        gameState.player1Wins++;
-        // Joueur 1 gagne
-        gameState.player1Winstreak++;
-        gameState.player2Winstreak = 0;
-
-        // Mettre à jour la plus haute winstreak
-        if (gameState.player1Winstreak > gameState.player1HighestWinstreak) {
-            gameState.player1HighestWinstreak = gameState.player1Winstreak;
+        updateStatsOnWin(gameState.stats, 'player1');
+        // Enregistrer dans stats globales
+        recordWin(gameState.player1, 'tictactoe');
+        if (gameState.player2 && !gameState.isAI) {
+            recordLoss(gameState.player2, 'tictactoe');
         }
     } else {
         if (gameState.isAI) {
@@ -496,32 +456,17 @@ async function displayResult(message: any, gameState: GameState, winner: string 
             result = `🎉 <@${gameState.player2}> gagne !`;
             color = 0xFEE75C;
         }
-        gameState.player2Wins++;
-        // Joueur 2 gagne
-        gameState.player1Winstreak = 0;
-        gameState.player2Winstreak++;
-
-        // Mettre à jour la plus haute winstreak
-        if (gameState.player2Winstreak > gameState.player2HighestWinstreak) {
-            gameState.player2HighestWinstreak = gameState.player2Winstreak;
+        updateStatsOnWin(gameState.stats, 'player2');
+        // Enregistrer dans stats globales
+        recordLoss(gameState.player1, 'tictactoe');
+        if (gameState.player2 && !gameState.isAI) {
+            recordWin(gameState.player2, 'tictactoe');
         }
     }
 
     // Construire la description avec les winstreaks
     let description = `**${result}**`;
-
-    // Afficher les winstreaks si > 1
-    let winstreakDisplay = "\n\n";
-    if (gameState.player1Winstreak > 1) {
-        winstreakDisplay += `<@${gameState.player1}> 🔥 **${gameState.player1Winstreak}**\n`;
-    }
-    if (gameState.player2Winstreak > 1) {
-        winstreakDisplay += `${gameState.isAI ? "<@1462959115528835092>" : `<@${gameState.player2}>`} 🔥 **${gameState.player2Winstreak}**\n`;
-    }
-
-    if (winstreakDisplay !== "\n\n") {
-        description += winstreakDisplay;
-    }
+    description += getWinstreakDisplay(gameState.stats, gameState.player1, gameState.player2, gameState.isAI);
 
     // Afficher la grille finale
     description += "\n**Grille finale:**\n";
@@ -536,25 +481,20 @@ async function displayResult(message: any, gameState: GameState, winner: string 
 
     const embed = new EmbedBuilder()
         .setColor(color)
-        .setTitle("🎮 Résultat - Tic-Tac-Toe")
+        .setTitle(`🎮 Résultat - ${GAME_TITLE}`)
         .setDescription(description)
         .setTimestamp();
 
-    const footerText = getStatsFooter(gameState);
+    const footerText = getStatsFooter(gameState.stats);
     if (footerText) {
         embed.setFooter({text: footerText});
     }
 
-    // Attendre un court instant pour que l'interaction précédente se termine
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    const rematchButton = new ButtonBuilder()
-        .setCustomId(`ttt_rematch_${message.channelId}_${Date.now()}`)
-        .setLabel("Rematch")
-        .setStyle(ButtonStyle.Primary)
-        .setEmoji("🔄");
-
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton);
+    const rematchButton = createRematchButton(message.channelId, GAME_PREFIX);
+    const backButton = createBackToMenuButton();
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton, backButton);
 
     await message.edit({embeds: [embed], components: [row]});
 
@@ -564,37 +504,6 @@ async function displayResult(message: any, gameState: GameState, winner: string 
     setupRematchCollector(message, gameState, embed);
 }
 
-function getStatsDescription(gameState: GameState): string {
-    const totalGames = gameState.player1Wins + gameState.player2Wins + gameState.draws;
-    if (totalGames === 0) return "";
-
-    let stats = `\n\n**Statistiques:**\n`;
-
-    if (gameState.player1HighestWinstreak > 1 || gameState.player2HighestWinstreak > 1) {
-        stats += `🔥 Meilleures séries : `;
-        if (gameState.player1HighestWinstreak > 1) {
-            stats += `<@${gameState.player1}>: **${gameState.player1HighestWinstreak}**`;
-        }
-        if (gameState.player2HighestWinstreak > 1) {
-            if (gameState.player1HighestWinstreak > 1) stats += " | ";
-            stats += `${gameState.isAI ? "<@1462959115528835092>" : `<@${gameState.player2}>`}: **${gameState.player2HighestWinstreak}**`;
-        }
-        stats += "\n";
-    }
-
-    if (gameState.draws > 0) {
-        stats += `🤝 Égalités : **${gameState.draws}**`;
-    }
-
-    return stats;
-}
-
-function getStatsFooter(gameState: GameState): string {
-    const totalGames = gameState.player1Wins + gameState.player2Wins + gameState.draws;
-    if (totalGames === 0) return "";
-
-    return `Score : ${gameState.player1Wins} - ${gameState.player2Wins} (${gameState.draws} égalités)`;
-}
 
 function setupRematchCollector(message: any, gameState: GameState, originalEmbed: EmbedBuilder) {
     const collector = message.createMessageComponentCollector({
@@ -604,6 +513,19 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
 
     collector.on("collect", async (i: any) => {
         try {
+            // Gestion du bouton Retour au menu
+            if (i.customId.startsWith("game_back_to_menu_")) {
+                if (gameState.originalUserId && i.user.id !== gameState.originalUserId) {
+                    await i.reply({content: "❌ Seul celui qui a lancé le menu peut y retourner !", ephemeral: true});
+                    return;
+                }
+
+                collector.stop("back_to_menu");
+                const gamesModule = require("../../commands/games/games");
+                await gamesModule.showGameMenu(i, gameState.originalUserId);
+                return;
+            }
+
             if (!i.customId.startsWith("ttt_rematch_")) return;
 
             const clickerId = i.user.id;
@@ -684,13 +606,15 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
 
     collector.on("end", async (_collected: any, reason: string) => {
         if (reason === "time") {
+            const description = `⏱️ Le temps pour accepter un rematch est écoulé.${getStatsDescription(gameState.stats, gameState.player1, gameState.player2, gameState.isAI)}`;
+
             const embed = new EmbedBuilder()
                 .setColor(0xED4245)
                 .setTitle("🎮 Tic-Tac-Toe")
-                .setDescription("⏱️ Le temps pour accepter un rematch est écoulé." + getStatsDescription(gameState))
+                .setDescription(description)
                 .setTimestamp();
 
-            const footerText = getStatsFooter(gameState);
+            const footerText = getStatsFooter(gameState.stats);
             if (footerText) {
                 embed.setFooter({text: footerText});
             }

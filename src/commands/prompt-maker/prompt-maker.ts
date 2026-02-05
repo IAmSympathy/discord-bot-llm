@@ -3,6 +3,7 @@ import {createLogger} from "../../utils/logger";
 import {OLLAMA_API_URL, OLLAMA_TEXT_MODEL} from "../../utils/constants";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {createErrorEmbed} from "../../utils/embedBuilder";
+import {isLowPowerMode} from "../../services/botStateService";
 
 const logger = createLogger("PromptMakerCmd");
 
@@ -239,6 +240,16 @@ module.exports = {
         const client = interaction.client;
 
         try {
+            // Vérifier le mode low power
+            if (isLowPowerMode()) {
+                const errorEmbed = createErrorEmbed(
+                    "⚡ Mode Économie d'Énergie",
+                    "Netricsa est en mode économie d'énergie et ne peut pas générer de prompts pour le moment."
+                );
+                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+                return;
+            }
+
             await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
             const description = interaction.options.getString("description", true);

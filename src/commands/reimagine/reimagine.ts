@@ -72,7 +72,7 @@ module.exports = {
             if (isLowPowerMode()) {
                 const errorEmbed = createErrorEmbed(
                     "⚡ Mode Économie d'Énergie",
-                    "Netricsa est en mode économie d'énergie et ne peut pas transformer d'images pour le moment.\n\nCe mode se désactive automatiquement quand l'owner est actif."
+                    "Netricsa est en mode économie d'énergie et ne peut pas transformer d'images pour le moment."
                 );
                 await interaction.reply({embeds: [errorEmbed], ephemeral: true});
                 return;

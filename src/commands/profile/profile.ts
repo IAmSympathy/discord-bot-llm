@@ -56,7 +56,7 @@ module.exports = {
             // Créer l'embed avec une couleur dynamique
             const embed = new EmbedBuilder()
                 .setColor(0x397d86)
-                .setTitle(`📋 Profil de ${profile.username}`)
+                .setTitle(`📋 Profil de ${targetUser.displayName}`)
                 .setThumbnail(targetUser.displayAvatarURL({size: 128}))
                 .setTimestamp()
                 .setFooter({text: `ID: ${targetUser.id}`});
