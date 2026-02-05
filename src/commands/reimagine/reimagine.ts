@@ -83,7 +83,8 @@ module.exports = {
             const negativePrompt = interaction.options.getString("negative") || "";
             const amount = interaction.options.getInteger("amount") || 3;
             const strengthInput = interaction.options.getString("strength");
-            const strength = strengthInput ? Math.min(Math.max(parseFloat(strengthInput), 0.1), 0.9) : 0.55;
+            // Remplacer la virgule par un point pour accepter les deux formats
+            const strength = strengthInput ? Math.min(Math.max(parseFloat(strengthInput.replace(",", ".")), 0.1), 0.9) : 0.55;
 
             const steps = 18;
             const cfgScale = 5.5;
@@ -238,7 +239,7 @@ module.exports = {
                 .addFields(
                     {name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1021) + "..." : prompt}
                 )
-                .setFooter({text: `Temps: ${generationTime}s • 💪 Strength : ${strength}`})
+                .setFooter({text: `💪 Strength : ${strength} • Temps: ${generationTime}s`})
                 .setTimestamp();
 
             if (negativePrompt) {

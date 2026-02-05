@@ -147,10 +147,10 @@ export function registerWatchedChannelResponder(client: Client) {
             // Ignorer les commandes slash-like tapées en texte
             if (message.content?.startsWith("/")) return;
 
-            // Filtrer les messages qui commencent par "!s"
-            if (message.content.trim().startsWith("!s ")) {
-                logger.info(`Ignored message from ${message.author} because it starts with "!s"`);
-                return; // Ne rien faire
+            // Ignorer complètement les messages commençant par "!s"
+            if (message.content?.trim().startsWith("!s")) {
+                logger.info(`Message from ${message.author.username} starts with "!s" - completely ignored`);
+                return;
             }
 
             // ===== GESTION DES DMs =====
@@ -167,11 +167,12 @@ export function registerWatchedChannelResponder(client: Client) {
                     return;
                 }
 
-                const userText = message.content?.trim();
+                let userText = message.content?.trim();
                 if (!userText || userText.length === 0) {
                     logger.info(`[DM] Empty message from ${message.author.username}, ignoring`);
                     return;
                 }
+
 
                 const userId = message.author.id;
                 const userName = message.author.username;
@@ -259,7 +260,7 @@ export function registerWatchedChannelResponder(client: Client) {
             }
 
 
-            const userText = message.content?.trim();
+            let userText = message.content?.trim();
             const isMentioned = message.mentions.has(client.user!.id);
             const isInWatchedChannel = isWatchedChannel(message, watchedChannelId);
             const channelName = (message.channel as any).name || `channel-${message.channelId}`;
@@ -340,6 +341,7 @@ export function registerWatchedChannelResponder(client: Client) {
             const imageUrls = await collectAllMediaUrls(message);
 
             if (!userText && imageUrls.length === 0) return;
+
 
             let contextPrompt = userText || "[Image envoyée sans texte]";
             let referencedMsg: Message | undefined = undefined;

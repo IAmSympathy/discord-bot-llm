@@ -365,7 +365,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                 } else {
                     // Sinon, envoyer un message normal et le supprimer après 5 secondes
                     const warningMessage = await channel.send({
-                        content: `Tu es déjà dans la file d'attente. Attends que ta requête actuelle soit terminée.`,
+                        content: `> ⌛ Tu es déjà dans la file d'attente. Attends que ta requête actuelle soit terminée.`,
                     });
                     setTimeout(() => {
                         warningMessage.delete().catch(() => {
@@ -415,7 +415,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             await setStatus(client, BotStatus.READING_MEMORY);
         }
 
-        // Gérer l'animation d'analyse d'image (seulement si pas déjà analysée)
+        // Gérer l'animation d'analyse d'image (seulement si pas déjà analysée et pas skip)
         // Si une animation a déjà été démarrée (par forumThreadHandler), la réutiliser
         const analysisAnimation = preStartedAnimation || new ImageAnalysisAnimation();
         if (imageUrls && imageUrls.length > 0 && !skipImageAnalysis && !preStartedAnimation) {
@@ -428,11 +428,15 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
         if (imageUrls && imageUrls.length > 0) {
             // Si les images sont déjà analysées (depuis forumThreadHandler), utiliser les résultats
-            if (skipImageAnalysis && preAnalyzedImages.length > 0) {
+            if (skipImageAnalysis && preAnalyzedImages && preAnalyzedImages.length > 0) {
                 logger.info(`Using pre-analyzed images (${preAnalyzedImages.length})`);
                 imageResults = preAnalyzedImages;
                 imageDescriptions = imageResults.map(r => r.description);
                 // Ne pas logger ici, déjà loggé dans forumThreadHandler
+            } else if (skipImageAnalysis) {
+                // Skip complètement l'analyse d'images si le flag est true (ex: !s dans le message)
+                logger.info(`Skipping image analysis for ${imageUrls.length} image(s) (!s flag)`);
+                imageDescriptions = imageUrls.map((url, index) => `[Image ${index + 1} - analyse désactivée par l'utilisateur]`);
             } else {
                 // Sinon, analyser les images normalement
                 imageResults = await processImagesWithMetadata(imageUrls);
