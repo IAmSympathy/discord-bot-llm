@@ -19,6 +19,7 @@ export interface DiscordStats {
     commandesUtilisees: number;
     mentionsRecues: number;
     repliesRecues: number;
+    tempsVocalMinutes: number; // Temps passé en vocal en minutes
 }
 
 /**
@@ -94,7 +95,8 @@ function initUserStats(userId: string, username: string): UserStats {
             reactionsRecues: 0,
             commandesUtilisees: 0,
             mentionsRecues: 0,
-            repliesRecues: 0
+            repliesRecues: 0,
+            tempsVocalMinutes: 0
         },
         netricsa: {
             imagesGenerees: 0,
@@ -215,6 +217,20 @@ export function recordReplyReceived(userId: string, username: string): void {
         stats[userId] = initUserStats(userId, username);
     }
     stats[userId].discord.repliesRecues++;
+    stats[userId].username = username;
+    stats[userId].lastUpdate = Date.now();
+    saveStats(stats);
+}
+
+/**
+ * Enregistre le temps passé en vocal (en minutes)
+ */
+export function recordVoiceTime(userId: string, username: string, minutes: number): void {
+    const stats = loadStats();
+    if (!stats[userId]) {
+        stats[userId] = initUserStats(userId, username);
+    }
+    stats[userId].discord.tempsVocalMinutes += minutes;
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);

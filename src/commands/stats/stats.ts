@@ -97,7 +97,21 @@ function createGameStatsEmbed(targetUser: User, gameType: string): EmbedBuilder 
         .setTitle(title)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL())
+        .setFooter({text: "Stats depuis le 5 février 2026"})
         .setTimestamp();
+}
+
+/**
+ * Formate le temps vocal en heures et minutes
+ */
+function formatVoiceTime(minutes: number): string {
+    if (minutes === 0) return "0 min";
+    if (minutes < 60) {
+        return `${minutes} min`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
 }
 
 /**
@@ -122,6 +136,7 @@ function createDiscordStatsEmbed(targetUser: User): EmbedBuilder {
         description += `⚡ **Commandes utilisées :** ${userStats.discord.commandesUtilisees}\n`;
         description += `📢 **Mentions reçues :** ${userStats.discord.mentionsRecues}\n`;
         description += `💬 **Réponses reçues :** ${userStats.discord.repliesRecues}\n`;
+        description += `🎤 **Temps en vocal :** ${formatVoiceTime(userStats.discord.tempsVocalMinutes)}\n`;
 
         if (isBot) {
             description += `\n✨ Toutes mes interactions Discord comptées !`;
@@ -137,6 +152,7 @@ function createDiscordStatsEmbed(targetUser: User): EmbedBuilder {
         .setTitle(title)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL())
+        .setFooter({text: "Stats depuis le 5 février 2026"})
         .setTimestamp();
 }
 
@@ -180,6 +196,7 @@ function createNetricsaStatsEmbed(targetUser: User): EmbedBuilder {
         .setTitle(title)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL())
+        .setFooter({text: "Stats depuis le 5 février 2026"})
         .setTimestamp();
 }
 
@@ -205,6 +222,7 @@ function createServerStatsEmbed(): EmbedBuilder {
         .setColor(0xFFA500)
         .setTitle("📊 Statistiques du serveur")
         .setDescription(description)
+        .setFooter({text: "Stats depuis le 5 février 2026"})
         .setTimestamp();
 }
 
@@ -275,7 +293,7 @@ module.exports = {
         .setDescription("Affiche tes statistiques")
         .addUserOption(option =>
             option
-                .setName("utilisateur")
+                .setName("user")
                 .setDescription("Voir les stats d'un autre utilisateur")
                 .setRequired(false)
         ),
