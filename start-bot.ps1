@@ -21,7 +21,7 @@ if (Test-Path $venvPath) {
     if ((Test-Path $pythonExe) -and (Test-Path $apiScript)) {
         Write-Host "📍 Lancement : $pythonExe $apiScript" -ForegroundColor Gray
         # Lancer dans cette console pour voir les erreurs
-        Start-Process -FilePath $pythonExe -ArgumentList @($apiScript) -WorkingDirectory "C:\Users\samyl\OneDrive\Documents\GitHub\discord-bot-llm\python_services" -WindowStyle Normal
+        Start-Process -FilePath $pythonExe -ArgumentList @($apiScript) -WorkingDirectory "C:\Users\samyl\OneDrive\Documents\GitHub\discord-bot-llm\python_services" -WindowStyle Hidden
         Write-Host "✅ Microservice Python demarre (fenetre normale pour debug)" -ForegroundColor Green
     } else {
         Write-Host "WARNING: Microservice non trouve, verifiez l'installation" -ForegroundColor Yellow
@@ -40,7 +40,7 @@ $nodeExe = "node"
 $botScript = "dist/bot.js"
 
 if (Test-Path (Join-Path $botPath $botScript)) {
-    Start-Process -FilePath $nodeExe -ArgumentList @($botScript) -WorkingDirectory $botPath -WindowStyle Normal
+    Start-Process -FilePath $nodeExe -ArgumentList @($botScript) -WorkingDirectory $botPath -WindowStyle Hidden
     Write-Host "✅ Bot Discord demarre (fenetre normale pour debug)" -ForegroundColor Green
 } else {
     Write-Host "WARNING: Bot Discord non trouve, verifiez que dist/bot.js existe" -ForegroundColor Yellow

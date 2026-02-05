@@ -560,6 +560,8 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
         logger.info(`Sending request to Ollama`);
 
+        let loadingTimeout: NodeJS.Timeout | null = null; // Déclarer ici pour accès dans catch
+
         try {
             // TWO-STEP APPROACH :
             // 1. Première requête : Générer la réponse SANS tools (pour garantir une réponse textuelle)
@@ -590,6 +592,25 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             let totalTokens = 0;
             let toolCalls: any[] = []; // Stocker les tool calls (pour la 2e requête)
             let firstChunkReceived = false; // Flag pour détecter le premier chunk
+            let loadingMessageSent = false; // Flag pour le message de chargement
+
+            // Timeout pour détecter si le modèle met trop de temps à répondre (rechargement)
+            loadingTimeout = setTimeout(async () => {
+                if (!firstChunkReceived && !loadingMessageSent && sendMessage) {
+                    loadingMessageSent = true;
+                    logger.info("Model loading detected (5s without first chunk), sending loading message...");
+                    try {
+                        const loadingMsg = await channel.send("⏳ Chargement du modèle en cours...");
+                        // Supprimer le message une fois que le modèle répond
+                        setTimeout(() => {
+                            loadingMsg.delete().catch(() => {
+                            });
+                        }, 30000); // Supprimer après 30s max
+                    } catch (err) {
+                        logger.warn("Could not send loading message:", err);
+                    }
+                }
+            }, 5000); // Attendre 5 secondes avant d'afficher le message
 
             const throttleResponseInterval = setInterval(() => {
                 if (sendMessage) {
@@ -621,6 +642,9 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
                             if (done) {
                                 logger.info(`Request complete for user ${userId}`);
+
+                                // Nettoyer le timeout de chargement
+                                if (loadingTimeout) clearTimeout(loadingTimeout);
 
                                 if (totalTokens > 0) {
                                     logger.info(`Tokens - Prompt: ${promptTokens} | Completion: ${completionTokens} | Total: ${totalTokens}`);
@@ -768,6 +792,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                 // Envoyer le premier message immédiatement pour arrêter le typing indicator
                                 if (!firstChunkReceived && sendMessage && cleanedResult.trim().length > 0) {
                                     firstChunkReceived = true;
+                                    if (loadingTimeout) clearTimeout(loadingTimeout); // Annuler le timeout de chargement
                                     await messageManager.throttleUpdate().catch((err) => logger.error("[FirstChunk] Update error:", err));
                                 }
                             }
@@ -780,6 +805,9 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             });
         } catch (error) {
             logger.error("Error processing LLM request:", error);
+
+            // Nettoyer le timeout de chargement
+            if (loadingTimeout) clearTimeout(loadingTimeout);
 
             // Retirer l'utilisateur de la queue en cas d'erreur
             usersInQueue.delete(userId);
