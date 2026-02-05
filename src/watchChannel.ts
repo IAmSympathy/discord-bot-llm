@@ -10,6 +10,7 @@ import {isLowPowerMode} from "./services/botStateService";
 import {appendDMTurn, getDMRecentTurns} from "./services/dmMemoryService";
 import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
+import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordAIConversation, recordMentionReceived, recordMessageSent, recordReactionAdded, recordReplyReceived} from "./services/userStatsService";
 
 const logger = createLogger("WatchChannel");
 
@@ -46,12 +47,20 @@ async function handleNettieReaction(client: Client, message: Message): Promise<s
         const emoji = await generateMentionEmoji(message.content);
         await message.react(emoji);
         logger.info(`Reacted with: ${emoji}`);
+
+        // Enregistrer la réaction de Netricsa dans les stats
+        recordReactionAdded(NETRICSA_USER_ID, NETRICSA_USERNAME);
+
         await clearStatus(client);
         return emoji;
     } catch (error) {
         logger.error("Failed to get emoji from LLM:", error);
         await clearStatus(client);
         await message.react("🤗");
+
+        // Enregistrer la réaction de fallback de Netricsa
+        recordReactionAdded(NETRICSA_USER_ID, NETRICSA_USERNAME);
+
         return "🤗";
     }
 
@@ -143,6 +152,32 @@ export function registerWatchedChannelResponder(client: Client) {
         try {
             // Ignore bots (évite boucle infinie)
             if (message.author?.bot) return;
+
+            // Enregistrer le message envoyé dans les statistiques (sauf pour les bots)
+            if (!message.author.bot) {
+                recordMessageSent(message.author.id, message.author.username);
+            }
+
+            // Enregistrer les mentions dans les statistiques
+            if (message.mentions.users.size > 0) {
+                message.mentions.users.forEach((user) => {
+                    if (!user.bot) {
+                        recordMentionReceived(user.id, user.username);
+                    }
+                });
+            }
+
+            // Enregistrer les réponses (replies) dans les statistiques
+            if (message.reference?.messageId) {
+                try {
+                    const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
+                    if (referencedMessage && !referencedMessage.author.bot) {
+                        recordReplyReceived(referencedMessage.author.id, referencedMessage.author.username);
+                    }
+                } catch (error) {
+                    // Ignorer les erreurs de fetch (message supprimé, etc.)
+                }
+            }
 
             // Ignorer les commandes slash-like tapées en texte
             if (message.content?.startsWith("/")) return;
@@ -421,6 +456,9 @@ export function registerWatchedChannelResponder(client: Client) {
                 threadStarterContext,
                 originalUserMessage: userText || "[Image envoyée sans texte]", // Message original pour la mémoire
             });
+
+            // Enregistrer la conversation IA dans les statistiques
+            recordAIConversation(message.author.id, message.author.displayName);
 
             await setBotPresence(client, "online");
         } catch (err) {

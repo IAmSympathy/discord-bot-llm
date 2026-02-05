@@ -9,6 +9,7 @@ import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {FileMemory} from "../../memory/fileMemory";
 import {MEMORY_FILE_PATH, MEMORY_MAX_TURNS, TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 import {isLowPowerMode} from "../../services/botStateService";
+import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordImageReimagined} from "../../services/userStatsService";
 
 const logger = createLogger("ReimageCmd");
 const memory = new FileMemory(MEMORY_FILE_PATH);
@@ -269,6 +270,13 @@ module.exports = {
                 formatTime(parseFloat(generationTime)),
                 imageUrls
             );
+
+            // Enregistrer dans les statistiques utilisateur (une stat par image réimaginée)
+            for (let i = 0; i < amount; i++) {
+                recordImageReimagined(interaction.user.id, interaction.user.username);
+                // Enregistrer aussi pour Netricsa elle-même
+                recordImageReimagined(NETRICSA_USER_ID, NETRICSA_USERNAME);
+            }
 
             // Ajouter à la mémoire une version simplifiée (pas besoin du prompt complet)
             await memory.appendTurn({

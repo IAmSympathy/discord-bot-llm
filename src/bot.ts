@@ -17,6 +17,7 @@ import {initializeBirthdayService} from "./services/birthdayService";
 import {initializeActivityMonitor} from "./services/activityMonitor";
 import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
+import {recordCommandUsed, recordReactionAdded, recordReactionReceived} from "./services/userStatsService";
 
 const logger = createLogger("Bot");
 
@@ -578,6 +579,50 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
 
 // === FIN ÉVÉNEMENTS SERVEUR DISCORD ===
 
+// === ÉVÉNEMENTS RÉACTIONS ===
+
+// Réaction ajoutée
+client.on(Events.MessageReactionAdd, async (reaction, user) => {
+    try {
+        // Ignorer les réactions des bots
+        if (user.bot) return;
+
+        // Si l'utilisateur est partiel, fetch les données complètes
+        if (user.partial) {
+            try {
+                await user.fetch();
+            } catch (error) {
+                logger.error("Error fetching user:", error);
+                return;
+            }
+        }
+
+        // Si la réaction est partielle, fetch les données complètes
+        if (reaction.partial) {
+            try {
+                await reaction.fetch();
+            } catch (error) {
+                logger.error("Error fetching reaction:", error);
+                return;
+            }
+        }
+
+        // Enregistrer la réaction ajoutée pour l'utilisateur qui réagit
+        if (user.username) {
+            recordReactionAdded(user.id, user.username);
+        }
+
+        // Enregistrer la réaction reçue pour l'auteur du message
+        if (reaction.message.author && !reaction.message.author.bot && reaction.message.author.username) {
+            recordReactionReceived(reaction.message.author.id, reaction.message.author.username);
+        }
+    } catch (error) {
+        logger.error("Error handling reaction add:", error);
+    }
+});
+
+// === FIN ÉVÉNEMENTS RÉACTIONS ===
+
 
 if (client.user) {
     client.user.setPresence({
@@ -595,6 +640,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     try {
+        // Enregistrer l'utilisation de la commande dans les statistiques
+        recordCommandUsed(interaction.user.id, interaction.user.username);
 
         await command.execute(interaction);
     } catch (error: any) {

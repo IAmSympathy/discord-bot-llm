@@ -1,7 +1,7 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, SlashCommandBuilder} from "discord.js";
 import {handleInteractionError} from "../../utils/interactionUtils";
 import {createBackToMenuButton} from "../common/gameUtils";
-import {recordDraw, recordLoss, recordWin} from "../common/globalStats";
+import {NETRICSA_GAME_ID, recordDraw, recordLoss, recordWin} from "../common/globalStats";
 
 interface GameState {
     player1: string;
@@ -417,6 +417,9 @@ async function displayResult(message: any, gameState: GameState) {
         recordDraw(gameState.player1, 'rockpaperscissors');
         if (gameState.player2 && !gameState.isAI) {
             recordDraw(gameState.player2, 'rockpaperscissors');
+        } else if (gameState.isAI) {
+            // Netricsa fait égalité aussi
+            recordDraw(NETRICSA_GAME_ID, 'rockpaperscissors');
         }
     } else if (choices[p1Choice as keyof typeof choices].beats === p2Choice) {
         result = `🎉 <@${gameState.player1}> gagne !`;
@@ -429,6 +432,9 @@ async function displayResult(message: any, gameState: GameState) {
         recordWin(gameState.player1, 'rockpaperscissors');
         if (gameState.player2 && !gameState.isAI) {
             recordLoss(gameState.player2, 'rockpaperscissors');
+        } else if (gameState.isAI) {
+            // Netricsa perd
+            recordLoss(NETRICSA_GAME_ID, 'rockpaperscissors');
         }
 
         // Mettre à jour la plus haute winstreak
@@ -451,6 +457,9 @@ async function displayResult(message: any, gameState: GameState) {
         recordLoss(gameState.player1, 'rockpaperscissors');
         if (gameState.player2 && !gameState.isAI) {
             recordWin(gameState.player2, 'rockpaperscissors');
+        } else if (gameState.isAI) {
+            // Netricsa gagne
+            recordWin(NETRICSA_GAME_ID, 'rockpaperscissors');
         }
 
         // Mettre à jour la plus haute winstreak

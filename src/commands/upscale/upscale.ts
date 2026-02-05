@@ -9,6 +9,7 @@ import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {FileMemory} from "../../memory/fileMemory";
 import {MEMORY_FILE_PATH, MEMORY_MAX_TURNS, TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 import {isLowPowerMode} from "../../services/botStateService";
+import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordImageUpscaled} from "../../services/userStatsService";
 import * as fs from "fs";
 import * as path from "path";
 import * as https from "https";
@@ -185,6 +186,11 @@ module.exports = {
                 formatTime(parseFloat(processingTime)),
                 imageUrl
             );
+
+            // Enregistrer dans les statistiques utilisateur
+            recordImageUpscaled(interaction.user.id, interaction.user.username);
+            // Enregistrer aussi pour Netricsa elle-même
+            recordImageUpscaled(NETRICSA_USER_ID, NETRICSA_USERNAME);
 
             // Ajouter à la mémoire une version simplifiée (pas besoin des détails techniques)
             await memory.appendTurn({

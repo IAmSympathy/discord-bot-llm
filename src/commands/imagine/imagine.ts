@@ -9,6 +9,7 @@ import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {FileMemory} from "../../memory/fileMemory";
 import {MEMORY_FILE_PATH, MEMORY_MAX_TURNS, TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 import {isLowPowerMode} from "../../services/botStateService";
+import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordImageGenerated} from "../../services/userStatsService";
 
 const logger = createLogger("GenerateImageCmd");
 const memory = new FileMemory(MEMORY_FILE_PATH);
@@ -175,6 +176,13 @@ module.exports = {
                 formatTime(parseFloat(generationTime)),
                 imageUrls
             );
+
+            // Enregistrer dans les statistiques utilisateur (une stat par image générée)
+            for (let i = 0; i < amount; i++) {
+                recordImageGenerated(interaction.user.id, interaction.user.username);
+                // Enregistrer aussi pour Netricsa elle-même
+                recordImageGenerated(NETRICSA_USER_ID, NETRICSA_USERNAME);
+            }
 
             // Ajouter à la mémoire une version simplifiée (pas besoin du prompt complet)
             logger.info("Saving to memory: /imagine command");

@@ -1,7 +1,8 @@
-import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
+import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {UserProfileService} from "../../services/userProfileService";
 import {updateUserActivityFromPresence} from "../../services/activityService";
 import {createErrorEmbed} from "../../utils/interactionUtils";
+import {showStatsForUser} from "../stats/stats";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -178,7 +179,53 @@ module.exports = {
                 });
             }
 
-            await interaction.editReply({embeds: [embed]});
+            // Créer le bouton pour accéder aux stats
+            const statsButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                new ButtonBuilder()
+                    .setCustomId("profile_view_stats")
+                    .setLabel("Voir les statistiques")
+                    .setEmoji("📊")
+                    .setStyle(ButtonStyle.Primary)
+            );
+
+            const message = await interaction.editReply({
+                embeds: [embed],
+                components: [statsButton]
+            });
+
+            // Créer un collector pour le bouton
+            const collector = message.createMessageComponentCollector({
+                componentType: ComponentType.Button,
+                time: 300000 // 5 minutes
+            });
+
+            collector.on("collect", async (buttonInteraction) => {
+                if (buttonInteraction.user.id !== interaction.user.id) {
+                    await buttonInteraction.reply({
+                        content: "❌ Ce bouton n'est pas pour toi !",
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                if (buttonInteraction.customId === "profile_view_stats") {
+                    // Déférer l'interaction du bouton pour éviter le timeout
+                    await buttonInteraction.deferUpdate();
+
+                    // Afficher les stats de l'utilisateur
+                    await showStatsForUser(buttonInteraction, targetUser);
+                }
+            });
+
+            collector.on("end", async () => {
+                try {
+                    await interaction.editReply({
+                        components: []
+                    });
+                } catch (error) {
+                    // Ignorer les erreurs si le message a été supprimé
+                }
+            });
         } catch (error) {
             console.error("[Profile Command] Error:", error);
 

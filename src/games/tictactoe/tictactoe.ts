@@ -2,7 +2,7 @@ import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteractio
 import {handleInteractionError} from "../../utils/interactionUtils";
 import {GameStats, getStatsDescription, getStatsFooter, getWinstreakDisplay, initializeStats, updateStatsOnDraw, updateStatsOnWin} from "../common/gameStats";
 import {canJoinGame, COLLECTOR_CONFIG, createBackToMenuButton, createCancelButton, createJoinButton, createRematchButton, createTimeoutEmbed, createWaitingEmbed, handleGameCancellation} from "../common/gameUtils";
-import {recordDraw, recordLoss, recordWin} from "../common/globalStats";
+import {NETRICSA_GAME_ID, recordDraw, recordLoss, recordWin} from "../common/globalStats";
 
 interface GameState {
     player1: string;
@@ -438,6 +438,9 @@ async function displayResult(message: any, gameState: GameState, winner: string 
         recordDraw(gameState.player1, 'tictactoe');
         if (gameState.player2 && !gameState.isAI) {
             recordDraw(gameState.player2, 'tictactoe');
+        } else if (gameState.isAI) {
+            // Netricsa fait égalité aussi
+            recordDraw(NETRICSA_GAME_ID, 'tictactoe');
         }
     } else if (winner === gameState.player1) {
         result = `🎉 <@${gameState.player1}> gagne !`;
@@ -447,6 +450,9 @@ async function displayResult(message: any, gameState: GameState, winner: string 
         recordWin(gameState.player1, 'tictactoe');
         if (gameState.player2 && !gameState.isAI) {
             recordLoss(gameState.player2, 'tictactoe');
+        } else if (gameState.isAI) {
+            // Netricsa perd
+            recordLoss(NETRICSA_GAME_ID, 'tictactoe');
         }
     } else {
         if (gameState.isAI) {
@@ -461,6 +467,9 @@ async function displayResult(message: any, gameState: GameState, winner: string 
         recordLoss(gameState.player1, 'tictactoe');
         if (gameState.player2 && !gameState.isAI) {
             recordWin(gameState.player2, 'tictactoe');
+        } else if (gameState.isAI) {
+            // Netricsa gagne
+            recordWin(NETRICSA_GAME_ID, 'tictactoe');
         }
     }
 

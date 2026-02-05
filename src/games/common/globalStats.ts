@@ -3,6 +3,10 @@ import path from "path";
 
 const STATS_FILE = path.join(__dirname, "../../data/game_stats.json");
 
+// ID de Netricsa pour ses statistiques de jeux
+export const NETRICSA_GAME_ID = "NETRICSA_BOT";
+export const NETRICSA_GAME_NAME = "Netricsa";
+
 export interface PlayerGameStats {
     wins: number;
     losses: number;

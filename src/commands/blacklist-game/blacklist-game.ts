@@ -9,16 +9,16 @@ import {createErrorEmbed, handleInteractionError, replyWithError} from "../../ut
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("blacklist-game")
-        .setDescription("Gère la blacklist des jeux qui ne déclenchent pas le Low Power Mode")
+        .setDescription("(TAH-UM) Gère la blacklist des jeux qui ne déclenchent pas le Low Power Mode")
         .addSubcommand(subcommand =>
             subcommand
                 .setName("add-current")
-                .setDescription("Ajoute le jeu que tu joues actuellement à la blacklist du Low Power Mode automatique")
+                .setDescription("(TAH-UM) Ajoute le jeu que tu joues actuellement à la blacklist du Low Power Mode automatique")
         )
         .addSubcommand(subcommand =>
             subcommand
                 .setName("add")
-                .setDescription("Ajoute un jeu spécifique à la blacklist du Low Power Mode automatique")
+                .setDescription("(TAH-UM) Ajoute un jeu spécifique à la blacklist du Low Power Mode automatique")
                 .addStringOption(option =>
                     option
                         .setName("game")
@@ -29,7 +29,7 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName("remove")
-                .setDescription("Retire un jeu de la blacklist du Low Power Mode automatique")
+                .setDescription("(TAH-UM) Retire un jeu de la blacklist du Low Power Mode automatique")
                 .addStringOption(option =>
                     option
                         .setName("game")
@@ -40,7 +40,7 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName("list")
-                .setDescription("Affiche la liste des jeux blacklistés du Low Power Mode automatique")
+                .setDescription("(TAH-UM) Affiche la liste des jeux blacklistés du Low Power Mode automatique")
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
