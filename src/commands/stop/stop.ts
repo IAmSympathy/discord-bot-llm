@@ -16,16 +16,21 @@ module.exports = {
             // Vérifier si l'utilisateur est modérateur ou owner
             const isAdminOrOwner = hasOwnerPermission(interaction.member as any) || hasModeratorPermission(interaction.member as any);
 
-            // Essayer d'arrêter le stream, l'analyse d'image ET les générations d'images
+            // Essayer d'arrêter le stream et l'analyse d'image (avec permissions)
             const streamAborted = abortStream(channelKey, requestingUserId, isAdminOrOwner);
             const imageAnalysisAborted = await abortImageAnalysis(channelKey, requestingUserId, isAdminOrOwner);
 
-            // Pour les générations d'images, chercher d'abord par userId (utilisateur actuel)
-            let imageGenerationAborted = abortImageGeneration(requestingUserId);
+            // Pour les générations d'images :
+            // Si admin/owner : chercher toutes les générations dans le canal
+            // Sinon : chercher seulement les générations de l'utilisateur
+            let imageGenerationAborted = false;
 
-            // Si pas trouvé et admin, chercher toutes les générations dans le canal
-            if (!imageGenerationAborted && isAdminOrOwner) {
-                imageGenerationAborted = abortImageGenerationByChannel(channelKey, requestingUserId, isAdminOrOwner);
+            if (isAdminOrOwner) {
+                // Admin peut arrêter n'importe quelle génération dans le canal
+                imageGenerationAborted = abortImageGenerationByChannel(channelKey, requestingUserId, true);
+            } else {
+                // Utilisateur normal ne peut arrêter que ses propres générations
+                imageGenerationAborted = abortImageGeneration(requestingUserId);
             }
 
             const success = streamAborted || imageAnalysisAborted || imageGenerationAborted;
