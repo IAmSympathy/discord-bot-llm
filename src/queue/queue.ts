@@ -414,8 +414,6 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         // Changer le statut selon l'activité
         if (imageUrls && imageUrls.length > 0 && !skipImageAnalysis) {
             await setStatus(client, imageUrls.length === 1 ? BotStatus.ANALYZING_IMAGE : BotStatus.ANALYZING_IMAGES(imageUrls.length));
-        } else {
-            await setStatus(client, BotStatus.READING_MEMORY);
         }
 
         // Gérer l'animation d'analyse d'image (seulement si pas déjà analysée et pas skip)
@@ -506,9 +504,6 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
             // Enregistrer la recherche web uniquement pour Netricsa elle-même
             recordNetricsaWebSearch();
-
-            // Changer le statut après la recherche web
-            await setStatus(client, BotStatus.THINKING);
         }
 
         // Récupérer le profil de l'utilisateur actuel

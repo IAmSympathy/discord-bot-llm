@@ -1,9 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
 import {createLogger} from "../utils/logger";
+import {DATA_DIR} from "../utils/constants";
 
 const logger = createLogger("UserStats");
-const STATS_FILE = path.join(__dirname, "../data/user_stats.json");
+const STATS_FILE = path.join(DATA_DIR, "user_stats.json");
 
 // ID et nom de Netricsa (le bot)
 export const NETRICSA_USER_ID = "NETRICSA_BOT";

@@ -51,13 +51,12 @@ module.exports = {
                 components: [statsButton],
             });
 
-            // Créer un collector pour le bouton des stats
-            const collector = message.createMessageComponentCollector({
-                componentType: ComponentType.Button,
+            // Créer un collector pour tous les boutons (profil et stats)
+            const mainCollector = message.createMessageComponentCollector({
                 time: 300000 // 5 minutes
             });
 
-            collector.on("collect", async (buttonInteraction) => {
+            mainCollector.on("collect", async (buttonInteraction) => {
                 if (buttonInteraction.user.id !== interaction.user.id) {
                     await buttonInteraction.reply({
                         content: "❌ Ce bouton n'est pas pour vous !",
@@ -67,14 +66,12 @@ module.exports = {
                 }
 
                 if (buttonInteraction.customId.startsWith("profile_view_stats_")) {
-                    const userId = buttonInteraction.customId.replace("profile_view_stats_", "");
-
                     // Afficher les stats avec navigation (importé depuis statsEmbedBuilder)
-                    await showStatsFromProfile(buttonInteraction, targetUser);
+                    await showStatsFromProfile(buttonInteraction, targetUser, interaction);
                 }
             });
 
-            collector.on("end", () => {
+            mainCollector.on("end", () => {
                 // Désactiver les boutons après expiration
                 statsButton.components[0].setDisabled(true);
                 interaction.editReply({
@@ -96,7 +93,7 @@ module.exports = {
 /**
  * Affiche les stats avec navigation complète
  */
-async function showStatsFromProfile(buttonInteraction: any, targetUser: any) {
+async function showStatsFromProfile(buttonInteraction: any, targetUser: any, originalInteraction: any) {
     await buttonInteraction.deferUpdate();
 
     let currentCategory: StatsCategory = "discord";
@@ -114,18 +111,12 @@ async function showStatsFromProfile(buttonInteraction: any, targetUser: any) {
 
     const message = await buttonInteraction.fetchReply();
 
-    // Créer un collector pour les interactions
-    const collector = message.createMessageComponentCollector({
-        componentType: ComponentType.Button,
+    // Créer un collector pour les interactions dans les stats
+    const statsCollector = message.createMessageComponentCollector({
         time: 300000 // 5 minutes
     });
 
-    const selectCollector = message.createMessageComponentCollector({
-        componentType: ComponentType.StringSelect,
-        time: 300000
-    });
-
-    collector.on("collect", async (i: any) => {
+    statsCollector.on("collect", async (i: any) => {
         if (i.user.id !== buttonInteraction.user.id) {
             await i.reply({
                 content: "❌ Ce bouton n'est pas pour vous !",
@@ -134,59 +125,51 @@ async function showStatsFromProfile(buttonInteraction: any, targetUser: any) {
             return;
         }
 
-        if (i.customId === "stats_discord") {
-            currentCategory = "discord";
-            embed = createDiscordStatsEmbed(targetUser);
-            navigationButtons = createStatsNavigationButtons(currentCategory);
-            await i.update({embeds: [embed], components: [navigationButtons, backToProfileButton]});
-        } else if (i.customId === "stats_netricsa") {
-            currentCategory = "netricsa";
-            embed = createNetricsaStatsEmbed(targetUser);
-            navigationButtons = createStatsNavigationButtons(currentCategory);
-            await i.update({embeds: [embed], components: [navigationButtons, backToProfileButton]});
-        } else if (i.customId === "stats_jeux") {
-            currentCategory = "jeux";
-            currentGameType = "global";
-            embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
-            navigationButtons = createStatsNavigationButtons(currentCategory);
-            await i.update({embeds: [embed], components: [navigationButtons, gameSelectMenu, backToProfileButton]});
-        } else if (i.customId === "stats_serveur") {
-            currentCategory = "serveur";
-            embed = createServerStatsEmbed(i.guild);
-            navigationButtons = createStatsNavigationButtons(currentCategory);
-            await i.update({embeds: [embed], components: [navigationButtons, backToProfileButton]});
-        } else if (i.customId.startsWith("stats_back_to_profile_")) {
-            // Retour au profil
-            const profileEmbed = createProfileEmbed(targetUser);
-            const statsButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
-                new ButtonBuilder()
-                    .setCustomId(`profile_view_stats_${targetUser.id}`)
-                    .setLabel("📊 Afficher les statistiques")
-                    .setStyle(ButtonStyle.Success)
-            );
-            await i.update({embeds: [profileEmbed], components: [statsButton]});
-            collector.stop();
-            selectCollector.stop();
+        try {
+            if (i.customId === "stats_discord") {
+                currentCategory = "discord";
+                embed = createDiscordStatsEmbed(targetUser);
+                navigationButtons = createStatsNavigationButtons(currentCategory);
+                await i.update({embeds: [embed], components: [navigationButtons, backToProfileButton]});
+            } else if (i.customId === "stats_netricsa") {
+                currentCategory = "netricsa";
+                embed = createNetricsaStatsEmbed(targetUser);
+                navigationButtons = createStatsNavigationButtons(currentCategory);
+                await i.update({embeds: [embed], components: [navigationButtons, backToProfileButton]});
+            } else if (i.customId === "stats_jeux") {
+                currentCategory = "jeux";
+                currentGameType = "global";
+                embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
+                navigationButtons = createStatsNavigationButtons(currentCategory);
+                await i.update({embeds: [embed], components: [navigationButtons, gameSelectMenu, backToProfileButton]});
+            } else if (i.customId === "stats_serveur") {
+                currentCategory = "serveur";
+                embed = createServerStatsEmbed(i.guild);
+                navigationButtons = createStatsNavigationButtons(currentCategory);
+                await i.update({embeds: [embed], components: [navigationButtons, backToProfileButton]});
+            } else if (i.customId.startsWith("stats_back_to_profile_")) {
+                // Retour au profil
+                const profileEmbed = createProfileEmbed(targetUser);
+                const statsButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`profile_view_stats_${targetUser.id}`)
+                        .setLabel("📊 Afficher les statistiques")
+                        .setStyle(ButtonStyle.Success)
+                );
+                await i.update({embeds: [profileEmbed], components: [statsButton]});
+                // Arrêter seulement ce collector, pas le collector principal
+                statsCollector.stop();
+            } else if (i.customId === "stats_game_select" && i.isStringSelectMenu()) {
+                currentGameType = i.values[0];
+                embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
+                await i.update({embeds: [embed]});
+            }
+        } catch (error) {
+            console.error("[Profile Stats] Error handling button:", error);
         }
     });
 
-    selectCollector.on("collect", async (i: any) => {
-        if (i.user.id !== buttonInteraction.user.id) {
-            await i.reply({
-                content: "❌ Ce menu n'est pas pour vous !",
-                flags: MessageFlags.Ephemeral
-            });
-            return;
-        }
-
-        if (i.customId === "stats_game_select") {
-            currentGameType = i.values[0];
-            embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
-            await i.update({embeds: [embed]});
-        }
-    });
-
-    collector.on("end", () => {
-        // Désactiver les boutons après expiration
+    statsCollector.on("end", () => {
+        // Ne rien faire ici, le collector principal gère l'expiration
     });
 }

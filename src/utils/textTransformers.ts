@@ -104,6 +104,28 @@ export function removeEmojis(text: string): string {
 }
 
 /**
+ * Supprime uniquement le premier emoji d'un texte (pour la réaction Discord)
+ * Garde tous les autres emojis dans le message
+ */
+export function removeFirstEmoji(text: string): string {
+    const regex = emojiRegex();
+    const match = regex.exec(text);
+
+    if (match && match.index !== undefined) {
+        // Supprimer uniquement le premier emoji trouvé
+        return text.slice(0, match.index) + text.slice(match.index + match[0].length);
+    }
+
+    // Vérifier les emojis Discord custom
+    const discordEmojiMatch = text.match(/<a?:(?!zzz)[a-zA-Z0-9_]+:[0-9]+>/);
+    if (discordEmojiMatch && discordEmojiMatch.index !== undefined) {
+        return text.slice(0, discordEmojiMatch.index) + text.slice(discordEmojiMatch.index + discordEmojiMatch[0].length);
+    }
+
+    return text;
+}
+
+/**
  * Retire les préfixes de réponse invalides que le modèle pourrait générer
  * Ex: "TOI (Netricsa) répond:", "Netricsa:", "Réponse:", etc.
  */

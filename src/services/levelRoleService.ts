@@ -53,18 +53,26 @@ export async function updateUserLevelRoles(
     guild: Guild,
     userId: string,
     newLevel: number
-): Promise<{ changed: boolean; newRole?: string; oldRole?: string }> {
+): Promise<{ changed: boolean; newRole?: string; oldRole?: string; skipped?: 'bot' | 'left' }> {
     try {
-        const member = await guild.members.fetch(userId);
+        const member = await guild.members.fetch(userId).catch((error) => {
+            // Ignorer l'erreur si le membre n'existe plus (a quitté le serveur)
+            // 10007 = Unknown Member, 10013 = Unknown User
+            if (error.code === 10007 || error.code === 10013) {
+                logger.debug(`User ${userId} no longer in guild (left server or unknown user)`);
+                return null;
+            }
+            throw error;
+        });
+
         if (!member) {
-            logger.warn(`Member ${userId} not found in guild`);
-            return {changed: false};
+            return {changed: false, skipped: 'left'};
         }
 
         // Ne pas attribuer de rôles aux bots
         if (member.user.bot) {
-            logger.info(`Skipping level role update for bot ${member.user.username}`);
-            return {changed: false};
+            logger.debug(`Skipping level role update for bot ${member.user.username}`);
+            return {changed: false, skipped: 'bot'};
         }
 
         const targetLevelRole = getLevelRoleForLevel(newLevel);
@@ -124,24 +132,19 @@ export async function initializeLevelRolesForGuild(guild: Guild, allXP: { [userI
 
     let updated = 0;
     let skippedBots = 0;
+    let skippedLeft = 0;
 
     for (const [userId, xpData] of Object.entries(allXP)) {
-        try {
-            // Vérifier si c'est un bot avant de mettre à jour
-            const member = await guild.members.fetch(userId).catch(() => null);
-            if (member && member.user.bot) {
-                skippedBots++;
-                continue;
-            }
+        const result = await updateUserLevelRoles(guild, userId, xpData.level);
 
-            const result = await updateUserLevelRoles(guild, userId, xpData.level);
-            if (result.changed) {
-                updated++;
-            }
-        } catch (error) {
-            logger.error(`Failed to initialize level role for user ${userId}:`, error);
+        if (result.changed) {
+            updated++;
+        } else if (result.skipped === 'bot') {
+            skippedBots++;
+        } else if (result.skipped === 'left') {
+            skippedLeft++;
         }
     }
 
-    logger.info(`Level roles initialized: ${updated} users updated, ${skippedBots} bots skipped`);
+    logger.info(`Level roles initialized: ${updated} users updated, ${skippedBots} bots skipped, ${skippedLeft} users left`);
 }

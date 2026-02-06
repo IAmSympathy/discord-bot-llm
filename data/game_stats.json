@@ -1,1 +1,166 @@
-{}
+{
+  "288799652902469633": {
+    "global": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "rockpaperscissors": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "tictactoe": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "hangman": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    }
+  },
+  "1462959115528835092": {
+    "global": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "rockpaperscissors": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "tictactoe": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "hangman": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    }
+  },
+  "351419795033423883": {
+    "global": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "rockpaperscissors": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "tictactoe": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "hangman": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    }
+  },
+  "814998532833673246": {
+    "global": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "rockpaperscissors": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "tictactoe": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "hangman": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "connect4": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    }
+  },
+  "NETRICSA_BOT": {
+    "global": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "rockpaperscissors": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "tictactoe": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "hangman": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    },
+    "connect4": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "currentStreak": 0,
+      "highestStreak": 0
+    }
+  }
+}

@@ -3,9 +3,10 @@ import * as path from "path";
 import {createLogger} from "../utils/logger";
 import {EmbedBuilder, TextChannel, VoiceChannel} from "discord.js";
 import {getNextLevelRole, updateUserLevelRoles} from "./levelRoleService";
+import {DATA_DIR} from "../utils/constants";
 
 const logger = createLogger("XPSystem");
-const XP_FILE = path.join(__dirname, "../data/user_xp.json");
+const XP_FILE = path.join(DATA_DIR, "user_xp.json");
 
 /**
  * Configuration des points d'XP par action

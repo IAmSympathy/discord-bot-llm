@@ -1,12 +1,15 @@
 import {Client, Guild, GuildMember, TextChannel} from "discord.js";
 import {UserProfileService} from "./userProfileService";
-import {LLMMessageService, LLMMessageType} from "./llmMessageService";
 import {EnvConfig} from "../utils/envConfig";
 import {createLogger} from "../utils/logger";
+import {FileMemory} from "../memory/fileMemory";
 import * as fs from "fs";
 import * as path from "path";
 
 const logger = createLogger("BirthdayService");
+const MEMORY_FILE_PATH = EnvConfig.MEMORY_FILE_PATH;
+const MEMORY_MAX_TURNS = EnvConfig.MEMORY_MAX_TURNS;
+const memory = new FileMemory(MEMORY_FILE_PATH);
 
 /**
  * Service pour gérer les anniversaires des utilisateurs
@@ -21,6 +24,42 @@ const GUILD_ID = EnvConfig.GUILD_ID;
 
 // Cas spécial : Tah-Um (ton userId)
 const SPECIAL_USER_ID = "288799652902469633"; // Tah-Um - anniversaire décalé d'un jour
+
+/**
+ * Variantes de messages d'anniversaire
+ */
+const BIRTHDAY_VARIANTS = [
+    (userId: string, age?: number) => age
+        ? `Joyeux anniversaire <@${userId}> ! Tu as maintenant **${age} ans** ! Profite bien de ta journée ! 🎉🎂`
+        : `Joyeux anniversaire <@${userId}> ! Profite bien de ta journée ! 🎉🎂`,
+    (userId: string, age?: number) => age
+        ? `C'est ton jour <@${userId}> ! **${age} ans** aujourd'hui ! Passe une excellente journée ! 🎂🎉`
+        : `C'est ton jour <@${userId}> ! Passe une excellente journée ! 🎂🎉`,
+    (userId: string, age?: number) => age
+        ? `Bonne fête <@${userId}> ! **${age} ans** déjà ! Profite à fond de cette journée ! 🎈🎊`
+        : `Bonne fête <@${userId}> ! Profite à fond de cette journée ! 🎈🎊`,
+    (userId: string, age?: number) => age
+        ? `Joyeux anniversaire <@${userId}> ! Bienvenue dans le club des **${age} ans** ! 🎊🎂`
+        : `Joyeux anniversaire <@${userId}> ! Que cette journée soit mémorable ! 🎊🎂`,
+    (userId: string, age?: number) => age
+        ? `Bon anniversaire <@${userId}> ! **${age} ans** ça se fête ! Amuse-toi bien ! 🥳🎉`
+        : `Bon anniversaire <@${userId}> ! Amuse-toi bien ! 🥳🎉`
+];
+
+const BIRTHDAY_SPECIAL_VARIANTS = [
+    (userId: string) => `<@${userId}> Est-ce que vous aviez oublié ? 😏🎂`,
+    (userId: string) => `<@${userId}> Quelqu'un a raté quelque chose hier... 🤔🎂`,
+    (userId: string) => `<@${userId}> On dirait que tout le monde avait la tête ailleurs hier... 😏🎉`,
+    (userId: string) => `<@${userId}> Oups, on a failli passer à côté ! 😅🎂`,
+    (userId: string) => `<@${userId}> Mieux vaut tard que jamais non ? 😏🎈`
+];
+
+/**
+ * Sélectionne une variante aléatoire
+ */
+function getRandomVariant<T>(variants: T[]): T {
+    return variants[Math.floor(Math.random() * variants.length)];
+}
 
 interface BirthdayState {
     lastCheck: string; // Date au format YYYY-MM-DD
@@ -91,18 +130,28 @@ async function celebrateSpecialBirthday(
             return true;
         }
 
-        // Générer et envoyer le message via LLMMessageService
-        await LLMMessageService.generateMessage({
-            type: LLMMessageType.BIRTHDAY_SPECIAL,
-            userId,
-            userName: username,
-            channel,
-            client,
-            age,
-            mentionUser: true
-        });
+        // Choisir une variante aléatoire du message spécial
+        const birthdayMessage = getRandomVariant(BIRTHDAY_SPECIAL_VARIANTS)(userId);
 
+        // Envoyer le message
+        await channel.send(birthdayMessage);
         logger.info(`✅ Special delayed birthday message sent for ${username} (no role given)`);
+
+        // Enregistrer dans la mémoire
+        await memory.appendTurn(
+            {
+                ts: Date.now(),
+                discordUid: userId,
+                displayName: username,
+                channelId: channel.id,
+                channelName: channel.name,
+                userText: `C'était l'anniversaire de ${username} hier`,
+                assistantText: birthdayMessage,
+                isPassive: false
+            },
+            MEMORY_MAX_TURNS
+        );
+        logger.info(`💾 Recorded special birthday message in memory for ${username}`);
 
         return true;
     } catch (error) {
@@ -195,23 +244,32 @@ async function celebrateBirthday(
             return true;
         }
 
-        // Générer et envoyer le message via LLMMessageService
-        await LLMMessageService.generateMessage({
-            type: LLMMessageType.BIRTHDAY,
-            userId,
-            userName: username,
-            channel,
-            client,
-            age,
-            mentionUser: true
-        });
+        // Choisir une variante aléatoire du message d'anniversaire
+        const birthdayMessage = getRandomVariant(BIRTHDAY_VARIANTS)(userId, age);
 
+        // Envoyer le message
+        await channel.send(birthdayMessage);
         logger.info(`✅ Birthday message sent for ${username}${age ? ` (${age} ans)` : ''}`);
+
+        // Enregistrer dans la mémoire
+        await memory.appendTurn(
+            {
+                ts: Date.now(),
+                discordUid: userId,
+                displayName: username,
+                channelId: channel.id,
+                channelName: channel.name,
+                userText: `C'est l'anniversaire de ${username}${age ? ` (${age} ans)` : ''}`,
+                assistantText: birthdayMessage,
+                isPassive: false
+            },
+            MEMORY_MAX_TURNS
+        );
+        logger.info(`💾 Recorded birthday message in memory for ${username}`);
 
         return true;
     } catch (error) {
         logger.error(`Error celebrating birthday for ${username}:`, error);
-
 
         return false;
     }

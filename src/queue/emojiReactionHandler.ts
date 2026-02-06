@@ -1,11 +1,13 @@
 import {Message as DiscordMessage} from "discord.js";
-import {convertTextEmojisToUnicode, extractValidEmojis, removeEmojis, removeResponsePrefixes} from "../utils/textTransformers";
+import {convertTextEmojisToUnicode, extractValidEmojis, removeFirstEmoji, removeResponsePrefixes} from "../utils/textTransformers";
 import {createLogger} from "../utils/logger";
 
 const logger = createLogger("EmojiReactionHandler");
 
 /**
  * Gère l'extraction et l'application des réactions emoji
+ * Le premier emoji est converti en réaction Discord et supprimé du message
+ * Les autres emojis restent dans le texte
  */
 export class EmojiReactionHandler {
     private replyToMessage?: DiscordMessage;
@@ -32,14 +34,16 @@ export class EmojiReactionHandler {
                     await this.replyToMessage.react(firstEmoji);
                     this.reactionApplied = true;
                     this.appliedEmojis = [firstEmoji];
+                    logger.info(`Applied reaction: ${firstEmoji} (${emojis.length - 1} other emoji(s) kept in text)`);
                 } catch (error) {
                     logger.warn(`Failed to apply ${firstEmoji}:`, error);
                 }
             }
         }
 
-        // 3. Retirer tous les emojis du texte
-        return removeEmojis(modifiedText);
+        // 3. Retirer UNIQUEMENT le premier emoji (qui devient la réaction)
+        // Les autres emojis restent dans le message
+        return removeFirstEmoji(modifiedText);
     }
 
     getAppliedEmojis(): string[] {

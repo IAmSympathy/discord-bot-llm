@@ -1,8 +1,9 @@
 import fs from "fs";
 import path from "path";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
+import {DATA_DIR} from "../../utils/constants";
 
-const STATS_FILE = path.join(__dirname, "../../data/game_stats.json");
+const STATS_FILE = path.join(DATA_DIR, "game_stats.json");
 
 // ID de Netricsa pour ses statistiques de jeux
 export const NETRICSA_GAME_ID = "NETRICSA_BOT";
@@ -262,7 +263,7 @@ export function getGlobalLeaderboard(limit: number = 10): Array<{
     // Récupérer les noms d'utilisateurs depuis userStatsService si disponible
     let usernames: { [userId: string]: string } = {};
     try {
-        const userStatsPath = path.join(__dirname, "../../data/user_stats.json");
+        const userStatsPath = path.join(DATA_DIR, "user_stats.json");
         if (fs.existsSync(userStatsPath)) {
             const userStatsData = JSON.parse(fs.readFileSync(userStatsPath, "utf-8"));
             Object.entries(userStatsData).forEach(([userId, data]: [string, any]) => {

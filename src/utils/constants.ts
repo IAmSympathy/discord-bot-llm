@@ -1,4 +1,8 @@
 import {EnvConfig} from "./envConfig";
+import * as path from "path";
+
+// Paths
+export const DATA_DIR = path.join(process.cwd(), "data");
 
 // Role IDs
 export const OWNER_ROLES = ["1122751212299767929", "1129445913123880960"] as const;

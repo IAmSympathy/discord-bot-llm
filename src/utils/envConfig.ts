@@ -78,6 +78,7 @@ export class EnvConfig {
     }
 
     static get SERVER_PROMPT_PATH(): string {
+        // Gardé pour backup, non utilisé dans le code
         return process.env.SERVER_PROMPT_PATH || "./data/server_prompt.txt";
     }
 
@@ -127,7 +128,7 @@ export class EnvConfig {
 
         if (!this.DISCORD_BOT_TOKEN) missing.push("DISCORD_LLM_BOT_TOKEN");
         if (!this.SYSTEM_PROMPT_PATH) missing.push("SYSTEM_PROMPT_PATH");
-        if (!this.SERVER_PROMPT_PATH) missing.push("SERVER_PROMPT_PATH");
+        // SERVER_PROMPT_PATH retiré - non utilisé (gardé en backup seulement)
 
         return {
             valid: missing.length === 0,
