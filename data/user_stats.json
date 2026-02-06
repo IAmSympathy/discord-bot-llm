@@ -3,33 +3,34 @@
     "userId": "288799652902469633",
     "username": "iam_sympathy",
     "discord": {
-      "messagesEnvoyes": 11,
-      "reactionsAjoutees": 0,
-      "reactionsRecues": 3,
-      "commandesUtilisees": 68,
+      "messagesEnvoyes": 15,
+      "reactionsAjoutees": 1,
+      "reactionsRecues": 6,
+      "commandesUtilisees": 78,
       "mentionsRecues": 9,
       "repliesRecues": 7,
-      "tempsVocalMinutes": 237
+      "tempsVocalMinutes": 244
     },
     "netricsa": {
       "imagesGenerees": 0,
-      "imagesReimaginee": 9,
-      "imagesUpscalee": 1,
+      "imagesReimaginee": 24,
+      "imagesUpscalee": 3,
       "recherchesWeb": 0,
-      "conversationsIA": 16
+      "conversationsIA": 16,
+      "promptsCrees": null
     },
-    "lastUpdate": 1770406706705
+    "lastUpdate": 1770412484932
   },
   "1462959115528835092": {
     "userId": "1462959115528835092",
     "username": "Netricsa",
     "discord": {
-      "messagesEnvoyes": 109,
-      "reactionsAjoutees": 4,
+      "messagesEnvoyes": 141,
+      "reactionsAjoutees": 5,
       "reactionsRecues": 0,
       "commandesUtilisees": 0,
       "mentionsRecues": 9,
-      "repliesRecues": 8,
+      "repliesRecues": 11,
       "tempsVocalMinutes": 0
     },
     "netricsa": {
@@ -39,7 +40,7 @@
       "conversationsIA": 0,
       "memesRecherches": 0
     },
-    "lastUpdate": 1770407115783
+    "lastUpdate": 1770412440620
   },
   "351419795033423883": {
     "userId": "351419795033423883",
@@ -67,13 +68,13 @@
     "userId": "369247585556365313",
     "username": "furio.",
     "discord": {
-      "messagesEnvoyes": 0,
-      "reactionsAjoutees": 0,
-      "reactionsRecues": 0,
+      "messagesEnvoyes": 5,
+      "reactionsAjoutees": 1,
+      "reactionsRecues": 1,
       "commandesUtilisees": 0,
       "mentionsRecues": 1,
       "repliesRecues": 0,
-      "tempsVocalMinutes": 229
+      "tempsVocalMinutes": 237
     },
     "netricsa": {
       "imagesGenerees": 0,
@@ -83,14 +84,14 @@
       "memesRecherches": 0,
       "promptsCrees": 0
     },
-    "lastUpdate": 1770363599210
+    "lastUpdate": 1770412484934
   },
   "NETRICSA_BOT": {
     "userId": "NETRICSA_BOT",
     "username": "Netricsa",
     "discord": {
       "messagesEnvoyes": 0,
-      "reactionsAjoutees": 0,
+      "reactionsAjoutees": 1,
       "reactionsRecues": 0,
       "commandesUtilisees": 0,
       "mentionsRecues": 0,
@@ -99,14 +100,14 @@
     },
     "netricsa": {
       "imagesGenerees": 0,
-      "imagesReimaginee": 9,
-      "imagesUpscalee": 1,
+      "imagesReimaginee": 24,
+      "imagesUpscalee": 3,
       "conversationsIA": 10,
       "memesRecherches": 0,
       "promptsCrees": 0,
       "recherchesWebNetricsa": 0
     },
-    "lastUpdate": 1770405892284
+    "lastUpdate": 1770412440663
   },
   "556847082657415189": {
     "userId": "556847082657415189",
@@ -178,13 +179,13 @@
     "userId": "531789001313746968",
     "username": "imbaduworst",
     "discord": {
-      "messagesEnvoyes": 6,
-      "reactionsAjoutees": 0,
+      "messagesEnvoyes": 8,
+      "reactionsAjoutees": 1,
       "reactionsRecues": 1,
       "commandesUtilisees": 0,
-      "mentionsRecues": 1,
+      "mentionsRecues": 2,
       "repliesRecues": 1,
-      "tempsVocalMinutes": 6
+      "tempsVocalMinutes": 89
     },
     "netricsa": {
       "imagesGenerees": 0,
@@ -194,7 +195,7 @@
       "memesRecherches": 0,
       "promptsCrees": 0
     },
-    "lastUpdate": 1770407255787
+    "lastUpdate": 1770412484935
   },
   "513423712582762502": {
     "userId": "513423712582762502",

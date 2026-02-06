@@ -41,7 +41,14 @@ async function downloadImage(url: string): Promise<string> {
                 resolve(filepath);
             });
         }).on("error", (err) => {
-            fs.unlinkSync(filepath);
+            try {
+                if (fs.existsSync(filepath)) {
+                    fs.unlinkSync(filepath);
+                }
+            } catch (unlinkErr) {
+                // Ignorer les erreurs de suppression
+                logger.warn(`Could not delete file ${filepath}:`, unlinkErr);
+            }
             reject(err);
         });
     });
@@ -216,9 +223,25 @@ module.exports = {
                 channelName: interaction.channel?.isDMBased() ? "DM" : (interaction.channel as any)?.name || "unknown"
             }, MEMORY_MAX_TURNS);
 
-            // Nettoyer le fichier temporaire
+            // Nettoyer le fichier temporaire (avec retry pour éviter les erreurs EBUSY)
             if (tempFilePath && fs.existsSync(tempFilePath)) {
-                fs.unlinkSync(tempFilePath);
+                let retries = 3;
+                while (retries > 0) {
+                    try {
+                        fs.unlinkSync(tempFilePath);
+                        break;
+                    } catch (err: any) {
+                        if (err.code === 'EBUSY' && retries > 1) {
+                            // Attendre un peu avant de réessayer
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                            retries--;
+                        } else {
+                            // Si ce n'est pas EBUSY ou si on a épuisé les tentatives, logger et continuer
+                            logger.warn(`Could not delete temporary file ${tempFilePath}:`, err.message);
+                            break;
+                        }
+                    }
+                }
             }
 
             // Réinitialiser le statut Discord tout à la fin
@@ -233,9 +256,25 @@ module.exports = {
             // Réinitialiser le statut Discord
             await clearStatus(interaction.client, statusId);
 
-            // Nettoyer le fichier temporaire en cas d'erreur
+            // Nettoyer le fichier temporaire en cas d'erreur (avec retry pour éviter les erreurs EBUSY)
             if (tempFilePath && fs.existsSync(tempFilePath)) {
-                fs.unlinkSync(tempFilePath);
+                let retries = 3;
+                while (retries > 0) {
+                    try {
+                        fs.unlinkSync(tempFilePath);
+                        break;
+                    } catch (err: any) {
+                        if (err.code === 'EBUSY' && retries > 1) {
+                            // Attendre un peu avant de réessayer
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                            retries--;
+                        } else {
+                            // Si ce n'est pas EBUSY ou si on a épuisé les tentatives, logger et continuer
+                            logger.warn(`Could not delete temporary file ${tempFilePath}:`, err.message);
+                            break;
+                        }
+                    }
+                }
             }
 
             // Si c'est une annulation, éditer le message pour indiquer l'annulation

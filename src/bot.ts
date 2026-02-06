@@ -719,7 +719,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             try {
                 const errorEmbed = createErrorEmbed(
                     "Erreur de commande",
-                    "❌ Une erreur s'est produite lors de l'exécution de la commande.\n\n" +
+                    "Une erreur s'est produite lors de l'exécution de la commande.\n\n" +
                     "Veuillez réessayer plus tard."
                 );
 
@@ -778,7 +778,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             try {
                 const errorEmbed = createErrorEmbed(
                     "Erreur",
-                    "❌ Une erreur s'est produite lors de l'exécution de la commande.\n\n" +
+                    "Une erreur s'est produite lors de l'exécution de la commande.\n\n" +
                     "Veuillez réessayer plus tard."
                 );
 
