@@ -110,6 +110,29 @@ async function endVoiceSession(userId: string, username: string, voiceState: Voi
 export function registerVoiceTracker(client: Client): void {
     logger.info("Voice tracker initialized with real-time XP system");
 
+    // Initialiser les sessions pour les utilisateurs déjà en vocal au démarrage
+    client.once(Events.ClientReady, () => {
+        logger.info("Checking for users already in voice channels...");
+
+        client.guilds.cache.forEach(guild => {
+            guild.channels.cache.forEach(channel => {
+                if (channel.isVoiceBased()) {
+                    channel.members.forEach(member => {
+                        const userId = member.user.id;
+                        const username = member.user.username;
+                        const isBot = member.user.bot;
+
+                        // Démarrer une session pour cet utilisateur
+                        startVoiceSession(userId, channel.id, username, client, isBot);
+                        logger.info(`Started voice session for ${username} (already in voice at startup)`);
+                    });
+                }
+            });
+        });
+
+        logger.info("Voice session initialization complete");
+    });
+
     client.on(Events.VoiceStateUpdate, async (oldState: VoiceState, newState: VoiceState) => {
         try {
             const userId = newState.id;

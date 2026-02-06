@@ -123,28 +123,32 @@ function createGameStatsEmbed(targetUser: User, gameType: string): EmbedBuilder 
 /**
  * Crée les boutons de navigation
  */
-function createNavigationButtons(): ActionRowBuilder<ButtonBuilder> {
+function createNavigationButtons(currentCategory?: StatsCategory): ActionRowBuilder<ButtonBuilder> {
     return new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
             .setCustomId("stats_discord")
             .setLabel("Discord")
             .setEmoji("📨")
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(currentCategory === "discord" ? ButtonStyle.Success : ButtonStyle.Primary)
+            .setDisabled(currentCategory === "discord"),
         new ButtonBuilder()
             .setCustomId("stats_netricsa")
             .setLabel("Netricsa")
             .setEmoji("🤖")
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(currentCategory === "netricsa" ? ButtonStyle.Success : ButtonStyle.Primary)
+            .setDisabled(currentCategory === "netricsa"),
         new ButtonBuilder()
             .setCustomId("stats_jeux")
             .setLabel("Jeux")
             .setEmoji("🎮")
-            .setStyle(ButtonStyle.Primary),
+            .setStyle(currentCategory === "jeux" ? ButtonStyle.Success : ButtonStyle.Primary)
+            .setDisabled(currentCategory === "jeux"),
         new ButtonBuilder()
             .setCustomId("stats_serveur")
             .setLabel("Serveur")
             .setEmoji("🌐")
-            .setStyle(ButtonStyle.Secondary)
+            .setStyle(currentCategory === "serveur" ? ButtonStyle.Success : ButtonStyle.Secondary)
+            .setDisabled(currentCategory === "serveur")
     );
 }
 
@@ -213,7 +217,7 @@ module.exports = {
 
             // Créer l'embed initial (Discord)
             let embed = createDiscordStatsEmbed(targetUser);
-            const navigationButtons = createNavigationButtons();
+            let navigationButtons = createNavigationButtons(currentCategory);
             const backToProfileButton = createBackToProfileButton(targetUser.id);
             const gameSelectMenu = createGameSelectMenu();
 
@@ -249,6 +253,7 @@ module.exports = {
                 if (buttonId === "stats_jeux") {
                     currentCategory = "jeux";
                     embed = createGameStatsEmbed(targetUser, currentGameType);
+                    navigationButtons = createNavigationButtons(currentCategory);
                     await buttonInteraction.update({
                         embeds: [embed],
                         components: [navigationButtons, gameSelectMenu, backToProfileButton]
@@ -256,6 +261,7 @@ module.exports = {
                 } else if (buttonId === "stats_discord") {
                     currentCategory = "discord";
                     embed = createDiscordStatsEmbed(targetUser);
+                    navigationButtons = createNavigationButtons(currentCategory);
                     await buttonInteraction.update({
                         embeds: [embed],
                         components: [navigationButtons, backToProfileButton]
@@ -263,6 +269,7 @@ module.exports = {
                 } else if (buttonId === "stats_netricsa") {
                     currentCategory = "netricsa";
                     embed = createNetricsaStatsEmbed(targetUser);
+                    navigationButtons = createNavigationButtons(currentCategory);
                     await buttonInteraction.update({
                         embeds: [embed],
                         components: [navigationButtons, backToProfileButton]
@@ -270,6 +277,7 @@ module.exports = {
                 } else if (buttonId === "stats_serveur") {
                     currentCategory = "serveur";
                     embed = createServerStatsEmbed(interaction.guild);
+                    navigationButtons = createNavigationButtons(currentCategory);
                     await buttonInteraction.update({
                         embeds: [embed],
                         components: [navigationButtons, backToProfileButton]
@@ -286,6 +294,7 @@ module.exports = {
                     // Retour aux stats depuis le profil
                     currentCategory = "discord";
                     embed = createDiscordStatsEmbed(targetUser);
+                    navigationButtons = createNavigationButtons(currentCategory);
                     await buttonInteraction.update({
                         embeds: [embed],
                         components: [navigationButtons, backToProfileButton]

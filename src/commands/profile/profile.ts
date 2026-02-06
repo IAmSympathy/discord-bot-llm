@@ -96,7 +96,8 @@ module.exports = {
                             .setCustomId(`stats_discord_${targetUser.id}`)
                             .setLabel("Discord")
                             .setEmoji("📨")
-                            .setStyle(ButtonStyle.Primary),
+                            .setStyle(ButtonStyle.Success)
+                            .setDisabled(true),
                         new ButtonBuilder()
                             .setCustomId(`stats_netricsa_${targetUser.id}`)
                             .setLabel("Netricsa")
@@ -146,25 +147,25 @@ module.exports = {
                             .setCustomId(`stats_discord_${targetUser.id}`)
                             .setLabel("Discord")
                             .setEmoji("📨")
-                            .setStyle(ButtonStyle.Primary)
+                            .setStyle(category === "discord" ? ButtonStyle.Success : ButtonStyle.Primary)
                             .setDisabled(category === "discord"),
                         new ButtonBuilder()
                             .setCustomId(`stats_netricsa_${targetUser.id}`)
                             .setLabel("Netricsa")
                             .setEmoji("🤖")
-                            .setStyle(ButtonStyle.Primary)
+                            .setStyle(category === "netricsa" ? ButtonStyle.Success : ButtonStyle.Primary)
                             .setDisabled(category === "netricsa"),
                         new ButtonBuilder()
                             .setCustomId(`stats_jeux_${targetUser.id}`)
                             .setLabel("Jeux")
                             .setEmoji("🎮")
-                            .setStyle(ButtonStyle.Primary)
+                            .setStyle(category === "jeux" ? ButtonStyle.Success : ButtonStyle.Primary)
                             .setDisabled(category === "jeux"),
                         new ButtonBuilder()
                             .setCustomId(`stats_serveur_${targetUser.id}`)
                             .setLabel("Serveur")
                             .setEmoji("🌐")
-                            .setStyle(ButtonStyle.Secondary)
+                            .setStyle(category === "serveur" ? ButtonStyle.Success : ButtonStyle.Secondary)
                             .setDisabled(category === "serveur")
                     );
 
