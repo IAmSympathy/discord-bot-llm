@@ -178,25 +178,21 @@ module.exports = {
                 imageUrls
             );
 
-            // Enregistrer dans les statistiques utilisateur (une stat par image générée)
-            for (let i = 0; i < amount; i++) {
-                recordImageGenerated(interaction.user.id, interaction.user.username);
-                // Enregistrer aussi pour Netricsa elle-même
-                recordImageGenerated(NETRICSA_USER_ID, NETRICSA_USERNAME);
-            }
+            // Enregistrer dans les statistiques utilisateur (UNE SEULE fois par commande, peu importe le nombre de variantes)
+            recordImageGenerated(interaction.user.id, interaction.user.username);
+            // Enregistrer aussi pour Netricsa elle-même (une seule fois)
+            recordImageGenerated(NETRICSA_USER_ID, NETRICSA_USERNAME);
 
-            // Ajouter XP avec notification de level up (message non-éphémère)
+            // Ajouter XP avec notification de level up (UNE SEULE fois par commande)
             const {addXP, XP_REWARDS} = require("../../services/xpSystem");
             if (interaction.channel) {
-                for (let i = 0; i < amount; i++) {
-                    await addXP(
-                        interaction.user.id,
-                        interaction.user.username,
-                        XP_REWARDS.imageGeneree,
-                        interaction.channel,
-                        false
-                    );
-                }
+                await addXP(
+                    interaction.user.id,
+                    interaction.user.username,
+                    XP_REWARDS.imageGeneree,
+                    interaction.channel,
+                    false
+                );
             }
 
             // Ajouter à la mémoire une version simplifiée (pas besoin du prompt complet)
