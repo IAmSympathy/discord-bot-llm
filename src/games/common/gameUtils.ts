@@ -87,14 +87,15 @@ export const COLLECTOR_CONFIG = {
 };
 
 /**
- * Gère l'annulation d'une partie
+ * Gère l'annulation d'une partie et retourne au choix de mode
  */
 export async function handleGameCancellation(
     interaction: any,
     playerId: string,
     activeGames: Map<string, any>,
     gameId: string,
-    gameTitle: string
+    gameTitle: string,
+    returnToModeSelection?: (interaction: any, playerId: string) => Promise<void>
 ): Promise<boolean> {
     if (interaction.user.id !== playerId) {
         await interaction.reply({content: "❌ Seul le créateur peut annuler la partie.", ephemeral: true});
@@ -102,8 +103,16 @@ export async function handleGameCancellation(
     }
 
     activeGames.delete(gameId);
-    const embed = createCancelEmbed(gameTitle);
-    await interaction.update({embeds: [embed], components: []});
+
+    // Si une fonction de retour au mode est fournie, l'utiliser
+    if (returnToModeSelection) {
+        await returnToModeSelection(interaction, playerId);
+    } else {
+        // Sinon, afficher le message d'annulation par défaut
+        const embed = createCancelEmbed(gameTitle);
+        await interaction.update({embeds: [embed], components: []});
+    }
+
     return true;
 }
 

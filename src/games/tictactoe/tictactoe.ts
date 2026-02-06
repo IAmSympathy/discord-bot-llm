@@ -55,10 +55,67 @@ module.exports = {
 
     // Exporter les fonctions pour le menu principal
     startGameAgainstAI,
-    waitForPlayer
+    waitForPlayer,
+    showModeSelection
 };
 
-async function waitForPlayer(interaction: ChatInputCommandInteraction, player1Id: string, gameId: string, originalUserId: string) {
+async function showModeSelection(interaction: any, originalUserId: string) {
+    const embed = new EmbedBuilder()
+        .setColor(0x5865F2)
+        .setTitle("❌ Tic-Tac-Toe ⭕")
+        .setDescription("Choisis ton mode de jeu :")
+        .setTimestamp();
+
+    const playerButton = new ButtonBuilder()
+        .setCustomId("ttt_mode_player")
+        .setLabel("Contre un joueur")
+        .setStyle(ButtonStyle.Success)
+        .setEmoji("👤");
+
+    const aiButton = new ButtonBuilder()
+        .setCustomId("ttt_mode_ai")
+        .setLabel("Contre Netricsa")
+        .setStyle(ButtonStyle.Primary)
+        .setEmoji("<:zzzRole_NetricsaModule:1466997072564584631>");
+
+    const backButton = createBackToMenuButton();
+
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(playerButton, aiButton, backButton);
+
+    await interaction.update({embeds: [embed], components: [row]});
+
+    const collector = interaction.message.createMessageComponentCollector({
+        componentType: ComponentType.Button,
+        time: 60000
+    });
+
+    collector.on("collect", async (i: any) => {
+        if (i.user.id !== originalUserId) {
+            await i.reply({content: "Ce n'est pas ton menu !", ephemeral: true});
+            return;
+        }
+
+        collector.stop();
+
+        if (i.customId.startsWith("game_back_to_menu")) {
+            const {showGameMenu} = require("../../commands/games/games");
+            await showGameMenu(i, originalUserId);
+            return;
+        }
+
+        const mode = i.customId === "ttt_mode_ai" ? "ai" : "player";
+        const playerId = i.user.id;
+        const gameId = i.channelId + "_" + Date.now();
+
+        if (mode === "ai") {
+            await startGameAgainstAI(i, playerId, gameId, originalUserId);
+        } else {
+            await waitForPlayer(i, playerId, gameId, originalUserId);
+        }
+    });
+}
+
+async function waitForPlayer(interaction: any, player1Id: string, gameId: string, originalUserId: string) {
     const gameState: GameState = {
         player1: player1Id,
         player2: null,
@@ -78,11 +135,15 @@ async function waitForPlayer(interaction: ChatInputCommandInteraction, player1Id
     const cancelButton = createCancelButton(gameId, GAME_PREFIX);
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(joinButton, cancelButton);
 
-    const message = await interaction.reply({
+    const message = await (interaction.reply ? interaction.reply({
         embeds: [embed],
         components: [row],
         fetchReply: true
-    });
+    }) : interaction.update({
+        embeds: [embed],
+        components: [row],
+        fetchReply: true
+    }));
 
     const collector = message.createMessageComponentCollector({
         componentType: ComponentType.Button,
@@ -92,7 +153,8 @@ async function waitForPlayer(interaction: ChatInputCommandInteraction, player1Id
     collector.on("collect", async (i: any) => {
         try {
             if (i.customId === `${GAME_PREFIX}_cancel_${gameId}`) {
-                const cancelled = await handleGameCancellation(i, player1Id, activeGames, gameId, GAME_TITLE);
+                const cancelled = await handleGameCancellation(i, player1Id, activeGames, gameId, GAME_TITLE,
+                    async (interaction, userId) => await showModeSelection(interaction, userId));
                 if (cancelled) collector.stop("cancelled");
                 return;
             }

@@ -6,6 +6,7 @@ import {createErrorEmbed} from "../../utils/embedBuilder";
 import {isLowPowerMode} from "../../services/botStateService";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {recordPromptCreated} from "../../services/userStatsService";
+import {logBotCommand} from "../../utils/discordLogger";
 
 const logger = createLogger("PromptMakerCmd");
 
@@ -306,6 +307,20 @@ module.exports = {
             embed.setTimestamp();
 
             await interaction.editReply({embeds: [embed]});
+
+            // Enregistrer dans les logs Discord
+            const channelName = interaction.channel?.isDMBased()
+                ? "DM"
+                : (interaction.channel as any)?.name || "unknown";
+
+            const optionsText = `Type: ${isImg2Img ? "img2img (reimagine)" : "text2img (imagine)"}\nDescription: ${description.substring(0, 100)}${description.length > 100 ? "..." : ""}`;
+
+            await logBotCommand(
+                interaction.user.username,
+                "prompt-maker",
+                channelName,
+                optionsText
+            );
 
             // Enregistrer la statistique de prompt créé
             recordPromptCreated(interaction.user.id, interaction.user.username);

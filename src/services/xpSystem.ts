@@ -13,28 +13,28 @@ const XP_FILE = path.join(__dirname, "../data/user_xp.json");
 export const XP_REWARDS = {
     // Stats Discord
     messageEnvoye: 5,
-    reactionAjoutee: 2,
-    reactionRecue: 3,
+    reactionAjoutee: 1,
+    reactionRecue: 2,
     commandeUtilisee: 0,
-    mentionRecue: 5,
-    replyRecue: 5,
-    minuteVocale: 2, // Par minute en vocal
+    mentionRecue: 3,
+    replyRecue: 4,
+    minuteVocale: 1,
 
     // Stats Netricsa
     imageGeneree: 50,
     imageReimaginee: 40,
     imageUpscalee: 30,
-    conversationIA: 10, // Inclut les recherches web automatiques
-    memeRecherche: 10, // Recherche de meme avec /findmeme
-    promptCree: 25, // Création de prompt avec /prompt-maker
+    conversationIA: 10,
+    memeRecherche: 15,
+    promptCree: 30,
 
     // Stats Création
-    postCreation: 500, // Post dans le salon création
+    postCreation: 500,
 
     // Stats Jeux
     victoireJeu: 100,
-    defaiteJeu: 25,
-    egaliteJeu: 50
+    defaiteJeu: 35,
+    egaliteJeu: 60
 };
 
 /**
@@ -213,14 +213,33 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
             nextRoleInfo = `\n\n👑 **Tu as atteint le rang maximum !**`;
         }
 
+        // Récupérer la couleur du rôle de niveau de l'utilisateur
+        let embedColor = 0xFFD700; // Gold par défaut
+        const levelRoleInfo = await import("./levelRoleService").then(m => m.getLevelRoleForLevel(newLevel));
+        if (levelRoleInfo) {
+            const LEVEL_ROLES = await import("../utils/constants").then(m => m.LEVEL_ROLES);
+            const levelRoleId = LEVEL_ROLES[levelRoleInfo.roleKey as keyof typeof LEVEL_ROLES];
+            const levelRole = guild.roles.cache.get(levelRoleId);
+            if (levelRole && levelRole.color !== 0) {
+                embedColor = levelRole.color;
+            }
+        }
+
         // Créer un embed de level up
         const embed = new EmbedBuilder()
-            .setColor(0xFFD700) // Gold
+            .setColor(embedColor)
             .setTitle("🎉 Level Up !")
             .setDescription(`Félicitations <@${userId}> !\n\nTu viens d'atteindre le **niveau ${newLevel}** ! ⭐${roleChangeInfo}${nextRoleInfo}`)
             .setTimestamp();
 
-        await channel.send({embeds: [embed]});
+        await channel.send({
+            content: `||<@${userId}>||`,
+            embeds: [embed],
+            allowedMentions: {
+                users: [userId]
+            }
+        });
+
         logger.info(`Level up message sent for ${username} (Level ${newLevel}) in ${channel.name || 'channel'}`);
     } catch (error) {
         logger.error(`Error sending level up message for ${username}:`, error);

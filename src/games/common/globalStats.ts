@@ -22,6 +22,7 @@ export interface PlayerStats {
     rockpaperscissors: PlayerGameStats;
     tictactoe: PlayerGameStats;
     hangman: PlayerGameStats;
+    connect4: PlayerGameStats;
 }
 
 interface StatsDatabase {
@@ -82,7 +83,8 @@ export function getPlayerStats(userId: string): PlayerStats {
             global: initGameStats(),
             rockpaperscissors: initGameStats(),
             tictactoe: initGameStats(),
-            hangman: initGameStats()
+            hangman: initGameStats(),
+            connect4: initGameStats()
         };
         saveStats(allStats);
     }
@@ -96,7 +98,7 @@ export function getPlayerStats(userId: string): PlayerStats {
 /**
  * Met à jour les stats après une victoire
  */
-export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman'): void {
+export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4'): void {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -104,7 +106,8 @@ export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe
             global: initGameStats(),
             rockpaperscissors: initGameStats(),
             tictactoe: initGameStats(),
-            hangman: initGameStats()
+            hangman: initGameStats(),
+            connect4: initGameStats()
         };
     }
 
@@ -133,7 +136,7 @@ export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe
 /**
  * Met à jour les stats après une défaite
  */
-export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman'): void {
+export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4'): void {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -141,7 +144,8 @@ export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictacto
             global: initGameStats(),
             rockpaperscissors: initGameStats(),
             tictactoe: initGameStats(),
-            hangman: initGameStats()
+            hangman: initGameStats(),
+            connect4: initGameStats()
         };
     }
 
@@ -164,7 +168,7 @@ export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictacto
 /**
  * Met à jour les stats après une égalité
  */
-export function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman'): void {
+export function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4'): void {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -172,7 +176,8 @@ export function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictacto
             global: initGameStats(),
             rockpaperscissors: initGameStats(),
             tictactoe: initGameStats(),
-            hangman: initGameStats()
+            hangman: initGameStats(),
+            connect4: initGameStats()
         };
     }
 
@@ -195,7 +200,7 @@ export function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictacto
 /**
  * Génère l'affichage des stats d'un joueur
  */
-export function formatPlayerStats(userId: string, game?: 'rockpaperscissors' | 'tictactoe' | 'hangman'): string {
+export function formatPlayerStats(userId: string, game?: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4'): string {
     const stats = getPlayerStats(userId);
 
     let output = `📊 **Statistiques de <@${userId}>**\n\n`;
@@ -204,7 +209,8 @@ export function formatPlayerStats(userId: string, game?: 'rockpaperscissors' | '
         // Afficher les stats d'un jeu spécifique
         const gameStats = stats[game];
         const gameName = game === 'rockpaperscissors' ? 'Roche-Papier-Ciseaux' :
-            game === 'tictactoe' ? 'Tic-Tac-Toe' : 'Pendu';
+            game === 'tictactoe' ? 'Tic-Tac-Toe' :
+                game === 'connect4' ? 'Connect 4' : 'Pendu';
 
         output += `**${gameName}**\n`;
         output += `🏆 Victoires : **${gameStats.wins}**\n`;
