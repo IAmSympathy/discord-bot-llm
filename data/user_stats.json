@@ -24,7 +24,7 @@
     "userId": "1462959115528835092",
     "username": "Netricsa",
     "discord": {
-      "messagesEnvoyes": 107,
+      "messagesEnvoyes": 109,
       "reactionsAjoutees": 4,
       "reactionsRecues": 0,
       "commandesUtilisees": 0,
@@ -39,7 +39,7 @@
       "conversationsIA": 0,
       "memesRecherches": 0
     },
-    "lastUpdate": 1770406695002
+    "lastUpdate": 1770407115783
   },
   "351419795033423883": {
     "userId": "351419795033423883",
@@ -184,7 +184,7 @@
       "commandesUtilisees": 0,
       "mentionsRecues": 1,
       "repliesRecues": 1,
-      "tempsVocalMinutes": 0
+      "tempsVocalMinutes": 6
     },
     "netricsa": {
       "imagesGenerees": 0,
@@ -194,7 +194,7 @@
       "memesRecherches": 0,
       "promptsCrees": 0
     },
-    "lastUpdate": 1770405077628
+    "lastUpdate": 1770407255787
   },
   "513423712582762502": {
     "userId": "513423712582762502",

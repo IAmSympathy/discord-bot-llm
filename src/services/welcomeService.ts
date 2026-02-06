@@ -30,11 +30,11 @@ const WELCOME_BACK_VARIANTS = [
 ];
 
 const GOODBYE_VARIANTS = [
-    (userName: string) => `${userName} a quitté le serveur. Bon courage pour la suite ! 👋`,
-    (userName: string) => `${userName} nous quitte... Bonne chance dans tes futures aventures ! 🌟`,
-    (userName: string) => `${userName} vient de partir. À bientôt peut-être ! 💫`,
-    (userName: string) => `${userName} s'en va. Que la force soit avec toi ! ⚡`,
-    (userName: string) => `${userName} a pris la porte. On espère te revoir un jour ! 🚪`
+    (displayName: string) => `${displayName} a quitté le serveur. Bon courage pour la suite ! 👋`,
+    (displayName: string) => `${displayName} nous quitte... Bonne chance dans tes futures aventures ! 🌟`,
+    (displayName: string) => `${displayName} vient de partir. À bientôt peut-être ! 💫`,
+    (displayName: string) => `${displayName} s'en va. Que la force soit avec toi ! ⚡`,
+    (displayName: string) => `${displayName} a pris la porte. On espère te revoir un jour ! 🚪`
 ];
 
 /**
@@ -142,7 +142,7 @@ export async function sendGoodbyeMessage(member: GuildMember | PartialGuildMembe
         }
 
         // Message préfait d'au revoir (variante aléatoire)
-        const goodbyeMessage = getRandomVariant(GOODBYE_VARIANTS)(member.user.username);
+        const goodbyeMessage = getRandomVariant(GOODBYE_VARIANTS)(member.user.displayName);
         const userContext = `${member.user.username} a quitté le serveur`;
 
         // Envoyer le message
