@@ -12,6 +12,7 @@ import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
 import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordAIConversation, recordEmojisUsed, recordMentionReceived, recordMessageSent, recordReactionAdded, recordReplyReceived} from "./services/userStatsService";
 import {addXP, XP_REWARDS} from "./services/xpSystem";
+import {handleCounterMessage} from "./services/counterService";
 
 const logger = createLogger("WatchChannel");
 
@@ -153,6 +154,34 @@ export function registerWatchedChannelResponder(client: Client) {
         try {
             // Ne plus ignorer complètement les bots - ils peuvent aussi gagner de l'XP
             // Mais on évite les réponses automatiques du bot lui-même pour éviter les boucles
+
+            // Vérifier si c'est le salon compteur
+            const COUNTER_CHANNEL_ID = EnvConfig.COUNTER_CHANNEL_ID;
+            if (COUNTER_CHANNEL_ID && message.channelId === COUNTER_CHANNEL_ID && !message.author.bot) {
+                // Gérer le message du compteur (validera et supprimera si invalide)
+                const isValid = await handleCounterMessage(message);
+
+                // Si le message est valide, enregistrer les stats et donner de l'XP
+                if (isValid) {
+                    recordMessageSent(message.author.id, message.author.username);
+                    await addXP(
+                        message.author.id,
+                        message.author.username,
+                        XP_REWARDS.compteurContribution,
+                        message.channel as TextChannel,
+                        false
+                    );
+                }
+
+                // Ne pas continuer le traitement normal pour les messages du compteur
+                // Pas de mémoire, pas de réponse aux mentions, rien
+                return;
+            }
+
+            // Si c'est un bot qui essaie de mentionner Netricsa dans le compteur, ignorer aussi
+            if (COUNTER_CHANNEL_ID && message.channelId === COUNTER_CHANNEL_ID) {
+                return;
+            }
 
             // Enregistrer le message envoyé dans les statistiques
             recordMessageSent(message.author.id, message.author.username);

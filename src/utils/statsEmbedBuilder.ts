@@ -74,6 +74,7 @@ export function createDiscordStatsEmbed(targetUser: User): EmbedBuilder {
         description += `💬 **Replies reçues :** ${userStats.discord.repliesRecues}\n`;
         description += `🎤 **Temps en vocal :** ${formatVoiceTime(userStats.discord.tempsVocalMinutes)}\n`;
 
+
         // Afficher l'emoji le plus utilisé
         const mostUsedEmoji = getMostUsedEmoji(targetUser.id);
         if (mostUsedEmoji) {
@@ -140,6 +141,7 @@ export function createNetricsaStatsEmbed(targetUser: User): EmbedBuilder {
 export function createGameStatsEmbed(targetUser: User): EmbedBuilder {
     const isBot = targetUser.bot;
     const gameStats = isBot ? getPlayerStats("NETRICSA_BOT") : getPlayerStats(targetUser.id);
+    const userStats = getUserStats(targetUser.id);
 
     let description = getLevelText(targetUser.id);
 
@@ -159,10 +161,13 @@ export function createGameStatsEmbed(targetUser: User): EmbedBuilder {
             const winRate = totalGames > 0
                 ? ((gameStats.global.wins / totalGames) * 100).toFixed(1)
                 : "0";
-            description += `📊 **Taux de victoire :** ${winRate}%\n`;
-            description += `🔥 **Série actuelle :** ${gameStats.global.currentStreak}\n`;
-            description += `⭐ **Meilleure série :** ${gameStats.global.highestStreak}`;
+            description += `📊 **Taux de victoire :** ${winRate}%`;
         }
+    }
+
+    // Ajouter les contributions au compteur
+    if (userStats && userStats.discord.compteurContributions && userStats.discord.compteurContributions > 0) {
+        description += `\n\n🔢 **Compteur :** ${userStats.discord.compteurContributions} contributions`;
     }
 
     return new EmbedBuilder()
@@ -354,13 +359,6 @@ export function createDetailedGameStatsEmbed(targetUser: User, gameType: string)
             description += `💀 **Défaites :** ${globalStats.losses}\n`;
             if (globalStats.draws > 0) {
                 description += `🤝 **Égalités :** ${globalStats.draws}\n`;
-            }
-            description += `\n`;
-            if (globalStats.currentStreak > 0) {
-                description += `🔥 **Série actuelle :** ${globalStats.currentStreak}\n`;
-            }
-            if (globalStats.highestStreak > 0) {
-                description += `⭐ **Meilleure série :** ${globalStats.highestStreak}\n`;
             }
 
             const winRate = ((globalStats.wins / totalGames) * 100).toFixed(1);

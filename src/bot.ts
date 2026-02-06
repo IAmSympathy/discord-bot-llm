@@ -16,6 +16,7 @@ import {setLowPowerStatus, setNormalStatus} from "./services/statusService";
 import {initializeMemeScheduler} from "./services/memeScheduler";
 import {initializeBirthdayService} from "./services/birthdayService";
 import {initializeYearlyRewindService} from "./services/yearlyRewindService";
+import {initializeCounter} from "./services/counterService";
 import {initializeActivityMonitor} from "./services/activityMonitor";
 import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
@@ -138,7 +139,20 @@ client.once(Events.ClientReady, async () => {
     // Initialiser le service de rewind annuel
     initializeYearlyRewindService(client);
 
-    // Initialiser le monitoring d'activité pour le mode automatique Low Power
+    // Initialiser le compteur
+    const COUNTER_CHANNEL_ID = EnvConfig.COUNTER_CHANNEL_ID;
+    if (COUNTER_CHANNEL_ID) {
+        try {
+            const counterChannel = await client.channels.fetch(COUNTER_CHANNEL_ID);
+            if (counterChannel && counterChannel.isTextBased()) {
+                await initializeCounter(counterChannel as any);
+            }
+        } catch (error) {
+            logger.error("Error initializing counter:", error);
+        }
+    }
+
+    // Initialiser le moniteur d'activité vocale
     initializeActivityMonitor(client);
 });
 

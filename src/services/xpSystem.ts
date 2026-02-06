@@ -15,6 +15,7 @@ const XP_FILE = path.join(DATA_DIR, "user_xp.json");
 export const XP_REWARDS = {
     // Stats Discord
     messageEnvoye: 5,
+    compteurContribution: 1,
     reactionAjoutee: 1,
     reactionRecue: 2,
     commandeUtilisee: 0,
@@ -201,6 +202,11 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
             return;
         }
 
+        // Vérifier si on est dans le salon compteur
+        const EnvConfig = await import("../utils/envConfig").then(m => m.EnvConfig);
+        const COUNTER_CHANNEL_ID = EnvConfig.COUNTER_CHANNEL_ID;
+        const isCounterChannel = COUNTER_CHANNEL_ID && channel.id === COUNTER_CHANNEL_ID;
+
         // Mettre à jour les rôles de niveau
         let roleChangeInfo = "";
         const roleResult = await updateUserLevelRoles(guild, userId, newLevel);
@@ -237,15 +243,38 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
             .setDescription(`Félicitations <@${userId}> !\n\nTu viens d'atteindre le **niveau ${newLevel}** ! ⭐${roleChangeInfo}${nextRoleInfo}`)
             .setTimestamp();
 
-        await channel.send({
-            content: `||<@${userId}>||`,
-            embeds: [embed],
-            allowedMentions: {
-                users: [userId]
-            }
-        });
+        // Dans le salon compteur, envoyer un message éphémère qui se supprime après 10 secondes
+        if (isCounterChannel) {
+            const msg = await channel.send({
+                content: `||<@${userId}>||`,
+                embeds: [embed],
+                allowedMentions: {
+                    users: [userId]
+                }
+            });
 
-        logger.info(`Level up message sent for ${username} (Level ${newLevel}) in ${channel.name || 'channel'}`);
+            // Supprimer le message après 10 secondes
+            setTimeout(async () => {
+                try {
+                    await msg.delete();
+                } catch (error) {
+                    // Ignore si le message est déjà supprimé
+                }
+            }, 10000);
+
+            logger.info(`Level up message sent (ephemeral) for ${username} (Level ${newLevel}) in counter channel`);
+        } else {
+            // Message normal dans les autres salons
+            await channel.send({
+                content: `||<@${userId}>||`,
+                embeds: [embed],
+                allowedMentions: {
+                    users: [userId]
+                }
+            });
+
+            logger.info(`Level up message sent for ${username} (Level ${newLevel}) in ${channel.name || 'channel'}`);
+        }
     } catch (error) {
         logger.error(`Error sending level up message for ${username}:`, error);
     }

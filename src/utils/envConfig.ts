@@ -46,6 +46,10 @@ export class EnvConfig {
         return process.env.ANNOUNCEMENTS_CHANNEL_ID;
     }
 
+    static get COUNTER_CHANNEL_ID(): string | undefined {
+        return process.env.COUNTER_CHANNEL_ID;
+    }
+
     static get CITATIONS_THREAD_ID(): string | undefined {
         return process.env.CITATIONS_THREAD_ID;
     }

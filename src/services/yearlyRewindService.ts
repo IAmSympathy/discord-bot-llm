@@ -369,7 +369,32 @@ function generateFunAwards(client: Client, year: string): RewindAward[] {
             title: "Le XP farmer",
             userId: mostProgressive.userId,
             username: mostProgressive.username,
-            value: `${mostProgressive.xpGained.toLocaleString()} XP gagnés`
+            value: `${mostProgressive.xpGained.toLocaleString()} XP gagnés (sigma grindset)`
+        });
+    }
+
+    // 🔢 Le mathématicien (plus de contributions au compteur)
+    let maxCounterContributions = 0;
+    let topCounter: { userId: string; username: string; contributions: number } | null = null;
+
+    for (const userStat of userStats) {
+        if (userStat.discord.compteurContributions && userStat.discord.compteurContributions > maxCounterContributions) {
+            maxCounterContributions = userStat.discord.compteurContributions;
+            topCounter = {
+                userId: userStat.userId,
+                username: userStat.username,
+                contributions: userStat.discord.compteurContributions
+            };
+        }
+    }
+
+    if (topCounter && topCounter.contributions > 0) {
+        awards.push({
+            emoji: "🔢",
+            title: "Le mathématicien",
+            userId: topCounter.userId,
+            username: topCounter.username,
+            value: `${topCounter.contributions} contributions au compteur (1+1=2 ez)`
         });
     }
 
@@ -437,9 +462,12 @@ export async function publishYearlyRewind(client: Client): Promise<void> {
         // Ajouter les awards par catégories
         if (awards.length > 0) {
             // Séparer les awards par catégorie
+            // Discord: no-life, moulin, emoji spammer, bot wannabe, sans-abri (5)
+            // Netricsa: Picasso, ChatGPT addict, XP farmer (3)
+            // Jeux: tryhard, inarrêtable, RNG Jesus, gooner absolu, mathématicien (5)
             const discordAwards = awards.slice(0, 5);
             const netricsaAwards = awards.slice(5, 8);
-            const gameAwards = awards.slice(8);
+            const gameAwards = awards.slice(8); // Inclut maintenant le mathématicien
 
             // Awards Discord
             if (discordAwards.length > 0) {

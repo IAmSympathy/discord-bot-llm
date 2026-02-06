@@ -1,0 +1,373 @@
+import * as fs from "fs";
+import * as path from "path";
+import {createLogger} from "../utils/logger";
+import {DATA_DIR} from "../utils/constants";
+import {Message, TextChannel} from "discord.js";
+import {getUserStats} from "./userStatsService";
+
+const logger = createLogger("CounterService");
+const COUNTER_STATE_FILE = path.join(DATA_DIR, "counter_state.json");
+
+interface CounterState {
+    currentNumber: number;
+    lastUserId: string | null;
+    highestReached: number;
+    contributions: { [userId: string]: { username: string; count: number } };
+}
+
+/**
+ * Charge l'état du compteur
+ */
+function loadCounterState(): CounterState {
+    try {
+        if (fs.existsSync(COUNTER_STATE_FILE)) {
+            const data = fs.readFileSync(COUNTER_STATE_FILE, "utf-8");
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        logger.error("Error loading counter state:", error);
+    }
+
+    return {
+        currentNumber: 0,
+        lastUserId: null,
+        highestReached: 0,
+        contributions: {}
+    };
+}
+
+/**
+ * Sauvegarde l'état du compteur
+ */
+function saveCounterState(state: CounterState): void {
+    try {
+        const dir = path.dirname(COUNTER_STATE_FILE);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, {recursive: true});
+        }
+        fs.writeFileSync(COUNTER_STATE_FILE, JSON.stringify(state, null, 2));
+    } catch (error) {
+        logger.error("Error saving counter state:", error);
+    }
+}
+
+/**
+ * Vérifie et traite un message dans le salon compteur
+ * @returns true si le message est valide, false sinon
+ */
+export async function handleCounterMessage(message: Message): Promise<boolean> {
+    const state = loadCounterState();
+    const content = message.content.trim();
+
+    // Vérifier que le message est un nombre
+    const number = parseInt(content);
+    if (isNaN(number) || content !== number.toString()) {
+        logger.info(`Invalid counter input from ${message.author.username}: "${content}"`);
+        await message.delete().catch(() => {
+        });
+        return false;
+    }
+
+    // Vérifier que ce n'est pas le même utilisateur que le précédent
+    if (state.lastUserId === message.author.id) {
+        logger.info(`User ${message.author.username} tried to count twice in a row`);
+        await message.delete().catch(() => {
+        });
+        return false;
+    }
+
+    // Vérifier que c'est le bon nombre
+    const expectedNumber = state.currentNumber + 1;
+    if (number !== expectedNumber) {
+        logger.info(`Wrong number from ${message.author.username}: expected ${expectedNumber}, got ${number}`);
+        await message.delete().catch(() => {
+        });
+
+        // Si c'était un reset intentionnel à 1 et que le compteur était > 0, on reset
+        if (number === 1 && state.currentNumber > 0) {
+            await resetCounter(message.channel as TextChannel, message.author.username);
+        }
+
+        return false;
+    }
+
+    // Nombre valide ! Mettre à jour l'état
+    state.currentNumber = number;
+    state.lastUserId = message.author.id;
+
+    // Mettre à jour le record
+    if (number > state.highestReached) {
+        state.highestReached = number;
+        logger.info(`🎉 New record reached: ${number}`);
+
+        // Réagir au message pour célébrer le nouveau record
+        if (number % 100 === 0) {
+            await message.react("🎉").catch(() => {
+            });
+            await message.react("💯").catch(() => {
+            });
+        } else if (number % 50 === 0) {
+            await message.react("🎊").catch(() => {
+            });
+        } else if (number % 10 === 0) {
+            await message.react("✨").catch(() => {
+            });
+        }
+    }
+
+    // Enregistrer la contribution
+    if (!state.contributions[message.author.id]) {
+        state.contributions[message.author.id] = {
+            username: message.author.username,
+            count: 0
+        };
+    }
+    state.contributions[message.author.id].count++;
+    state.contributions[message.author.id].username = message.author.username;
+
+    saveCounterState(state);
+
+    // Synchroniser avec les stats utilisateur
+    syncUserStatsWithCounter(message.author.id);
+
+    logger.info(`Counter: ${message.author.username} counted ${number}`);
+
+    return true;
+}
+
+/**
+ * Reset le compteur
+ */
+async function resetCounter(channel: TextChannel, username: string): Promise<void> {
+    const state = loadCounterState();
+    const oldNumber = state.currentNumber;
+
+    state.currentNumber = 0;
+    state.lastUserId = null;
+    saveCounterState(state);
+
+    logger.info(`Counter reset by ${username} from ${oldNumber} to 0`);
+
+    await channel.send({
+        content: `❌ **Compteur réinitialisé !**\n` +
+            `Le compteur était à **${oldNumber}**.\n` +
+            `Record : **${state.highestReached}**\n` +
+            `Recommencez à **1** !`
+    });
+}
+
+/**
+ * Récupère l'état actuel du compteur
+ */
+export function getCounterState(): CounterState {
+    return loadCounterState();
+}
+
+/**
+ * Récupère le nombre de contributions d'un utilisateur au compteur
+ */
+export function getUserCounterContributions(userId: string): number {
+    const state = loadCounterState();
+    return state.contributions[userId]?.count || 0;
+}
+
+/**
+ * Récupère le top contributeurs du compteur
+ */
+export function getTopCounterContributors(limit: number = 10): Array<{ userId: string; username: string; count: number }> {
+    const state = loadCounterState();
+
+    return Object.entries(state.contributions)
+        .map(([userId, data]) => ({
+            userId,
+            username: data.username,
+            count: data.count
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, limit);
+}
+
+/**
+ * Force reset du compteur (commande admin)
+ */
+export async function forceResetCounter(channel: TextChannel): Promise<void> {
+    const state = loadCounterState();
+    const oldNumber = state.currentNumber;
+
+    state.currentNumber = 0;
+    state.lastUserId = null;
+    saveCounterState(state);
+
+    logger.info(`Counter force reset from ${oldNumber} to 0`);
+
+    await channel.send({
+        content: `🔄 **Compteur réinitialisé par un administrateur !**\n` +
+            `Le compteur était à **${oldNumber}**.\n` +
+            `Record : **${state.highestReached}**\n` +
+            `Recommencez à **1** !`
+    });
+}
+
+/**
+ * Initialise le compteur avec un message explicatif de Netricsa
+ */
+export async function initializeCounter(channel: TextChannel): Promise<void> {
+    const state = loadCounterState();
+
+    // D'abord, valider et nettoyer les messages existants
+    await validateAndCleanChannel(channel);
+
+    // Si le compteur est déjà initialisé, ne pas renvoyer le message d'intro
+    if (state.currentNumber !== 0 || state.lastUserId !== null) {
+        logger.info("Counter already initialized, skipping intro message");
+        return;
+    }
+
+    // Message d'explication des règles
+    await channel.send({
+        embeds: [{
+            color: 0x5865F2,
+            title: "🔢 Bienvenue au Compteur !",
+            description:
+                "**Règles du jeu :**\n" +
+                "╭ 📝 Comptez en séquence (1, 2, 3, 4...)\n" +
+                "├ 👥 Pas deux fois de suite le même utilisateur\n" +
+                "├ ❌ Messages invalides supprimés automatiquement\n" +
+                "├ ✨ Réactions spéciales aux paliers (10, 50, 100)\n" +
+                "╰ 🏆 Vos contributions sont trackées dans vos stats !\n\n" +
+                "**Bonne chance et amusez-vous ! 🎉**",
+            footer: {
+                text: "Le compteur commence maintenant !"
+            }
+        }]
+    });
+
+    // Envoyer le message "0" pour initialiser
+    const zeroMessage = await channel.send("0");
+
+    // Marquer comme initialisé (Netricsa a envoyé 0)
+    state.currentNumber = 0;
+    state.lastUserId = zeroMessage.author.id;
+    saveCounterState(state);
+
+    logger.info("Counter initialized with Netricsa's message");
+}
+
+/**
+ * Valide et nettoie le salon compteur en vérifiant tous les messages récents
+ */
+async function validateAndCleanChannel(channel: TextChannel): Promise<void> {
+    try {
+        logger.info("Validating and cleaning counter channel...");
+
+        const state = loadCounterState();
+        let expectedNumber = state.currentNumber + 1;
+        let lastValidUserId = state.lastUserId;
+
+        // Récupérer les 100 derniers messages
+        const messages = await channel.messages.fetch({limit: 100});
+
+        // Trier par date (du plus ancien au plus récent)
+        const sortedMessages = Array.from(messages.values()).reverse();
+
+        let messagesToDelete: string[] = [];
+        let validMessagesFound = 0;
+
+        // Trouver le dernier message valide pour déterminer où on en est
+        for (const msg of sortedMessages) {
+            // Ignorer les messages du bot (embeds, etc.)
+            if (msg.author.bot && !msg.content.match(/^\d+$/)) {
+                continue;
+            }
+
+            const content = msg.content.trim();
+            const number = parseInt(content);
+
+            // Si c'est un nombre valide
+            if (!isNaN(number) && content === number.toString()) {
+                // Vérifier si c'est dans la séquence
+                if (number === expectedNumber) {
+                    // Vérifier que ce n'est pas le même utilisateur
+                    if (lastValidUserId === msg.author.id) {
+                        messagesToDelete.push(msg.id);
+                    } else {
+                        // Message valide !
+                        expectedNumber = number + 1;
+                        lastValidUserId = msg.author.id;
+                        validMessagesFound++;
+                    }
+                } else {
+                    // Mauvais nombre dans la séquence
+                    messagesToDelete.push(msg.id);
+                }
+            } else {
+                // Pas un nombre valide
+                messagesToDelete.push(msg.id);
+            }
+        }
+
+        // Supprimer les messages invalides (max 10 à la fois pour éviter le rate limit)
+        if (messagesToDelete.length > 0) {
+            logger.info(`Found ${messagesToDelete.length} invalid messages to delete`);
+
+            for (let i = 0; i < messagesToDelete.length && i < 10; i++) {
+                const messageId = messagesToDelete[i];
+                try {
+                    const msgToDelete = await channel.messages.fetch(messageId);
+                    await msgToDelete.delete();
+                    await new Promise(resolve => setTimeout(resolve, 500)); // Éviter le rate limit
+                } catch (error) {
+                    logger.error(`Error deleting message ${messageId}:`, error);
+                }
+            }
+
+            if (messagesToDelete.length > 10) {
+                logger.warn(`Only deleted 10 messages out of ${messagesToDelete.length} to avoid rate limit`);
+            }
+        }
+
+        // Mettre à jour l'état si nécessaire
+        if (validMessagesFound > 0 && expectedNumber - 1 !== state.currentNumber) {
+            state.currentNumber = expectedNumber - 1;
+            state.lastUserId = lastValidUserId;
+            saveCounterState(state);
+            logger.info(`Counter state updated to ${state.currentNumber} after validation`);
+        }
+
+        logger.info(`Counter channel validated. Current number: ${state.currentNumber}`);
+
+    } catch (error) {
+        logger.error("Error validating counter channel:", error);
+    }
+}
+
+/**
+ * Synchronise les contributions du compteur avec les stats utilisateur
+ */
+function syncUserStatsWithCounter(userId: string): void {
+    const state = loadCounterState();
+    const contribution = state.contributions[userId];
+
+    if (!contribution) return;
+
+    // Mettre à jour les stats utilisateur
+    const userStats = getUserStats(userId);
+    if (userStats && userStats.discord.compteurContributions !== contribution.count) {
+        userStats.discord.compteurContributions = contribution.count;
+
+        // Sauvegarder via le module userStatsService
+        const fs = require("fs");
+        const path = require("path");
+        const DATA_DIR = require("../utils/constants").DATA_DIR;
+        const STATS_FILE = path.join(DATA_DIR, "user_stats.json");
+
+        try {
+            const allStats = JSON.parse(fs.readFileSync(STATS_FILE, "utf-8"));
+            allStats[userId] = userStats;
+            fs.writeFileSync(STATS_FILE, JSON.stringify(allStats, null, 2));
+        } catch (error) {
+            logger.error("Error syncing counter contributions to user stats:", error);
+        }
+    }
+}
+
