@@ -9,7 +9,8 @@ import {MODERATOR_ROLES, OWNER_ROLES} from "./constants";
 const OWNER_COMMANDS = [
     'lowpower',
     'auto-lowpower',
-    'blacklist-game'
+    'blacklist-game',
+    'test-rewind'
 ];
 
 /**

@@ -4,6 +4,7 @@ import {createLogger} from "../utils/logger";
 import {EmbedBuilder, TextChannel, VoiceChannel} from "discord.js";
 import {getNextLevelRole, updateUserLevelRoles} from "./levelRoleService";
 import {DATA_DIR} from "../utils/constants";
+import {recordYearlyXP} from "./yearlyXPService";
 
 const logger = createLogger("XPSystem");
 const XP_FILE = path.join(DATA_DIR, "user_xp.json");
@@ -155,6 +156,9 @@ export async function addXP(
     const levelUp = newLevel > oldLevel;
 
     saveXP(xpData);
+
+    // Enregistrer l'XP gagné pour l'année en cours
+    recordYearlyXP(userId, username, amount);
 
     if (levelUp) {
         logger.info(`${username} level up! ${oldLevel} → ${newLevel} (${xpData[userId].totalXP} XP)`);

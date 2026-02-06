@@ -2,12 +2,13 @@ import * as fs from "fs";
 import * as path from "path";
 import {createLogger} from "../utils/logger";
 import {DATA_DIR} from "../utils/constants";
+import {recordYearlyAIConversation, recordYearlyCommandUsed, recordYearlyImageGenerated, recordYearlyImageReimagined, recordYearlyImageUpscaled, recordYearlyMemeSearched, recordYearlyMentionReceived, recordYearlyMessageSent, recordYearlyNetricsaWebSearch, recordYearlyPromptCreated, recordYearlyReactionAdded, recordYearlyReactionReceived, recordYearlyReplyReceived, recordYearlyVoiceTime} from "./yearlyStatsService";
 
 const logger = createLogger("UserStats");
 const STATS_FILE = path.join(DATA_DIR, "user_stats.json");
 
 // ID et nom de Netricsa (le bot)
-export const NETRICSA_USER_ID = "NETRICSA_BOT";
+export const NETRICSA_USER_ID = "1462959115528835092";
 export const NETRICSA_USERNAME = "Netricsa";
 
 /**
@@ -21,6 +22,7 @@ export interface DiscordStats {
     mentionsRecues: number;
     repliesRecues: number;
     tempsVocalMinutes: number; // Temps passé en vocal en minutes
+    emojisUtilises?: { [emoji: string]: number }; // Compteur d'emojis utilisés
 }
 
 /**
@@ -101,7 +103,8 @@ function initUserStats(userId: string, username: string): UserStats {
             commandesUtilisees: 0,
             mentionsRecues: 0,
             repliesRecues: 0,
-            tempsVocalMinutes: 0
+            tempsVocalMinutes: 0,
+            emojisUtilises: {}
         },
         netricsa: {
             imagesGenerees: 0,
@@ -169,6 +172,9 @@ export function recordMessageSent(userId: string, username: string): void {
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
 
+    // Enregistrer aussi dans les stats annuelles
+    recordYearlyMessageSent(userId, username);
+
     // Note: XP est ajouté avec notification dans watchChannel.ts
 }
 
@@ -185,6 +191,9 @@ export function recordReactionAdded(userId: string, username: string): void {
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
 
+    // Enregistrer aussi dans les stats annuelles
+    recordYearlyReactionAdded(userId, username);
+
     // Note: XP avec notification est ajouté dans bot.ts lors de l'événement reactionAdd
 }
 
@@ -200,8 +209,7 @@ export function recordReactionReceived(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-
-    // Note: XP avec notification est ajouté dans bot.ts lors de l'événement reactionAdd
+    recordYearlyReactionReceived(userId, username);
 }
 
 /**
@@ -216,8 +224,7 @@ export function recordCommandUsed(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-
-    // Note: XP avec notification est ajouté dans les handlers de commandes
+    recordYearlyCommandUsed(userId, username);
 }
 
 /**
@@ -232,8 +239,7 @@ export function recordMentionReceived(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-
-    // Note: XP avec notification est ajouté dans watchChannel.ts
+    recordYearlyMentionReceived(userId, username);
 }
 
 /**
@@ -248,8 +254,7 @@ export function recordReplyReceived(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-
-    // Note: XP avec notification est ajouté dans watchChannel.ts
+    recordYearlyReplyReceived(userId, username);
 }
 
 /**
@@ -264,8 +269,7 @@ export function recordVoiceTime(userId: string, username: string, minutes: numbe
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-
-    // Note: XP avec notification est ajouté en temps réel dans voiceTracker.ts
+    recordYearlyVoiceTime(userId, username, minutes);
 }
 
 // === FONCTIONS D'INCRÉMENTATION NETRICSA ===
@@ -282,8 +286,7 @@ export function recordImageGenerated(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-
-    // Note: XP avec notification est ajouté dans imagine.ts après la génération
+    recordYearlyImageGenerated(userId, username);
 }
 
 /**
@@ -298,8 +301,7 @@ export function recordImageReimagined(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-
-    // Note: XP avec notification est ajouté dans reimagine.ts après la génération
+    recordYearlyImageReimagined(userId, username);
 }
 
 /**
@@ -314,8 +316,7 @@ export function recordImageUpscaled(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-
-    // Note: XP avec notification est ajouté dans upscale.ts après l'upscaling
+    recordYearlyImageUpscaled(userId, username);
 }
 
 /**
@@ -330,8 +331,7 @@ export function recordAIConversation(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-
-    // Note: XP avec notification est ajouté dans queue.ts après la génération de la réponse
+    recordYearlyAIConversation(userId, username);
 }
 
 /**
@@ -346,8 +346,7 @@ export function recordMemeSearched(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-
-    // Note: XP avec notification est ajouté dans findmeme.ts après la recherche
+    recordYearlyMemeSearched(userId, username);
 }
 
 /**
@@ -362,8 +361,7 @@ export function recordPromptCreated(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-
-    // Note: XP avec notification est ajouté dans prompt-maker.ts après la création
+    recordYearlyPromptCreated(userId, username);
 }
 
 /**
@@ -383,6 +381,140 @@ export function recordNetricsaWebSearch(): void {
     stats[NETRICSA_USER_ID].netricsa.recherchesWebNetricsa!++;
     stats[NETRICSA_USER_ID].lastUpdate = Date.now();
     saveStats(stats);
+    recordYearlyNetricsaWebSearch();
+}
+
+/**
+ * Enregistre les emojis utilisés dans un message
+ */
+export function recordEmojisUsed(userId: string, username: string, messageContent: string): void {
+    const stats = loadStats();
+    if (!stats[userId]) {
+        stats[userId] = initUserStats(userId, username);
+    }
+
+    // Initialiser le champ s'il n'existe pas
+    if (!stats[userId].discord.emojisUtilises) {
+        stats[userId].discord.emojisUtilises = {};
+    }
+
+    // Regex pour extraire les emojis Unicode et Discord personnalisés
+    const emojiRegex = /(\p{Emoji_Presentation}|\p{Emoji}\uFE0F|<a?:\w+:\d+>)/gu;
+    const emojis = messageContent.match(emojiRegex);
+
+    if (emojis && emojis.length > 0) {
+        for (const emoji of emojis) {
+            // Pour les emojis Discord personnalisés, on garde juste le nom
+            let cleanEmoji = emoji;
+            const customEmojiMatch = emoji.match(/<a?:(\w+):\d+>/);
+            if (customEmojiMatch) {
+                cleanEmoji = `:${customEmojiMatch[1]}:`;
+            }
+
+            if (!stats[userId].discord.emojisUtilises![cleanEmoji]) {
+                stats[userId].discord.emojisUtilises![cleanEmoji] = 0;
+            }
+            stats[userId].discord.emojisUtilises![cleanEmoji]++;
+        }
+
+        stats[userId].username = username;
+        stats[userId].lastUpdate = Date.now();
+        saveStats(stats);
+    }
+}
+
+/**
+ * Récupère l'emoji le plus utilisé par un utilisateur
+ */
+export function getMostUsedEmoji(userId: string): { emoji: string; count: number } | null {
+    const stats = loadStats();
+    const userStat = stats[userId];
+
+    if (!userStat || !userStat.discord.emojisUtilises || Object.keys(userStat.discord.emojisUtilises).length === 0) {
+        return null;
+    }
+
+    let mostUsedEmoji = "";
+    let maxCount = 0;
+
+    for (const [emoji, count] of Object.entries(userStat.discord.emojisUtilises)) {
+        if (count > maxCount) {
+            maxCount = count;
+            mostUsedEmoji = emoji;
+        }
+    }
+
+    return mostUsedEmoji ? {emoji: mostUsedEmoji, count: maxCount} : null;
+}
+
+/**
+ * Récupère l'emoji le plus utilisé sur tout le serveur
+ */
+export function getServerMostUsedEmoji(): { emoji: string; count: number } | null {
+    const stats = loadStats();
+    const emojiCounts: { [emoji: string]: number } = {};
+
+    // Agréger tous les emojis de tous les utilisateurs
+    for (const userStat of Object.values(stats)) {
+        if (userStat.discord.emojisUtilises) {
+            for (const [emoji, count] of Object.entries(userStat.discord.emojisUtilises)) {
+                if (!emojiCounts[emoji]) {
+                    emojiCounts[emoji] = 0;
+                }
+                emojiCounts[emoji] += count;
+            }
+        }
+    }
+
+    if (Object.keys(emojiCounts).length === 0) {
+        return null;
+    }
+
+    let mostUsedEmoji = "";
+    let maxCount = 0;
+
+    for (const [emoji, count] of Object.entries(emojiCounts)) {
+        if (count > maxCount) {
+            maxCount = count;
+            mostUsedEmoji = emoji;
+        }
+    }
+
+    return mostUsedEmoji ? {emoji: mostUsedEmoji, count: maxCount} : null;
+}
+
+/**
+ * Sauvegarde les stats de l'année dans un fichier backup
+ */
+export function backupYearlyStats(year: string): void {
+    try {
+        const stats = loadStats();
+        const backupFile = path.join(DATA_DIR, `user_stats_${year}.json`);
+        fs.writeFileSync(backupFile, JSON.stringify(stats, null, 2));
+        logger.info(`✅ Stats backed up to user_stats_${year}.json`);
+    } catch (error) {
+        logger.error("Error backing up yearly stats:", error);
+    }
+}
+
+/**
+ * Réinitialise toutes les stats pour une nouvelle année
+ */
+export function resetAllStats(): void {
+    try {
+        const stats = loadStats();
+
+        // Réinitialiser chaque utilisateur en gardant les IDs et usernames
+        for (const userId in stats) {
+            const username = stats[userId].username;
+            stats[userId] = initUserStats(userId, username);
+        }
+
+        saveStats(stats);
+        logger.info(`✅ All stats reset for new year`);
+    } catch (error) {
+        logger.error("Error resetting stats:", error);
+    }
 }
 
 /**
@@ -406,7 +538,7 @@ export interface ServerStats {
     totalConversations: number;
 }
 
-export function getServerStats(): ServerStats {
+export function getServerStats(excludeBots: boolean = false): ServerStats {
     const allStats = loadStats();
     const stats: ServerStats = {
         totalUsers: 0,
@@ -420,6 +552,11 @@ export function getServerStats(): ServerStats {
     };
 
     for (const userStat of Object.values(allStats)) {
+        // Si excludeBots est true, ignorer Netricsa et les autres bots
+        if (excludeBots && (userStat.userId === NETRICSA_USER_ID || userStat.userId.startsWith('bot_'))) {
+            continue;
+        }
+
         stats.totalUsers++;
         stats.totalMessages += userStat.discord.messagesEnvoyes;
         stats.totalReactions += userStat.discord.reactionsAjoutees;

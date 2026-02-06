@@ -10,7 +10,7 @@ import {isLowPowerMode} from "./services/botStateService";
 import {appendDMTurn, getDMRecentTurns} from "./services/dmMemoryService";
 import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
-import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordAIConversation, recordMentionReceived, recordMessageSent, recordReactionAdded, recordReplyReceived} from "./services/userStatsService";
+import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordAIConversation, recordEmojisUsed, recordMentionReceived, recordMessageSent, recordReactionAdded, recordReplyReceived} from "./services/userStatsService";
 import {addXP, XP_REWARDS} from "./services/xpSystem";
 
 const logger = createLogger("WatchChannel");
@@ -156,6 +156,9 @@ export function registerWatchedChannelResponder(client: Client) {
 
             // Enregistrer le message envoyé dans les statistiques
             recordMessageSent(message.author.id, message.author.username);
+
+            // Enregistrer les emojis utilisés dans le message
+            recordEmojisUsed(message.author.id, message.author.username, message.content);
 
             // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
             await addXP(

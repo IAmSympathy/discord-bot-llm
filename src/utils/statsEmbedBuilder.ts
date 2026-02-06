@@ -1,5 +1,5 @@
 import {EmbedBuilder, User} from "discord.js";
-import {getServerStats, getUserStats} from "../services/userStatsService";
+import {getMostUsedEmoji, getServerStats, getUserStats} from "../services/userStatsService";
 import {getUserXP, getXPForNextLevel} from "../services/xpSystem";
 import {getPlayerStats} from "../games/common/globalStats";
 import {UserProfileService} from "../services/userProfileService";
@@ -72,7 +72,13 @@ export function createDiscordStatsEmbed(targetUser: User): EmbedBuilder {
         description += `⚡ **Commandes utilisées :** ${userStats.discord.commandesUtilisees}\n`;
         description += `📢 **Mentions reçues :** ${userStats.discord.mentionsRecues}\n`;
         description += `💬 **Replies reçues :** ${userStats.discord.repliesRecues}\n`;
-        description += `🎤 **Temps en vocal :** ${formatVoiceTime(userStats.discord.tempsVocalMinutes)}`;
+        description += `🎤 **Temps en vocal :** ${formatVoiceTime(userStats.discord.tempsVocalMinutes)}\n`;
+
+        // Afficher l'emoji le plus utilisé
+        const mostUsedEmoji = getMostUsedEmoji(targetUser.id);
+        if (mostUsedEmoji) {
+            description += `😄 **Emoji préféré :** ${mostUsedEmoji.emoji} (×${mostUsedEmoji.count})`;
+        }
     }
 
     return new EmbedBuilder()

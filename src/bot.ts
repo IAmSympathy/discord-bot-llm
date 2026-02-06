@@ -15,6 +15,7 @@ import {isLowPowerMode} from "./services/botStateService";
 import {setLowPowerStatus, setNormalStatus} from "./services/statusService";
 import {initializeMemeScheduler} from "./services/memeScheduler";
 import {initializeBirthdayService} from "./services/birthdayService";
+import {initializeYearlyRewindService} from "./services/yearlyRewindService";
 import {initializeActivityMonitor} from "./services/activityMonitor";
 import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
@@ -133,6 +134,9 @@ client.once(Events.ClientReady, async () => {
 
     // Initialiser le service de vérification des anniversaires
     initializeBirthdayService(client);
+
+    // Initialiser le service de rewind annuel
+    initializeYearlyRewindService(client);
 
     // Initialiser le monitoring d'activité pour le mode automatique Low Power
     initializeActivityMonitor(client);
