@@ -1,7 +1,6 @@
-import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, MessageFlags, SlashCommandBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, User} from "discord.js";
+import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, MessageFlags, SlashCommandBuilder, User} from "discord.js";
 import {handleInteractionError} from "../../utils/interactionUtils";
-import {getPlayerStats} from "../../games/common/globalStats";
-import {createDiscordStatsEmbed, createNetricsaStatsEmbed, createProfileEmbed, createServerStatsEmbed, getLevelText, StatsCategory} from "../../utils/statsEmbedBuilder";
+import {createBackToProfileButton, createDetailedGameStatsEmbed, createDiscordStatsEmbed, createGameSelectMenu, createNetricsaStatsEmbed, createProfileEmbed, createServerStatsEmbed, createStatsNavigationButtons, StatsCategory} from "../../utils/statsEmbedBuilder";
 
 /**
  * Crée le bouton "Voir les statistiques" pour le profil
@@ -16,189 +15,7 @@ function createViewStatsButton(userId: string): ActionRowBuilder<ButtonBuilder> 
     );
 }
 
-/**
- * Crée l'embed pour les statistiques de jeux avec choix de type de jeu
- */
-function createGameStatsEmbed(targetUser: User, gameType: string): EmbedBuilder {
-    // Si c'est le bot, afficher ses vraies stats de jeux
-    const isBot = targetUser.bot;
-    const stats = isBot ? getPlayerStats("NETRICSA_BOT") : getPlayerStats(targetUser.id);
-
-    let description = "";
-    let title = isBot ? `📊 Mes Statistiques de Jeux (Netricsa)` : `📊 Statistiques de ${targetUser.displayName}`;
-
-    // Ajouter le niveau en haut (sauf pour Netricsa)
-    if (!isBot) {
-        description += getLevelText(targetUser.id);
-    }
-
-    if (gameType === "global") {
-        title += " - Jeux (Global)";
-        const globalStats = stats.global;
-        const totalGames = globalStats.wins + globalStats.losses + globalStats.draws;
-
-        if (totalGames === 0) {
-            if (isBot) {
-                description += "Aucune partie jouée pour le moment. Je suis prête à affronter les joueurs ! 🎮";
-            } else {
-                description += "Aucune partie jouée pour le moment.";
-            }
-        } else {
-            description += `**Total de parties :** ${totalGames}\n\n`;
-            description += `🏆 **Victoires :** ${globalStats.wins}\n`;
-            description += `💀 **Défaites :** ${globalStats.losses}\n`;
-            if (globalStats.draws > 0) {
-                description += `🤝 **Égalités :** ${globalStats.draws}\n`;
-            }
-            description += `\n`;
-            if (globalStats.currentStreak > 0) {
-                description += `🔥 **Série actuelle :** ${globalStats.currentStreak}\n`;
-            }
-            if (globalStats.highestStreak > 0) {
-                description += `⭐ **Meilleure série :** ${globalStats.highestStreak}\n`;
-            }
-
-            const winRate = ((globalStats.wins / totalGames) * 100).toFixed(1);
-            description += `\n📈 **Taux de victoire :** ${winRate}%`;
-
-            if (isBot) {
-                description += `\n\n✨ Voilà mes performances contre tous les joueurs !`;
-            }
-        }
-    } else {
-        const gameNames: Record<string, string> = {
-            rockpaperscissors: "Roche-Papier-Ciseaux",
-            tictactoe: "Tic-Tac-Toe",
-            hangman: "Pendu"
-        };
-
-        title += ` - Jeux (${gameNames[gameType]})`;
-        const gameStats = stats[gameType as 'rockpaperscissors' | 'tictactoe' | 'hangman'];
-        const totalGames = gameStats.wins + gameStats.losses + gameStats.draws;
-
-        if (totalGames === 0) {
-            if (isBot && gameType === "hangman") {
-                description += `Je ne joue pas au Pendu (c'est un jeu solo), mais je compte les scores ! 🎮`;
-            } else if (isBot) {
-                description += `Aucune partie de ${gameNames[gameType]} jouée pour le moment. Viens m'affronter ! 🎮`;
-            } else {
-                description += `Aucune partie de ${gameNames[gameType]} jouée pour le moment.`;
-            }
-        } else {
-            description += `**Total de parties :** ${totalGames}\n\n`;
-            description += `🏆 **Victoires :** ${gameStats.wins}\n`;
-            description += `💀 **Défaites :** ${gameStats.losses}\n`;
-            if (gameStats.draws > 0) {
-                description += `🤝 **Égalités :** ${gameStats.draws}\n`;
-            }
-            description += `\n`;
-            if (gameStats.currentStreak > 0) {
-                description += `🔥 **Série actuelle :** ${gameStats.currentStreak}\n`;
-            }
-            if (gameStats.highestStreak > 0) {
-                description += `⭐ **Meilleure série :** ${gameStats.highestStreak}\n`;
-            }
-
-            const winRate = ((gameStats.wins / totalGames) * 100).toFixed(1);
-            description += `\n📈 **Taux de victoire :** ${winRate}%`;
-
-            if (isBot) {
-                description += `\n\n✨ Mes performances à ${gameNames[gameType]} !`;
-            }
-        }
-    }
-
-    const embed = new EmbedBuilder()
-        .setColor(0x397d86)
-        .setTitle(title)
-        .setDescription(description)
-        .setThumbnail(targetUser.displayAvatarURL())
-        .setFooter({text: "Stats depuis le 5 février 2026"})
-        .setTimestamp();
-
-
-    return embed;
-}
-
-/**
- * Crée les boutons de navigation
- */
-function createNavigationButtons(currentCategory?: StatsCategory): ActionRowBuilder<ButtonBuilder> {
-    return new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder()
-            .setCustomId("stats_discord")
-            .setLabel("Discord")
-            .setEmoji("📨")
-            .setStyle(currentCategory === "discord" ? ButtonStyle.Success : ButtonStyle.Primary)
-            .setDisabled(currentCategory === "discord"),
-        new ButtonBuilder()
-            .setCustomId("stats_netricsa")
-            .setLabel("Netricsa")
-            .setEmoji("🤖")
-            .setStyle(currentCategory === "netricsa" ? ButtonStyle.Success : ButtonStyle.Primary)
-            .setDisabled(currentCategory === "netricsa"),
-        new ButtonBuilder()
-            .setCustomId("stats_jeux")
-            .setLabel("Jeux")
-            .setEmoji("🎮")
-            .setStyle(currentCategory === "jeux" ? ButtonStyle.Success : ButtonStyle.Primary)
-            .setDisabled(currentCategory === "jeux"),
-        new ButtonBuilder()
-            .setCustomId("stats_serveur")
-            .setLabel("Serveur")
-            .setEmoji("🌐")
-            .setStyle(currentCategory === "serveur" ? ButtonStyle.Success : ButtonStyle.Secondary)
-            .setDisabled(currentCategory === "serveur")
-    );
-}
-
-/**
- * Crée le bouton "Retour au profil"
- */
-function createBackToProfileButton(userId: string): ActionRowBuilder<ButtonBuilder> {
-    return new ActionRowBuilder<ButtonBuilder>().addComponents(
-        new ButtonBuilder()
-            .setCustomId(`stats_back_to_profile_${userId}`)
-            .setLabel("Retour au profil")
-            .setEmoji("◀️")
-            .setStyle(ButtonStyle.Danger)
-    );
-}
-
-/**
- * Crée le menu de sélection des jeux
- */
-function createGameSelectMenu(): ActionRowBuilder<StringSelectMenuBuilder> {
-    return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-        new StringSelectMenuBuilder()
-            .setCustomId("stats_game_select")
-            .setPlaceholder("Choisir un jeu")
-            .addOptions(
-                new StringSelectMenuOptionBuilder()
-                    .setLabel("Global")
-                    .setDescription("Statistiques globales de tous les jeux")
-                    .setValue("global")
-                    .setEmoji("🌐"),
-                new StringSelectMenuOptionBuilder()
-                    .setLabel("Roche-Papier-Ciseaux")
-                    .setDescription("Statistiques du jeu Roche-Papier-Ciseaux")
-                    .setValue("rockpaperscissors")
-                    .setEmoji("🪨"),
-                new StringSelectMenuOptionBuilder()
-                    .setLabel("Tic-Tac-Toe")
-                    .setDescription("Statistiques du jeu Tic-Tac-Toe")
-                    .setValue("tictactoe")
-                    .setEmoji("❌"),
-                new StringSelectMenuOptionBuilder()
-                    .setLabel("Pendu")
-                    .setDescription("Statistiques du jeu Pendu")
-                    .setValue("hangman")
-                    .setEmoji("🔤")
-            )
-    );
-}
-
-module.exports = {
+const statsCommand = {
     data: new SlashCommandBuilder()
         .setName("stats")
         .setDescription("Affiche tes statistiques")
@@ -217,7 +34,7 @@ module.exports = {
 
             // Créer l'embed initial (Discord)
             let embed = createDiscordStatsEmbed(targetUser);
-            let navigationButtons = createNavigationButtons(currentCategory);
+            let navigationButtons = createStatsNavigationButtons(currentCategory);
             const backToProfileButton = createBackToProfileButton(targetUser.id);
             const gameSelectMenu = createGameSelectMenu();
 
@@ -252,8 +69,8 @@ module.exports = {
 
                 if (buttonId === "stats_jeux") {
                     currentCategory = "jeux";
-                    embed = createGameStatsEmbed(targetUser, currentGameType);
-                    navigationButtons = createNavigationButtons(currentCategory);
+                    embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
+                    navigationButtons = createStatsNavigationButtons(currentCategory);
                     await buttonInteraction.update({
                         embeds: [embed],
                         components: [navigationButtons, gameSelectMenu, backToProfileButton]
@@ -261,7 +78,7 @@ module.exports = {
                 } else if (buttonId === "stats_discord") {
                     currentCategory = "discord";
                     embed = createDiscordStatsEmbed(targetUser);
-                    navigationButtons = createNavigationButtons(currentCategory);
+                    navigationButtons = createStatsNavigationButtons(currentCategory);
                     await buttonInteraction.update({
                         embeds: [embed],
                         components: [navigationButtons, backToProfileButton]
@@ -269,7 +86,7 @@ module.exports = {
                 } else if (buttonId === "stats_netricsa") {
                     currentCategory = "netricsa";
                     embed = createNetricsaStatsEmbed(targetUser);
-                    navigationButtons = createNavigationButtons(currentCategory);
+                    navigationButtons = createStatsNavigationButtons(currentCategory);
                     await buttonInteraction.update({
                         embeds: [embed],
                         components: [navigationButtons, backToProfileButton]
@@ -277,7 +94,7 @@ module.exports = {
                 } else if (buttonId === "stats_serveur") {
                     currentCategory = "serveur";
                     embed = createServerStatsEmbed(interaction.guild);
-                    navigationButtons = createNavigationButtons(currentCategory);
+                    navigationButtons = createStatsNavigationButtons(currentCategory);
                     await buttonInteraction.update({
                         embeds: [embed],
                         components: [navigationButtons, backToProfileButton]
@@ -294,7 +111,7 @@ module.exports = {
                     // Retour aux stats depuis le profil
                     currentCategory = "discord";
                     embed = createDiscordStatsEmbed(targetUser);
-                    navigationButtons = createNavigationButtons(currentCategory);
+                    navigationButtons = createStatsNavigationButtons(currentCategory);
                     await buttonInteraction.update({
                         embeds: [embed],
                         components: [navigationButtons, backToProfileButton]
@@ -312,7 +129,7 @@ module.exports = {
                 }
 
                 currentGameType = selectInteraction.values[0];
-                embed = createGameStatsEmbed(targetUser, currentGameType);
+                embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
                 await selectInteraction.update({
                     embeds: [embed],
                     components: [navigationButtons, gameSelectMenu, backToProfileButton]
@@ -339,13 +156,13 @@ module.exports = {
 /**
  * Export de la fonction pour l'appeler depuis d'autres fichiers (comme profile)
  */
-export async function showStatsForUser(interaction: any, targetUser: User) {
+async function showStatsForUser(interaction: any, targetUser: User) {
     try {
         let currentCategory: StatsCategory = "discord";
         let currentGameType = "global";
 
         let embed = createDiscordStatsEmbed(targetUser);
-        const navigationButtons = createNavigationButtons();
+        const navigationButtons = createStatsNavigationButtons();
         const gameSelectMenu = createGameSelectMenu();
 
         // Détecter si l'interaction a été différée ou répondue
@@ -401,7 +218,7 @@ export async function showStatsForUser(interaction: any, targetUser: User) {
 
             if (buttonId === "stats_jeux") {
                 currentCategory = "jeux";
-                embed = createGameStatsEmbed(targetUser, currentGameType);
+                embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
                 await buttonInteraction.update({
                     embeds: [embed],
                     components: [navigationButtons, gameSelectMenu]
@@ -440,7 +257,7 @@ export async function showStatsForUser(interaction: any, targetUser: User) {
             }
 
             currentGameType = selectInteraction.values[0];
-            embed = createGameStatsEmbed(targetUser, currentGameType);
+            embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
             await selectInteraction.update({
                 embeds: [embed],
                 components: [navigationButtons, gameSelectMenu]
@@ -470,3 +287,5 @@ export async function showStatsForUser(interaction: any, targetUser: User) {
     }
 }
 
+// Export de la commande pour le système de chargement de bot.ts
+module.exports = statsCommand;

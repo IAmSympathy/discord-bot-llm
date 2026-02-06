@@ -76,7 +76,9 @@ for (const folder of commandFolders) {
         const filePath = path.join(commandsPath, file);
         const command = require(filePath);
         if ("data" in command && "execute" in command) {
-            client.commands.set(command.data.name, command);
+            // Utiliser le nom de la commande pour les commandes contextuelles et slash
+            const commandName = command.data.name;
+            client.commands.set(commandName, command);
         } else {
             logger.warn(`The command at ${filePath} is missing a required "data" or "execute" property.`);
         }
@@ -666,73 +668,134 @@ if (client.user) {
 }
 
 client.on(Events.InteractionCreate, async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
-    const command = interaction.client.commands.get(interaction.commandName);
+    // Gérer les commandes slash (ChatInputCommand)
+    if (interaction.isChatInputCommand()) {
+        const command = interaction.client.commands.get(interaction.commandName);
 
-    if (!command) {
-        console.error(`No command matching ${interaction.commandName} was found.`);
+        if (!command) {
+            console.error(`No command matching ${interaction.commandName} was found.`);
+            return;
+        }
+
+        try {
+            // Vérifier si la commande peut être exécutée dans ce canal
+            if (!canExecuteCommand(interaction)) {
+                const errorMessage = getCommandRestrictionMessage(interaction);
+                const errorEmbed = createErrorEmbed("Commande restreinte", errorMessage);
+
+                await interaction.reply({
+                    embeds: [errorEmbed],
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+
+            // Enregistrer l'utilisation de la commande dans les statistiques
+            recordCommandUsed(interaction.user.id, interaction.user.username);
+
+            // Ajouter XP avec notification pour l'utilisation de commande
+            const {addXP, XP_REWARDS} = require("./services/xpSystem");
+            if (interaction.channel) {
+                await addXP(
+                    interaction.user.id,
+                    interaction.user.username,
+                    XP_REWARDS.commandeUtilisee,
+                    interaction.channel,
+                    false // Les utilisateurs de commandes ne sont jamais des bots
+                );
+            }
+
+            await command.execute(interaction);
+        } catch (error: any) {
+            console.error("[Command Error]", error);
+
+            // Si l'interaction a expiré (Unknown interaction), on ne peut plus répondre
+            if (error?.code === 10062 || error?.rawError?.code === 10062) {
+                console.warn(`[Command] Interaction expired for ${interaction.commandName} - user took too long or network delay`);
+                return;
+            }
+
+            // Essayer de répondre seulement si l'interaction est encore valide
+            try {
+                const errorEmbed = createErrorEmbed(
+                    "Erreur de commande",
+                    "❌ Une erreur s'est produite lors de l'exécution de la commande.\n\n" +
+                    "Veuillez réessayer plus tard."
+                );
+
+                if (interaction.replied || interaction.deferred) {
+                    await interaction.followUp({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+                } else {
+                    await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+                }
+            } catch (replyError: any) {
+                // Si on ne peut pas répondre (interaction expirée), log seulement
+                if (replyError?.code === 10062) {
+                    console.warn(`[Command] Could not send error message - interaction already expired`);
+                } else {
+                    console.error("[Command] Error sending error message:", replyError);
+                }
+            }
+        }
         return;
     }
 
-    try {
-        // Vérifier si la commande peut être exécutée dans ce canal
-        if (!canExecuteCommand(interaction)) {
-            const errorMessage = getCommandRestrictionMessage(interaction);
-            const errorEmbed = createErrorEmbed("Commande restreinte", errorMessage);
+    // Gérer les commandes de menu contextuel (User Context Menu)
+    if (interaction.isUserContextMenuCommand()) {
+        const command = interaction.client.commands.get(interaction.commandName);
 
-            await interaction.reply({
-                embeds: [errorEmbed],
-                flags: MessageFlags.Ephemeral
-            });
+        if (!command) {
+            console.error(`No context menu command matching ${interaction.commandName} was found.`);
             return;
         }
 
-        // Enregistrer l'utilisation de la commande dans les statistiques
-        recordCommandUsed(interaction.user.id, interaction.user.username);
-
-        // Ajouter XP avec notification pour l'utilisation de commande
-        const {addXP, XP_REWARDS} = require("./services/xpSystem");
-        if (interaction.channel) {
-            await addXP(
-                interaction.user.id,
-                interaction.user.username,
-                XP_REWARDS.commandeUtilisee,
-                interaction.channel,
-                false // Les utilisateurs de commandes ne sont jamais des bots
-            );
-        }
-
-        await command.execute(interaction);
-    } catch (error: any) {
-        console.error("[Command Error]", error);
-
-        // Si l'interaction a expiré (Unknown interaction), on ne peut plus répondre
-        if (error?.code === 10062 || error?.rawError?.code === 10062) {
-            console.warn(`[Command] Interaction expired for ${interaction.commandName} - user took too long or network delay`);
-            return;
-        }
-
-        // Essayer de répondre seulement si l'interaction est encore valide
         try {
-            const errorEmbed = createErrorEmbed(
-                "Erreur de commande",
-                "❌ Une erreur s'est produite lors de l'exécution de la commande.\n\n" +
-                "Veuillez réessayer plus tard."
-            );
+            // Les commandes de menu contextuel sont toujours autorisées (pas de restrictions)
+            // Enregistrer l'utilisation dans les statistiques
+            recordCommandUsed(interaction.user.id, interaction.user.username);
 
-            if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
-            } else {
-                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+            // Ajouter XP pour l'utilisation de commande contextuelle
+            const {addXP, XP_REWARDS} = require("./services/xpSystem");
+            if (interaction.channel) {
+                await addXP(
+                    interaction.user.id,
+                    interaction.user.username,
+                    XP_REWARDS.commandeUtilisee,
+                    interaction.channel,
+                    false
+                );
             }
-        } catch (replyError: any) {
-            // Si on ne peut pas répondre (interaction expirée), log seulement
-            if (replyError?.code === 10062) {
-                console.warn(`[Command] Could not send error message - interaction already expired`);
-            } else {
-                console.error("[Command] Error sending error message:", replyError);
+
+            await command.execute(interaction);
+        } catch (error: any) {
+            console.error("[Context Menu Command Error]", error);
+
+            if (error?.code === 10062 || error?.rawError?.code === 10062) {
+                console.warn(`[Context Menu] Interaction expired for ${interaction.commandName}`);
+                return;
+            }
+
+            try {
+                const errorEmbed = createErrorEmbed(
+                    "Erreur",
+                    "❌ Une erreur s'est produite lors de l'exécution de la commande.\n\n" +
+                    "Veuillez réessayer plus tard."
+                );
+
+                if (interaction.replied || interaction.deferred) {
+                    await interaction.followUp({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+                } else {
+                    await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+                }
+            } catch (replyError: any) {
+                if (replyError?.code === 10062) {
+                    console.warn(`[Context Menu] Could not send error message - interaction already expired`);
+                } else {
+                    console.error("[Context Menu] Error sending error message:", replyError);
+                }
             }
         }
+        return;
     }
 });
 

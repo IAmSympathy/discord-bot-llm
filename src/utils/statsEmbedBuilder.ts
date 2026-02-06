@@ -316,3 +316,194 @@ export function createProfileEmbed(targetUser: User): EmbedBuilder {
     return embed;
 }
 
+/**
+ * Crée une version détaillée de l'embed de stats de jeux avec sélection par type de jeu
+ */
+export function createDetailedGameStatsEmbed(targetUser: User, gameType: string): EmbedBuilder {
+    const isBot = targetUser.bot;
+    const stats = isBot ? getPlayerStats("NETRICSA_BOT") : getPlayerStats(targetUser.id);
+
+    let description = "";
+    let title = isBot ? `📊 Mes Statistiques de Jeux (Netricsa)` : `📊 Statistiques de ${targetUser.displayName}`;
+
+    // Ajouter le niveau en haut (sauf pour Netricsa)
+    if (!isBot) {
+        description += getLevelText(targetUser.id);
+    }
+
+    if (gameType === "global") {
+        title += " - Jeux (Global)";
+        const globalStats = stats.global;
+        const totalGames = globalStats.wins + globalStats.losses + globalStats.draws;
+
+        if (totalGames === 0) {
+            if (isBot) {
+                description += "Aucune partie jouée pour le moment. Je suis prête à affronter les joueurs ! 🎮";
+            } else {
+                description += "Aucune partie jouée pour le moment.";
+            }
+        } else {
+            description += `**Total de parties :** ${totalGames}\n\n`;
+            description += `🏆 **Victoires :** ${globalStats.wins}\n`;
+            description += `💀 **Défaites :** ${globalStats.losses}\n`;
+            if (globalStats.draws > 0) {
+                description += `🤝 **Égalités :** ${globalStats.draws}\n`;
+            }
+            description += `\n`;
+            if (globalStats.currentStreak > 0) {
+                description += `🔥 **Série actuelle :** ${globalStats.currentStreak}\n`;
+            }
+            if (globalStats.highestStreak > 0) {
+                description += `⭐ **Meilleure série :** ${globalStats.highestStreak}\n`;
+            }
+
+            const winRate = ((globalStats.wins / totalGames) * 100).toFixed(1);
+            description += `\n📈 **Taux de victoire :** ${winRate}%`;
+
+            if (isBot) {
+                description += `\n\n✨ Voilà mes performances contre tous les joueurs !`;
+            }
+        }
+    } else {
+        const gameNames: Record<string, string> = {
+            rockpaperscissors: "Roche-Papier-Ciseaux",
+            tictactoe: "Tic-Tac-Toe",
+            connect4: "Connect 4",
+            hangman: "Pendu"
+        };
+
+        title += ` - Jeux (${gameNames[gameType]})`;
+        const gameStats = stats[gameType as 'rockpaperscissors' | 'tictactoe' | 'connect4' | 'hangman'];
+        const totalGames = gameStats.wins + gameStats.losses + gameStats.draws;
+
+        if (totalGames === 0) {
+            if (isBot && gameType === "hangman") {
+                description += `Je ne joue pas au Pendu (c'est un jeu solo), mais je compte les scores ! 🎮`;
+            } else if (isBot) {
+                description += `Aucune partie de ${gameNames[gameType]} jouée pour le moment. Viens m'affronter ! 🎮`;
+            } else {
+                description += `Aucune partie de ${gameNames[gameType]} jouée pour le moment.`;
+            }
+        } else {
+            description += `**Total de parties :** ${totalGames}\n\n`;
+            description += `🏆 **Victoires :** ${gameStats.wins}\n`;
+            description += `💀 **Défaites :** ${gameStats.losses}\n`;
+            if (gameStats.draws > 0) {
+                description += `🤝 **Égalités :** ${gameStats.draws}\n`;
+            }
+            description += `\n`;
+            if (gameStats.currentStreak > 0) {
+                description += `🔥 **Série actuelle :** ${gameStats.currentStreak}\n`;
+            }
+            if (gameStats.highestStreak > 0) {
+                description += `⭐ **Meilleure série :** ${gameStats.highestStreak}\n`;
+            }
+
+            const winRate = ((gameStats.wins / totalGames) * 100).toFixed(1);
+            description += `\n📈 **Taux de victoire :** ${winRate}%`;
+
+            if (isBot) {
+                description += `\n\n✨ Mes performances à ${gameNames[gameType]} !`;
+            }
+        }
+    }
+
+    const embed = new EmbedBuilder()
+        .setColor(0x397d86)
+        .setTitle(title)
+        .setDescription(description)
+        .setThumbnail(targetUser.displayAvatarURL())
+        .setFooter({text: "Stats depuis le 5 février 2026"})
+        .setTimestamp();
+
+    return embed;
+}
+
+/**
+ * Crée les boutons de navigation pour les stats
+ */
+export function createStatsNavigationButtons(currentCategory?: StatsCategory): import("discord.js").ActionRowBuilder<import("discord.js").ButtonBuilder> {
+    const {ActionRowBuilder, ButtonBuilder, ButtonStyle} = require("discord.js");
+
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId("stats_discord")
+            .setLabel("Discord")
+            .setEmoji("📨")
+            .setStyle(currentCategory === "discord" ? ButtonStyle.Success : ButtonStyle.Primary)
+            .setDisabled(currentCategory === "discord"),
+        new ButtonBuilder()
+            .setCustomId("stats_netricsa")
+            .setLabel("Netricsa")
+            .setEmoji("🤖")
+            .setStyle(currentCategory === "netricsa" ? ButtonStyle.Success : ButtonStyle.Primary)
+            .setDisabled(currentCategory === "netricsa"),
+        new ButtonBuilder()
+            .setCustomId("stats_jeux")
+            .setLabel("Jeux")
+            .setEmoji("🎮")
+            .setStyle(currentCategory === "jeux" ? ButtonStyle.Success : ButtonStyle.Primary)
+            .setDisabled(currentCategory === "jeux"),
+        new ButtonBuilder()
+            .setCustomId("stats_serveur")
+            .setLabel("Serveur")
+            .setEmoji("🌐")
+            .setStyle(currentCategory === "serveur" ? ButtonStyle.Success : ButtonStyle.Secondary)
+            .setDisabled(currentCategory === "serveur")
+    );
+}
+
+/**
+ * Crée le bouton "Retour au profil"
+ */
+export function createBackToProfileButton(userId: string): import("discord.js").ActionRowBuilder<import("discord.js").ButtonBuilder> {
+    const {ActionRowBuilder, ButtonBuilder, ButtonStyle} = require("discord.js");
+
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`stats_back_to_profile_${userId}`)
+            .setLabel("Retour au profil")
+            .setEmoji("◀️")
+            .setStyle(ButtonStyle.Danger)
+    );
+}
+
+/**
+ * Crée le menu de sélection des jeux
+ */
+export function createGameSelectMenu(): import("discord.js").ActionRowBuilder<import("discord.js").StringSelectMenuBuilder> {
+    const {ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder} = require("discord.js");
+
+    return new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+            .setCustomId("stats_game_select")
+            .setPlaceholder("Choisir un jeu")
+            .addOptions(
+                new StringSelectMenuOptionBuilder()
+                    .setLabel("Global")
+                    .setDescription("Statistiques globales de tous les jeux")
+                    .setValue("global")
+                    .setEmoji("🌐"),
+                new StringSelectMenuOptionBuilder()
+                    .setLabel("Roche-Papier-Ciseaux")
+                    .setDescription("Statistiques du jeu Roche-Papier-Ciseaux")
+                    .setValue("rockpaperscissors")
+                    .setEmoji("🪨"),
+                new StringSelectMenuOptionBuilder()
+                    .setLabel("Tic-Tac-Toe")
+                    .setDescription("Statistiques du jeu Tic-Tac-Toe")
+                    .setValue("tictactoe")
+                    .setEmoji("❌"),
+                new StringSelectMenuOptionBuilder()
+                    .setLabel("Connect 4")
+                    .setDescription("Statistiques du jeu Connect 4")
+                    .setValue("connect4")
+                    .setEmoji("🔴"),
+                new StringSelectMenuOptionBuilder()
+                    .setLabel("Pendu")
+                    .setDescription("Statistiques du jeu Pendu")
+                    .setValue("hangman")
+                    .setEmoji("🔤")
+            )
+    );
+}
