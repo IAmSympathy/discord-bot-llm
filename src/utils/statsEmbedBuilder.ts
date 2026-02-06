@@ -304,10 +304,7 @@ export function createProfileEmbed(targetUser: User): EmbedBuilder {
     // Faits
     if (profile.facts.length > 0) {
         const recentFacts = profile.facts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 10);
-        const factsText = recentFacts.map(fact => {
-            const date = new Date(fact.timestamp).toLocaleDateString("fr-FR", {day: "2-digit", month: "2-digit", year: "numeric"});
-            return `• ${fact.content} *(${date})*`;
-        }).join("\n");
+        const factsText = recentFacts.map(fact => `• ${fact.content}`).join("\n");
 
         const factsTitle = profile.facts.length > 10
             ? `📝 Faits enregistrés (${profile.facts.length} - affichage limité à 10)`

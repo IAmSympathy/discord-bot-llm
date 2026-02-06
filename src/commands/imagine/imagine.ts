@@ -65,6 +65,7 @@ module.exports = {
         }
 
         let progressMessage: any = null;
+        let statusId: string = "";
 
         try {
             const prompt = interaction.options.getString("prompt", true);
@@ -78,8 +79,8 @@ module.exports = {
 
             logger.info(`Generating image for ${interaction.user.username}: "${prompt.substring(0, 50)}..."`);
 
-            // Définir le statut Discord (10 minutes pour les générations longues)
-            await setStatus(interaction.client, BotStatus.GENERATING_IMAGE, 600000); // 10 minutes
+            // Définir le statut Discord et stocker l'ID (10 minutes pour les générations longues)
+            statusId = await setStatus(interaction.client, BotStatus.GENERATING_IMAGE, 600000);
 
             // Message de progression avec animation de points
             progressMessage = await interaction.reply({
@@ -211,8 +212,8 @@ module.exports = {
             }, MEMORY_MAX_TURNS);
             logger.info("Memory saved successfully for /imagine command");
 
-            // Réinitialiser le statut Discord tout à la fin
-            await clearStatus(interaction.client);
+            // Réinitialiser le statut spécifique de cette génération
+            await clearStatus(interaction.client, statusId);
 
         } catch (error) {
             logger.error("Error generating image:", error);
@@ -220,8 +221,8 @@ module.exports = {
             // Désenregistrer la génération en cas d'erreur
             unregisterImageGeneration(interaction.user.id);
 
-            // Réinitialiser le statut Discord
-            await clearStatus(interaction.client);
+            // Réinitialiser le statut spécifique de cette génération
+            await clearStatus(interaction.client, statusId);
 
             // Si c'est une annulation, éditer le message pour indiquer l'annulation
             if (error instanceof Error && error.message === "CANCELLED") {

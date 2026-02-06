@@ -2,86 +2,178 @@ import {ActivityType, Client} from "discord.js";
 import {createLogger} from "../utils/logger";
 
 /**
- * Service pour gérer les statuts dynamiques de Netricsa
+ * Service pour gérer les statuts dynamiques de Netricsa avec système de pile
  */
 
-let statusTimeoutId: NodeJS.Timeout | null = null;
 const logger = createLogger("StatusService");
 
 /**
- * Change le statut de Netricsa avec réinitialisation automatique
+ * Interface pour un élément de la pile de statuts
  */
-export async function setStatus(client: Client, status: string, durationMs: number = 30000) {
-    if (!client.user) {
-        logger.warn("Client user not available, cannot set status");
-        return;
-    }
-
-    // Annuler le timeout précédent s'il existe
-    if (statusTimeoutId) {
-        clearTimeout(statusTimeoutId);
-        statusTimeoutId = null;
-    }
-
-    // Définir le nouveau statut
-    try {
-        await client.user.setPresence({
-            status: "online",
-            activities: [{
-                name: status,
-                type: ActivityType.Playing  // Changed from Custom to Playing for better compatibility
-            }]
-        });
-        logger.info(`Status set: ${status}`);
-    } catch (error) {
-        logger.error(`Error setting status: ${error}`);
-        return;
-    }
-
-    // Réinitialiser après le délai
-    statusTimeoutId = setTimeout(async () => {
-        await clearStatus(client);
-        statusTimeoutId = null;
-    }, durationMs);
+interface StatusStackItem {
+    id: string;
+    status: string;
+    timeoutId?: NodeJS.Timeout;
 }
 
 /**
- * Réinitialise le statut à vide
+ * Pile de statuts (LIFO - Last In First Out)
+ * Le statut au sommet de la pile est celui affiché
  */
-export async function clearStatus(client: Client) {
+let statusStack: StatusStackItem[] = [];
+
+/**
+ * Génère un ID unique pour un statut
+ */
+function generateStatusId(): string {
+    return `status_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Applique le statut actuel (celui au sommet de la pile)
+ */
+async function applyCurrentStatus(client: Client): Promise<void> {
+    if (!client.user) {
+        logger.warn("Client user not available, cannot apply status");
+        return;
+    }
+
+    try {
+        if (statusStack.length === 0) {
+            // Aucun statut dans la pile, effacer
+            await client.user.setPresence({
+                status: "online",
+                activities: []
+            });
+            logger.info("📭 Status cleared (stack empty)");
+        } else {
+            // Afficher le statut au sommet de la pile
+            const currentStatus = statusStack[statusStack.length - 1];
+            await client.user.setPresence({
+                status: "online",
+                activities: [{
+                    name: currentStatus.status,
+                    type: ActivityType.Playing
+                }]
+            });
+            logger.info(`📊 Status applied: ${currentStatus.status} (stack depth: ${statusStack.length})`);
+        }
+    } catch (error) {
+        logger.error(`Error applying status: ${error}`);
+    }
+}
+
+/**
+ * Ajoute un statut à la pile et l'affiche
+ * @returns ID du statut pour le retirer plus tard
+ */
+export async function setStatus(client: Client, status: string, durationMs: number = 30000): Promise<string> {
+    if (!client.user) {
+        logger.warn("Client user not available, cannot set status");
+        return "";
+    }
+
+    const statusId = generateStatusId();
+    const statusItem: StatusStackItem = {
+        id: statusId,
+        status: status
+    };
+
+    // Ajouter à la pile
+    statusStack.push(statusItem);
+    logger.info(`➕ Added status to stack: ${status} (ID: ${statusId}, depth: ${statusStack.length})`);
+
+    // Appliquer le nouveau statut
+    await applyCurrentStatus(client);
+
+    // Configurer le timeout pour retirer automatiquement
+    if (durationMs > 0) {
+        statusItem.timeoutId = setTimeout(async () => {
+            await clearStatus(client, statusId);
+        }, durationMs);
+    }
+
+    return statusId;
+}
+
+/**
+ * Retire un statut spécifique de la pile
+ * Si aucun ID n'est fourni, retire le statut au sommet
+ */
+export async function clearStatus(client: Client, statusId?: string): Promise<void> {
     if (!client.user) {
         logger.warn("Client user not available, cannot clear status");
         return;
     }
 
-    // Annuler le timeout s'il existe
-    if (statusTimeoutId) {
-        clearTimeout(statusTimeoutId);
-        statusTimeoutId = null;
+    if (statusStack.length === 0) {
+        logger.info("⚠️ No status to clear (stack already empty)");
+        return;
     }
 
-    try {
-        await client.user.setPresence({
-            status: "online",
-            activities: []
-        });
-        logger.info("Status cleared");
-    } catch (error) {
-        logger.error(`Error clearing status: ${error}`);
+    if (statusId) {
+        // Retirer un statut spécifique
+        const index = statusStack.findIndex(item => item.id === statusId);
+        if (index === -1) {
+            logger.warn(`⚠️ Status ID not found in stack: ${statusId}`);
+            return;
+        }
+
+        const removedStatus = statusStack[index];
+
+        // Annuler le timeout s'il existe
+        if (removedStatus.timeoutId) {
+            clearTimeout(removedStatus.timeoutId);
+        }
+
+        // Retirer de la pile
+        statusStack.splice(index, 1);
+        logger.info(`➖ Removed status from stack: ${removedStatus.status} (ID: ${statusId}, remaining: ${statusStack.length})`);
+    } else {
+        // Retirer le statut au sommet de la pile
+        const removedStatus = statusStack.pop();
+        if (removedStatus) {
+            // Annuler le timeout s'il existe
+            if (removedStatus.timeoutId) {
+                clearTimeout(removedStatus.timeoutId);
+            }
+            logger.info(`➖ Removed top status from stack: ${removedStatus.status} (remaining: ${statusStack.length})`);
+        }
     }
+
+    // Appliquer le statut actuel (celui qui est maintenant au sommet)
+    await applyCurrentStatus(client);
+}
+
+/**
+ * Vide complètement la pile de statuts
+ */
+export async function clearAllStatuses(client: Client): Promise<void> {
+    logger.info(`🧹 Clearing all statuses (${statusStack.length} in stack)`);
+
+    // Annuler tous les timeouts
+    for (const item of statusStack) {
+        if (item.timeoutId) {
+            clearTimeout(item.timeoutId);
+        }
+    }
+
+    // Vider la pile
+    statusStack = [];
+
+    // Appliquer le statut vide
+    await applyCurrentStatus(client);
 }
 
 /**
  * Met Netricsa en mode "Ne pas déranger" avec un statut Low Power
+ * Ce statut est permanent et vide la pile des autres statuts
  */
 export async function setLowPowerStatus(client: Client): Promise<void> {
     if (!client.user) return;
 
-    // Annuler le timeout s'il existe
-    if (statusTimeoutId) {
-        clearTimeout(statusTimeoutId);
-        statusTimeoutId = null;
-    }
+    // Vider la pile des statuts temporaires
+    await clearAllStatuses(client);
 
     await client.user.setPresence({
         status: "dnd",
@@ -91,27 +183,25 @@ export async function setLowPowerStatus(client: Client): Promise<void> {
         }]
     });
 
-    logger.info("🔋 Status set to DND - Low Power Mode");
+    logger.info("🔋 Status set to DND - Low Power Mode (stack cleared)");
 }
 
 /**
  * Remet Netricsa en mode normal (online)
+ * Vide la pile et restaure le statut par défaut
  */
 export async function setNormalStatus(client: Client): Promise<void> {
     if (!client.user) return;
 
-    // Annuler le timeout s'il existe
-    if (statusTimeoutId) {
-        clearTimeout(statusTimeoutId);
-        statusTimeoutId = null;
-    }
+    // Vider la pile des statuts
+    await clearAllStatuses(client);
 
     await client.user.setPresence({
         status: "online",
         activities: []
     });
 
-    logger.info("⚡ Status set to Online - Normal Mode");
+    logger.info("⚡ Status set to Online - Normal Mode (stack cleared)");
 }
 
 /**

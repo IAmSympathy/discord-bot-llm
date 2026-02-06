@@ -57,6 +57,7 @@ module.exports = {
     async execute(interaction: ChatInputCommandInteraction) {
         let tempFilePath: string | null = null;
         let progressMessage: any = null;
+        let statusId: string = "";
 
         try {
             // Vérifier si l'utilisateur a déjà une génération en cours
@@ -103,7 +104,7 @@ module.exports = {
             }
 
             // Définir le statut Discord (10 minutes pour les réimaginations longues)
-            await setStatus(interaction.client, BotStatus.REIMAGINING_IMAGE, 600000); // 10 minutes
+            statusId = await setStatus(interaction.client, BotStatus.REIMAGINING_IMAGE, 600000); // 10 minutes
 
             // Message de progression avec animation de points
             progressMessage = await interaction.reply({
@@ -309,7 +310,7 @@ module.exports = {
             }
 
             // Réinitialiser le statut Discord tout à la fin
-            await clearStatus(interaction.client);
+            await clearStatus(interaction.client, statusId);
 
         } catch (error) {
             logger.error("Error reimagining image:", error);
@@ -318,7 +319,7 @@ module.exports = {
             unregisterImageGeneration(interaction.user.id);
 
             // Réinitialiser le statut Discord
-            await clearStatus(interaction.client);
+            await clearStatus(interaction.client, statusId);
 
             // Nettoyer le fichier temporaire en cas d'erreur
             if (tempFilePath && require("fs").existsSync(tempFilePath)) {

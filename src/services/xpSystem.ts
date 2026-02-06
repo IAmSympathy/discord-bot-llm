@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import {createLogger} from "../utils/logger";
 import {EmbedBuilder, TextChannel, VoiceChannel} from "discord.js";
+import {getNextLevelRole, updateUserLevelRoles} from "./levelRoleService";
 
 const logger = createLogger("XPSystem");
 const XP_FILE = path.join(__dirname, "../data/user_xp.json");
@@ -175,18 +176,52 @@ export async function addXP(
  */
 async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: string, username: string, newLevel: number): Promise<void> {
     try {
-        // Discord permet d'envoyer des messages directement dans les canaux vocaux
-        // Ces messages apparaissent dans le chat textuel intégré du canal vocal
+        // Vérifier si c'est un bot
+        const guild = channel.guild;
+        if (!guild) {
+            logger.warn("No guild found for level up message");
+            return;
+        }
+
+        const member = await guild.members.fetch(userId).catch(() => null);
+        if (!member) {
+            logger.warn(`Member ${userId} not found for level up message`);
+            return;
+        }
+
+        // Les bots ne devraient jamais recevoir de notification de level up
+        // Mais au cas où, on s'assure qu'ils ne reçoivent pas de rôles
+        if (member.user.bot) {
+            logger.info(`Skipping level up message for bot ${username}`);
+            return;
+        }
+
+        // Mettre à jour les rôles de niveau
+        let roleChangeInfo = "";
+        const roleResult = await updateUserLevelRoles(guild, userId, newLevel);
+
+        if (roleResult.changed && roleResult.newRole) {
+            roleChangeInfo = `\n\n🎖️ **Tu es maintenant ${roleResult.newRole} !**`;
+        }
+
+        // Vérifier le prochain rôle
+        const nextRole = getNextLevelRole(newLevel);
+        let nextRoleInfo = "";
+        if (nextRole) {
+            nextRoleInfo = `\n\n⬆️ Plus que **${nextRole.levelsNeeded} niveau${nextRole.levelsNeeded > 1 ? 'x' : ''}** avant d'atteindre <@&${nextRole.roleId}> !`;
+        } else {
+            nextRoleInfo = `\n\n👑 **Tu as atteint le rang maximum !**`;
+        }
 
         // Créer un embed de level up
         const embed = new EmbedBuilder()
             .setColor(0xFFD700) // Gold
             .setTitle("🎉 Level Up !")
-            .setDescription(`Félicitations <@${userId}> !\n\nTu viens d'atteindre le **niveau ${newLevel}** ! ⭐`)
+            .setDescription(`Félicitations <@${userId}> !\n\nTu viens d'atteindre le **niveau ${newLevel}** ! ⭐${roleChangeInfo}${nextRoleInfo}`)
             .setTimestamp();
 
         await channel.send({embeds: [embed]});
-        logger.info(`Level up message sent for ${username} in ${channel.name || 'channel'}`);
+        logger.info(`Level up message sent for ${username} (Level ${newLevel}) in ${channel.name || 'channel'}`);
     } catch (error) {
         logger.error(`Error sending level up message for ${username}:`, error);
     }

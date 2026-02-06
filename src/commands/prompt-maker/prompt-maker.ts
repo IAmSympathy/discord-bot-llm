@@ -241,6 +241,8 @@ module.exports = {
     async execute(interaction: ChatInputCommandInteraction) {
         const client = interaction.client;
 
+        let statusId: string = "";
+
         try {
             // Vérifier le mode low power
             if (isLowPowerMode()) {
@@ -260,7 +262,7 @@ module.exports = {
 
             logger.info(`Generating optimized prompt for ${interaction.user.username}: "${description}" (${type})`);
 
-            await setStatus(client, BotStatus.GENERATING_PROMPT);
+            statusId = await setStatus(client, BotStatus.GENERATING_PROMPT);
 
             // Générer le prompt optimisé
             const result = await generateOptimizedPrompt(description, isImg2Img);
@@ -320,7 +322,7 @@ module.exports = {
             }
 
             // Clear status
-            await clearStatus(client);
+            await clearStatus(client, statusId);
 
             logger.info(`Prompt generated successfully for ${interaction.user.username}`);
 
@@ -328,7 +330,7 @@ module.exports = {
             logger.error("Error generating prompt:", error);
 
             // Clear status en cas d'erreur
-            await clearStatus(client);
+            await clearStatus(client, statusId);
 
             const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
             const errorEmbed = createErrorEmbed(
@@ -344,4 +346,3 @@ module.exports = {
         }
     },
 };
-

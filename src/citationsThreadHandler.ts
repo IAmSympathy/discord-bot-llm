@@ -10,6 +10,8 @@ const logger = createLogger("CitationsThread");
 
 export function registerCitationsThreadHandler(client: Client) {
     client.on(Events.MessageCreate, async (message: Message) => {
+        let statusId: string = "";
+
         try {
             if (message.author.bot) return;
             if (!CITATIONS_THREAD_ID || message.channelId !== CITATIONS_THREAD_ID) return;
@@ -20,7 +22,7 @@ export function registerCitationsThreadHandler(client: Client) {
                 return;
             }
 
-            await setStatus(client, BotStatus.GENERATING_CITATION);
+            statusId = await setStatus(client, BotStatus.GENERATING_CITATION);
 
             const threadName = message.channel.name;
             const parentChannel = message.channel.parent?.name || "Unknown";
@@ -35,10 +37,10 @@ export function registerCitationsThreadHandler(client: Client) {
 
             logger.info(`Réaction ${emoji} ajoutée`);
 
-            await clearStatus(client);
+            await clearStatus(client, statusId);
         } catch (error) {
             logger.error("Erreur lors du traitement du message:", error);
-            await clearStatus(client);
+            await clearStatus(client, statusId);
         }
     });
 

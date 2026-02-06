@@ -82,6 +82,7 @@ module.exports = {
     async execute(interaction: ChatInputCommandInteraction) {
         let tempFilePath: string | null = null;
         let progressMessage: any = null;
+        let statusId: string = "";
 
         try {
             // Vérifier si l'utilisateur a déjà une génération en cours
@@ -122,7 +123,7 @@ module.exports = {
             logger.info(`Upscaling image for ${interaction.user.username} with model ${model}, scale: x${scale}`);
 
             // Définir le statut Discord (15 minutes pour l'upscaling)
-            await setStatus(interaction.client, BotStatus.UPSCALING_IMAGE, 900000); // 15 minutes
+            statusId = await setStatus(interaction.client, BotStatus.UPSCALING_IMAGE, 900000); // 15 minutes
 
             // Message de progression avec animation de points
             progressMessage = await interaction.reply({
@@ -221,7 +222,7 @@ module.exports = {
             }
 
             // Réinitialiser le statut Discord tout à la fin
-            await clearStatus(interaction.client);
+            await clearStatus(interaction.client, statusId);
 
         } catch (error) {
             logger.error("Error upscaling image:", error);
@@ -230,7 +231,7 @@ module.exports = {
             unregisterImageGeneration(interaction.user.id);
 
             // Réinitialiser le statut Discord
-            await clearStatus(interaction.client);
+            await clearStatus(interaction.client, statusId);
 
             // Nettoyer le fichier temporaire en cas d'erreur
             if (tempFilePath && fs.existsSync(tempFilePath)) {

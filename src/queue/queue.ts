@@ -398,6 +398,8 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         });
     }
 
+    let currentStatusId: string = "";
+
     // Mettre en queue globale unique (un seul LLM pour toutes les requêtes)
     enqueueGlobally(async () => {
         const requestStartTime = Date.now();
@@ -834,8 +836,8 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             // Arrêter l'indicateur typing
             if (typingInterval) clearInterval(typingInterval);
 
-            // Réinitialiser le statut en cas d'erreur
-            await clearStatus(client);
+            // Réinitialiser le statut spécifique en cas d'erreur
+            await clearStatus(client, currentStatusId);
 
             // Rejeter la promesse en cas d'erreur
             const pending = pendingResponses.get(channelKey);

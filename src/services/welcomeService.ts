@@ -3,6 +3,7 @@ import {UserProfileService} from "./userProfileService";
 import {LLMMessageService, LLMMessageType} from "./llmMessageService";
 import {EnvConfig} from "../utils/envConfig";
 import {createLogger} from "../utils/logger";
+import {DEFAULT_MEMBER_ROLE, LEVEL_ROLES} from "../utils/constants";
 
 const logger = createLogger("WelcomeService");
 
@@ -11,6 +12,19 @@ const logger = createLogger("WelcomeService");
  */
 export async function sendWelcomeMessage(member: GuildMember, client: Client): Promise<void> {
     try {
+        // Attribuer le rôle Beheaded au nouveau membre (sauf si c'est un bot)
+        if (!member.user.bot && DEFAULT_MEMBER_ROLE) {
+            try {
+                await member.roles.add(DEFAULT_MEMBER_ROLE);
+                logger.info(`✅ Assigned Beheaded role to ${member.user.username}`);
+                await member.roles.add(LEVEL_ROLES.HATCHLING);
+                logger.info(`✅ Assigned Hatchling role to ${member.user.username}`);
+            } catch (error) {
+                logger.error(`Error assigning welcome roles to ${member.user.username}:`, error);
+
+            }
+        }
+
         const welcomeChannelId = EnvConfig.WATCH_CHANNEL_ID;
         if (!welcomeChannelId) {
             logger.warn("WATCH_CHANNEL_ID not configured");

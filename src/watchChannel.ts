@@ -42,7 +42,7 @@ function isWatchedChannel(message: Message, watchedChannelId?: string): boolean 
 
 async function handleNettieReaction(client: Client, message: Message): Promise<string> {
     logger.info(`Message from ${message.author.username} talks about Nettie`);
-    await setStatus(client, BotStatus.CHOOSING_REACTION);
+    const statusId = await setStatus(client, BotStatus.CHOOSING_REACTION);
 
     try {
         const emoji = await generateMentionEmoji(message.content);
@@ -52,11 +52,11 @@ async function handleNettieReaction(client: Client, message: Message): Promise<s
         // Enregistrer la réaction de Netricsa dans les stats
         recordReactionAdded(NETRICSA_USER_ID, NETRICSA_USERNAME);
 
-        await clearStatus(client);
+        await clearStatus(client, statusId);
         return emoji;
     } catch (error) {
         logger.error("Failed to get emoji from LLM:", error);
-        await clearStatus(client);
+        await clearStatus(client, statusId);
         await message.react("🤗");
 
         // Enregistrer la réaction de fallback de Netricsa

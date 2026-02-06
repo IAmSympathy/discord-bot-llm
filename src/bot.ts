@@ -20,6 +20,8 @@ import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
 import {recordCommandUsed, recordReactionAdded, recordReactionReceived} from "./services/userStatsService";
 import {canExecuteCommand, getCommandRestrictionMessage} from "./utils/commandPermissions";
+import {getAllXP} from "./services/xpSystem";
+import {initializeLevelRolesForGuild} from "./services/levelRoleService";
 
 const logger = createLogger("Bot");
 
@@ -111,6 +113,17 @@ client.once(Events.ClientReady, async () => {
     } else {
         await setNormalStatus(client);
         logger.info("Bot started in Normal Mode");
+    }
+
+    // Initialiser les rôles de niveau pour tous les utilisateurs
+    try {
+        const allXP = getAllXP();
+        for (const guild of client.guilds.cache.values()) {
+            await initializeLevelRolesForGuild(guild, allXP);
+        }
+        logger.info("Level roles initialized for all guilds");
+    } catch (error) {
+        logger.error("Error initializing level roles:", error);
     }
 
     // Initialiser le planificateur de memes automatiques

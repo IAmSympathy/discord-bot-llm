@@ -48,11 +48,23 @@ export async function showGameMenu(interaction: any, originalUserId?: string) {
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rpsButton, tttButton, hangmanButton);
 
-    const message = await interaction.reply({
-        embeds: [embed],
-        components: [row],
-        fetchReply: true
-    });
+    // Si c'est une interaction de bouton (retour au menu), utiliser update() au lieu de reply()
+    const isButtonInteraction = interaction.isButton && interaction.isButton();
+    let message;
+
+    if (isButtonInteraction) {
+        message = await interaction.update({
+            embeds: [embed],
+            components: [row],
+            fetchReply: true
+        });
+    } else {
+        message = await interaction.reply({
+            embeds: [embed],
+            components: [row],
+            fetchReply: true
+        });
+    }
 
     const collector = message.createMessageComponentCollector({
         componentType: ComponentType.Button,
