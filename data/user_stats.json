@@ -3,9 +3,9 @@
     "userId": "288799652902469633",
     "username": "iam_sympathy",
     "discord": {
-      "messagesEnvoyes": 19,
+      "messagesEnvoyes": 22,
       "reactionsAjoutees": 1,
-      "reactionsRecues": 6,
+      "reactionsRecues": 7,
       "commandesUtilisees": 91,
       "mentionsRecues": 9,
       "repliesRecues": 7,
@@ -13,7 +13,7 @@
       "emojisUtilises": {
         "🗿": 1
       },
-      "compteurContributions": 2
+      "compteurContributions": 5
     },
     "netricsa": {
       "imagesGenerees": 0,
@@ -23,14 +23,14 @@
       "conversationsIA": 16,
       "promptsCrees": null
     },
-    "lastUpdate": 1770418557869
+    "lastUpdate": 1770419530711
   },
   "1462959115528835092": {
     "userId": "1462959115528835092",
     "username": "Netricsa",
     "discord": {
-      "messagesEnvoyes": 184,
-      "reactionsAjoutees": 5,
+      "messagesEnvoyes": 189,
+      "reactionsAjoutees": 6,
       "reactionsRecues": 0,
       "commandesUtilisees": 0,
       "mentionsRecues": 9,
@@ -48,7 +48,7 @@
       "conversationsIA": 0,
       "memesRecherches": 0
     },
-    "lastUpdate": 1770418426530
+    "lastUpdate": 1770419530634
   },
   "351419795033423883": {
     "userId": "351419795033423883",
@@ -232,13 +232,14 @@
     "userId": "814998532833673246",
     "username": "eddie64",
     "discord": {
-      "messagesEnvoyes": 0,
+      "messagesEnvoyes": 4,
       "reactionsAjoutees": 0,
       "reactionsRecues": 0,
       "commandesUtilisees": 1,
       "mentionsRecues": 1,
       "repliesRecues": 1,
-      "tempsVocalMinutes": 14
+      "tempsVocalMinutes": 14,
+      "compteurContributions": 4
     },
     "netricsa": {
       "imagesGenerees": 0,
@@ -248,7 +249,7 @@
       "memesRecherches": 0,
       "promptsCrees": 0
     },
-    "lastUpdate": 1770418210994
+    "lastUpdate": 1770419533472
   },
   "1017530434604769281": {
     "userId": "1017530434604769281",

@@ -1,15 +1,19 @@
 {
-  "currentNumber": 4,
-  "lastUserId": "531789001313746968",
-  "highestReached": 4,
+  "currentNumber": 11,
+  "lastUserId": "814998532833673246",
+  "highestReached": 11,
   "contributions": {
     "288799652902469633": {
       "username": "iam_sympathy",
-      "count": 2
+      "count": 5
     },
     "531789001313746968": {
       "username": "imbaduworst",
       "count": 2
+    },
+    "814998532833673246": {
+      "username": "eddie64",
+      "count": 4
     }
   }
 }
