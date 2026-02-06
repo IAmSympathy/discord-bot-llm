@@ -11,6 +11,7 @@ import {appendDMTurn, getDMRecentTurns} from "./services/dmMemoryService";
 import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
 import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordAIConversation, recordMentionReceived, recordMessageSent, recordReactionAdded, recordReplyReceived} from "./services/userStatsService";
+import {addXP, XP_REWARDS} from "./services/xpSystem";
 
 const logger = createLogger("WatchChannel");
 
@@ -150,20 +151,34 @@ export function registerWatchedChannelResponder(client: Client) {
 
     client.on("messageCreate", async (message) => {
         try {
-            // Ignore bots (évite boucle infinie)
-            if (message.author?.bot) return;
+            // Ne plus ignorer complètement les bots - ils peuvent aussi gagner de l'XP
+            // Mais on évite les réponses automatiques du bot lui-même pour éviter les boucles
 
-            // Enregistrer le message envoyé dans les statistiques (sauf pour les bots)
-            if (!message.author.bot) {
-                recordMessageSent(message.author.id, message.author.username);
-            }
+            // Enregistrer le message envoyé dans les statistiques
+            recordMessageSent(message.author.id, message.author.username);
+
+            // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
+            await addXP(
+                message.author.id,
+                message.author.username,
+                XP_REWARDS.messageEnvoye,
+                message.channel as TextChannel,
+                message.author.bot
+            );
 
             // Enregistrer les mentions dans les statistiques
             if (message.mentions.users.size > 0) {
-                message.mentions.users.forEach((user) => {
-                    if (!user.bot) {
-                        recordMentionReceived(user.id, user.username);
-                    }
+                message.mentions.users.forEach(async (user) => {
+                    recordMentionReceived(user.id, user.username);
+
+                    // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
+                    await addXP(
+                        user.id,
+                        user.username,
+                        XP_REWARDS.mentionRecue,
+                        message.channel as TextChannel,
+                        user.bot
+                    );
                 });
             }
 
@@ -171,13 +186,25 @@ export function registerWatchedChannelResponder(client: Client) {
             if (message.reference?.messageId) {
                 try {
                     const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
-                    if (referencedMessage && !referencedMessage.author.bot) {
+                    if (referencedMessage) {
                         recordReplyReceived(referencedMessage.author.id, referencedMessage.author.username);
+
+                        // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
+                        await addXP(
+                            referencedMessage.author.id,
+                            referencedMessage.author.username,
+                            XP_REWARDS.replyRecue,
+                            message.channel as TextChannel,
+                            referencedMessage.author.bot
+                        );
                     }
                 } catch (error) {
                     // Ignorer les erreurs de fetch (message supprimé, etc.)
                 }
             }
+
+            // Après avoir enregistré les stats, ignorer les messages des bots pour éviter les boucles
+            if (message.author?.bot) return;
 
             // Ignorer les commandes slash-like tapées en texte
             if (message.content?.startsWith("/")) return;

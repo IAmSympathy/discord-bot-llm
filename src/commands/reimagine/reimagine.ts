@@ -278,6 +278,20 @@ module.exports = {
                 recordImageReimagined(NETRICSA_USER_ID, NETRICSA_USERNAME);
             }
 
+            // Ajouter XP avec notification de level up (message non-éphémère)
+            const {addXP, XP_REWARDS} = require("../../services/xpSystem");
+            if (interaction.channel) {
+                for (let i = 0; i < amount; i++) {
+                    await addXP(
+                        interaction.user.id,
+                        interaction.user.username,
+                        XP_REWARDS.imageReimaginee,
+                        interaction.channel,
+                        false
+                    );
+                }
+            }
+
             // Ajouter à la mémoire une version simplifiée (pas besoin du prompt complet)
             await memory.appendTurn({
                 ts: Date.now(),

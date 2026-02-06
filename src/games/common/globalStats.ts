@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import {addXP, XP_REWARDS} from "../../services/xpSystem";
 
 const STATS_FILE = path.join(__dirname, "../../data/game_stats.json");
 
@@ -122,6 +123,11 @@ export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe
     }
 
     saveStats(allStats);
+
+    // Ajouter XP (seulement pour les vrais joueurs, pas pour Netricsa)
+    if (userId !== NETRICSA_GAME_ID) {
+        addXP(userId, "Player", XP_REWARDS.victoireJeu);
+    }
 }
 
 /**
@@ -148,6 +154,11 @@ export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictacto
     allStats[userId].global.currentStreak = 0;
 
     saveStats(allStats);
+
+    // Ajouter XP (seulement pour les vrais joueurs, pas pour Netricsa)
+    if (userId !== NETRICSA_GAME_ID) {
+        addXP(userId, "Player", XP_REWARDS.defaiteJeu);
+    }
 }
 
 /**
@@ -174,6 +185,11 @@ export function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictacto
     allStats[userId].global.currentStreak = 0;
 
     saveStats(allStats);
+
+    // Ajouter XP (seulement pour les vrais joueurs, pas pour Netricsa)
+    if (userId !== NETRICSA_GAME_ID) {
+        addXP(userId, "Player", XP_REWARDS.egaliteJeu);
+    }
 }
 
 /**
@@ -220,3 +236,71 @@ export function formatPlayerStats(userId: string, game?: 'rockpaperscissors' | '
 
     return output;
 }
+
+/**
+ * Récupère le leaderboard global des jeux
+ * @param limit Nombre maximum de joueurs à retourner
+ * @returns Liste triée des joueurs avec leurs stats
+ */
+export function getGlobalLeaderboard(limit: number = 10): Array<{
+    userId: string;
+    username: string;
+    wins: number;
+    losses: number;
+    draws: number;
+    currentStreak: number;
+    highestStreak: number;
+}> {
+    const stats = loadStats();
+
+    // Récupérer les noms d'utilisateurs depuis userStatsService si disponible
+    let usernames: { [userId: string]: string } = {};
+    try {
+        const userStatsPath = path.join(__dirname, "../../data/user_stats.json");
+        if (fs.existsSync(userStatsPath)) {
+            const userStatsData = JSON.parse(fs.readFileSync(userStatsPath, "utf-8"));
+            Object.entries(userStatsData).forEach(([userId, data]: [string, any]) => {
+                usernames[userId] = data.username || userId;
+            });
+        }
+    } catch (error) {
+        console.error("[GameStats] Error loading usernames:", error);
+    }
+
+    const leaderboard = Object.entries(stats)
+        .map(([userId, playerStats]) => {
+            const totalGames = playerStats.global.wins + playerStats.global.losses + playerStats.global.draws;
+            return {
+                userId,
+                username: userId === NETRICSA_GAME_ID ? NETRICSA_GAME_NAME : (usernames[userId] || userId),
+                wins: playerStats.global.wins,
+                losses: playerStats.global.losses,
+                draws: playerStats.global.draws,
+                currentStreak: playerStats.global.currentStreak,
+                highestStreak: playerStats.global.highestStreak,
+                totalGames,
+                winRate: totalGames > 0 ? playerStats.global.wins / totalGames : 0
+            };
+        })
+        .filter(p => p.totalGames > 0) // Uniquement les joueurs avec au moins 1 partie
+        .sort((a, b) => {
+            // Trier par taux de victoire, puis par nombre de parties
+            if (b.winRate !== a.winRate) {
+                return b.winRate - a.winRate;
+            }
+            return b.totalGames - a.totalGames;
+        })
+        .slice(0, limit)
+        .map(({userId, username, wins, losses, draws, currentStreak, highestStreak}) => ({
+            userId,
+            username,
+            wins,
+            losses,
+            draws,
+            currentStreak,
+            highestStreak
+        }));
+
+    return leaderboard;
+}
+

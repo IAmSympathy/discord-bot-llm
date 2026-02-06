@@ -3,6 +3,7 @@ import {getRandomMeme} from "../../services/memeService";
 import {logCommand} from "../../utils/discordLogger";
 import {EnvConfig} from "../../utils/envConfig";
 import {handleInteractionError, replyWithError} from "../../utils/interactionUtils";
+import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordMemeSearched} from "../../services/userStatsService";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -59,16 +60,7 @@ module.exports = {
                 return;
             }
 
-            // Vérifier que la commande est utilisée dans le bon salon
-            if (interaction.channelId !== MEME_CHANNEL_ID) {
-                await replyWithError(
-                    interaction,
-                    "Salon incorrect",
-                    `Cette commande ne peut être utilisée que dans <#${MEME_CHANNEL_ID}>.`,
-                    true
-                );
-                return;
-            }
+            // Note: La vérification du canal est maintenant gérée par le système centralisé dans bot.ts
 
             // Réponse immédiate
             await interaction.reply("Recherche d'un meme...");
@@ -88,6 +80,23 @@ module.exports = {
             saveMemeToHistory(meme);
 
             console.log(`[FindMeme] Posted meme: "${meme.title}" (${meme.id})`);
+
+            // Enregistrer dans les statistiques utilisateur
+            recordMemeSearched(interaction.user.id, interaction.user.username);
+            // Enregistrer aussi pour Netricsa elle-même
+            recordMemeSearched(NETRICSA_USER_ID, NETRICSA_USERNAME);
+
+            // Ajouter XP avec notification
+            const {addXP, XP_REWARDS} = require("../../services/xpSystem");
+            if (interaction.channel) {
+                await addXP(
+                    interaction.user.id,
+                    interaction.user.username,
+                    XP_REWARDS.memeRecherche,
+                    interaction.channel,
+                    false // Les utilisateurs de commandes ne sont jamais des bots
+                );
+            }
 
             // Logger la commande
             await logCommand("🎭 Meme posté", undefined, [

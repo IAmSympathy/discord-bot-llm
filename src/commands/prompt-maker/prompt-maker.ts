@@ -4,6 +4,8 @@ import {OLLAMA_API_URL, OLLAMA_TEXT_MODEL} from "../../utils/constants";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {createErrorEmbed} from "../../utils/embedBuilder";
 import {isLowPowerMode} from "../../services/botStateService";
+import {addXP, XP_REWARDS} from "../../services/xpSystem";
+import {recordPromptCreated} from "../../services/userStatsService";
 
 const logger = createLogger("PromptMakerCmd");
 
@@ -302,6 +304,20 @@ module.exports = {
             embed.setTimestamp();
 
             await interaction.editReply({embeds: [embed]});
+
+            // Enregistrer la statistique de prompt créé
+            recordPromptCreated(interaction.user.id, interaction.user.username);
+
+            // Ajouter XP avec notification pour la création de prompt
+            if (interaction.channel) {
+                await addXP(
+                    interaction.user.id,
+                    interaction.user.username,
+                    XP_REWARDS.promptCree,
+                    interaction.channel as any,
+                    false
+                );
+            }
 
             // Clear status
             await clearStatus(client);

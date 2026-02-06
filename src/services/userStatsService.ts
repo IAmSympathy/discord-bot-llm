@@ -29,8 +29,10 @@ export interface NetricsaStats {
     imagesGenerees: number;
     imagesReimaginee: number;
     imagesUpscalee: number;
-    recherchesWeb: number;
     conversationsIA: number;
+    memesRecherches: number;
+    promptsCrees: number;
+    recherchesWebNetricsa?: number; // Seulement pour Netricsa elle-même
 }
 
 /**
@@ -86,6 +88,8 @@ function saveStats(stats: StatsDatabase): void {
  * Initialise les statistiques par défaut pour un utilisateur
  */
 function initUserStats(userId: string, username: string): UserStats {
+    const isNetricsa = userId === NETRICSA_USER_ID;
+
     return {
         userId,
         username,
@@ -102,8 +106,10 @@ function initUserStats(userId: string, username: string): UserStats {
             imagesGenerees: 0,
             imagesReimaginee: 0,
             imagesUpscalee: 0,
-            recherchesWeb: 0,
-            conversationsIA: 0
+            conversationsIA: 0,
+            memesRecherches: 0,
+            promptsCrees: 0,
+            ...(isNetricsa ? {recherchesWebNetricsa: 0} : {})
         },
         lastUpdate: Date.now()
     };
@@ -114,7 +120,18 @@ function initUserStats(userId: string, username: string): UserStats {
  */
 export function getUserStats(userId: string): UserStats | null {
     const stats = loadStats();
-    return stats[userId] || null;
+    const userStat = stats[userId];
+
+    if (!userStat) {
+        return null;
+    }
+
+    // Migration : ajouter tempsVocalMinutes si manquant (anciennes données)
+    if (userStat.discord && userStat.discord.tempsVocalMinutes === undefined) {
+        userStat.discord.tempsVocalMinutes = 0;
+    }
+
+    return userStat;
 }
 
 /**
@@ -150,6 +167,8 @@ export function recordMessageSent(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
+
+    // Note: XP est ajouté avec notification dans watchChannel.ts
 }
 
 /**
@@ -164,6 +183,8 @@ export function recordReactionAdded(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
+
+    // Note: XP avec notification est ajouté dans bot.ts lors de l'événement reactionAdd
 }
 
 /**
@@ -178,6 +199,8 @@ export function recordReactionReceived(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
+
+    // Note: XP avec notification est ajouté dans bot.ts lors de l'événement reactionAdd
 }
 
 /**
@@ -192,6 +215,8 @@ export function recordCommandUsed(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
+
+    // Note: XP avec notification est ajouté dans les handlers de commandes
 }
 
 /**
@@ -206,6 +231,8 @@ export function recordMentionReceived(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
+
+    // Note: XP avec notification est ajouté dans watchChannel.ts
 }
 
 /**
@@ -220,6 +247,8 @@ export function recordReplyReceived(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
+
+    // Note: XP avec notification est ajouté dans watchChannel.ts
 }
 
 /**
@@ -234,6 +263,8 @@ export function recordVoiceTime(userId: string, username: string, minutes: numbe
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
+
+    // Note: XP avec notification est ajouté en temps réel dans voiceTracker.ts
 }
 
 // === FONCTIONS D'INCRÉMENTATION NETRICSA ===
@@ -250,6 +281,8 @@ export function recordImageGenerated(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
+
+    // Note: XP avec notification est ajouté dans imagine.ts après la génération
 }
 
 /**
@@ -264,6 +297,8 @@ export function recordImageReimagined(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
+
+    // Note: XP avec notification est ajouté dans reimagine.ts après la génération
 }
 
 /**
@@ -278,20 +313,8 @@ export function recordImageUpscaled(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-}
 
-/**
- * Enregistre une recherche web
- */
-export function recordWebSearch(userId: string, username: string): void {
-    const stats = loadStats();
-    if (!stats[userId]) {
-        stats[userId] = initUserStats(userId, username);
-    }
-    stats[userId].netricsa.recherchesWeb++;
-    stats[userId].username = username;
-    stats[userId].lastUpdate = Date.now();
-    saveStats(stats);
+    // Note: XP avec notification est ajouté dans upscale.ts après l'upscaling
 }
 
 /**
@@ -305,6 +328,59 @@ export function recordAIConversation(userId: string, username: string): void {
     stats[userId].netricsa.conversationsIA++;
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
+    saveStats(stats);
+
+    // Note: XP avec notification est ajouté dans queue.ts après la génération de la réponse
+}
+
+/**
+ * Enregistre une recherche de meme
+ */
+export function recordMemeSearched(userId: string, username: string): void {
+    const stats = loadStats();
+    if (!stats[userId]) {
+        stats[userId] = initUserStats(userId, username);
+    }
+    stats[userId].netricsa.memesRecherches++;
+    stats[userId].username = username;
+    stats[userId].lastUpdate = Date.now();
+    saveStats(stats);
+
+    // Note: XP avec notification est ajouté dans findmeme.ts après la recherche
+}
+
+/**
+ * Enregistre la création d'un prompt
+ */
+export function recordPromptCreated(userId: string, username: string): void {
+    const stats = loadStats();
+    if (!stats[userId]) {
+        stats[userId] = initUserStats(userId, username);
+    }
+    stats[userId].netricsa.promptsCrees++;
+    stats[userId].username = username;
+    stats[userId].lastUpdate = Date.now();
+    saveStats(stats);
+
+    // Note: XP avec notification est ajouté dans prompt-maker.ts après la création
+}
+
+/**
+ * Enregistre une recherche web de Netricsa (uniquement pour Netricsa elle-même)
+ */
+export function recordNetricsaWebSearch(): void {
+    const stats = loadStats();
+    if (!stats[NETRICSA_USER_ID]) {
+        stats[NETRICSA_USER_ID] = initUserStats(NETRICSA_USER_ID, NETRICSA_USERNAME);
+    }
+
+    // Initialiser le champ s'il n'existe pas
+    if (stats[NETRICSA_USER_ID].netricsa.recherchesWebNetricsa === undefined) {
+        stats[NETRICSA_USER_ID].netricsa.recherchesWebNetricsa = 0;
+    }
+
+    stats[NETRICSA_USER_ID].netricsa.recherchesWebNetricsa!++;
+    stats[NETRICSA_USER_ID].lastUpdate = Date.now();
     saveStats(stats);
 }
 
@@ -349,7 +425,7 @@ export function getServerStats(): ServerStats {
         stats.totalCommands += userStat.discord.commandesUtilisees;
         stats.totalImages += userStat.netricsa.imagesGenerees + userStat.netricsa.imagesReimaginee;
         stats.totalUpscales += userStat.netricsa.imagesUpscalee;
-        stats.totalSearches += userStat.netricsa.recherchesWeb;
+        // Les recherches web ne sont plus comptées (uniquement pour Netricsa)
         stats.totalConversations += userStat.netricsa.conversationsIA;
     }
 

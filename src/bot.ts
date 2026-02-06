@@ -19,6 +19,7 @@ import {initializeActivityMonitor} from "./services/activityMonitor";
 import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
 import {recordCommandUsed, recordReactionAdded, recordReactionReceived} from "./services/userStatsService";
+import {canExecuteCommand, getCommandRestrictionMessage} from "./utils/commandPermissions";
 
 const logger = createLogger("Bot");
 
@@ -588,8 +589,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
 // Réaction ajoutée
 client.on(Events.MessageReactionAdd, async (reaction, user) => {
     try {
-        // Ignorer les réactions des bots
-        if (user.bot) return;
+        // Ne plus ignorer complètement les bots pour les stats
 
         // Si l'utilisateur est partiel, fetch les données complètes
         if (user.partial) {
@@ -614,11 +614,29 @@ client.on(Events.MessageReactionAdd, async (reaction, user) => {
         // Enregistrer la réaction ajoutée pour l'utilisateur qui réagit
         if (user.username) {
             recordReactionAdded(user.id, user.username);
+
+            // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
+            const {addXP, XP_REWARDS} = require("./services/xpSystem");
+            if (reaction.message.channel) {
+                await addXP(user.id, user.username, XP_REWARDS.reactionAjoutee, reaction.message.channel, user.bot);
+            }
         }
 
         // Enregistrer la réaction reçue pour l'auteur du message
-        if (reaction.message.author && !reaction.message.author.bot && reaction.message.author.username) {
+        if (reaction.message.author && reaction.message.author.username) {
             recordReactionReceived(reaction.message.author.id, reaction.message.author.username);
+
+            // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
+            const {addXP, XP_REWARDS} = require("./services/xpSystem");
+            if (reaction.message.channel) {
+                await addXP(
+                    reaction.message.author.id,
+                    reaction.message.author.username,
+                    XP_REWARDS.reactionRecue,
+                    reaction.message.channel,
+                    reaction.message.author.bot
+                );
+            }
         }
     } catch (error) {
         logger.error("Error handling reaction add:", error);
@@ -644,8 +662,32 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     try {
+        // Vérifier si la commande peut être exécutée dans ce canal
+        if (!canExecuteCommand(interaction)) {
+            const errorMessage = getCommandRestrictionMessage(interaction);
+            const errorEmbed = createErrorEmbed("Commande restreinte", errorMessage);
+
+            await interaction.reply({
+                embeds: [errorEmbed],
+                flags: MessageFlags.Ephemeral
+            });
+            return;
+        }
+
         // Enregistrer l'utilisation de la commande dans les statistiques
         recordCommandUsed(interaction.user.id, interaction.user.username);
+
+        // Ajouter XP avec notification pour l'utilisation de commande
+        const {addXP, XP_REWARDS} = require("./services/xpSystem");
+        if (interaction.channel) {
+            await addXP(
+                interaction.user.id,
+                interaction.user.username,
+                XP_REWARDS.commandeUtilisee,
+                interaction.channel,
+                false // Les utilisateurs de commandes ne sont jamais des bots
+            );
+        }
 
         await command.execute(interaction);
     } catch (error: any) {

@@ -1,12 +1,23 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, MessageFlags, SlashCommandBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, User} from "discord.js";
 import {handleInteractionError} from "../../utils/interactionUtils";
 import {getPlayerStats} from "../../games/common/globalStats";
-import {getNetricsaStats, getServerStats, getUserStats} from "../../services/userStatsService";
-
-type StatsCategory = "jeux" | "discord" | "netricsa" | "serveur";
+import {createDiscordStatsEmbed, createNetricsaStatsEmbed, createProfileEmbed, createServerStatsEmbed, getLevelText, StatsCategory} from "../../utils/statsEmbedBuilder";
 
 /**
- * Crée l'embed pour les statistiques de jeux
+ * Crée le bouton "Voir les statistiques" pour le profil
+ */
+function createViewStatsButton(userId: string): ActionRowBuilder<ButtonBuilder> {
+    return new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`profile_view_stats_${userId}`)
+            .setLabel("Voir les statistiques")
+            .setEmoji("📊")
+            .setStyle(ButtonStyle.Primary)
+    );
+}
+
+/**
+ * Crée l'embed pour les statistiques de jeux avec choix de type de jeu
  */
 function createGameStatsEmbed(targetUser: User, gameType: string): EmbedBuilder {
     // Si c'est le bot, afficher ses vraies stats de jeux
@@ -16,6 +27,11 @@ function createGameStatsEmbed(targetUser: User, gameType: string): EmbedBuilder 
     let description = "";
     let title = isBot ? `📊 Mes Statistiques de Jeux (Netricsa)` : `📊 Statistiques de ${targetUser.displayName}`;
 
+    // Ajouter le niveau en haut (sauf pour Netricsa)
+    if (!isBot) {
+        description += getLevelText(targetUser.id);
+    }
+
     if (gameType === "global") {
         title += " - Jeux (Global)";
         const globalStats = stats.global;
@@ -23,9 +39,9 @@ function createGameStatsEmbed(targetUser: User, gameType: string): EmbedBuilder 
 
         if (totalGames === 0) {
             if (isBot) {
-                description = "Aucune partie jouée pour le moment. Je suis prête à affronter les joueurs ! 🎮";
+                description += "Aucune partie jouée pour le moment. Je suis prête à affronter les joueurs ! 🎮";
             } else {
-                description = "Aucune partie jouée pour le moment.";
+                description += "Aucune partie jouée pour le moment.";
             }
         } else {
             description += `**Total de parties :** ${totalGames}\n\n`;
@@ -62,11 +78,11 @@ function createGameStatsEmbed(targetUser: User, gameType: string): EmbedBuilder 
 
         if (totalGames === 0) {
             if (isBot && gameType === "hangman") {
-                description = `Je ne joue pas au Pendu (c'est un jeu solo), mais je compte les scores ! 🎮`;
+                description += `Je ne joue pas au Pendu (c'est un jeu solo), mais je compte les scores ! 🎮`;
             } else if (isBot) {
-                description = `Aucune partie de ${gameNames[gameType]} jouée pour le moment. Viens m'affronter ! 🎮`;
+                description += `Aucune partie de ${gameNames[gameType]} jouée pour le moment. Viens m'affronter ! 🎮`;
             } else {
-                description = `Aucune partie de ${gameNames[gameType]} jouée pour le moment.`;
+                description += `Aucune partie de ${gameNames[gameType]} jouée pour le moment.`;
             }
         } else {
             description += `**Total de parties :** ${totalGames}\n\n`;
@@ -92,138 +108,16 @@ function createGameStatsEmbed(targetUser: User, gameType: string): EmbedBuilder 
         }
     }
 
-    return new EmbedBuilder()
-        .setColor(0x2494DB)
+    const embed = new EmbedBuilder()
+        .setColor(0x397d86)
         .setTitle(title)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL())
         .setFooter({text: "Stats depuis le 5 février 2026"})
         .setTimestamp();
-}
 
-/**
- * Formate le temps vocal en heures et minutes
- */
-function formatVoiceTime(minutes: number): string {
-    if (minutes === 0) return "0 min";
-    if (minutes < 60) {
-        return `${minutes} min`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
-}
 
-/**
- * Crée l'embed pour les statistiques Discord
- */
-function createDiscordStatsEmbed(targetUser: User): EmbedBuilder {
-    // Si c'est le bot lui-même, afficher les stats de Netricsa
-    const isBot = targetUser.bot;
-    const userStats = isBot ? getNetricsaStats() : getUserStats(targetUser.id);
-
-    let description = "";
-    if (!userStats) {
-        if (isBot) {
-            description = "Aucune statistique Discord enregistrée pour le moment. Je commence tout juste à compter mes actions ! 🤖";
-        } else {
-            description = "Aucune statistique Discord enregistrée pour le moment.";
-        }
-    } else {
-        description += `📨 **Messages envoyés :** ${userStats.discord.messagesEnvoyes}\n`;
-        description += `👍 **Réactions ajoutées :** ${userStats.discord.reactionsAjoutees}\n`;
-        description += `❤️ **Réactions reçues :** ${userStats.discord.reactionsRecues}\n`;
-        description += `⚡ **Commandes utilisées :** ${userStats.discord.commandesUtilisees}\n`;
-        description += `📢 **Mentions reçues :** ${userStats.discord.mentionsRecues}\n`;
-        description += `💬 **Réponses reçues :** ${userStats.discord.repliesRecues}\n`;
-        description += `🎤 **Temps en vocal :** ${formatVoiceTime(userStats.discord.tempsVocalMinutes)}\n`;
-
-        if (isBot) {
-            description += `\n✨ Toutes mes interactions Discord comptées !`;
-        }
-    }
-
-    const title = isBot
-        ? `📊 Mes Statistiques Discord (Netricsa)`
-        : `📊 Statistiques Discord de ${targetUser.displayName}`;
-
-    return new EmbedBuilder()
-        .setColor(0x5865F2)
-        .setTitle(title)
-        .setDescription(description)
-        .setThumbnail(targetUser.displayAvatarURL())
-        .setFooter({text: "Stats depuis le 5 février 2026"})
-        .setTimestamp();
-}
-
-/**
- * Crée l'embed pour les statistiques Netricsa
- */
-function createNetricsaStatsEmbed(targetUser: User): EmbedBuilder {
-    // Si c'est le bot lui-même, afficher les stats de Netricsa
-    const isBot = targetUser.bot;
-    const userStats = isBot ? getNetricsaStats() : getUserStats(targetUser.id);
-
-    let description = "";
-    if (!userStats) {
-        if (isBot) {
-            description = "Aucune statistique Netricsa enregistrée pour le moment. Je commence tout juste à compter mes actions ! 🤖";
-        } else {
-            description = "Aucune statistique Netricsa enregistrée pour le moment.";
-        }
-    } else {
-        description += `🎨 **Images générées :** ${userStats.netricsa.imagesGenerees}\n`;
-        description += `🖼️ **Images réimaginées :** ${userStats.netricsa.imagesReimaginee}\n`;
-        description += `🔍 **Images upscalées :** ${userStats.netricsa.imagesUpscalee}\n`;
-        description += `🌐 **Recherches web :** ${userStats.netricsa.recherchesWeb}\n`;
-        description += `💬 **Conversations IA :** ${userStats.netricsa.conversationsIA}\n`;
-
-        const totalImages = userStats.netricsa.imagesGenerees + userStats.netricsa.imagesReimaginee;
-        description += `\n📊 **Total d'images créées :** ${totalImages}`;
-
-        // Si c'est Netricsa, ajouter un message personnalisé
-        if (isBot) {
-            description += `\n\n✨ Voilà toutes mes actions depuis que j'ai commencé à les compter !`;
-        }
-    }
-
-    const title = isBot
-        ? `📊 Mes Statistiques (Netricsa)`
-        : `📊 Statistiques Netricsa de ${targetUser.displayName}`;
-
-    return new EmbedBuilder()
-        .setColor(0x397D86)
-        .setTitle(title)
-        .setDescription(description)
-        .setThumbnail(targetUser.displayAvatarURL())
-        .setFooter({text: "Stats depuis le 5 février 2026"})
-        .setTimestamp();
-}
-
-/**
- * Crée l'embed pour les statistiques du serveur
- */
-function createServerStatsEmbed(): EmbedBuilder {
-    const serverStats = getServerStats();
-
-    let description = "";
-    description += `👥 **Utilisateurs actifs :** ${serverStats.totalUsers}\n\n`;
-    description += `**📱 Statistiques Discord**\n`;
-    description += `📨 Messages envoyés : ${serverStats.totalMessages}\n`;
-    description += `👍 Réactions ajoutées : ${serverStats.totalReactions}\n`;
-    description += `⚡ Commandes utilisées : ${serverStats.totalCommands}\n\n`;
-    description += `**🤖 Statistiques Netricsa**\n`;
-    description += `🎨 Images créées : ${serverStats.totalImages}\n`;
-    description += `🔍 Images upscalées : ${serverStats.totalUpscales}\n`;
-    description += `🌐 Recherches web : ${serverStats.totalSearches}\n`;
-    description += `💬 Conversations IA : ${serverStats.totalConversations}`;
-
-    return new EmbedBuilder()
-        .setColor(0xFFA500)
-        .setTitle("📊 Statistiques du serveur")
-        .setDescription(description)
-        .setFooter({text: "Stats depuis le 5 février 2026"})
-        .setTimestamp();
+    return embed;
 }
 
 /**
@@ -234,7 +128,7 @@ function createNavigationButtons(): ActionRowBuilder<ButtonBuilder> {
         new ButtonBuilder()
             .setCustomId("stats_discord")
             .setLabel("Discord")
-            .setEmoji("📱")
+            .setEmoji("📨")
             .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
             .setCustomId("stats_netricsa")
@@ -251,6 +145,19 @@ function createNavigationButtons(): ActionRowBuilder<ButtonBuilder> {
             .setLabel("Serveur")
             .setEmoji("🌐")
             .setStyle(ButtonStyle.Secondary)
+    );
+}
+
+/**
+ * Crée le bouton "Retour au profil"
+ */
+function createBackToProfileButton(userId: string): ActionRowBuilder<ButtonBuilder> {
+    return new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`stats_back_to_profile_${userId}`)
+            .setLabel("Retour au profil")
+            .setEmoji("◀️")
+            .setStyle(ButtonStyle.Danger)
     );
 }
 
@@ -300,18 +207,19 @@ module.exports = {
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
-            const targetUser = interaction.options.getUser("utilisateur") || interaction.user;
+            const targetUser = interaction.options.getUser("user") || interaction.user;
             let currentCategory: StatsCategory = "discord";
             let currentGameType = "global";
 
             // Créer l'embed initial (Discord)
             let embed = createDiscordStatsEmbed(targetUser);
             const navigationButtons = createNavigationButtons();
+            const backToProfileButton = createBackToProfileButton(targetUser.id);
             const gameSelectMenu = createGameSelectMenu();
 
             const message = await interaction.reply({
                 embeds: [embed],
-                components: [navigationButtons], // Pas de gameSelectMenu par défaut car on affiche Discord
+                components: [navigationButtons, backToProfileButton],
                 flags: MessageFlags.Ephemeral,
                 fetchReply: true
             });
@@ -343,28 +251,44 @@ module.exports = {
                     embed = createGameStatsEmbed(targetUser, currentGameType);
                     await buttonInteraction.update({
                         embeds: [embed],
-                        components: [navigationButtons, gameSelectMenu]
+                        components: [navigationButtons, gameSelectMenu, backToProfileButton]
                     });
                 } else if (buttonId === "stats_discord") {
                     currentCategory = "discord";
                     embed = createDiscordStatsEmbed(targetUser);
                     await buttonInteraction.update({
                         embeds: [embed],
-                        components: [navigationButtons]
+                        components: [navigationButtons, backToProfileButton]
                     });
                 } else if (buttonId === "stats_netricsa") {
                     currentCategory = "netricsa";
                     embed = createNetricsaStatsEmbed(targetUser);
                     await buttonInteraction.update({
                         embeds: [embed],
-                        components: [navigationButtons]
+                        components: [navigationButtons, backToProfileButton]
                     });
                 } else if (buttonId === "stats_serveur") {
                     currentCategory = "serveur";
-                    embed = createServerStatsEmbed();
+                    embed = createServerStatsEmbed(interaction.guild);
                     await buttonInteraction.update({
                         embeds: [embed],
-                        components: [navigationButtons]
+                        components: [navigationButtons, backToProfileButton]
+                    });
+                } else if (buttonId.startsWith("stats_back_to_profile_")) {
+                    // Retour au profil
+                    const profileEmbed = createProfileEmbed(targetUser);
+                    const viewStatsButton = createViewStatsButton(targetUser.id);
+                    await buttonInteraction.update({
+                        embeds: [profileEmbed],
+                        components: [viewStatsButton]
+                    });
+                } else if (buttonId.startsWith("profile_view_stats_")) {
+                    // Retour aux stats depuis le profil
+                    currentCategory = "discord";
+                    embed = createDiscordStatsEmbed(targetUser);
+                    await buttonInteraction.update({
+                        embeds: [embed],
+                        components: [navigationButtons, backToProfileButton]
                     });
                 }
             });
@@ -382,7 +306,7 @@ module.exports = {
                 embed = createGameStatsEmbed(targetUser, currentGameType);
                 await selectInteraction.update({
                     embeds: [embed],
-                    components: [navigationButtons, gameSelectMenu]
+                    components: [navigationButtons, gameSelectMenu, backToProfileButton]
                 });
             });
 
@@ -415,15 +339,23 @@ export async function showStatsForUser(interaction: any, targetUser: User) {
         const navigationButtons = createNavigationButtons();
         const gameSelectMenu = createGameSelectMenu();
 
-        // Détecter si l'interaction a déjà été répondue/différée (cas du bouton)
-        const isAlreadyReplied = interaction.replied || interaction.deferred;
+        // Détecter si l'interaction a été différée ou répondue
+        const isDeferred = interaction.deferred && !interaction.replied;
+        const isAlreadyReplied = interaction.replied;
 
         let message;
-        if (isAlreadyReplied) {
-            // Pour les interactions déjà répondues (boutons), utiliser followUp
+        if (isDeferred) {
+            // Pour les interactions différées (deferReply), utiliser editReply
+            message = await interaction.editReply({
+                embeds: [embed],
+                components: [navigationButtons],
+                fetchReply: true
+            });
+        } else if (isAlreadyReplied) {
+            // Pour les interactions déjà répondues, utiliser followUp
             message = await interaction.followUp({
                 embeds: [embed],
-                components: [navigationButtons], // Pas de gameSelectMenu par défaut
+                components: [navigationButtons],
                 flags: MessageFlags.Ephemeral,
                 fetchReply: true
             });
@@ -431,7 +363,7 @@ export async function showStatsForUser(interaction: any, targetUser: User) {
             // Pour les nouvelles interactions (commandes slash), utiliser reply
             message = await interaction.reply({
                 embeds: [embed],
-                components: [navigationButtons], // Pas de gameSelectMenu par défaut
+                components: [navigationButtons],
                 flags: MessageFlags.Ephemeral,
                 fetchReply: true
             });
@@ -481,7 +413,7 @@ export async function showStatsForUser(interaction: any, targetUser: User) {
                 });
             } else if (buttonId === "stats_serveur") {
                 currentCategory = "serveur";
-                embed = createServerStatsEmbed();
+                embed = createServerStatsEmbed(interaction.guild);
                 await buttonInteraction.update({
                     embeds: [embed],
                     components: [navigationButtons]
@@ -509,14 +441,14 @@ export async function showStatsForUser(interaction: any, targetUser: User) {
         collector.on("end", async () => {
             try {
                 // Désactiver les composants du message des stats
-                if (isAlreadyReplied) {
-                    // Pour les interactions déjà répondues, éditer le message directement
-                    await message.edit({
+                if (isDeferred || !isAlreadyReplied) {
+                    // Pour les interactions différées ou les commandes slash, utiliser editReply
+                    await interaction.editReply({
                         components: []
                     });
                 } else {
-                    // Pour les commandes slash, utiliser editReply
-                    await interaction.editReply({
+                    // Pour les interactions déjà répondues (followUp), éditer le message directement
+                    await message.edit({
                         components: []
                     });
                 }

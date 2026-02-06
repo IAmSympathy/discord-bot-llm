@@ -13,7 +13,7 @@ import {logBotImageAnalysis, logBotResponse, logBotWebSearch, logError} from "..
 import {BotStatus, clearStatus, setStatus} from "../services/statusService";
 import {getDMRecentTurns} from "../services/dmMemoryService";
 import {createLogger} from "../utils/logger";
-import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordAIConversation, recordWebSearch} from "../services/userStatsService";
+import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordAIConversation, recordNetricsaWebSearch} from "../services/userStatsService";
 
 const wait = require("node:timers/promises").setTimeout;
 const logger = createLogger("Queue");
@@ -502,11 +502,8 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             // Logger la recherche web avec le temps
             await logBotWebSearch(userName, prompt, webContext.facts?.length || 0, webSearchTime);
 
-            // Enregistrer dans les statistiques utilisateur
-            recordWebSearch(userId, userName);
-
-            // Enregistrer aussi pour Netricsa elle-même
-            recordWebSearch(NETRICSA_USER_ID, NETRICSA_USERNAME);
+            // Enregistrer la recherche web uniquement pour Netricsa elle-même
+            recordNetricsaWebSearch();
 
             // Changer le statut après la recherche web
             await setStatus(client, BotStatus.THINKING);
@@ -740,8 +737,15 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                         logger.info(`✅ Saved in #${channelName}${contextInfo.length > 0 ? ` [${contextInfo.join(", ")}]` : ""}`);
                                     }
 
+                                    // Enregistrer la conversation IA pour l'utilisateur
+                                    recordAIConversation(userId, userName);
+
                                     // Enregistrer la conversation IA pour Netricsa elle-même
                                     recordAIConversation(NETRICSA_USER_ID, NETRICSA_USERNAME);
+
+                                    // Ajouter XP avec notification pour l'utilisateur (conversation IA inclut les recherches web)
+                                    const {addXP, XP_REWARDS} = require("../services/xpSystem");
+                                    await addXP(userId, userName, XP_REWARDS.conversationIA, channel, false);
                                 } else if (isModerationRefusal) {
                                     logger.warn(`🚫 Moderation refusal detected, NOT saving to memory`);
                                 }

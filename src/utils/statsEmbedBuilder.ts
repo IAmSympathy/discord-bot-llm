@@ -1,0 +1,321 @@
+import {EmbedBuilder, User} from "discord.js";
+import {getServerStats, getUserStats} from "../services/userStatsService";
+import {getUserXP, getXPForNextLevel} from "../services/xpSystem";
+import {getPlayerStats} from "../games/common/globalStats";
+import {UserProfileService} from "../services/userProfileService";
+
+/**
+ * Crée une barre de progression visuelle pour l'XP
+ */
+export function createXPBar(currentXP: number, level: number): string {
+    const xpForCurrent = level * level * 100;
+    const xpForNext = (level + 1) * (level + 1) * 100;
+    const xpInLevel = currentXP - xpForCurrent;
+    const xpNeeded = xpForNext - xpForCurrent;
+    const percentage = (xpInLevel / xpNeeded) * 100;
+
+    const totalBars = 10;
+    const filledBars = Math.floor((percentage / 100) * totalBars);
+    const emptyBars = totalBars - filledBars;
+
+    const bar = "█".repeat(filledBars) + "░".repeat(emptyBars);
+    return `${bar} ${percentage.toFixed(0)}%`;
+}
+
+/**
+ * Crée le texte d'affichage du niveau et de l'XP
+ */
+export function getLevelText(userId: string): string {
+    const xpData = getUserXP(userId);
+
+    if (xpData) {
+        const xpForNext = getXPForNextLevel(xpData.level);
+        const progressBar = createXPBar(xpData.totalXP, xpData.level);
+
+        return `⭐ **Niveau ${xpData.level}**\n${progressBar}\n💫 **${xpData.totalXP.toLocaleString()} XP** | ${xpForNext.toLocaleString()} XP \n\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+    } else {
+        return `⭐ **Niveau 0**\nAucune XP pour le moment. Commence à être actif pour gagner des niveaux !\n\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+    }
+}
+
+/**
+ * Formate le temps vocal en heures et minutes
+ */
+export function formatVoiceTime(minutes?: number): string {
+    if (minutes === undefined || minutes === null || isNaN(minutes) || minutes === 0) {
+        return "0 min";
+    }
+
+    if (minutes < 60) {
+        return `${minutes} min`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+}
+
+/**
+ * Crée l'embed pour les statistiques Discord
+ */
+export function createDiscordStatsEmbed(targetUser: User): EmbedBuilder {
+    const userStats = getUserStats(targetUser.id);
+
+    let description = getLevelText(targetUser.id);
+
+    if (!userStats) {
+        description += "Aucune statistique disponible pour le moment.";
+    } else {
+        description += `📨 **Messages envoyés :** ${userStats.discord.messagesEnvoyes}\n`;
+        description += `👍 **Réactions ajoutées :** ${userStats.discord.reactionsAjoutees}\n`;
+        description += `❤️ **Réactions reçues :** ${userStats.discord.reactionsRecues}\n`;
+        description += `⚡ **Commandes utilisées :** ${userStats.discord.commandesUtilisees}\n`;
+        description += `📢 **Mentions reçues :** ${userStats.discord.mentionsRecues}\n`;
+        description += `💬 **Replies reçues :** ${userStats.discord.repliesRecues}\n`;
+        description += `🎤 **Temps en vocal :** ${formatVoiceTime(userStats.discord.tempsVocalMinutes)}`;
+    }
+
+    return new EmbedBuilder()
+        .setColor(0x397d86)
+        .setTitle(`📊 Statistiques Discord de ${targetUser.displayName}`)
+        .setDescription(description)
+        .setThumbnail(targetUser.displayAvatarURL({size: 128}))
+        .setFooter({text: "Stats depuis le 5 février 2026"})
+        .setTimestamp();
+}
+
+/**
+ * Crée l'embed pour les statistiques Netricsa
+ */
+export function createNetricsaStatsEmbed(targetUser: User): EmbedBuilder {
+    const userStats = getUserStats(targetUser.id);
+    const isBot = targetUser.bot;
+
+    let description = getLevelText(targetUser.id);
+
+    if (!userStats) {
+        description += "Aucune statistique disponible pour le moment.";
+    } else {
+        description += `🎨 **Images générées :** ${userStats.netricsa.imagesGenerees}\n`;
+        description += `🖼️ **Images réimaginées :** ${userStats.netricsa.imagesReimaginee}\n`;
+        description += `🔍 **Images upscalées :** ${userStats.netricsa.imagesUpscalee}\n`;
+        description += `✨ **Prompts créés :** ${userStats.netricsa.promptsCrees || 0}\n`;
+        description += `💬 **Conversations IA :** ${userStats.netricsa.conversationsIA}\n`;
+
+        // Afficher les recherches web uniquement pour Netricsa
+        if (isBot && userStats.netricsa.recherchesWebNetricsa !== undefined) {
+            description += `🌐 **Recherches web effectuées :** ${userStats.netricsa.recherchesWebNetricsa}\n`;
+        }
+
+        description += `🎭 **Memes recherchés :** ${userStats.netricsa.memesRecherches || 0}\n`;
+
+
+        const totalImages = userStats.netricsa.imagesGenerees + userStats.netricsa.imagesReimaginee;
+        description += `\n📊 **Total d'images créées :** ${totalImages}`;
+
+        // Si c'est Netricsa, ajouter un message personnalisé
+        if (isBot) {
+            description += `\n\n✨ Voilà toutes mes actions depuis que j'ai commencé à les compter !`;
+        }
+    }
+
+    return new EmbedBuilder()
+        .setColor(0x397d86)
+        .setTitle(`🤖 Statistiques Netricsa de ${targetUser.displayName}`)
+        .setDescription(description)
+        .setThumbnail(targetUser.displayAvatarURL({size: 128}))
+        .setFooter({text: "Stats depuis le 5 février 2026"})
+        .setTimestamp();
+}
+
+/**
+ * Crée l'embed pour les statistiques de jeux
+ */
+export function createGameStatsEmbed(targetUser: User): EmbedBuilder {
+    const isBot = targetUser.bot;
+    const gameStats = isBot ? getPlayerStats("NETRICSA_BOT") : getPlayerStats(targetUser.id);
+
+    let description = getLevelText(targetUser.id);
+
+    if (!gameStats) {
+        description += "Aucune partie jouée pour le moment.";
+    } else {
+        const totalGames = gameStats.global.wins + gameStats.global.losses + gameStats.global.draws;
+
+        if (totalGames === 0) {
+            description += "Aucune partie jouée pour le moment.";
+        } else {
+            description += `🎮 **Parties jouées :** ${totalGames}\n`;
+            description += `🏆 **Victoires :** ${gameStats.global.wins}\n`;
+            description += `💀 **Défaites :** ${gameStats.global.losses}\n`;
+            description += `🤝 **Égalités :** ${gameStats.global.draws}\n`;
+
+            const winRate = totalGames > 0
+                ? ((gameStats.global.wins / totalGames) * 100).toFixed(1)
+                : "0";
+            description += `📊 **Taux de victoire :** ${winRate}%\n`;
+            description += `🔥 **Série actuelle :** ${gameStats.global.currentStreak}\n`;
+            description += `⭐ **Meilleure série :** ${gameStats.global.highestStreak}`;
+        }
+    }
+
+    return new EmbedBuilder()
+        .setColor(0x397d86)
+        .setTitle(`🎮 Statistiques de Jeux de ${targetUser.displayName}`)
+        .setDescription(description)
+        .setThumbnail(targetUser.displayAvatarURL({size: 128}))
+        .setFooter({text: "Stats depuis le 5 février 2026"})
+        .setTimestamp();
+}
+
+/**
+ * Crée l'embed pour les statistiques du serveur
+ */
+export function createServerStatsEmbed(guild?: any): EmbedBuilder {
+    const serverStats = getServerStats();
+
+    // Pas de niveau pour les stats serveur
+    let description = "";
+    description += `👥 **Utilisateurs actifs :** ${serverStats.totalUsers}\n`;
+    description += `📨 **Messages totaux :** ${serverStats.totalMessages.toLocaleString()}\n`;
+    description += `👍 **Réactions totales :** ${serverStats.totalReactions.toLocaleString()}\n`;
+    description += `⚡ **Commandes utilisées :** ${serverStats.totalCommands.toLocaleString()}\n`;
+    description += `🎨 **Images créées :** ${serverStats.totalImages.toLocaleString()}\n`;
+    description += `🔍 **Upscales :** ${serverStats.totalUpscales.toLocaleString()}\n`;
+    description += `💬 **Conversations IA :** ${serverStats.totalConversations.toLocaleString()}`;
+
+    const embed = new EmbedBuilder()
+        .setColor(0x397d86)
+        .setTitle("🌐 Statistiques du Serveur")
+        .setDescription(description)
+        .setFooter({text: "Stats depuis le 5 février 2026"})
+        .setTimestamp();
+
+    // Utiliser l'icône du serveur si disponible
+    if (guild && guild.iconURL) {
+        embed.setThumbnail(guild.iconURL({size: 128}));
+    }
+
+    return embed;
+}
+
+/**
+ * Type pour les catégories de stats
+ */
+export type StatsCategory = "discord" | "netricsa" | "jeux" | "serveur";
+
+/**
+ * Crée l'embed pour une catégorie de stats donnée
+ */
+export function createStatsEmbed(targetUser: User, category: StatsCategory, guild?: any): EmbedBuilder {
+    switch (category) {
+        case "discord":
+            return createDiscordStatsEmbed(targetUser);
+        case "netricsa":
+            return createNetricsaStatsEmbed(targetUser);
+        case "jeux":
+            return createGameStatsEmbed(targetUser);
+        case "serveur":
+            return createServerStatsEmbed(guild);
+        default:
+            return createDiscordStatsEmbed(targetUser);
+    }
+}
+
+/**
+ * Crée l'embed de profil pour l'utilisateur
+ */
+export function createProfileEmbed(targetUser: User): EmbedBuilder {
+    const profile = UserProfileService.getProfile(targetUser.id);
+
+    const embed = new EmbedBuilder()
+        .setColor(0x397d86)
+        .setTitle(`📋 Profil de ${targetUser.displayName}`)
+        .setThumbnail(targetUser.displayAvatarURL({size: 128}))
+        .setTimestamp()
+        .setFooter({text: `ID: ${targetUser.id}`});
+
+    if (!profile) {
+        embed.setDescription(`Aucun profil trouvé pour **${targetUser.username}**.\nL'IA n'a pas encore appris d'informations sur cet utilisateur.`);
+        return embed;
+    }
+
+    // Vérifier si le profil a du contenu
+    const hasContent =
+        profile.roles.length > 0 ||
+        profile.aliases.length > 0 ||
+        profile.interests.length > 0 ||
+        profile.facts.length > 0;
+
+    if (!hasContent) {
+        embed.setDescription("ℹ️ Le profil existe mais est vide pour le moment.");
+        return embed;
+    }
+
+    // Aliases
+    if (profile.aliases.length > 0) {
+        const aliasesText = profile.aliases.map(alias => `• ${alias}`).join("\n");
+        embed.addFields({name: "🏷️ Surnoms", value: aliasesText, inline: true});
+    }
+
+    // Rôles Discord
+    if (profile.roles.length > 0) {
+        const rolesText = profile.roles.map(role => `• ${role}`).join("\n");
+        embed.addFields({name: "👥 Rôles Discord", value: rolesText, inline: true});
+    }
+
+    // Activité en cours
+    if (profile.currentActivity) {
+        const activityAge = Date.now() - profile.currentActivity.timestamp;
+        const maxAge = 15 * 60 * 1000;
+
+        if (activityAge < maxAge) {
+            let activityText = `• ${profile.currentActivity.gameName}`;
+            if (profile.currentActivity.details) {
+                activityText += ` (${profile.currentActivity.details})`;
+            }
+            embed.addFields({name: "🎮 Joue actuellement à", value: activityText, inline: false});
+        }
+    }
+
+    // Anniversaire
+    if (profile.birthday) {
+        const monthNames = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+        let birthdayText = `Date: ${profile.birthday.day} ${monthNames[profile.birthday.month - 1]}`;
+
+        if (profile.birthday.year) {
+            const now = new Date();
+            let age = now.getFullYear() - profile.birthday.year;
+            const birthdayThisYear = new Date(now.getFullYear(), profile.birthday.month - 1, profile.birthday.day);
+            if (now < birthdayThisYear) age--;
+            birthdayText += ` ${profile.birthday.year} (${age} ans)`;
+        }
+
+        birthdayText += `\nNotification: ${profile.birthday.notify ? 'Activée' : 'Désactivée'}`;
+        embed.addFields({name: "🎂 Anniversaire", value: birthdayText, inline: false});
+    }
+
+    // Intérêts
+    if (profile.interests.length > 0) {
+        const interestsText = profile.interests.map(interest => `• ${interest}`).join("\n");
+        embed.addFields({name: "💡 Centres d'intérêt", value: interestsText});
+    }
+
+    // Faits
+    if (profile.facts.length > 0) {
+        const recentFacts = profile.facts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 10);
+        const factsText = recentFacts.map(fact => {
+            const date = new Date(fact.timestamp).toLocaleDateString("fr-FR", {day: "2-digit", month: "2-digit", year: "numeric"});
+            return `• ${fact.content} *(${date})*`;
+        }).join("\n");
+
+        const factsTitle = profile.facts.length > 10
+            ? `📝 Faits enregistrés (${profile.facts.length} - affichage limité à 10)`
+            : `📝 Faits enregistrés (${profile.facts.length})`;
+
+        embed.addFields({name: factsTitle, value: factsText, inline: false});
+    }
+
+    return embed;
+}
+

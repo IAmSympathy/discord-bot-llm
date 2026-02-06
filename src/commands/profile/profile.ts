@@ -1,8 +1,8 @@
-import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
+import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {UserProfileService} from "../../services/userProfileService";
 import {updateUserActivityFromPresence} from "../../services/activityService";
 import {createErrorEmbed} from "../../utils/interactionUtils";
-import {showStatsForUser} from "../stats/stats";
+import {createProfileEmbed, createStatsEmbed, StatsCategory} from "../../utils/statsEmbedBuilder";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -41,148 +41,13 @@ module.exports = {
                 }
             }
 
-            const profile = UserProfileService.getProfile(targetUser.id);
-
-            if (!profile) {
-                const noProfileEmbed = new EmbedBuilder()
-                    .setColor(0x3498db)
-                    .setTitle("❌ Profil introuvable")
-                    .setDescription(`Aucun profil trouvé pour **${targetUser.username}**.\nL'IA n'a pas encore appris d'informations sur cet utilisateur.`)
-                    .setTimestamp();
-
-                await interaction.editReply({embeds: [noProfileEmbed]});
-                return;
-            }
-
-            // Créer l'embed avec une couleur dynamique
-            const embed = new EmbedBuilder()
-                .setColor(0x397d86)
-                .setTitle(`📋 Profil de ${targetUser.displayName}`)
-                .setThumbnail(targetUser.displayAvatarURL({size: 128}))
-                .setTimestamp()
-                .setFooter({text: `ID: ${targetUser.id}`});
-
-            // Vérifier si le profil a du contenu
-            const hasContent =
-                profile.roles.length > 0 ||
-                profile.aliases.length > 0 ||
-                profile.interests.length > 0 ||
-                profile.facts.length > 0;
-
-            if (!hasContent) {
-                embed.setDescription("ℹ️ Le profil existe mais est vide pour le moment.");
-                await interaction.editReply({embeds: [embed]});
-                return;
-            }
-
-
-            // Aliases (surnoms)
-            if (profile.aliases.length > 0) {
-                const aliasesText = profile.aliases.map(alias => `• ${alias}`).join("\n");
-                embed.addFields({
-                    name: "🏷️ Surnoms",
-                    value: aliasesText,
-                    inline: true
-                });
-            }
-
-            // Rôles Discord
-            if (profile.roles.length > 0) {
-                const rolesText = profile.roles.map(role => `• ${role}`).join("\n");
-                embed.addFields({
-                    name: "👥 Rôles Discord",
-                    value: rolesText,
-                    inline: true
-                });
-            }
-
-            // Activité en cours (jeu joué)
-            if (profile.currentActivity) {
-                const activityAge = Date.now() - profile.currentActivity.timestamp;
-                const maxAge = 15 * 60 * 1000; // 15 minutes
-
-                if (activityAge < maxAge) {
-                    let activityText = `• ${profile.currentActivity.gameName}`;
-                    if (profile.currentActivity.details) {
-                        activityText += ` (${profile.currentActivity.details})`;
-                    }
-                    embed.addFields({
-                        name: "🎮 Joue actuellement à",
-                        value: activityText,
-                        inline: false
-                    });
-                }
-            }
-
-            // Anniversaire
-            if (profile.birthday) {
-                const monthNames = [
-                    "janvier", "février", "mars", "avril", "mai", "juin",
-                    "juillet", "août", "septembre", "octobre", "novembre", "décembre"
-                ];
-                let birthdayText = `Date: ${profile.birthday.day} ${monthNames[profile.birthday.month - 1]}`;
-
-                if (profile.birthday.year) {
-                    const now = new Date();
-                    let age = now.getFullYear() - profile.birthday.year;
-
-                    // Vérifier si l'anniversaire n'est pas encore passé cette année
-                    const birthdayThisYear = new Date(now.getFullYear(), profile.birthday.month - 1, profile.birthday.day);
-                    if (now < birthdayThisYear) {
-                        age--;
-                    }
-
-                    birthdayText += ` ${profile.birthday.year} (${age} ans)`;
-                }
-
-                birthdayText += `\nNotification: ${profile.birthday.notify ? 'Activée' : 'Désactivée'}`;
-
-                embed.addFields({
-                    name: "🎂 Anniversaire",
-                    value: birthdayText,
-                    inline: false
-                });
-            }
-
-            // Intérêts
-            if (profile.interests.length > 0) {
-                const interestsText = profile.interests.map(interest => `• ${interest}`).join("\n");
-                embed.addFields({
-                    name: "💡 Centres d'intérêt",
-                    value: interestsText,
-                });
-            }
-
-            // Faits
-            if (profile.facts.length > 0) {
-                const recentFacts = profile.facts
-                    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-                    .slice(0, 10);
-
-                const factsText = recentFacts.map(fact => {
-                    const date = new Date(fact.timestamp).toLocaleDateString("fr-FR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric"
-                    });
-                    return `• ${fact.content} *(${date})*`;
-                }).join("\n");
-
-                const factsTitle = profile.facts.length > 10
-                    ? `📝 Faits enregistrés (${profile.facts.length} - affichage limité à 10)`
-                    : `📝 Faits enregistrés (${profile.facts.length})`;
-
-                embed.addFields({
-                    name: factsTitle,
-                    value: factsText,
-                    inline: false
-                });
-            }
+            // Créer l'embed de profil en utilisant la fonction partagée
+            const embed = createProfileEmbed(targetUser);
 
             // Créer le bouton pour accéder aux stats
             const statsButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                 new ButtonBuilder()
-                    .setCustomId("profile_view_stats")
+                    .setCustomId(`profile_view_stats_${targetUser.id}`)
                     .setLabel("Voir les statistiques")
                     .setEmoji("📊")
                     .setStyle(ButtonStyle.Primary)
@@ -208,12 +73,105 @@ module.exports = {
                     return;
                 }
 
-                if (buttonInteraction.customId === "profile_view_stats") {
-                    // Déférer l'interaction du bouton pour éviter le timeout
+                const customId = buttonInteraction.customId;
+
+                if (customId.startsWith("profile_view_stats_")) {
+                    // Afficher les stats en éditant le message
                     await buttonInteraction.deferUpdate();
 
-                    // Afficher les stats de l'utilisateur
-                    await showStatsForUser(buttonInteraction, targetUser);
+                    // Créer l'embed des stats Discord (par défaut)
+                    const statsEmbed = createStatsEmbed(targetUser, "discord", interaction.guild);
+
+                    // Créer les boutons de navigation des stats + bouton retour
+                    const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                        new ButtonBuilder()
+                            .setCustomId(`profile_back_${targetUser.id}`)
+                            .setLabel("Retour au profil")
+                            .setEmoji("◀️")
+                            .setStyle(ButtonStyle.Danger)
+                    );
+
+                    const categoryButtons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                        new ButtonBuilder()
+                            .setCustomId(`stats_discord_${targetUser.id}`)
+                            .setLabel("Discord")
+                            .setEmoji("📨")
+                            .setStyle(ButtonStyle.Primary),
+                        new ButtonBuilder()
+                            .setCustomId(`stats_netricsa_${targetUser.id}`)
+                            .setLabel("Netricsa")
+                            .setEmoji("🤖")
+                            .setStyle(ButtonStyle.Primary),
+                        new ButtonBuilder()
+                            .setCustomId(`stats_jeux_${targetUser.id}`)
+                            .setLabel("Jeux")
+                            .setEmoji("🎮")
+                            .setStyle(ButtonStyle.Primary),
+                        new ButtonBuilder()
+                            .setCustomId(`stats_serveur_${targetUser.id}`)
+                            .setLabel("Serveur")
+                            .setEmoji("🌐")
+                            .setStyle(ButtonStyle.Secondary)
+                    );
+
+                    await buttonInteraction.editReply({
+                        embeds: [statsEmbed],
+                        components: [categoryButtons, backButton]
+                    });
+                } else if (customId.startsWith("profile_back_")) {
+                    // Retour au profil
+                    await buttonInteraction.deferUpdate();
+                    await buttonInteraction.editReply({
+                        embeds: [embed],
+                        components: [statsButton]
+                    });
+                } else if (customId.startsWith("stats_")) {
+                    // Changer de catégorie de stats
+                    await buttonInteraction.deferUpdate();
+
+                    const category = customId.split("_")[1] as StatsCategory;
+                    const statsEmbed = createStatsEmbed(targetUser, category, interaction.guild);
+
+                    // Garder les mêmes boutons
+                    const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                        new ButtonBuilder()
+                            .setCustomId(`profile_back_${targetUser.id}`)
+                            .setLabel("Retour au profil")
+                            .setEmoji("◀️")
+                            .setStyle(ButtonStyle.Danger)
+                    );
+
+                    const categoryButtons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                        new ButtonBuilder()
+                            .setCustomId(`stats_discord_${targetUser.id}`)
+                            .setLabel("Discord")
+                            .setEmoji("📨")
+                            .setStyle(ButtonStyle.Primary)
+                            .setDisabled(category === "discord"),
+                        new ButtonBuilder()
+                            .setCustomId(`stats_netricsa_${targetUser.id}`)
+                            .setLabel("Netricsa")
+                            .setEmoji("🤖")
+                            .setStyle(ButtonStyle.Primary)
+                            .setDisabled(category === "netricsa"),
+                        new ButtonBuilder()
+                            .setCustomId(`stats_jeux_${targetUser.id}`)
+                            .setLabel("Jeux")
+                            .setEmoji("🎮")
+                            .setStyle(ButtonStyle.Primary)
+                            .setDisabled(category === "jeux"),
+                        new ButtonBuilder()
+                            .setCustomId(`stats_serveur_${targetUser.id}`)
+                            .setLabel("Serveur")
+                            .setEmoji("🌐")
+                            .setStyle(ButtonStyle.Secondary)
+                            .setDisabled(category === "serveur")
+                    );
+
+                    await buttonInteraction.editReply({
+                        embeds: [statsEmbed],
+                        components: [categoryButtons, backButton]
+                    });
                 }
             });
 

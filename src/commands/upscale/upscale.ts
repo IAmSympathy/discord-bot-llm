@@ -192,6 +192,18 @@ module.exports = {
             // Enregistrer aussi pour Netricsa elle-même
             recordImageUpscaled(NETRICSA_USER_ID, NETRICSA_USERNAME);
 
+            // Ajouter XP avec notification de level up (message non-éphémère)
+            const {addXP, XP_REWARDS} = require("../../services/xpSystem");
+            if (interaction.channel) {
+                await addXP(
+                    interaction.user.id,
+                    interaction.user.username,
+                    XP_REWARDS.imageUpscalee,
+                    interaction.channel,
+                    false
+                );
+            }
+
             // Ajouter à la mémoire une version simplifiée (pas besoin des détails techniques)
             await memory.appendTurn({
                 ts: Date.now(),

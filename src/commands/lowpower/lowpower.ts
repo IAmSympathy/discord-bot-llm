@@ -1,9 +1,8 @@
-import {ChatInputCommandInteraction, EmbedBuilder, GuildMember, MessageFlags, SlashCommandBuilder} from "discord.js";
+import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {toggleLowPowerMode} from "../../services/botStateService";
 import {logCommand} from "../../utils/discordLogger";
 import {setLowPowerStatus, setNormalStatus} from "../../services/statusService";
-import {hasOwnerPermission} from "../../utils/permissions";
-import {handleInteractionError, replyWithError, safeReply} from "../../utils/interactionUtils";
+import {handleInteractionError, safeReply} from "../../utils/interactionUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -12,17 +11,7 @@ module.exports = {
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
-            const member = interaction.member instanceof GuildMember ? interaction.member : null;
-
-            if (!hasOwnerPermission(member)) {
-                await replyWithError(
-                    interaction,
-                    "Permission refusée",
-                    "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*",
-                    true
-                );
-                return;
-            }
+            // Note: La vérification des permissions est gérée par le système centralisé dans bot.ts
 
             // Toggle le mode (marque automatiquement comme manuel)
             const newState = toggleLowPowerMode();
