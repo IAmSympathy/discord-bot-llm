@@ -1,11 +1,13 @@
 import {EmbedBuilder, User} from "discord.js";
 import {getMostUsedEmoji, getServerStats, getUserStats} from "../services/userStatsService";
-import {getUserXP, getXPForNextLevel} from "../services/xpSystem";
+import {getUserXP} from "../services/xpSystem";
 import {getPlayerStats} from "../games/common/globalStats";
 import {UserProfileService} from "../services/userProfileService";
 import {getUserCounterContributions} from "../services/counterService";
 import * as fs from "fs";
 import * as path from "path";
+import {getLevelRoleForLevel} from "../services/levelRoleService";
+import {LEVEL_ROLES} from "../utils/constants";
 
 const DAILY_FILE = path.join(process.cwd(), "data", "daily_streaks.json");
 
@@ -34,14 +36,23 @@ function getDailyStreak(userId: string): { streak: number; totalClaims: number }
  * Crée une barre de progression visuelle pour l'XP
  */
 export function createXPBar(currentXP: number, level: number): string {
-    const xpForCurrent = level * level * 100;
-    const xpForNext = (level + 1) * (level + 1) * 100;
+    const xpForCurrent = level * level * 85;
+    const xpForNext = (level + 1) * (level + 1) * 85;
     const xpInLevel = currentXP - xpForCurrent;
     const xpNeeded = xpForNext - xpForCurrent;
-    const percentage = (xpInLevel / xpNeeded) * 100;
+
+    // S'assurer que xpNeeded n'est pas zéro pour éviter division par zéro
+    if (xpNeeded <= 0) {
+        return "█".repeat(10) + " 100%"; // Barre pleine si niveau max ou erreur
+    }
+
+    // S'assurer que le pourcentage est entre 0 et 100
+    let percentage = (xpInLevel / xpNeeded) * 100;
+    percentage = Math.max(0, Math.min(100, percentage));
 
     const totalBars = 10;
-    const filledBars = Math.floor((percentage / 100) * totalBars);
+    // S'assurer que filledBars est entre 0 et totalBars
+    const filledBars = Math.max(0, Math.min(totalBars, Math.floor((percentage / 100) * totalBars)));
     const emptyBars = totalBars - filledBars;
 
     const bar = "█".repeat(filledBars) + "░".repeat(emptyBars);
@@ -55,10 +66,23 @@ export function getLevelText(userId: string): string {
     const xpData = getUserXP(userId);
 
     if (xpData) {
-        const xpForNext = getXPForNextLevel(xpData.level);
+        const xpForCurrent = xpData.level * xpData.level * 85;
+        const xpForNext = (xpData.level + 1) * (xpData.level + 1) * 85;
+        const xpInLevel = xpData.totalXP - xpForCurrent;
+        const xpNeededInLevel = xpForNext - xpForCurrent;
+
         const progressBar = createXPBar(xpData.totalXP, xpData.level);
 
-        return `⭐ **Niveau ${xpData.level}**\n${progressBar}\n💫 **${xpData.totalXP.toLocaleString()} XP** | ${xpForNext.toLocaleString()} XP \n\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+        const roleInfo = getLevelRoleForLevel(xpData.level);
+        let roleDisplay = "Aucun";
+
+        if (roleInfo) {
+            // Récupérer l'ID du rôle depuis LEVEL_ROLES
+            const roleId = LEVEL_ROLES[roleInfo.roleKey as keyof typeof LEVEL_ROLES];
+            roleDisplay = `<@&${roleId}>`;
+        }
+
+        return `⭐ **Niveau ${xpData.level}**\u00A0\u00A0\u00A0\u00A0🏆 **Rang** ${roleDisplay}\n\`\`\`\n${progressBar}\n\`\`\`💫 ${xpInLevel.toLocaleString()} XP / ${xpNeededInLevel.toLocaleString()} XP \n\n━━━━━━━━━━━━━━━━━━━━\n\n`;
     } else {
         return `⭐ **Niveau 0**\nAucune XP pour le moment. Commence à être actif pour gagner des niveaux !\n\n━━━━━━━━━━━━━━━━━━━━\n\n`;
     }
@@ -89,6 +113,12 @@ export function createDiscordStatsEmbed(targetUser: User): EmbedBuilder {
 
     let description = getLevelText(targetUser.id);
 
+    // Afficher le daily streak
+    const dailyData = getDailyStreak(targetUser.id);
+    if (dailyData && dailyData.streak > 0) {
+        description += `🔥 **Série quotidienne :** ${dailyData.streak} jour${dailyData.streak > 1 ? 's' : ''} (${dailyData.totalClaims} total)\n\n`;
+    }
+
     if (!userStats) {
         description += "Aucune statistique disponible pour le moment.";
     } else {
@@ -100,17 +130,13 @@ export function createDiscordStatsEmbed(targetUser: User): EmbedBuilder {
         description += `💬 **Replies reçues :** ${userStats.discord.repliesRecues}\n`;
         description += `🎤 **Temps en vocal :** ${formatVoiceTime(userStats.discord.tempsVocalMinutes)}\n`;
 
-        // Afficher le daily streak
-        const dailyData = getDailyStreak(targetUser.id);
-        if (dailyData && dailyData.streak > 0) {
-            description += `🔥 **Série quotidienne :** ${dailyData.streak} jour${dailyData.streak > 1 ? 's' : ''} (${dailyData.totalClaims} total)\n`;
-        }
-
         // Afficher l'emoji le plus utilisé
         const mostUsedEmoji = getMostUsedEmoji(targetUser.id);
         if (mostUsedEmoji) {
             description += `😄 **Emoji préféré :** ${mostUsedEmoji.emoji} (×${mostUsedEmoji.count})`;
         }
+
+
     }
 
     return new EmbedBuilder()

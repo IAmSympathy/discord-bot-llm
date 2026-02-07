@@ -33,15 +33,7 @@ const GLOBAL_COMMANDS = [
     'remove-birthday',
     'stop',
     'reset-dm',
-    'leaderboard',
-    'rollthedice',
-    '8ball',
-    'choose',
-    'coinflip',
-    'daily',
-    'ascii',
-    'ship',
-    'challenges',
+    'leaderboard'
     // Ajoutez ici d'autres commandes qui peuvent être utilisées n'importe où
 ];
 
@@ -50,10 +42,18 @@ const GLOBAL_COMMANDS = [
  */
 const SPECIAL_COMMANDS = {
     findmeme: 'MEME_CHANNEL', // Uniquement dans le salon meme ou en DM
-    imagine: 'IMAGE_CHANNEL', // Uniquement dans le salon image ou en DM
-    reimagine: 'IMAGE_CHANNEL', // Uniquement dans le salon image ou en DM
-    upscale: 'IMAGE_CHANNEL', // Uniquement dans le salon image ou en DM
-    games: 'IMAGE_CHANNEL', // Uniquement dans le salon image ou en DM
+    imagine: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
+    reimagine: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
+    upscale: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
+    games: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
+    rollthedice: 'COMMAND_CHANNEL', // Uniquement dans le salon jeux ou en DM
+    '8ball': 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
+    choose: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
+    coinflip: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
+    daily: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
+    ascii: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
+    ship: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
+    challenges: 'COMMAND_CHANNEL' // Uniquement dans le salon commande ou en DM
 } as const;
 
 /**
@@ -161,38 +161,21 @@ export function canExecuteCommand(interaction: ChatInputCommandInteraction): boo
             return interaction.channelId === memeChannelId;
         }
 
-        if (restriction === 'IMAGE_CHANNEL') {
+        if (restriction === 'COMMAND_CHANNEL') {
             // Les DMs sont autorisés
             if (!interaction.guild) {
                 return true;
             }
 
-            // Sur serveur : vérifier qu'on est dans le salon image
-            const imageChannelId = EnvConfig.IMAGE_CHANNEL_ID;
+            // Sur serveur : vérifier qu'on est dans le salon commandes
+            const commandChannelId = EnvConfig.COMMAND_CHANNEL_ID;
 
-            if (!imageChannelId) {
-                // Si le salon image n'est pas configuré, bloquer
+            if (!commandChannelId) {
+                // Si le salon commande n'est pas configuré, bloquer
                 return false;
             }
 
-            return interaction.channelId === imageChannelId;
-        }
-
-        if (restriction === 'GAMES_CHANNEL') {
-            // Les DMs sont autorisés
-            if (!interaction.guild) {
-                return true;
-            }
-
-            // Sur serveur : vérifier qu'on est dans le salon jeux
-            const gamesChannelId = EnvConfig.GAMES_CHANNEL_ID;
-
-            if (!gamesChannelId) {
-                // Si le salon jeux n'est pas configuré, bloquer
-                return false;
-            }
-
-            return interaction.channelId === gamesChannelId;
+            return interaction.channelId === commandChannelId;
         }
     }
 
@@ -251,20 +234,12 @@ export function getCommandRestrictionMessage(interaction: ChatInputCommandIntera
             return "Cette commande ne peut être utilisée qu'en message privé (le salon meme n'est pas configuré).";
         }
 
-        if (restriction === 'IMAGE_CHANNEL') {
-            const imageChannelId = EnvConfig.IMAGE_CHANNEL_ID;
-            if (imageChannelId) {
-                return "Cette commande ne peut être utilisée que dans le salon <#" + imageChannelId + "> ou en message privé.";
+        if (restriction === 'COMMAND_CHANNEL') {
+            const commandChannelId = EnvConfig.COMMAND_CHANNEL_ID;
+            if (commandChannelId) {
+                return "Cette commande ne peut être utilisée que dans le salon <#" + commandChannelId + "> ou en message privé.";
             }
-            return "Cette commande ne peut être utilisée qu'en message privé (le salon image n'est pas configuré).";
-        }
-
-        if (restriction === 'GAMES_CHANNEL') {
-            const gamesChannelId = EnvConfig.GAMES_CHANNEL_ID;
-            if (gamesChannelId) {
-                return "Cette commande ne peut être utilisée que dans le salon <#" + gamesChannelId + "> ou en message privé.";
-            }
-            return "Cette commande ne peut être utilisée qu'en message privé (le salon jeux n'est pas configuré).";
+            return "Cette commande ne peut être utilisée qu'en message privé (le salon commande n'est pas configuré).";
         }
     }
 

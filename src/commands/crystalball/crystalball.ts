@@ -4,7 +4,7 @@ import {addXP, XP_REWARDS} from "../../services/xpSystem";
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName("8ball")
+        .setName("crystalball")
         .setDescription("Pose une question et laisse le destin décider")
         .addStringOption((option) =>
             option
@@ -19,26 +19,26 @@ module.exports = {
 
             // Réponses possibles
             const responses = [
-                {answer: "Oui", emoji: "✅", color: 0x57F287},
-                {answer: "Non", emoji: "❌", color: 0xED4245},
-                {answer: "Peut-être", emoji: "🤷", color: 0xFEE75C},
-                {answer: "Les signes pointent vers oui", emoji: "🔮", color: 0x5865F2},
-                {answer: "Certainement pas", emoji: "⛔", color: 0xED4245},
-                {answer: "Assurément", emoji: "💫", color: 0x57F287},
-                {answer: "Sans aucun doute", emoji: "🌟", color: 0x57F287},
-                {answer: "Réessaie plus tard", emoji: "❓", color: 0x99AAB5},
-                {answer: "Je ne peux pas prédire maintenant", emoji: "🤔", color: 0x99AAB5},
-                {answer: "Concentre-toi et redemande", emoji: "💭", color: 0x99AAB5},
-                {answer: "Mieux vaut ne pas te le dire", emoji: "⚠️", color: 0xFEE75C},
-                {answer: "C'est certain", emoji: "🎯", color: 0x57F287},
-                {answer: "Mes sources disent non", emoji: "🚫", color: 0xED4245},
-                {answer: "Les perspectives sont bonnes", emoji: "🌈", color: 0x57F287},
-                {answer: "Très probable", emoji: "⚡", color: 0x57F287},
-                {answer: "Peu probable", emoji: "💀", color: 0xED4245},
-                {answer: "C'est incertain", emoji: "🎲", color: 0xFEE75C},
-                {answer: "Absolument", emoji: "🔥", color: 0x57F287},
-                {answer: "Absolument pas", emoji: "❄️", color: 0xED4245},
-                {answer: "Tu peux compter dessus", emoji: "🌠", color: 0x57F287}
+                {answer: "Oui"},
+                {answer: "Non"},
+                {answer: "Peut-être"},
+                {answer: "Les signes pointent vers oui"},
+                {answer: "Certainement pas"},
+                {answer: "Assurément"},
+                {answer: "Sans aucun doute"},
+                {answer: "Réessaie plus tard"},
+                {answer: "Je ne peux pas prédire maintenant"},
+                {answer: "Concentre-toi et redemande"},
+                {answer: "Mieux vaut ne pas te le dire"},
+                {answer: "C'est certain"},
+                {answer: "Mes sources disent non"},
+                {answer: "Les perspectives sont bonnes"},
+                {answer: "Très probable"},
+                {answer: "Peu probable"},
+                {answer: "C'est incertain"},
+                {answer: "Absolument"},
+                {answer: "Absolument pas"},
+                {answer: "Tu peux compter dessus"}
             ];
 
             // Choisir une réponse aléatoire
@@ -46,8 +46,8 @@ module.exports = {
 
             // Créer l'embed de résultat
             const embed = new EmbedBuilder()
-                .setColor(randomResponse.color)
-                .setTitle(`${randomResponse.emoji} Réponse du destin`);
+                .setColor("#0c061c")
+                .setTitle(`🔮 Réponse du destin`);
 
             if (question) {
                 embed.addFields({
@@ -70,7 +70,7 @@ module.exports = {
 
             // Logger la commande
             await logCommand(
-                `${randomResponse.emoji} Yes or No`,
+                `🔮 Crystal Ball`,
                 undefined,
                 [
                     {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
@@ -91,7 +91,7 @@ module.exports = {
             }
 
         } catch (error) {
-            console.error("Error in 8ball command:", error);
+            console.error("Error in crystalball command:", error);
             await interaction.reply({
                 content: "Une erreur s'est produite lors de la consultation du destin.",
                 ephemeral: true

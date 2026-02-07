@@ -1,4 +1,4 @@
-import {ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, TextChannel} from "discord.js";
+import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder, TextChannel} from "discord.js";
 import {logCommand} from "../../utils/discordLogger";
 import {addXP} from "../../services/xpSystem";
 import * as fs from "fs";
@@ -85,6 +85,7 @@ module.exports = {
 
             const dailyData = loadDailyData();
             const userData = dailyData[userId] || {lastClaim: 0, streak: 0, totalClaims: 0};
+            const alreadyClaimed = isSameDay(userData.lastClaim, now);
 
             // Vérifier si déjà réclamé aujourd'hui
             if (isSameDay(userData.lastClaim, now)) {
@@ -107,7 +108,7 @@ module.exports = {
                     .setFooter({text: `Total réclamé : ${userData.totalClaims} fois`})
                     .setTimestamp();
 
-                await interaction.reply({embeds: [embed]});
+                await interaction.reply({embeds: [embed], flags: MessageFlags.Ephemeral});
                 return;
             }
 
@@ -210,7 +211,7 @@ module.exports = {
             console.error("Error in daily command:", error);
             await interaction.reply({
                 content: "Une erreur s'est produite lors de la réclamation de la récompense quotidienne.",
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     },

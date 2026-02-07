@@ -72,5 +72,5 @@ export const FILTER_PATTERNS = {
 } as const;
 
 // Channel restrictions for specific commands
-export const IMAGE_CHANNEL_ID = EnvConfig.IMAGE_CHANNEL_ID;
+export const COMMAND_CHANNEL_ID = EnvConfig.COMMAND_CHANNEL_ID;
 export const GAMES_CHANNEL_ID = EnvConfig.GAMES_CHANNEL_ID;

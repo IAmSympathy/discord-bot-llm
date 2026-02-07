@@ -3,7 +3,7 @@ import * as path from "path";
 import {createLogger} from "../utils/logger";
 import {AttachmentBuilder, EmbedBuilder, TextChannel, VoiceChannel} from "discord.js";
 import {getNextLevelRole, updateUserLevelRoles} from "./levelRoleService";
-import {DATA_DIR} from "../utils/constants";
+import {DATA_DIR, LEVEL_ROLES} from "../utils/constants";
 import {recordYearlyXP} from "./yearlyXPService";
 import {recordMonthlyXP} from "./monthlyXPService";
 import {getRoleUpImage} from "./levelUpImageService";
@@ -277,6 +277,7 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
 
         // Récupérer le rôle actuel pour l'image
         const currentRoleName = levelRoleInfo?.roleKey || "HATCHLING";
+        const currentRoleId = LEVEL_ROLES[currentRoleName as keyof typeof LEVEL_ROLES];
         imageAttachment = getRoleUpImage(currentRoleName);
 
         // Si c'est un changement de rôle, changer le titre
@@ -301,22 +302,21 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
         const progressBar = "█".repeat(filledBars) + "░".repeat(emptyBars);
 
         // Construire la description avec sections séparées
-        let description = `### Félicitations ! 🎊\n\n`;
-        description += `Tu as atteint le **niveau ${newLevel}** !\n\n`;
+        let description = `### Félicitations !\n\n`;
+        description += `Tu as atteint le **niveau ${newLevel}** !\n`;
 
         // Section changement de rôle (si applicable)
         if (roleResult.changed && roleResult.newRole) {
             description += `### 🎖️ Nouveau Rôle Débloqué\n`;
-            description += `Tu es maintenant **${roleResult.newRole}** !\n\n`;
+            description += `Tu es maintenant **${roleResult.newRole}** !\n`;
         }
 
         // Section progression XP
         description += `### 📊 Progression\n`;
-        description += `\`\`\`\n`;
-        description += `${progressBar} ${progressPercent}%\n`;
-        description += `\`\`\`\n`;
-        description += `**${xpInCurrentLevel.toLocaleString()} / ${xpNeededForNext.toLocaleString()} XP**\n`;
-        description += `*${(xpNeededForNext - xpInCurrentLevel).toLocaleString()} XP restants jusqu'au niveau ${newLevel + 1}*\n\n`;
+        description += `\`\`\``;
+        description += `${progressBar} ${progressPercent}%`;
+        description += `\`\`\``;
+        description += `💫 ${xpInCurrentLevel.toLocaleString()} XP / ${xpNeededForNext.toLocaleString()} XP\n`;
 
         // Section prochain rôle
         if (nextRole) {
@@ -326,6 +326,7 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
             description += `### 👑 Rang Maximum\n`;
             description += `Tu as atteint le rang suprême ! Continue à accumuler de l'XP pour dominer le classement !`;
         }
+        description += `\n---\n`;
 
         // Créer un embed de level up amélioré
         const embed = new EmbedBuilder()
@@ -334,18 +335,18 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
             .setDescription(description)
             .addFields(
                 {
-                    name: "💎 XP Total",
-                    value: `**${currentXP.toLocaleString()}** XP`,
+                    name: "💫 XP Total",
+                    value: `${currentXP.toLocaleString()} XP`,
                     inline: true
                 },
                 {
                     name: "⭐ Niveau",
-                    value: `**${newLevel}**`,
+                    value: `${newLevel}`,
                     inline: true
                 },
                 {
                     name: "🏆 Rang",
-                    value: `${currentRoleName}`,
+                    value: currentRoleId ? `<@&${currentRoleId}>` : currentRoleName,
                     inline: true
                 }
             )

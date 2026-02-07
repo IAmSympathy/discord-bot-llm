@@ -440,7 +440,7 @@ module.exports = {
 
                 embed.addFields({
                     name: `${status} ${challenge.emoji} ${challenge.name}`,
-                    value: `${challenge.description}\n${progressBar} ${progressText}\nRécompense : **${challenge.xpReward} XP** 🎁`,
+                    value: `${challenge.description}\n${progressBar} ${progressText}\nRécompense : **${challenge.xpReward} XP** 💫`,
                     inline: false
                 });
             }
