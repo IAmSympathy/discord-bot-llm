@@ -24,6 +24,7 @@ import {recordCommandUsed, recordReactionAdded, recordReactionReceived} from "./
 import {canExecuteCommand, getCommandRestrictionMessage} from "./utils/commandPermissions";
 import {getAllXP} from "./services/xpSystem";
 import {initializeLevelRolesForGuild} from "./services/levelRoleService";
+import {initializeRandomEventsService} from "./services/randomEventsService";
 
 const logger = createLogger("Bot");
 
@@ -159,6 +160,9 @@ client.once(Events.ClientReady, async () => {
 
     // Initialiser le moniteur d'activité vocale
     initializeActivityMonitor(client);
+
+    // Initialiser le service d'événements aléatoires
+    initializeRandomEventsService(client);
 });
 
 // === ÉVÉNEMENTS SERVEUR DISCORD ===

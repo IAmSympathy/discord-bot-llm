@@ -3,6 +3,7 @@ import * as path from "path";
 import {createLogger} from "../utils/logger";
 import {DATA_DIR} from "../utils/constants";
 import {Message, TextChannel} from "discord.js";
+import {checkCounterChallengeProgress} from "./randomEventsService";
 
 const logger = createLogger("CounterService");
 const COUNTER_STATE_FILE = path.join(DATA_DIR, "counter_state.json");
@@ -299,6 +300,13 @@ export async function handleCounterMessage(message: Message): Promise<boolean> {
 
     saveCounterState(state);
 
+    // Vérifier si l'objectif du défi du compteur est atteint
+    await checkCounterChallengeProgress(
+        message.client,
+        message.author.id,
+        message.author.username,
+        number
+    );
 
     // Vérifier les achievements du compteur
     const {checkCounterAchievements} = require("./counterAchievementChecker");
@@ -348,6 +356,14 @@ export function getCounterState(): CounterState {
 export function getUserCounterContributions(userId: string): number {
     const state = loadCounterState();
     return state.contributions[userId]?.count || 0;
+}
+
+/**
+ * Récupère le nombre actuel du compteur
+ */
+export function getCurrentCount(): number {
+    const state = loadCounterState();
+    return state.currentNumber;
 }
 
 /**

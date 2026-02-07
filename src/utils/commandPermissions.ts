@@ -11,7 +11,8 @@ const OWNER_COMMANDS = [
     'auto-lowpower',
     'blacklist-game',
     'test-rewind',
-    'set-status'
+    'set-status',
+    'test-event'
 ];
 
 /**
