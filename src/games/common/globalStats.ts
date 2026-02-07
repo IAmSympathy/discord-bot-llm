@@ -103,8 +103,9 @@ export function getPlayerStats(userId: string): PlayerStats {
  * @param userId ID de l'utilisateur
  * @param game Nom du jeu
  * @param isVsAI true si c'est contre Netricsa, false si contre un joueur
+ * @param channel Canal où envoyer la notification de level up (optionnel)
  */
-export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false): void {
+export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false, channel?: any): void {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -172,7 +173,7 @@ export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe
             }
         }
 
-        addXP(userId, "Player", xpAmount);
+        addXP(userId, "Player", xpAmount, channel);
     }
 }
 
@@ -181,8 +182,9 @@ export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe
  * @param userId ID de l'utilisateur
  * @param game Nom du jeu
  * @param isVsAI true si c'est contre Netricsa, false si contre un joueur
+ * @param channel Canal où envoyer la notification de level up (optionnel)
  */
-export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false): void {
+export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false, channel?: any): void {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -244,7 +246,7 @@ export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictacto
             }
         }
 
-        addXP(userId, "Player", xpAmount);
+        addXP(userId, "Player", xpAmount, channel);
     }
 }
 
@@ -253,8 +255,9 @@ export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictacto
  * @param userId ID de l'utilisateur
  * @param game Nom du jeu
  * @param isVsAI true si c'est contre Netricsa, false si contre un joueur
+ * @param channel Canal où envoyer la notification de level up (optionnel)
  */
-export function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false): void {
+export function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false, channel?: any): void {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -317,7 +320,7 @@ export function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictacto
         }
 
         if (xpAmount > 0) {
-            addXP(userId, "Player", xpAmount);
+            addXP(userId, "Player", xpAmount, channel);
         }
     }
 }

@@ -655,6 +655,11 @@ client.on(Events.MessageReactionAdd, async (reaction, user) => {
         if (user.username) {
             recordReactionAdded(user.id, user.username);
 
+            // Enregistrer l'emoji utilisé dans la réaction pour les stats d'emoji favori
+            const {recordEmojisUsed} = require("./services/userStatsService");
+            const emojiUsed = reaction.emoji.name || reaction.emoji.toString();
+            recordEmojisUsed(user.id, user.username, emojiUsed);
+
             // Vérifier les achievements Discord (réactions)
             const {checkDiscordAchievements} = require("./services/discordAchievementChecker");
             await checkDiscordAchievements(user.id, user.username, reaction.client, reaction.message.channelId);

@@ -495,24 +495,24 @@ async function displayResult(message: any, gameState: GameState, winner: string 
         color = 0xFEE75C;
         updateStatsOnDraw(gameState.stats);
         // Enregistrer dans stats globales
-        recordDraw(gameState.player1, 'tictactoe', gameState.isAI);
+        recordDraw(gameState.player1, 'tictactoe', gameState.isAI, message.channel);
         if (gameState.player2 && !gameState.isAI) {
-            recordDraw(gameState.player2, 'tictactoe', false);
+            recordDraw(gameState.player2, 'tictactoe', false, message.channel);
         } else if (gameState.isAI) {
             // Netricsa fait égalité aussi
-            recordDraw(NETRICSA_GAME_ID, 'tictactoe', true);
+            recordDraw(NETRICSA_GAME_ID, 'tictactoe', true, message.channel);
         }
     } else if (winner === gameState.player1) {
         result = `🎉 <@${gameState.player1}> gagne !`;
         color = 0x57F287;
         updateStatsOnWin(gameState.stats, 'player1');
         // Enregistrer dans stats globales
-        recordWin(gameState.player1, 'tictactoe', gameState.isAI);
+        recordWin(gameState.player1, 'tictactoe', gameState.isAI, message.channel);
         if (gameState.player2 && !gameState.isAI) {
-            recordLoss(gameState.player2, 'tictactoe', false);
+            recordLoss(gameState.player2, 'tictactoe', false, message.channel);
         } else if (gameState.isAI) {
             // Netricsa perd
-            recordLoss(NETRICSA_GAME_ID, 'tictactoe', true);
+            recordLoss(NETRICSA_GAME_ID, 'tictactoe', true, message.channel);
         }
     } else {
         if (gameState.isAI) {
@@ -524,12 +524,12 @@ async function displayResult(message: any, gameState: GameState, winner: string 
         }
         updateStatsOnWin(gameState.stats, 'player2');
         // Enregistrer dans stats globales
-        recordLoss(gameState.player1, 'tictactoe', gameState.isAI);
+        recordLoss(gameState.player1, 'tictactoe', gameState.isAI, message.channel);
         if (gameState.player2 && !gameState.isAI) {
-            recordWin(gameState.player2, 'tictactoe', false);
+            recordWin(gameState.player2, 'tictactoe', false, message.channel);
         } else if (gameState.isAI) {
             // Netricsa gagne
-            recordWin(NETRICSA_GAME_ID, 'tictactoe', true);
+            recordWin(NETRICSA_GAME_ID, 'tictactoe', true, message.channel);
         }
     }
 

@@ -471,12 +471,12 @@ async function displayResult(message: any, gameState: GameState) {
         gameState.player2Winstreak = 0;
         gameState.draws++;
         // Enregistrer dans stats globales
-        recordDraw(gameState.player1, 'rockpaperscissors', gameState.isAI);
+        recordDraw(gameState.player1, 'rockpaperscissors', gameState.isAI, message.channel);
         if (gameState.player2 && !gameState.isAI) {
-            recordDraw(gameState.player2, 'rockpaperscissors', false);
+            recordDraw(gameState.player2, 'rockpaperscissors', false, message.channel);
         } else if (gameState.isAI) {
             // Netricsa fait égalité aussi
-            recordDraw(NETRICSA_GAME_ID, 'rockpaperscissors', true);
+            recordDraw(NETRICSA_GAME_ID, 'rockpaperscissors', true, message.channel);
         }
     } else if (choices[p1Choice as keyof typeof choices].beats === p2Choice) {
         result = `🎉 <@${gameState.player1}> gagne !`;
@@ -486,12 +486,12 @@ async function displayResult(message: any, gameState: GameState) {
         gameState.player1TotalWins++;
         gameState.player2Winstreak = 0;
         // Enregistrer dans stats globales
-        recordWin(gameState.player1, 'rockpaperscissors', gameState.isAI);
+        recordWin(gameState.player1, 'rockpaperscissors', gameState.isAI, message.channel);
         if (gameState.player2 && !gameState.isAI) {
-            recordLoss(gameState.player2, 'rockpaperscissors', false);
+            recordLoss(gameState.player2, 'rockpaperscissors', false, message.channel);
         } else if (gameState.isAI) {
             // Netricsa perd
-            recordLoss(NETRICSA_GAME_ID, 'rockpaperscissors', true);
+            recordLoss(NETRICSA_GAME_ID, 'rockpaperscissors', true, message.channel);
         }
 
         // Mettre à jour la plus haute winstreak
@@ -511,12 +511,12 @@ async function displayResult(message: any, gameState: GameState) {
         gameState.player2Winstreak++;
         gameState.player2TotalWins++;
         // Enregistrer dans stats globales
-        recordLoss(gameState.player1, 'rockpaperscissors', gameState.isAI);
+        recordLoss(gameState.player1, 'rockpaperscissors', gameState.isAI, message.channel);
         if (gameState.player2 && !gameState.isAI) {
-            recordWin(gameState.player2, 'rockpaperscissors', false);
+            recordWin(gameState.player2, 'rockpaperscissors', false, message.channel);
         } else if (gameState.isAI) {
             // Netricsa gagne
-            recordWin(NETRICSA_GAME_ID, 'rockpaperscissors', true);
+            recordWin(NETRICSA_GAME_ID, 'rockpaperscissors', true, message.channel);
         }
 
         // Mettre à jour la plus haute winstreak

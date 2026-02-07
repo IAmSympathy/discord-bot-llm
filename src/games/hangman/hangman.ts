@@ -323,8 +323,8 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                 gameState.isCompleted = true;
                 collector.stop("gave_up");
 
-                // Enregistrer la défaite
-                recordLoss(gameState.player, 'hangman');
+                // Enregistrer la défaite avec le canal pour la notification de level up
+                recordLoss(gameState.player, 'hangman', true, message.channel);
                 gameState.losses++;
                 gameState.currentStreak = 0;
 
@@ -368,7 +368,8 @@ async function displayResult(message: any, gameState: GameState, isWon: boolean,
         gameState.currentStreak++;
 
         // Enregistrer dans les stats globales (Hangman est toujours vs IA)
-        recordWin(gameState.player, 'hangman', true);
+        // Passer le message pour permettre la notification de level up
+        recordWin(gameState.player, 'hangman', true, message.channel);
 
         // Mettre à jour la plus haute streak
         if (gameState.currentStreak > gameState.highestStreak) {
@@ -386,8 +387,9 @@ async function displayResult(message: any, gameState: GameState, isWon: boolean,
 
             // Enregistrer dans les stats globales (seulement si pas déjà enregistré lors de l'abandon)
             // Hangman est toujours vs IA
+            // Passer le message pour permettre la notification de level up
             if (!isAbandoned) {
-                recordLoss(gameState.player, 'hangman', true);
+                recordLoss(gameState.player, 'hangman', true, message.channel);
             }
         }
     }
