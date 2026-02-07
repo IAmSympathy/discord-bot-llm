@@ -63,11 +63,12 @@ function saveMemeHistory(history: PostedMeme[]): void {
 }
 
 /**
- * Récupère les posts d'un subreddit
+ * Récupère les posts d'un subreddit (top posts de la journée)
  */
 async function fetchSubredditPosts(subreddit: string): Promise<RedditPost[]> {
     try {
-        const response = await fetch(`https://www.reddit.com/r/${subreddit}/hot.json?limit=100`, {
+        // Récupérer les posts les plus upvotés de la journée (top daily)
+        const response = await fetch(`https://www.reddit.com/r/${subreddit}/top.json?t=day&limit=100`, {
             headers: {
                 "User-Agent": "DiscordBot/1.0"
             }
