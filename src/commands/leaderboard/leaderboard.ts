@@ -2,7 +2,7 @@ import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteractio
 import {getAllXP} from "../../services/xpSystem";
 import {getAllStats} from "../../services/userStatsService";
 import {getGlobalLeaderboard} from "../../games/common/globalStats";
-import {getYearlyXP} from "../../services/yearlyXPService";
+import {getMonthlyXP} from "../../services/monthlyXPService";
 
 type LeaderboardCategory = "xp" | "messages" | "vocal" | "images" | "jeux";
 type LeaderboardMode = "alltime" | "monthly";
@@ -97,7 +97,12 @@ async function createLeaderboardEmbed(
 
     let description = "";
     let title = "";
-    const modeText = mode === "monthly" ? "📅 Mensuel (Février 2026)" : "📊 All-Time";
+
+    // Obtenir le mois actuel pour l'affichage
+    const now = new Date();
+    const monthNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+    const currentMonthName = monthNames[now.getMonth()];
+    const modeText = mode === "monthly" ? `📅 Mensuel (${currentMonthName} ${now.getFullYear()})` : "📊 All-Time";
 
     // Récupérer tous les userIds pour filtrer les bots
     let allUserIds: string[] = [];
@@ -109,9 +114,11 @@ async function createLeaderboardEmbed(
             let sortedXP: any[] = [];
 
             if (mode === "monthly") {
-                // XP mensuel (année en cours)
-                const yearlyData = getYearlyXP("2026");
-                sortedXP = Object.entries(yearlyData)
+                // XP mensuel (mois en cours)
+                const now = new Date();
+                const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                const monthlyData = getMonthlyXP(currentMonth);
+                sortedXP = Object.entries(monthlyData)
                     .map(([userId, data]: [string, any]) => ({
                         userId,
                         username: data.username,
@@ -286,7 +293,7 @@ async function createLeaderboardEmbed(
 
     embed.setTitle(title);
     embed.setDescription(description || "*Aucune donnée disponible.*");
-    embed.setFooter({text: mode === "monthly" ? "Stats depuis février 2026" : "Stats depuis le 5 février 2026"});
+    embed.setFooter({text: mode === "monthly" ? `Stats de ${currentMonthName} ${now.getFullYear()}` : "Stats depuis le 5 février 2026"});
 
     return embed;
 }

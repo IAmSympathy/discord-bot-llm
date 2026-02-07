@@ -5,11 +5,11 @@
     "discord": {
       "messagesEnvoyes": 56,
       "reactionsAjoutees": 1,
-      "reactionsRecues": 10,
-      "commandesUtilisees": 149,
-      "mentionsRecues": 20,
+      "reactionsRecues": 11,
+      "commandesUtilisees": 153,
+      "mentionsRecues": 22,
       "repliesRecues": 7,
-      "tempsVocalMinutes": 632,
+      "tempsVocalMinutes": 682,
       "emojisUtilises": {
         "🗿": 1,
         ":outraged_sam:": 1,
@@ -25,14 +25,14 @@
       "conversationsIA": 16,
       "promptsCrees": null
     },
-    "lastUpdate": 1770448377014
+    "lastUpdate": 1770451508522
   },
   "1462959115528835092": {
     "userId": "1462959115528835092",
     "username": "Netricsa",
     "discord": {
-      "messagesEnvoyes": 398,
-      "reactionsAjoutees": 38,
+      "messagesEnvoyes": 422,
+      "reactionsAjoutees": 40,
       "reactionsRecues": 0,
       "commandesUtilisees": 0,
       "mentionsRecues": 9,
@@ -41,40 +41,44 @@
       "emojisUtilises": {
         "🏆": 1,
         "🎬": 1,
-        "🎉": 28
+        "🎉": 32,
+        "😊": 2
       }
     },
     "netricsa": {
       "imagesGenerees": 0,
       "imagesReimaginee": 0,
       "imagesUpscalee": 0,
-      "conversationsIA": 0,
+      "conversationsIA": 2,
       "memesRecherches": 0
     },
-    "lastUpdate": 1770448005256
+    "lastUpdate": 1770451409747
   },
   "351419795033423883": {
     "userId": "351419795033423883",
     "username": "mr.cr4zy",
     "discord": {
-      "messagesEnvoyes": 7,
-      "reactionsAjoutees": 0,
-      "reactionsRecues": 0,
-      "commandesUtilisees": 6,
-      "mentionsRecues": 4,
+      "messagesEnvoyes": 9,
+      "reactionsAjoutees": 1,
+      "reactionsRecues": 2,
+      "commandesUtilisees": 9,
+      "mentionsRecues": 8,
       "repliesRecues": 0,
-      "tempsVocalMinutes": 549,
-      "compteurContributions": 5
+      "tempsVocalMinutes": 599,
+      "compteurContributions": 5,
+      "emojisUtilises": {
+        "🤓": 1
+      }
     },
     "netricsa": {
       "imagesGenerees": 0,
       "imagesReimaginee": 0,
       "imagesUpscalee": 0,
-      "conversationsIA": 0,
+      "conversationsIA": 4,
       "memesRecherches": 0,
       "promptsCrees": 0
     },
-    "lastUpdate": 1770448377022
+    "lastUpdate": 1770451508553
   },
   "369247585556365313": {
     "userId": "369247585556365313",
@@ -419,5 +423,28 @@
       "promptsCrees": 0
     },
     "lastUpdate": 1770444475757
+  },
+  "1211781489931452447": {
+    "userId": "1211781489931452447",
+    "username": "Wordle",
+    "discord": {
+      "messagesEnvoyes": 1,
+      "reactionsAjoutees": 0,
+      "reactionsRecues": 0,
+      "commandesUtilisees": 0,
+      "mentionsRecues": 0,
+      "repliesRecues": 0,
+      "tempsVocalMinutes": 0,
+      "emojisUtilises": {}
+    },
+    "netricsa": {
+      "imagesGenerees": 0,
+      "imagesReimaginee": 0,
+      "imagesUpscalee": 0,
+      "conversationsIA": 0,
+      "memesRecherches": 0,
+      "promptsCrees": 0
+    },
+    "lastUpdate": 1770450559115
   }
 }

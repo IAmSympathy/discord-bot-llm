@@ -31,6 +31,14 @@ export const LEVEL_THRESHOLDS = [
     {level: 80, role: "ELDER", name: "Elder"}
 ] as const;
 
+// Monthly Ranking Roles
+export const MONTHLY_RANKING_ROLES = {
+    GOLD: "1469592407149514814",        // À remplacer par l'ID réel
+    SILVER: "1469593432233087008",    // À remplacer par l'ID réel
+    BRONZE: "1469593737741992049",    // À remplacer par l'ID réel
+    CELESTIAL: "1469594382834602097" // À remplacer par l'ID réel
+} as const;
+
 // Memory Configuration - Sliding Window System
 export const MEMORY_MAX_TURNS = 28; // Total turns to keep in memory
 export const MEMORY_RECENT_TURNS = 8; // Always keep last 8 turns (recent context) - SANS FILTRE

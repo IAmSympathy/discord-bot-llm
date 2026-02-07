@@ -140,6 +140,10 @@ client.once(Events.ClientReady, async () => {
     // Initialiser le service de rewind annuel
     initializeYearlyRewindService(client);
 
+    // Initialiser le service de classement mensuel
+    const {initializeMonthlyRankingService} = require("./services/monthlyRankingService");
+    initializeMonthlyRankingService(client);
+
     // Initialiser le compteur
     const COUNTER_CHANNEL_ID = EnvConfig.COUNTER_CHANNEL_ID;
     if (COUNTER_CHANNEL_ID) {

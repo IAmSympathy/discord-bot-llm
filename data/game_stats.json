@@ -1,11 +1,11 @@
 {
   "288799652902469633": {
     "global": {
-      "wins": 0,
+      "wins": 1,
       "losses": 0,
       "draws": 2,
-      "currentStreak": 0,
-      "highestStreak": 0
+      "currentStreak": 1,
+      "highestStreak": 1
     },
     "rockpaperscissors": {
       "wins": 0,
@@ -22,11 +22,11 @@
       "highestStreak": 0
     },
     "hangman": {
-      "wins": 0,
+      "wins": 1,
       "losses": 0,
       "draws": 0,
-      "currentStreak": 0,
-      "highestStreak": 0
+      "currentStreak": 1,
+      "highestStreak": 1
     }
   },
   "1462959115528835092": {

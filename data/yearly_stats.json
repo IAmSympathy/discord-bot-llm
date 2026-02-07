@@ -5,11 +5,11 @@
       "discord": {
         "messagesEnvoyes": 56,
         "reactionsAjoutees": 1,
-        "reactionsRecues": 10,
-        "commandesUtilisees": 149,
-        "mentionsRecues": 20,
+        "reactionsRecues": 11,
+        "commandesUtilisees": 153,
+        "mentionsRecues": 22,
         "repliesRecues": 7,
-        "tempsVocalMinutes": 632
+        "tempsVocalMinutes": 682
       },
       "netricsa": {
         "imagesGenerees": 0,
@@ -23,8 +23,8 @@
     "1462959115528835092": {
       "username": "Netricsa",
       "discord": {
-        "messagesEnvoyes": 398,
-        "reactionsAjoutees": 38,
+        "messagesEnvoyes": 422,
+        "reactionsAjoutees": 40,
         "reactionsRecues": 0,
         "commandesUtilisees": 0,
         "mentionsRecues": 9,
@@ -35,26 +35,26 @@
         "imagesGenerees": 0,
         "imagesReimaginee": 0,
         "imagesUpscalee": 0,
-        "conversationsIA": 0,
+        "conversationsIA": 2,
         "memesRecherches": 0
       }
     },
     "351419795033423883": {
       "username": "mr.cr4zy",
       "discord": {
-        "messagesEnvoyes": 7,
-        "reactionsAjoutees": 0,
-        "reactionsRecues": 0,
-        "commandesUtilisees": 6,
-        "mentionsRecues": 4,
+        "messagesEnvoyes": 9,
+        "reactionsAjoutees": 1,
+        "reactionsRecues": 2,
+        "commandesUtilisees": 9,
+        "mentionsRecues": 8,
         "repliesRecues": 0,
-        "tempsVocalMinutes": 549
+        "tempsVocalMinutes": 599
       },
       "netricsa": {
         "imagesGenerees": 0,
         "imagesReimaginee": 0,
         "imagesUpscalee": 0,
-        "conversationsIA": 0,
+        "conversationsIA": 4,
         "memesRecherches": 0,
         "promptsCrees": 0
       }
@@ -350,6 +350,26 @@
         "mentionsRecues": 3,
         "repliesRecues": 0,
         "tempsVocalMinutes": 98
+      },
+      "netricsa": {
+        "imagesGenerees": 0,
+        "imagesReimaginee": 0,
+        "imagesUpscalee": 0,
+        "conversationsIA": 0,
+        "memesRecherches": 0,
+        "promptsCrees": 0
+      }
+    },
+    "1211781489931452447": {
+      "username": "Wordle",
+      "discord": {
+        "messagesEnvoyes": 1,
+        "reactionsAjoutees": 0,
+        "reactionsRecues": 0,
+        "commandesUtilisees": 0,
+        "mentionsRecues": 0,
+        "repliesRecues": 0,
+        "tempsVocalMinutes": 0
       },
       "netricsa": {
         "imagesGenerees": 0,

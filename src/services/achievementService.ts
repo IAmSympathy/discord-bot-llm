@@ -1303,9 +1303,12 @@ async function sendAchievementNotification(
             thumbnailUrl = "attachment://achievement_badge.png";
         }
 
+        // Déterminer le titre selon si c'est un succès secret ou non
+        const embedTitle = achievement.secret ? "🔓 Succès Secret !" : "✨ Succès !";
+
         const embed = new EmbedBuilder()
             .setColor(0xFFD700) // Gold
-            .setTitle("✨ Succès !")
+            .setTitle(embedTitle)
             .setDescription(
                 `## ${achievement.emoji} ${achievement.name}\n\n` +
                 `*${achievement.description}*\n\n` +
@@ -1334,8 +1337,8 @@ async function sendAchievementNotification(
         let notificationSent = false;
         let targetChannel: TextChannel | null = null;
 
-        // Si c'est un achievement de PROFIL, envoyer en DM
-        if (achievement.category === AchievementCategory.PROFIL) {
+        // Si c'est un achievement de PROFIL ou SECRET, envoyer en DM
+        if (achievement.category === AchievementCategory.PROFIL || achievement.secret) {
             try {
                 const user = await client.users.fetch(userId);
                 await user.send(messageOptions);
@@ -1381,12 +1384,17 @@ async function sendAchievementNotification(
             // Log Discord pour l'achievement
             const {logCommand} = require("../utils/discordLogger");
             const user = await client.users.fetch(userId);
+
+            // Déterminer le type de notification
+            const notificationType = (achievement.category === AchievementCategory.PROFIL || achievement.secret) ? "DM" : "Channel";
+            const achievementType = achievement.secret ? "Secret" : achievement.category;
+
             await logCommand("🏆 Achievement Débloqué", undefined, [
                 {name: "👤 Utilisateur", value: user.username, inline: true},
                 {name: "🎯 Achievement", value: `${achievement.emoji} ${achievement.name}`, inline: true},
                 {name: "🎁 XP", value: `+${achievement.xpReward} XP`, inline: true},
-                {name: "📋 Catégorie", value: achievement.category, inline: true},
-                {name: "📨 Notification", value: achievement.category === AchievementCategory.PROFIL ? "DM" : "Channel", inline: true}
+                {name: "📋 Type", value: achievementType, inline: true},
+                {name: "📨 Notification", value: notificationType, inline: true}
             ]);
 
             const {addXP} = require("./xpSystem");

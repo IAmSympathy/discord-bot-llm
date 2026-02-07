@@ -5,6 +5,7 @@ import {AttachmentBuilder, EmbedBuilder, TextChannel, VoiceChannel} from "discor
 import {getNextLevelRole, updateUserLevelRoles} from "./levelRoleService";
 import {DATA_DIR} from "../utils/constants";
 import {recordYearlyXP} from "./yearlyXPService";
+import {recordMonthlyXP} from "./monthlyXPService";
 import {getRoleUpImage} from "./levelUpImageService";
 
 const logger = createLogger("XPSystem");
@@ -191,6 +192,9 @@ export async function addXP(
 
     // Enregistrer l'XP gagné pour l'année en cours
     recordYearlyXP(userId, username, amount);
+
+    // Enregistrer l'XP gagné pour le mois en cours
+    recordMonthlyXP(userId, username, amount);
 
     if (levelUp) {
         logger.info(`${username} level up! ${oldLevel} → ${newLevel} (${xpData[userId].totalXP} XP)`);

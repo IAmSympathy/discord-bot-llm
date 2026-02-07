@@ -84,12 +84,12 @@ async function fetchRandomWord(): Promise<string> {
 
 const HANGMAN_STAGES = [
     "```\n  ┌─────┐\n  │     │\n  │     \n  │     \n  │     \n  │     \n──┴──\n```",
-    "```\n  ┌─────┐\n  │     │\n  │     <:cringesmile:1469540262849019955>\n  │     \n  │     \n  │     \n──┴──\n```",
-    "```\n  ┌─────┐\n  │     │\n  │     <:cringesmile:1469540262849019955>\n  │     │\n  │     \n  │     \n──┴──\n```",
-    "```\n  ┌─────┐\n  │     │\n  │     <:cringesmile:1469540262849019955>\n  │    ─│\n  │     \n  │     \n──┴──\n```",
-    "```\n  ┌─────┐\n  │     │\n  │     <:cringesmile:1469540262849019955>\n  │    ─│─\n  │     \n  │     \n──┴──\n```",
-    "```\n  ┌─────┐\n  │     │\n  │     <:cringesmile:1469540262849019955>\n  │    ─│─\n  │    ╱\n  │     \n──┴──\n```",
-    "```\n  ┌─────┐\n  │     │\n  │     <:outraged_sam:1469527109050306570>\n  │    ─│─\n  │    ╱ ╲\n  │     \n──┴──\n```"
+    "```\n  ┌─────┐\n  │     │\n  │     😫\n  │     \n  │     \n  │     \n──┴──\n```",
+    "```\n  ┌─────┐\n  │     │\n  │     😫\n  │     │\n  │     \n  │     \n──┴──\n```",
+    "```\n  ┌─────┐\n  │     │\n  │     😫\n  │    ─│\n  │     \n  │     \n──┴──\n```",
+    "```\n  ┌─────┐\n  │     │\n  │     😫\n  │    ─│─\n  │     \n  │     \n──┴──\n```",
+    "```\n  ┌─────┐\n  │     │\n  │     😫\n  │    ─│─\n  │    ╱\n  │     \n──┴──\n```",
+    "```\n  ┌─────┐\n  │     │\n  │     😵\n  │    ─│─\n  │    ╱ ╲\n  │     \n──┴──\n```"
 ];
 
 module.exports = {
@@ -176,7 +176,7 @@ function createGameEmbed(gameState: GameState): EmbedBuilder {
 
     const embed = new EmbedBuilder()
         .setColor(0x2494DB)
-        .setTitle("🎮 Sam Pendu")
+        .setTitle("🎮 Bonhomme Pendu")
         .setDescription(description)
         .setTimestamp();
 
@@ -343,7 +343,7 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
 
             const timeoutEmbed = new EmbedBuilder()
                 .setColor(0xED4245)
-                .setTitle("🎮 Sam Pendu")
+                .setTitle("🎮 Bonhomme Pendu")
                 .setDescription(`⏱️ Temps écoulé ! La partie est annulée.\n\n**Le mot était:** \`${gameState.word}\`` + getStatsDescription(gameState))
                 .setTimestamp();
 
@@ -390,7 +390,7 @@ async function displayResult(message: any, gameState: GameState, isWon: boolean,
             result = `🏳️ Partie abandonnée...`;
             color = 0xFEE75C;
         } else {
-            result = `💀 Perdu ! Sam a été pendu...`;
+            result = `💀 Perdu ! Le bonhomme a été pendu...`;
             color = 0xED4245;
             gameState.losses++;
             gameState.currentStreak = 0;
@@ -415,7 +415,7 @@ async function displayResult(message: any, gameState: GameState, isWon: boolean,
 
     const embed = new EmbedBuilder()
         .setColor(color)
-        .setTitle("🎮 Résultat - Sam Pendu")
+        .setTitle("🎮 Résultat - Bonhomme Pendu")
         .setDescription(description)
         .setTimestamp();
 
@@ -531,7 +531,7 @@ function setupRestartCollector(message: any, gameState: GameState) {
         if (reason === "time") {
             const embed = new EmbedBuilder()
                 .setColor(0xED4245)
-                .setTitle("🎮 Sam Pendu")
+                .setTitle("🎮 Bonhomme Pendu")
                 .setDescription("⏱️ Le temps pour recommencer est écoulé." + getStatsDescription(gameState))
                 .setTimestamp();
 

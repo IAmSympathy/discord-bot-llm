@@ -21,7 +21,7 @@ const CATEGORY_NAMES: Partial<{ [key in AchievementCategory]: string }> = {
 /**
  * Crée l'embed des achievements avec pagination pour toutes les catégories
  */
-function createAchievementEmbed(targetUser: any, category: AchievementCategory, page: number = 0): any {
+function createAchievementEmbed(targetUser: any, category: AchievementCategory, page: number = 0, viewerId?: string): any {
     const {EmbedBuilder} = require("discord.js");
     const {getAchievementsByCategory, getAchievementStats, getCompletionPercentage} = require("../../services/achievementService");
 
@@ -32,6 +32,9 @@ function createAchievementEmbed(targetUser: any, category: AchievementCategory, 
     const categoryStats = stats[category];
     const categoryName = CATEGORY_NAMES[category];
     const categoryEmoji = CATEGORY_EMOJIS[category];
+
+    // Vérifier si on regarde le profil de quelqu'un d'autre
+    const isViewingOtherProfile = viewerId && viewerId !== targetUser.id;
 
     // Pagination pour toutes les catégories si > 5 achievements
     const ITEMS_PER_PAGE = 5;
@@ -66,10 +69,29 @@ function createAchievementEmbed(targetUser: any, category: AchievementCategory, 
         // Si débloqué : emoji du succès, sinon : 🔒
         const displayEmoji = unlocked ? achievement.emoji : "🔒";
 
-        if (achievement.secret && !unlocked) {
-            description += `**${displayEmoji} ${achievement.name}**\n`;
-            description += `*Succès secret - Débloquez-le pour voir la description*\n\n`;
+        // Si c'est un succès secret
+        if (achievement.secret) {
+            // Si pas débloqué OU si débloqué mais qu'on regarde le profil de quelqu'un d'autre
+            if (isViewingOtherProfile) {
+                description += `**${displayEmoji} ${achievement.name}**\n`;
+                if (unlocked)
+                    description += `*✅ Succès secret - Débloquez-le pour voir la description*\n\n`;
+                else
+                    description += `*Succès secret - Débloquez-le pour voir la description*\n\n`;
+            } else {
+                // Secret débloqué et on regarde son propre profil
+                description += `**${displayEmoji} ${achievement.name}**\n`;
+                description += `${achievement.description}\n`;
+
+                if (unlockedAt) {
+                    const date = new Date(unlockedAt);
+                    description += `*✅ Débloqué le ${date.toLocaleDateString("fr-FR")}*\n`;
+                }
+
+                description += `\n`;
+            }
         } else {
+            // Succès non-secret normal
             description += `**${displayEmoji} ${achievement.name}**\n`;
             description += `${achievement.description}\n`;
 
@@ -242,7 +264,7 @@ module.exports = {
                         currentAchievementCategory = AchievementCategory.PROFIL;
                         currentAchievementPage = 0;
 
-                        const embed = createAchievementEmbed(targetUser, currentAchievementCategory, currentAchievementPage);
+                        const embed = createAchievementEmbed(targetUser, currentAchievementCategory, currentAchievementPage, interaction.user.id);
                         const navButtons = createAchievementNavigationButtons(currentAchievementCategory, targetUser.id);
 
                         // Ajouter la pagination si nécessaire (> 5 achievements)
@@ -329,7 +351,7 @@ module.exports = {
                         currentAchievementCategory = categoryStr as AchievementCategory;
                         currentAchievementPage = 0; // Reset page quand on change de catégorie
 
-                        const embed = createAchievementEmbed(targetUser, currentAchievementCategory, currentAchievementPage);
+                        const embed = createAchievementEmbed(targetUser, currentAchievementCategory, currentAchievementPage, interaction.user.id);
                         const navButtons = createAchievementNavigationButtons(currentAchievementCategory, targetUser.id);
 
                         // Ajouter la pagination si nécessaire (> 5 achievements)
@@ -369,7 +391,7 @@ module.exports = {
                             }
                         }
 
-                        const embed = createAchievementEmbed(targetUser, currentAchievementCategory, currentAchievementPage);
+                        const embed = createAchievementEmbed(targetUser, currentAchievementCategory, currentAchievementPage, interaction.user.id);
                         const navButtons = createAchievementNavigationButtons(currentAchievementCategory, targetUser.id);
 
                         const {getAchievementsByCategory} = require("../../services/achievementService");
