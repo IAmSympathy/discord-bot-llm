@@ -189,13 +189,13 @@ Votre niveau détermine votre rôle de préfixe :
 **🦎 Adult (Niveau 20-34)**
 └─ 34,000 à 98,260 XP nécessaires
 
-**⚔️ Commando (Niveau 35-54)**
+**⚔️ Soldier (Niveau 35-54)**
 └─ 104,125 à 247,860 XP nécessaires
 
 **👑 Elite (Niveau 55-79)**
 └─ 257,125 à 531,685 XP nécessaires
 
-**🔱 Elder (Niveau 80+)**
+**🔱 Commando (Niveau 80+)**
 └─ 544,000+ XP nécessaires
 
 💡 **Votre rôle change automatiquement quand vous montez de niveau !**
@@ -210,9 +210,9 @@ Votre niveau détermine votre rôle de préfixe :
 
 - **Juvenile (10)** : ~55 jours (2 mois)
 - **Adult (20)** : ~7 mois
-- **Commando (35)** : ~2 ans
+- **Soldier (35)** : ~2 ans
 - **Elite (55)** : ~4.7 ans
-- **Elder (80)** : ~10 ans
+- **Commando (80)** : ~10 ans
 
 ### 🚶 Utilisateur Actif (~576 XP/jour)
 
@@ -220,9 +220,9 @@ Votre niveau détermine votre rôle de préfixe :
 
 - **Juvenile (10)** : ~15 jours
 - **Adult (20)** : ~2 mois
-- **Commando (35)** : ~6 mois ✅
+- **Soldier (35)** : ~6 mois ✅
 - **Elite (55)** : ~15 mois ✅
-- **Elder (80)** : ~2.6 ans ✅
+- **Commando (80)** : ~2.6 ans ✅
 
 ### 🏃 Utilisateur Très Actif (~1,260 XP/jour)
 
@@ -230,11 +230,11 @@ Votre niveau détermine votre rôle de préfixe :
 
 - **Juvenile (10)** : ~7 jours
 - **Adult (20)** : ~1 mois
-- **Commando (35)** : ~3 mois ✅
+- **Soldier (35)** : ~3 mois ✅
 - **Elite (55)** : ~7 mois ✅
-- **Elder (80)** : ~14 mois ✅
+- **Commando (80)** : ~14 mois ✅
 
-💡 **Elder est atteignable en ~1 an pour les très actifs !**
+💡 **Commando est atteignable en ~1 an pour les très actifs !**
 
 ---
 

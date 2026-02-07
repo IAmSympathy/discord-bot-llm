@@ -8,9 +8,9 @@ assets/levelup/
     ├── role_hatchling.png   (niveaux 1-9)
     ├── role_juvenile.png    (niveaux 10-19)
     ├── role_adult.png       (niveaux 20-34)
-    ├── role_commando.png    (niveaux 35-54)
+    ├── role_soldier.png     (niveaux 35-54)
     ├── role_elite.png       (niveaux 55-79)
-    └── role_elder.png       (niveaux 80+)
+    └── role_commando.png    (niveaux 80+)
 ```
 
 **Total : 6 images à créer** 🎨
@@ -46,9 +46,9 @@ Les images dans `roleup/` sont utilisées pour **TOUS les level ups**, selon le 
 | **Hatchling** | 1-9     | Gris/Argent (#4A5568) | Débutant, humble        | 🥚    |
 | **Juvenile**  | 10-19   | Cyan (#38B2AC)        | Progression, croissance | 🐣    |
 | **Adult**     | 20-34   | Bleu (#4299E1)        | Mature, établi          | 🦅    |
-| **Commando**  | 35-54   | Violet (#9F7AEA)      | Guerrier, combattant    | ⚔️    |
-| **Elite**     | 55-79   | Rouge (#F56565)       | Élite, puissant         | 👑    |
-| **Elder**     | 80+     | Or (#F6AD55)          | Légendaire, suprême     | 🔱    |
+| **Soldier**   | 35-54   | Vert (#48BB78)        | Combattant, déterminé   | ⚔️    |
+| **Elite**     | 55-79   | Violet (#9F7AEA)      | Élite, puissant         | 👑    |
+| **Commando**  | 80+     | Rouge (#F56565)       | Maître, légendaire      | 🔱    |
 
 ## 💡 Suggestions de design
 
@@ -84,9 +84,9 @@ Le bot change juste le titre de l'embed, donc l'image peut être conçue pour fo
 - [ ] `role_hatchling.png` - Niveaux 1-9 (gris)
 - [ ] `role_juvenile.png` - Niveaux 10-19 (cyan)
 - [ ] `role_adult.png` - Niveaux 20-34 (bleu)
-- [ ] `role_commando.png` - Niveaux 35-54 (violet)
-- [ ] `role_elite.png` - Niveaux 55-79 (rouge)
-- [ ] `role_elder.png` - Niveaux 80+ (or)
+- [ ] `role_soldier.png` - Niveaux 35-54 (vert)
+- [ ] `role_elite.png` - Niveaux 55-79 (violet)
+- [ ] `role_commando.png` - Niveaux 80+ (rouge)
 
 ## ❓ FAQ
 

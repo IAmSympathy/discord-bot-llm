@@ -17,18 +17,18 @@ export const LEVEL_ROLES = {
     HATCHLING: "1469149644293410866", // Niveau 1-9
     JUVENILE: "1469149867644293183",   // Niveau 10-19
     ADULT: "1469150100260524214",      // Niveau 20-34
-    COMMANDO: "1469150429794402344",   // Niveau 35-54
+    SOLDIER: "1469150762259976327",    // Niveau 35-54
     ELITE: "1469150566038114579",      // Niveau 55-79
-    ELDER: "1469150762259976327"       // Niveau 80+
+    COMMANDO: "1469150429794402344"    // Niveau 80+
 } as const;
 
 export const LEVEL_THRESHOLDS = [
     {level: 1, role: "HATCHLING", name: "Hatchling"},
     {level: 10, role: "JUVENILE", name: "Juvenile"},
     {level: 20, role: "ADULT", name: "Adult"},
-    {level: 35, role: "COMMANDO", name: "Commando"},
+    {level: 35, role: "SOLDIER", name: "Soldier"},
     {level: 55, role: "ELITE", name: "Elite"},
-    {level: 80, role: "ELDER", name: "Elder"}
+    {level: 80, role: "COMMANDO", name: "Commando"}
 ] as const;
 
 // Monthly Ranking Roles

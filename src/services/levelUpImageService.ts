@@ -22,7 +22,7 @@ if (!fs.existsSync(ROLEUP_DIR)) {
  * Utilise les images de roleup pour tous les level ups (même logique)
  *
  * @param level - Le niveau atteint
- * @param roleName - (Optionnel) Le nom du rôle actuel (HATCHLING, JUVENILE, ADULT, COMMANDO, ELITE, ELDER)
+ * @param roleName - (Optionnel) Le nom du rôle actuel (HATCHLING, JUVENILE, ADULT, SOLDIER, ELITE, COMMANDO)
  * @returns AttachmentBuilder ou null si aucune image disponible
  */
 export function getLevelUpImage(level: number, roleName?: string): AttachmentBuilder | null {
@@ -38,7 +38,7 @@ export function getLevelUpImage(level: number, roleName?: string): AttachmentBui
 /**
  * Récupère l'image de role up pour un rôle donné
  *
- * @param roleName - Le nom du rôle (HATCHLING, JUVENILE, ADULT, COMMANDO, ELITE, ELDER)
+ * @param roleName - Le nom du rôle (HATCHLING, JUVENILE, ADULT, SOLDIER, ELITE, COMMANDO)
  * @returns AttachmentBuilder ou null si aucune image disponible
  */
 export function getRoleUpImage(roleName: string): AttachmentBuilder | null {
