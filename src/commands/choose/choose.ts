@@ -47,13 +47,13 @@ module.exports = {
                 .setTitle("🎯 Choix aléatoire")
                 .addFields(
                     {
-                        name: "📋 Options",
+                        name: "Options",
                         value: options.map(opt => `• ${opt}`).join("\n"),
                         inline: false
                     },
                     {
-                        name: "✨ J'ai choisi",
-                        value: `**${chosenOption}**`,
+                        name: "J'ai choisi",
+                        value: `${chosenOption}`,
                         inline: false
                     }
                 )

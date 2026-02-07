@@ -163,10 +163,10 @@ module.exports = {
             // Créer l'embed de résultat
             const embed = new EmbedBuilder()
                 .setColor(0x57F287)
-                .setTitle("✅ Récompense quotidienne réclamée !")
+                .setTitle("🗓️ Récompense quotidienne réclamée !")
                 .setDescription(
                     `Tu as récupéré ta récompense quotidienne !\n\n` +
-                    `💰 **+${totalXP} XP** ${bonusXP > 0 ? `(${baseXP} + ${bonusXP} bonus)` : ''}\n` +
+                    `🎁 **+${totalXP} XP** gagné ! ${bonusXP > 0 ? `(${baseXP} + ${bonusXP} bonus)` : ''}\n` +
                     `🔥 Série : **${newStreak} jour${newStreak > 1 ? 's' : ''}**${milestoneMessage}`
                 )
                 .setFooter({text: `Total réclamé : ${userData.totalClaims + 1} fois`})
@@ -175,7 +175,7 @@ module.exports = {
             // Ajouter des infos sur le prochain palier
             if (newStreak < 7) {
                 embed.addFields({
-                    name: "🎯 Prochain palier",
+                    name: "Prochain palier",
                     value: `Encore **${7 - newStreak} jour${7 - newStreak > 1 ? 's' : ''}** pour le bonus de 7 jours (+50 XP)`,
                     inline: false
                 });

@@ -19,7 +19,7 @@ export const XP_REWARDS = {
     messageEnvoye: 7,               // Augmenté de 5 à 7 (+40%)
     reactionAjoutee: 1,
     reactionRecue: 2,
-    commandeUtilisee: 0,
+    commandeUtilisee: 5,            // XP pour commandes fun (ascii, choose, rollthedice, coinflip)
     mentionRecue: 3,
     replyRecue: 4,
     minuteVocale: 2,                // Augmenté de 1 à 2 (+100%)

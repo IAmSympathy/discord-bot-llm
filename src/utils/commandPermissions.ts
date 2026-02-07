@@ -34,7 +34,7 @@ const GLOBAL_COMMANDS = [
     'reset-dm',
     'leaderboard',
     'rollthedice',
-    'yesorno',
+    '8ball',
     'choose',
     'coinflip',
     'daily',

@@ -36,7 +36,7 @@ module.exports = {
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
-            let text = interaction.options.getString("texte", true);
+            let text = interaction.options.getString("text", true);
             const style = interaction.options.getString("style") || "standard";
 
             // Limiter à 20 caractères

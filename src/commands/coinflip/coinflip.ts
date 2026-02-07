@@ -19,7 +19,7 @@ module.exports = {
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
-            const userChoice = interaction.options.getString("choix");
+            const userChoice = interaction.options.getString("choice");
 
             // Simuler le lancer (pile, face, ou SUPER RARE : sur la tranche)
             const random = Math.random();
@@ -45,7 +45,7 @@ module.exports = {
             }
 
             // Message d'animation
-            await interaction.reply("🌀 *Lance la pièce...*");
+            await interaction.reply("🌀  *Lance la pièce...*");
 
             // Attendre un peu pour l'effet d'animation
             await new Promise(resolve => setTimeout(resolve, 1500));
@@ -77,13 +77,13 @@ module.exports = {
 
                 embed.addFields(
                     {
-                        name: "🎯 Ton choix",
+                        name: "Ton choix",
                         value: `${userChoiceEmoji} **${userChoiceText}**`,
                         inline: true
                     },
                     {
-                        name: "💫 Résultat",
-                        value: `${resultEmoji} **${resultText}**`,
+                        name: "Résultat",
+                        value: `${resultEmoji} ${resultText}`,
                         inline: true
                     }
                 );
@@ -97,8 +97,8 @@ module.exports = {
                     });
                 } else {
                     embed.addFields({
-                        name: won ? "🎉 Résultat" : "😔 Résultat",
-                        value: won ? "**Tu as gagné !**" : "**Tu as perdu !**",
+                        name: " ",
+                        value: won ? "\n**🎉 Tu as gagné !**" : "\n**😔 Tu as perdu !**",
                         inline: false
                     });
                 }
