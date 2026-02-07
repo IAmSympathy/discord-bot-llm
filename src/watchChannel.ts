@@ -204,19 +204,22 @@ export function registerWatchedChannelResponder(client: Client) {
                 message.author.bot
             );
 
-            // Enregistrer les mentions dans les statistiques
+            // Enregistrer les mentions dans les statistiques (exclure les bots et Netricsa)
             if (message.mentions.users.size > 0) {
                 message.mentions.users.forEach(async (user) => {
-                    recordMentionReceived(user.id, user.username);
+                    // Exclure les bots (incluant Netricsa) de l'enregistrement des mentions
+                    if (!user.bot) {
+                        recordMentionReceived(user.id, user.username);
 
-                    // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
-                    await addXP(
-                        user.id,
-                        user.username,
-                        XP_REWARDS.mentionRecue,
-                        message.channel as TextChannel,
-                        user.bot
-                    );
+                        // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
+                        await addXP(
+                            user.id,
+                            user.username,
+                            XP_REWARDS.mentionRecue,
+                            message.channel as TextChannel,
+                            user.bot
+                        );
+                    }
                 });
             }
 
