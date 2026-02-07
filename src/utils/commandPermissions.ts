@@ -41,6 +41,7 @@ const GLOBAL_COMMANDS = [
     'daily',
     'ascii',
     'ship',
+    'challenges',
     // Ajoutez ici d'autres commandes qui peuvent être utilisées n'importe où
 ];
 
