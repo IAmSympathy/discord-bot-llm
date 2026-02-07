@@ -6,13 +6,11 @@ import {createLogger} from "../../utils/logger";
 import {hasActiveGeneration, registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
 import {formatTime} from "../../utils/timeFormat";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
-import {FileMemory} from "../../memory/fileMemory";
-import {MEMORY_FILE_PATH, MEMORY_MAX_TURNS, TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
+import {TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 import {isLowPowerMode} from "../../services/botStateService";
 import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordImageReimagined} from "../../services/userStatsService";
 
 const logger = createLogger("ReimageCmd");
-const memory = new FileMemory(MEMORY_FILE_PATH);
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -305,16 +303,7 @@ module.exports = {
                 );
             }
 
-            // Ajouter à la mémoire une version simplifiée (pas besoin du prompt complet)
-            await memory.appendTurn({
-                ts: Date.now(),
-                discordUid: interaction.user.id,
-                displayName: interaction.user.username,
-                userText: `/reimagine`,
-                assistantText: `J'ai réimaginé une image`,
-                channelId: interaction.channelId,
-                channelName: interaction.channel?.isDMBased() ? "DM" : (interaction.channel as any)?.name || "unknown"
-            }, MEMORY_MAX_TURNS);
+            logger.info("✅ Image reimagined successfully");
 
             // Nettoyer le fichier temporaire (avec retry pour éviter les erreurs EBUSY)
             if (tempFilePath && fs.existsSync(tempFilePath)) {

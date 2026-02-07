@@ -1,8 +1,8 @@
 import {ChannelType, ChatInputCommandInteraction, Client, DMChannel, Message as DiscordMessage, TextChannel, ThreadChannel} from "discord.js";
 import {FileMemory} from "../memory/fileMemory";
 import {analyzeMessageType} from "../memory/memoryFilter";
-import {DISCORD_TYPING_UPDATE_INTERVAL, FILTER_PATTERNS, MEMORY_FILE_PATH, MEMORY_MAX_TURNS} from "../utils/constants";
-import {ImageAnalysisResult, processImages, processImagesWithMetadata} from "../services/imageService";
+import {DISCORD_TYPING_UPDATE_INTERVAL, MEMORY_FILE_PATH, MEMORY_MAX_TURNS} from "../utils/constants";
+import {ImageAnalysisResult, processImagesWithMetadata} from "../services/imageService";
 import {getWebContext} from "../services/searchService";
 import {OllamaService} from "../services/ollamaService";
 import {DiscordMessageManager, ImageAnalysisAnimation} from "./discordMessageManager";
@@ -109,186 +109,6 @@ export function enqueueGlobally<T>(job: AsyncJob<T>): Promise<T> {
     return next;
 }
 
-// Fonction pour enregistrer un message utilisateur passivement (Mode Hybride)
-// L'IA voit le message et le garde en mémoire, mais ne répond pas
-// Retourne true si le message a été sauvegardé, false sinon
-export async function recordPassiveMessage(
-    userId: string,
-    userName: string,
-    messageContent: string,
-    channelId: string,
-    channelName: string,
-    imageUrls?: string[],
-    botReaction?: string, // Pour enregistrer les réactions du bot (ex: "🤗")
-    isReply?: boolean // Pour indiquer si c'est une réponse à un autre message
-): Promise<boolean> {
-    const trimmedMessage = messageContent.trim();
-
-    // NOUVEAU : Détecter si c'est une question importante
-    const isImportantQuestion = trimmedMessage.includes('?') &&
-        !(/^(ça va|ca va|cv|quoi de neuf)\s*\??$/i.test(trimmedMessage)); // Exclure les questions sociales basiques
-
-    // Si c'est une question importante, l'enregistrer dans le cache
-    if (isImportantQuestion) {
-        recentQuestionsByChannel.set(channelId, {
-            timestamp: Date.now(),
-            userId: userId,
-            userName: userName,
-            question: messageContent
-        });
-    }
-
-    // NOUVEAU : Vérifier si c'est une réponse courte Oui/Non dans le contexte d'une question récente
-    const isShortResponse = FILTER_PATTERNS.SHORT_RESPONSE.test(trimmedMessage) && trimmedMessage.length < 20;
-
-    // NOUVEAU : Détecter les activités courantes (réponses à "Tu fais quoi?", etc.)
-    const isActivity = FILTER_PATTERNS.ACTIVITY.test(trimmedMessage);
-
-    // NOUVEAU : Détecter "rien" comme réponse valide
-    const isNothingResponse = FILTER_PATTERNS.NOTHING_RESPONSE.test(trimmedMessage);
-
-    // NOUVEAU : Détecter les nombres seuls (réponses à des questions quantitatives)
-    const isNumericAnswer = FILTER_PATTERNS.NUMERIC_ANSWER.test(trimmedMessage);
-
-    let forceStore = false;
-
-    if (isShortResponse) {
-        const recentQuestion = recentQuestionsByChannel.get(channelId);
-        if (recentQuestion) {
-            const timeSinceQuestion = Date.now() - recentQuestion.timestamp;
-
-            // Si la question a été posée dans les 30 dernières secondes par quelqu'un d'autre
-            if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
-                forceStore = true;
-                logger.info(`💡 Short response "${trimmedMessage}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
-            }
-        }
-    }
-
-    // NOUVEAU : Forcer le stockage des activités même si courtes (réponse à "Tu fais quoi?")
-    if (isActivity) {
-        const recentQuestion = recentQuestionsByChannel.get(channelId);
-        if (recentQuestion) {
-            const timeSinceQuestion = Date.now() - recentQuestion.timestamp;
-
-            // Si une question a été posée récemment (probablement "Tu fais quoi?")
-            if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
-                forceStore = true;
-                logger.info(`💡 Activity "${trimmedMessage}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
-            }
-        }
-    }
-
-    // NOUVEAU : Forcer le stockage des réponses numériques (rank, niveau, âge, etc.)
-    if (isNumericAnswer) {
-        const recentQuestion = recentQuestionsByChannel.get(channelId);
-        if (recentQuestion) {
-            const timeSinceQuestion = Date.now() - recentQuestion.timestamp;
-
-            // Si une question a été posée récemment (probablement quantitative)
-            if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
-                forceStore = true;
-                logger.info(`💡 Numeric answer "${trimmedMessage}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
-            }
-        }
-    }
-
-    // NOUVEAU : Forcer le stockage de "rien" comme réponse valide
-    if (isNothingResponse) {
-        const recentQuestion = recentQuestionsByChannel.get(channelId);
-        if (recentQuestion) {
-            const timeSinceQuestion = Date.now() - recentQuestion.timestamp;
-
-            // Si une question a été posée récemment (probablement "Tu fais quoi?")
-            if (timeSinceQuestion < QUESTION_CONTEXT_TIMEOUT && recentQuestion.userId !== userId) {
-                forceStore = true;
-                logger.info(`💡 Nothing response "${trimmedMessage}" kept (answer to recent question: "${recentQuestion.question.substring(0, 50)}...")`);
-            }
-        }
-    }
-
-    // Vérifier contenu inapproprié AVANT tout (même si forceStore)
-    const isInappropriateContent = /\b(sexe|sex|cul|baiser|porn|nudes?)\b/i.test(messageContent);
-
-    if (isInappropriateContent) {
-        logger.warn(`🚫 Inappropriate content skipped from ${userName} in #${channelName}`);
-        return false;
-    }
-
-    // Traiter les images si présentes
-    let imageDescriptions: string[] = [];
-    if (imageUrls && imageUrls.length > 0) {
-        try {
-            imageDescriptions = await processImages(imageUrls);
-        } catch (error) {
-            logger.error("Error processing images:", error);
-        }
-    }
-
-    // Vérifier si le message ne contient QUE des liens GIF (sans autre texte)
-    const cleanedMessageContent = removeGifLinks(messageContent);
-    const isOnlyGifLinks = !cleanedMessageContent && messageContent.trim().length > 0;
-
-    // Si le message ne contient QUE des liens GIF, ne pas l'enregistrer (sauf si forceStore ou images)
-    if (isOnlyGifLinks && !forceStore && imageDescriptions.length === 0) {
-        logger.info(`⏭️ Message was only GIF links, skipped from ${userName} in #${channelName}`);
-        return false;
-    }
-
-    // Si le message contient du texte en plus des GIF, garder le message complet (avec les liens)
-    // Si que des GIF + images, utiliser "[Media attachments]"
-    // Si que des GIF + forceStore, garder le message original
-    let finalMessageContent: string;
-    if (isOnlyGifLinks) {
-        if (imageDescriptions.length > 0) {
-            finalMessageContent = "[Media attachments]";
-        } else if (forceStore) {
-            finalMessageContent = messageContent; // Garder les liens GIF si forceStore
-        } else {
-            finalMessageContent = "";
-        }
-    } else {
-        finalMessageContent = messageContent; // Message normal avec ou sans GIF
-    }
-    // Filtrer SEULEMENT le spam pur et les messages vraiment vides
-    // Le filtrage d'importance se fera dans slidingWindowMemory() qui garde TOUJOURS les 6 derniers
-    const trimmed = finalMessageContent.trim();
-
-    // Skip uniquement si c'est vraiment vide ou du spam pur (emojis seuls, etc.)
-    const isPureNoise = !trimmed || /^[👍👎😂🤣😭🔥💀🎉❤️😊😅🙄😏]+$/.test(trimmed);
-
-    if (!forceStore && isPureNoise) {
-        logger.info(`⏭️ Message skipped (pure noise) from ${userName} in #${channelName}`);
-        return false;
-    }
-
-    const messageType = analyzeMessageType(finalMessageContent);
-
-    // Enregistrer le message comme un tour passif (sans réponse du bot)
-    // TOUS les messages sont stockés (sauf spam pur), le filtrage d'importance se fait dans slidingWindowMemory()
-    await memory.appendTurn(
-        {
-            ts: Date.now(),
-            discordUid: userId,
-            displayName: userName,
-            channelId: channelId,
-            channelName: channelName,
-            userText: finalMessageContent,
-            assistantText: botReaction ? `[Réaction emoji: ${botReaction}]` : undefined, // Si réaction, on la add-note
-            isPassive: true, // Marqué comme passif
-            isReply: isReply, // NOUVEAU : indique si c'est un reply
-            ...(imageDescriptions.length > 0 ? {imageDescriptions: imageDescriptions.slice(0, 5)} : {}),
-            ...(botReaction ? {assistantReactions: [botReaction]} : {}), // Enregistrer la réaction
-        },
-        MEMORY_MAX_TURNS
-    );
-
-    const reactionNote = botReaction ? ` [reaction: ${botReaction}]` : "";
-    const replyNote = isReply ? " [reply]" : "";
-    const contextNote = forceStore ? " [contextual-response]" : "";
-    logger.info(`👁️ Recorded from ${userName} in #${channelName} [${messageType.type}]${imageDescriptions.length > 0 ? ` [${imageDescriptions.length} images]` : ""}${reactionNote}${replyNote}${contextNote}`);
-    return true;
-}
 
 // Fonction pour effacer TOUTE la mémoire globale
 export async function clearAllMemory(): Promise<void> {
@@ -717,10 +537,8 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                                 channelName: channelName,
                                                 userText: originalUserMessage || prompt, // Utiliser le message original sans contexte
                                                 assistantText: cleanedText,
-                                                isReply: isReply, // NOUVEAU : enregistrer si c'est un reply
                                                 ...(imageDescriptions.length > 0 ? {imageDescriptions: imageDescriptions.slice(0, 5)} : {}),
                                                 ...(webContext ? {webContext} : {}),
-                                                ...(emojiHandler.getAppliedEmojis().length > 0 ? {assistantReactions: emojiHandler.getAppliedEmojis()} : {}),
                                             },
                                             MEMORY_MAX_TURNS
                                         );

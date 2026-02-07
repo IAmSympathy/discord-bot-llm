@@ -6,13 +6,11 @@ import {createLogger} from "../../utils/logger";
 import {hasActiveGeneration, registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
 import {formatTime} from "../../utils/timeFormat";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
-import {FileMemory} from "../../memory/fileMemory";
-import {MEMORY_FILE_PATH, MEMORY_MAX_TURNS, TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
+import {TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 import {isLowPowerMode} from "../../services/botStateService";
 import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordImageGenerated} from "../../services/userStatsService";
 
 const logger = createLogger("GenerateImageCmd");
-const memory = new FileMemory(MEMORY_FILE_PATH);
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -204,18 +202,7 @@ module.exports = {
                 );
             }
 
-            // Ajouter à la mémoire une version simplifiée (pas besoin du prompt complet)
-            logger.info("Saving to memory: /imagine command");
-            await memory.appendTurn({
-                ts: Date.now(),
-                discordUid: interaction.user.id,
-                displayName: interaction.user.username,
-                userText: `/imagine`,
-                assistantText: `J'ai généré une image`,
-                channelId: interaction.channelId,
-                channelName: interaction.channel?.isDMBased() ? "DM" : (interaction.channel as any)?.name || "unknown"
-            }, MEMORY_MAX_TURNS);
-            logger.info("Memory saved successfully for /imagine command");
+            logger.info("✅ Image generation completed successfully");
 
             // Réinitialiser le statut spécifique de cette génération
             await clearStatus(interaction.client, statusId);

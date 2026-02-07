@@ -1,5 +1,5 @@
 import {ChannelType, Client, Message, TextChannel} from "discord.js";
-import {processLLMRequest, recordPassiveMessage} from "./queue/queue";
+import {processLLMRequest} from "./queue/queue";
 import {setBotPresence} from "./bot";
 import {generateMentionEmoji} from "./services/emojiService";
 import {collectAllMediaUrls} from "./services/gifService";
@@ -312,7 +312,6 @@ export function registerWatchedChannelResponder(client: Client) {
                             channelName: "DM",
                             userText: userText,
                             assistantText: response,
-                            isPassive: false,
                             ...(imageUrls.length > 0 ? {imageDescriptions: [`${imageUrls.length} image(s)`]} : {})
                         });
                         logger.info(`[DM] Saved conversation turn for ${userName}`);
@@ -334,30 +333,11 @@ export function registerWatchedChannelResponder(client: Client) {
 
                     await message.reply(lowPowerMessage);
                     logger.info(`Low Power Mode - sent message to ${message.author.username}`);
-
-                    // NE PAS enregistrer passivement : l'utilisateur attend une réponse
-                    // Si on enregistrait, on aurait un message sans réponse dans la mémoire
                     return;
                 }
 
-
-                // Pour les autres messages (pas destinés à Netricsa), continuer à enregistrer passivement
-                const userText = message.content?.trim();
-                if (userText && userText.length > 0) {
-                    const channelName = (message.channel as any).name || `channel-${message.channelId}`;
-                    const isReply = !!message.reference?.messageId;
-                    await recordPassiveMessage(
-                        message.author.id,
-                        message.author.displayName,
-                        userText,
-                        message.channelId,
-                        channelName,
-                        undefined,
-                        undefined,
-                        isReply
-                    );
-                }
-                return; // Ne pas traiter plus loin
+                // En mode Low Power, ignorer tous les autres messages
+                return;
             }
 
 
@@ -374,66 +354,21 @@ export function registerWatchedChannelResponder(client: Client) {
                 // Ajouter une réaction emoji
                 const reactionEmoji = await handleNettieReaction(client, message);
 
-                // NOUVEAU : Enregistrer aussi en mémoire avec la réaction (sans analyser les images)
-                let savedInMemory = false;
-                if (userText) {
-                    // NE PAS collecter les médias pour les mentions Nettie (juste une réaction, pas d'analyse)
-
-                    // Enregistrer avec la réaction du bot
-                    savedInMemory = await recordPassiveMessage(
-                        message.author.id,
-                        message.author.displayName,
-                        userText,
-                        message.channelId,
-                        channelName,
-                        undefined, // Pas d'images
-                        reactionEmoji, // ← Passer la réaction
-                        undefined // Pas de isReply pour les mentions Nettie
-                    );
-
-                    logger.info(`[Nettie Reaction] Message recorded with reaction ${reactionEmoji} in #${channelName}${savedInMemory ? ' (saved in memory)' : ' (not saved)'}`);
-                }
-
                 // Logger la réaction
                 await logBotReaction(
                     message.author.username,
                     channelName,
                     message.content,
                     reactionEmoji,
-                    savedInMemory
+                    false
                 );
 
                 return; // Ne pas répondre avec du texte, juste la réaction
             }
 
-            // MODE HYBRIDE : Enregistrer TOUS les messages passivement (même sans mention)
-            // L'IA voit tout mais ne répond que quand mentionnée ou dans le canal surveillé
+            // Netricsa ne répond que si mentionnée ou dans le canal surveillé
             if (!isMentioned && !isInWatchedChannel) {
-                // NE PAS collecter les médias pour les messages passifs (sans mention)
-                // Les images ne sont analysées que si le bot est mentionné ou dans le canal surveillé
-
-                // Si le message a du texte, l'enregistrer passivement
-                if (userText) {
-                    // Obtenir le nom du channel
-                    const channelName = (message.channel as any).name || `channel-${message.channelId}`;
-
-                    // Détecter si c'est une réponse à un autre message
-                    const isReply = !!message.reference?.messageId;
-
-                    // Enregistrer passivement (sans répondre et sans analyser les images)
-                    await recordPassiveMessage(
-                        message.author.id,
-                        message.author.displayName,
-                        userText,
-                        message.channelId,
-                        channelName,
-                        undefined, // Pas d'images
-                        undefined, // Pas de réaction
-                        isReply // Passer le flag reply
-                    );
-                }
-
-                return; // Ne pas répondre, juste enregistrer (ou ignorer si pas de texte)
+                return; // Ignorer les messages où elle n'est pas mentionnée
             }
 
             // À partir d'ici, le bot VA RÉPONDRE (mention ou canal surveillé)

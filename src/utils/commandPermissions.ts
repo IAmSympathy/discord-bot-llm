@@ -26,15 +26,13 @@ const ADMIN_COMMANDS = [
  */
 const GLOBAL_COMMANDS = [
     'add-note',
+    'remove-note',
     'profile',
     'set-birthday',
     'remove-birthday',
-    'remove-note',
-    'stats',
     'stop',
     'reset-dm',
     'leaderboard',
-    'achievements'
     // Ajoutez ici d'autres commandes qui peuvent être utilisées n'importe où
 ];
 
@@ -42,7 +40,11 @@ const GLOBAL_COMMANDS = [
  * Liste des commandes spéciales avec restrictions personnalisées
  */
 const SPECIAL_COMMANDS = {
-    findmeme: 'MEME_CHANNEL' // Uniquement dans le salon meme ou en DM
+    findmeme: 'MEME_CHANNEL', // Uniquement dans le salon meme ou en DM
+    imagine: 'IMAGE_CHANNEL', // Uniquement dans le salon image ou en DM
+    reimagine: 'IMAGE_CHANNEL', // Uniquement dans le salon image ou en DM
+    upscale: 'IMAGE_CHANNEL', // Uniquement dans le salon image ou en DM
+    games: 'IMAGE_CHANNEL' // Uniquement dans le salon image ou en DM
 } as const;
 
 /**
@@ -149,6 +151,40 @@ export function canExecuteCommand(interaction: ChatInputCommandInteraction): boo
 
             return interaction.channelId === memeChannelId;
         }
+
+        if (restriction === 'IMAGE_CHANNEL') {
+            // Les DMs sont autorisés
+            if (!interaction.guild) {
+                return true;
+            }
+
+            // Sur serveur : vérifier qu'on est dans le salon image
+            const imageChannelId = EnvConfig.IMAGE_CHANNEL_ID;
+
+            if (!imageChannelId) {
+                // Si le salon image n'est pas configuré, bloquer
+                return false;
+            }
+
+            return interaction.channelId === imageChannelId;
+        }
+
+        if (restriction === 'GAMES_CHANNEL') {
+            // Les DMs sont autorisés
+            if (!interaction.guild) {
+                return true;
+            }
+
+            // Sur serveur : vérifier qu'on est dans le salon jeux
+            const gamesChannelId = EnvConfig.GAMES_CHANNEL_ID;
+
+            if (!gamesChannelId) {
+                // Si le salon jeux n'est pas configuré, bloquer
+                return false;
+            }
+
+            return interaction.channelId === gamesChannelId;
+        }
     }
 
     // Commandes utilisateur : DMs autorisés OU salon NETRICSA sur serveur
@@ -204,6 +240,22 @@ export function getCommandRestrictionMessage(interaction: ChatInputCommandIntera
                 return "Cette commande ne peut être utilisée que dans le salon <#" + memeChannelId + "> ou en message privé.";
             }
             return "Cette commande ne peut être utilisée qu'en message privé (le salon meme n'est pas configuré).";
+        }
+
+        if (restriction === 'IMAGE_CHANNEL') {
+            const imageChannelId = EnvConfig.IMAGE_CHANNEL_ID;
+            if (imageChannelId) {
+                return "Cette commande ne peut être utilisée que dans le salon <#" + imageChannelId + "> ou en message privé.";
+            }
+            return "Cette commande ne peut être utilisée qu'en message privé (le salon image n'est pas configuré).";
+        }
+
+        if (restriction === 'GAMES_CHANNEL') {
+            const gamesChannelId = EnvConfig.GAMES_CHANNEL_ID;
+            if (gamesChannelId) {
+                return "Cette commande ne peut être utilisée que dans le salon <#" + gamesChannelId + "> ou en message privé.";
+            }
+            return "Cette commande ne peut être utilisée qu'en message privé (le salon jeux n'est pas configuré).";
         }
     }
 

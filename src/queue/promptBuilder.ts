@@ -11,7 +11,6 @@ const logger = createLogger("PromptBuilder");
  */
 function formatMemoryTurn(turn: MemoryTurn, showChannelHeader: boolean = false): string {
     const imageContext = turn.imageDescriptions?.length ? ` [Images: ${turn.imageDescriptions.join(", ")}]` : "";
-    const reactionContext = turn.assistantReactions?.length ? ` [Réactions: ${turn.assistantReactions.join(" ")}]` : "";
 
     const channelHeader = showChannelHeader ? `📍 #${turn.channelName}\n` : "";
 
@@ -20,17 +19,14 @@ function formatMemoryTurn(turn: MemoryTurn, showChannelHeader: boolean = false):
     const ageInDays = Math.floor(ageInMs / (1000 * 60 * 60 * 24));
     const ageNote = ageInDays > 1 ? ` [${ageInDays}j]` : "";
 
-    // Si c'est un message passif (sans réponse du bot)
-    if (turn.isPassive || !turn.assistantText) {
-        const hasReaction = turn.assistantReactions && turn.assistantReactions.length > 0;
-        const passiveNote = hasReaction ? " [Vu, réagi]" : " [Vu]";
-
-        return `${channelHeader}👤 ${turn.displayName}: "${turn.userText}"${imageContext}${passiveNote}${ageNote}`;
+    // Si pas de réponse du bot (commande ou message sans interaction)
+    if (!turn.assistantText) {
+        return `${channelHeader}👤 ${turn.displayName}: "${turn.userText}"${imageContext}${ageNote}`;
     }
 
     // Message normal avec réponse du bot
     return `${channelHeader}👤 ${turn.displayName}: "${turn.userText}"${imageContext}${ageNote}
-🤖 Toi: "${turn.assistantText}"${reactionContext}`;
+🤖 Toi: "${turn.assistantText}"`;
 }
 
 /**

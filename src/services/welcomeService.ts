@@ -100,8 +100,7 @@ export async function sendWelcomeMessage(member: GuildMember, client: Client): P
                 channelId: channel.id,
                 channelName: channel.name,
                 userText: userContext,
-                assistantText: welcomeMessage,
-                isPassive: false
+                assistantText: welcomeMessage
             },
             MEMORY_MAX_TURNS
         );
@@ -162,8 +161,7 @@ export async function sendGoodbyeMessage(member: GuildMember | PartialGuildMembe
                 channelId: channel.id,
                 channelName: channel.name,
                 userText: userContext,
-                assistantText: goodbyeMessage,
-                isPassive: false
+                assistantText: goodbyeMessage
             },
             MEMORY_MAX_TURNS
         );

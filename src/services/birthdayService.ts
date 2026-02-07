@@ -146,8 +146,7 @@ async function celebrateSpecialBirthday(
                 channelId: channel.id,
                 channelName: channel.name,
                 userText: `C'était l'anniversaire de ${username} hier`,
-                assistantText: birthdayMessage,
-                isPassive: false
+                assistantText: birthdayMessage
             },
             MEMORY_MAX_TURNS
         );
@@ -260,8 +259,7 @@ async function celebrateBirthday(
                 channelId: channel.id,
                 channelName: channel.name,
                 userText: `C'est l'anniversaire de ${username}${age ? ` (${age} ans)` : ''}`,
-                assistantText: birthdayMessage,
-                isPassive: false
+                assistantText: birthdayMessage
             },
             MEMORY_MAX_TURNS
         );

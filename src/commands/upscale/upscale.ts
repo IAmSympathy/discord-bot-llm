@@ -6,8 +6,7 @@ import {createLogger} from "../../utils/logger";
 import {hasActiveGeneration, registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
 import {formatTime} from "../../utils/timeFormat";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
-import {FileMemory} from "../../memory/fileMemory";
-import {MEMORY_FILE_PATH, MEMORY_MAX_TURNS, TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
+import {TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 import {isLowPowerMode} from "../../services/botStateService";
 import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordImageUpscaled} from "../../services/userStatsService";
 import * as fs from "fs";
@@ -16,7 +15,6 @@ import * as https from "https";
 import * as http from "http";
 
 const logger = createLogger("UpscaleCmd");
-const memory = new FileMemory(MEMORY_FILE_PATH);
 
 // Dossier temporaire pour télécharger les images
 const TEMP_DIR = path.join(process.cwd(), "temp_images");
@@ -221,16 +219,7 @@ module.exports = {
                 );
             }
 
-            // Ajouter à la mémoire une version simplifiée (pas besoin des détails techniques)
-            await memory.appendTurn({
-                ts: Date.now(),
-                discordUid: interaction.user.id,
-                displayName: interaction.user.username,
-                userText: `/upscale`,
-                assistantText: `J'ai upscalé une image`,
-                channelId: interaction.channelId,
-                channelName: interaction.channel?.isDMBased() ? "DM" : (interaction.channel as any)?.name || "unknown"
-            }, MEMORY_MAX_TURNS);
+            logger.info("✅ Upscale completed successfully");
 
             // Nettoyer le fichier temporaire (avec retry pour éviter les erreurs EBUSY)
             if (tempFilePath && fs.existsSync(tempFilePath)) {

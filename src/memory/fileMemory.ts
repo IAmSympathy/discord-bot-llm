@@ -21,7 +21,7 @@ export type MemoryTurn = {
     discordUid: string;
     displayName: string;
     userText: string;
-    assistantText?: string; // Optionnel pour les messages passifs (Mode Hybride)
+    assistantText?: string; // Optionnel pour les commandes sans réponse textuelle
 
     // Channel où le message a été envoyé
     channelId: string;
@@ -33,17 +33,8 @@ export type MemoryTurn = {
     // Contexte web (optionnel)
     webContext?: WebContext;
 
-    // Réactions appliquées par l'assistant (ex: ["😏", "🔥"])
-    assistantReactions?: string[];
-
     // Génération d'image (optionnel)
     imageGeneration?: ImageGenerationInfo;
-
-    // Indique si c'est un message passif (vu mais sans réponse du bot)
-    isPassive?: boolean;
-
-    // Indique si c'est une réponse à un autre message (reply)
-    isReply?: boolean;
 };
 
 type MemoryFile = {

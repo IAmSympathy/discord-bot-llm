@@ -50,6 +50,14 @@ export class EnvConfig {
         return process.env.COUNTER_CHANNEL_ID;
     }
 
+    static get IMAGE_CHANNEL_ID(): string | undefined {
+        return process.env.IMAGE_CHANNEL_ID;
+    }
+
+    static get GAMES_CHANNEL_ID(): string | undefined {
+        return process.env.GAMES_CHANNEL_ID;
+    }
+
     static get CITATIONS_THREAD_ID(): string | undefined {
         return process.env.CITATIONS_THREAD_ID;
     }
