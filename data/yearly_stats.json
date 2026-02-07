@@ -3,13 +3,13 @@
     "288799652902469633": {
       "username": "iam_sympathy",
       "discord": {
-        "messagesEnvoyes": 56,
+        "messagesEnvoyes": 58,
         "reactionsAjoutees": 1,
         "reactionsRecues": 11,
-        "commandesUtilisees": 154,
-        "mentionsRecues": 22,
+        "commandesUtilisees": 164,
+        "mentionsRecues": 23,
         "repliesRecues": 7,
-        "tempsVocalMinutes": 704
+        "tempsVocalMinutes": 727
       },
       "netricsa": {
         "imagesGenerees": 0,
@@ -23,7 +23,7 @@
     "1462959115528835092": {
       "username": "Netricsa",
       "discord": {
-        "messagesEnvoyes": 428,
+        "messagesEnvoyes": 458,
         "reactionsAjoutees": 40,
         "reactionsRecues": 0,
         "commandesUtilisees": 0,
@@ -45,10 +45,10 @@
         "messagesEnvoyes": 9,
         "reactionsAjoutees": 1,
         "reactionsRecues": 2,
-        "commandesUtilisees": 9,
-        "mentionsRecues": 9,
+        "commandesUtilisees": 12,
+        "mentionsRecues": 10,
         "repliesRecues": 0,
-        "tempsVocalMinutes": 621
+        "tempsVocalMinutes": 643
       },
       "netricsa": {
         "imagesGenerees": 0,
@@ -183,7 +183,7 @@
     "513423712582762502": {
       "username": "TTS Bot",
       "discord": {
-        "messagesEnvoyes": 1,
+        "messagesEnvoyes": 3,
         "reactionsAjoutees": 0,
         "reactionsRecues": 0,
         "commandesUtilisees": 0,

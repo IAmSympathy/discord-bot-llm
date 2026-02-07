@@ -33,6 +33,8 @@ const GLOBAL_COMMANDS = [
     'stop',
     'reset-dm',
     'leaderboard',
+    'rollthedice',
+    'yesorno',
     // Ajoutez ici d'autres commandes qui peuvent être utilisées n'importe où
 ];
 
@@ -44,7 +46,7 @@ const SPECIAL_COMMANDS = {
     imagine: 'IMAGE_CHANNEL', // Uniquement dans le salon image ou en DM
     reimagine: 'IMAGE_CHANNEL', // Uniquement dans le salon image ou en DM
     upscale: 'IMAGE_CHANNEL', // Uniquement dans le salon image ou en DM
-    games: 'IMAGE_CHANNEL' // Uniquement dans le salon image ou en DM
+    games: 'IMAGE_CHANNEL', // Uniquement dans le salon image ou en DM
 } as const;
 
 /**

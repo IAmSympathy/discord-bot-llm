@@ -3,17 +3,18 @@
     "userId": "288799652902469633",
     "username": "iam_sympathy",
     "discord": {
-      "messagesEnvoyes": 56,
+      "messagesEnvoyes": 58,
       "reactionsAjoutees": 1,
       "reactionsRecues": 11,
-      "commandesUtilisees": 154,
-      "mentionsRecues": 22,
+      "commandesUtilisees": 164,
+      "mentionsRecues": 23,
       "repliesRecues": 7,
-      "tempsVocalMinutes": 704,
+      "tempsVocalMinutes": 727,
       "emojisUtilises": {
         "🗿": 1,
         ":outraged_sam:": 1,
-        ":cringesmile:": 1
+        ":cringesmile:": 1,
+        "🤡": 1
       },
       "compteurContributions": 24
     },
@@ -25,13 +26,13 @@
       "conversationsIA": 16,
       "promptsCrees": null
     },
-    "lastUpdate": 1770452937926
+    "lastUpdate": 1770454654878
   },
   "1462959115528835092": {
     "userId": "1462959115528835092",
     "username": "Netricsa",
     "discord": {
-      "messagesEnvoyes": 428,
+      "messagesEnvoyes": 458,
       "reactionsAjoutees": 40,
       "reactionsRecues": 0,
       "commandesUtilisees": 0,
@@ -41,7 +42,7 @@
       "emojisUtilises": {
         "🏆": 1,
         "🎬": 1,
-        "🎉": 33,
+        "🎉": 35,
         "😊": 2
       }
     },
@@ -52,7 +53,7 @@
       "conversationsIA": 2,
       "memesRecherches": 0
     },
-    "lastUpdate": 1770452843715
+    "lastUpdate": 1770454670989
   },
   "351419795033423883": {
     "userId": "351419795033423883",
@@ -61,10 +62,10 @@
       "messagesEnvoyes": 9,
       "reactionsAjoutees": 1,
       "reactionsRecues": 2,
-      "commandesUtilisees": 9,
-      "mentionsRecues": 9,
+      "commandesUtilisees": 12,
+      "mentionsRecues": 10,
       "repliesRecues": 0,
-      "tempsVocalMinutes": 621,
+      "tempsVocalMinutes": 643,
       "compteurContributions": 5,
       "emojisUtilises": {
         "🤓": 1
@@ -78,7 +79,7 @@
       "memesRecherches": 0,
       "promptsCrees": 0
     },
-    "lastUpdate": 1770452937937
+    "lastUpdate": 1770454670500
   },
   "369247585556365313": {
     "userId": "369247585556365313",
@@ -219,7 +220,7 @@
     "userId": "513423712582762502",
     "username": "TTS Bot",
     "discord": {
-      "messagesEnvoyes": 1,
+      "messagesEnvoyes": 3,
       "reactionsAjoutees": 0,
       "reactionsRecues": 0,
       "commandesUtilisees": 0,
@@ -235,7 +236,7 @@
       "memesRecherches": 0,
       "promptsCrees": 0
     },
-    "lastUpdate": 1770403738402
+    "lastUpdate": 1770453054553
   },
   "814998532833673246": {
     "userId": "814998532833673246",
