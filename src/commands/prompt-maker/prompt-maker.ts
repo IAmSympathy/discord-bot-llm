@@ -1,6 +1,6 @@
 import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {createLogger} from "../../utils/logger";
-import {OLLAMA_API_URL, OLLAMA_TEXT_MODEL} from "../../utils/constants";
+import {OLLAMA_API_URL, OLLAMA_TEXT_MODEL, TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {createErrorEmbed} from "../../utils/embedBuilder";
 import {isLowPowerMode} from "../../services/botStateService";
@@ -243,6 +243,8 @@ module.exports = {
         const client = interaction.client;
 
         let statusId: string = "";
+        let progressMessage: any = null;
+        let animationInterval: NodeJS.Timeout | null = null;
 
         try {
             // Vérifier le mode low power
@@ -255,8 +257,6 @@ module.exports = {
                 return;
             }
 
-            await interaction.deferReply({});
-
             const description = interaction.options.getString("description", true);
             const type = interaction.options.getString("type", true) as "text2img" | "img2img";
             const isImg2Img = type === "img2img";
@@ -265,8 +265,31 @@ module.exports = {
 
             statusId = await setStatus(client, BotStatus.GENERATING_PROMPT);
 
+            // Message de progression avec animation de points
+            progressMessage = await interaction.reply({
+                content: "> 📝 Génération du prompt."
+            });
+
+            // Animation des points
+            let dotCount = 1;
+            animationInterval = setInterval(async () => {
+                dotCount = (dotCount % 3) + 1;
+                const dots = ".".repeat(dotCount);
+
+                await progressMessage
+                    .edit(`> 📝 Génération du prompt${dots}\n`)
+                    .catch(() => {
+                    });
+            }, TYPING_ANIMATION_INTERVAL);
+
             // Générer le prompt optimisé
             const result = await generateOptimizedPrompt(description, isImg2Img);
+
+            // Arrêter l'animation
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
 
             // Créer l'embed de réponse
             const embed = new EmbedBuilder()
@@ -306,7 +329,10 @@ module.exports = {
             embed.setFooter({text: "Généré par Netricsa"});
             embed.setTimestamp();
 
-            await interaction.editReply({embeds: [embed]});
+            await progressMessage.edit({
+                content: null,
+                embeds: [embed]
+            });
 
             // Enregistrer dans les logs Discord
             const channelName = interaction.channel?.isDMBased()
@@ -353,6 +379,12 @@ module.exports = {
         } catch (error) {
             logger.error("Error generating prompt:", error);
 
+            // Arrêter l'animation en cas d'erreur
+            if (animationInterval) {
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+
             // Clear status en cas d'erreur
             await clearStatus(client, statusId);
 
@@ -362,7 +394,9 @@ module.exports = {
                 `Impossible de générer le prompt optimisé.\n\n**Erreur:** ${errorMessage}`
             );
 
-            if (interaction.deferred) {
+            if (progressMessage) {
+                await progressMessage.edit({embeds: [errorEmbed]});
+            } else if (interaction.replied || interaction.deferred) {
                 await interaction.editReply({embeds: [errorEmbed]});
             } else {
                 await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});

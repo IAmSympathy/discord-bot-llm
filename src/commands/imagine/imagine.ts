@@ -82,7 +82,7 @@ module.exports = {
 
             // Message de progression avec animation de points
             progressMessage = await interaction.reply({
-                content: "Génération de l'image."
+                content: "> 🎨 Imagination de l'image."
             });
 
             // Animation des points
@@ -94,7 +94,7 @@ module.exports = {
                 const label = amount === 1 ? "image" : "images";
 
                 await progressMessage
-                    .edit(`Génération de ${amount === 1 ? "l’" : `${amount} `}${label}${dots}\n`)
+                    .edit(`> 🎨 Imagination de ${amount === 1 ? "l’" : `${amount} `}${label}${dots}\n`)
                     .catch(() => {
                     });
             }, TYPING_ANIMATION_INTERVAL);

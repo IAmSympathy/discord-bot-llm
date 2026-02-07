@@ -743,7 +743,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         id: "netricsa_conv_5",
         category: AchievementCategory.NETRICSA,
         name: "Première Conversation",
-        description: "Avoir 5 conversations avec Netricsa",
+        description: "Converser 5 fois avec Netricsa",
         emoji: "💭",
         secret: false,
         xpReward: 50
@@ -752,7 +752,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         id: "netricsa_conv_50",
         category: AchievementCategory.NETRICSA,
         name: "Bavard IA",
-        description: "Avoir 50 conversations avec Netricsa",
+        description: "Converser 50 fois avec Netricsa",
         emoji: "🗣️",
         secret: false,
         xpReward: 100
@@ -761,7 +761,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         id: "netricsa_conv_200",
         category: AchievementCategory.NETRICSA,
         name: "Causeur Expert",
-        description: "Avoir 200 conversations avec Netricsa",
+        description: "Converser 200 fois avec Netricsa",
         emoji: "💬",
         secret: false,
         xpReward: 200
@@ -770,7 +770,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         id: "netricsa_conv_500",
         category: AchievementCategory.NETRICSA,
         name: "Meilleur Ami de Netricsa",
-        description: "Avoir 500 conversations avec Netricsa",
+        description: "Converser 500 fois avec Netricsa",
         emoji: "🎙️",
         secret: false,
         xpReward: 500

@@ -106,7 +106,7 @@ module.exports = {
 
             // Message de progression avec animation de points
             progressMessage = await interaction.reply({
-                content: "Réimagination de l'image."
+                content: "> 🌀 Réimagination de l'image."
             });
 
             // Animation des points (intervalle plus rapide pour meilleur feedback)
@@ -114,7 +114,7 @@ module.exports = {
             const animationInterval = setInterval(async () => {
                 dotCount = (dotCount % 3) + 1;
                 const dots = ".".repeat(dotCount);
-                await progressMessage.edit(`Réimagination de l'image${dots}`).catch(() => {
+                await progressMessage.edit(`> 🌀 Réimagination de l'image${dots}`).catch(() => {
                 });
             }, TYPING_ANIMATION_INTERVAL);
 

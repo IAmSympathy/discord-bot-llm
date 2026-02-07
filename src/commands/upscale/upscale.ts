@@ -132,7 +132,7 @@ module.exports = {
 
             // Message de progression avec animation de points
             progressMessage = await interaction.reply({
-                content: `Upscaling de l'image avec la méthode **${modelName} (x${scale})**.`
+                content: `> 🔍 Upscaling de l'image avec la méthode **${modelName} (x${scale})**.`
             });
 
             // Animation des points
@@ -140,7 +140,7 @@ module.exports = {
             const animationInterval = setInterval(async () => {
                 dotCount = (dotCount % 3) + 1;
                 const dots = ".".repeat(dotCount);
-                await progressMessage.edit(`Upscaling de l'image avec la méthode **${modelName} (x${scale})**${dots}`).catch(() => {
+                await progressMessage.edit(`> 🔍 Upscaling de l'image avec la méthode **${modelName} (x${scale})**${dots}`).catch(() => {
                 });
             }, TYPING_ANIMATION_INTERVAL);
 
