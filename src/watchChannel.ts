@@ -161,13 +161,13 @@ export function registerWatchedChannelResponder(client: Client) {
                 // Gérer le message du compteur (validera et supprimera si invalide)
                 const isValid = await handleCounterMessage(message);
 
-                // Si le message est valide, enregistrer les stats et donner de l'XP
+                // Si le message est valide, donner très peu d'XP (1 XP seulement)
+                // NE PAS enregistrer dans les stats de messages (ça fausserait les statistiques)
                 if (isValid) {
-                    recordMessageSent(message.author.id, message.author.username);
                     await addXP(
                         message.author.id,
                         message.author.username,
-                        XP_REWARDS.compteurContribution,
+                        1, // 1 XP seulement pour le compteur
                         message.channel as TextChannel,
                         false
                     );

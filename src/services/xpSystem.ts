@@ -16,7 +16,6 @@ const XP_FILE = path.join(DATA_DIR, "user_xp.json");
 export const XP_REWARDS = {
     // Stats Discord
     messageEnvoye: 7,               // Augmenté de 5 à 7 (+40%)
-    compteurContribution: 1,
     reactionAjoutee: 1,
     reactionRecue: 2,
     commandeUtilisee: 0,
