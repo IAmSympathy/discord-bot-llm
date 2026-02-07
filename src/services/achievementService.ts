@@ -201,22 +201,49 @@ async function sendAchievementNotification(
         const channel = await client.channels.fetch(channelId);
         if (!channel || !channel.isTextBased()) return;
 
-        const {EmbedBuilder} = require("discord.js");
+        const {EmbedBuilder, AttachmentBuilder} = require("discord.js");
+        const path = require("path");
+        const fs = require("fs");
+
+        // Charger l'image du badge d'achievement si elle existe
+        const badgeImagePath = path.join(__dirname, "../../assets/achievement_badge.png");
+        let attachment = null;
+        let thumbnailUrl = null;
+
+        if (fs.existsSync(badgeImagePath)) {
+            attachment = new AttachmentBuilder(badgeImagePath, {name: "achievement_badge.png"});
+            thumbnailUrl = "attachment://achievement_badge.png";
+        }
+
         const embed = new EmbedBuilder()
             .setColor(0xFFD700) // Gold
-            .setTitle("🏆 Achievement Débloqué !")
+            .setTitle("✨ Succès !")
             .setDescription(
-                `**${achievement.emoji} ${achievement.name}**\n` +
-                `${achievement.description}\n\n` +
-                `+${achievement.xpReward} XP`
+                `## ${achievement.emoji} ${achievement.name}\n\n` +
+                `*${achievement.description}*\n\n` +
+                `🎁 **+${achievement.xpReward} XP** gagné !\n\n` +
+                `Consulte tous tes succès avec \`/profile\` ou en faisant clic droit sur ton nom : Applications → **Voir le profil** !`
             )
+            .setFooter({text: "Continue comme ça pour débloquer plus de succès !"})
             .setTimestamp();
 
-        await (channel as TextChannel).send({
-            content: `||<@${userId}>||`,
+        // Ajouter la thumbnail seulement si l'image existe
+        if (thumbnailUrl) {
+            embed.setThumbnail(thumbnailUrl);
+        }
+
+        const messageOptions: any = {
+            content: `<@${userId}> 🎉`,
             embeds: [embed],
             allowedMentions: {users: [userId]}
-        });
+        };
+
+        // Ajouter l'attachment seulement si l'image existe
+        if (attachment) {
+            messageOptions.files = [attachment];
+        }
+
+        await (channel as TextChannel).send(messageOptions);
 
         // Ajouter l'XP de l'achievement
         const {addXP} = require("./xpSystem");
