@@ -105,7 +105,7 @@ export function getPlayerStats(userId: string): PlayerStats {
  * @param isVsAI true si c'est contre Netricsa, false si contre un joueur
  * @param channel Canal où envoyer la notification de level up (optionnel)
  */
-export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false, channel?: any): void {
+export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false, channel?: any): Promise<void> {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -174,17 +174,32 @@ export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe
         }
 
         addXP(userId, "Player", xpAmount, channel);
+
+        // Tracker la victoire pour achievements avancés
+        const {trackWin, trackGamePlayed} = require("../../services/gameTracker");
+        trackWin(userId, game, isVsAI);
+        trackGamePlayed(userId, game);
+
+        // Vérifier les achievements de jeux
+        if (channel) {
+            const {checkGameAchievements, checkGameTimeAchievements, checkGameSessionAchievements, checkGameDailyAchievements} = require("../../services/gameAchievementChecker");
+            await checkGameAchievements(userId, "Player", channel.client, channel.id);
+            await checkGameTimeAchievements(userId, "Player", channel.client, channel.id);
+            await checkGameSessionAchievements(userId, "Player", channel.client, channel.id);
+            await checkGameDailyAchievements(userId, "Player", channel.client, channel.id);
+        }
     }
 }
 
 /**
+ * Met à jour les stats après une défaite/**
  * Met à jour les stats après une défaite
  * @param userId ID de l'utilisateur
  * @param game Nom du jeu
  * @param isVsAI true si c'est contre Netricsa, false si contre un joueur
  * @param channel Canal où envoyer la notification de level up (optionnel)
  */
-export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false, channel?: any): void {
+export async function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false, channel?: any): Promise<void> {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -247,17 +262,32 @@ export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictacto
         }
 
         addXP(userId, "Player", xpAmount, channel);
+
+        // Tracker la défaite pour achievements avancés
+        const {trackLoss, trackGamePlayed} = require("../../services/gameTracker");
+        trackLoss(userId, isVsAI);
+        trackGamePlayed(userId, game);
+
+        // Vérifier les achievements de jeux
+        if (channel) {
+            const {checkGameAchievements, checkGameTimeAchievements, checkGameSessionAchievements, checkGameDailyAchievements} = require("../../services/gameAchievementChecker");
+            await checkGameAchievements(userId, "Player", channel.client, channel.id);
+            await checkGameTimeAchievements(userId, "Player", channel.client, channel.id);
+            await checkGameSessionAchievements(userId, "Player", channel.client, channel.id);
+            await checkGameDailyAchievements(userId, "Player", channel.client, channel.id);
+        }
     }
 }
 
 /**
+ * Met à jour les stats après une égalité/**
  * Met à jour les stats après une égalité
  * @param userId ID de l'utilisateur
  * @param game Nom du jeu
  * @param isVsAI true si c'est contre Netricsa, false si contre un joueur
  * @param channel Canal où envoyer la notification de level up (optionnel)
  */
-export function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false, channel?: any): void {
+export async function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false, channel?: any): Promise<void> {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -321,6 +351,20 @@ export function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictacto
 
         if (xpAmount > 0) {
             addXP(userId, "Player", xpAmount, channel);
+        }
+
+        // Tracker l'égalité pour achievements avancés
+        const {trackDraw, trackGamePlayed} = require("../../services/gameTracker");
+        trackDraw(userId);
+        trackGamePlayed(userId, game);
+
+        // Vérifier les achievements de jeux
+        if (channel) {
+            const {checkGameAchievements, checkGameTimeAchievements, checkGameSessionAchievements, checkGameDailyAchievements} = require("../../services/gameAchievementChecker");
+            await checkGameAchievements(userId, "Player", channel.client, channel.id);
+            await checkGameTimeAchievements(userId, "Player", channel.client, channel.id);
+            await checkGameSessionAchievements(userId, "Player", channel.client, channel.id);
+            await checkGameDailyAchievements(userId, "Player", channel.client, channel.id);
         }
     }
 }

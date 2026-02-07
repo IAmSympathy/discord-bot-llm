@@ -374,16 +374,18 @@ function generateFunAwards(client: Client, year: string): RewindAward[] {
     }
 
     // 🔢 Le mathématicien (plus de contributions au compteur)
+    const {getUserCounterContributions} = require("./counterService");
     let maxCounterContributions = 0;
     let topCounter: { userId: string; username: string; contributions: number } | null = null;
 
     for (const userStat of userStats) {
-        if (userStat.discord.compteurContributions && userStat.discord.compteurContributions > maxCounterContributions) {
-            maxCounterContributions = userStat.discord.compteurContributions;
+        const counterContributions = getUserCounterContributions(userStat.userId);
+        if (counterContributions > maxCounterContributions) {
+            maxCounterContributions = counterContributions;
             topCounter = {
                 userId: userStat.userId,
                 username: userStat.username,
-                contributions: userStat.discord.compteurContributions
+                contributions: counterContributions
             };
         }
     }

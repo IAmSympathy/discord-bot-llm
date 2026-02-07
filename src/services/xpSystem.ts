@@ -14,25 +14,25 @@ const XP_FILE = path.join(DATA_DIR, "user_xp.json");
  */
 export const XP_REWARDS = {
     // Stats Discord
-    messageEnvoye: 5,
+    messageEnvoye: 7,               // Augmenté de 5 à 7 (+40%)
     compteurContribution: 1,
     reactionAjoutee: 1,
     reactionRecue: 2,
     commandeUtilisee: 0,
     mentionRecue: 3,
     replyRecue: 4,
-    minuteVocale: 1,
+    minuteVocale: 2,                // Augmenté de 1 à 2 (+100%)
 
     // Stats Netricsa
     imageGeneree: 50,
     imageReimaginee: 40,
     imageUpscalee: 30,
-    conversationIA: 10,
+    conversationIA: 12,             // Augmenté de 10 à 12 (+20%)
     memeRecherche: 15,
     promptCree: 30,
 
     // Stats Création
-    postCreation: 1000,
+    postCreation: 500,              // Réduit de 1000 à 500 (-50%)
 
     // === JEUX - ROCHE PAPIER CISEAUX ===
     // Contre joueur (PvP)
@@ -72,18 +72,19 @@ export const XP_REWARDS = {
 
 /**
  * Calcule le niveau basé sur l'XP total
- * Formule : niveau = floor(sqrt(xp / 100))
- * Niveau 1 = 100 XP, Niveau 2 = 400 XP, Niveau 3 = 900 XP, etc.
+ * Formule : niveau = floor(sqrt(xp / 85))
+ * Niveau 1 = 85 XP, Niveau 2 = 340 XP, Niveau 3 = 765 XP, etc.
+ * Ajusté de /100 à /85 pour une progression -15% plus rapide
  */
 export function calculateLevel(totalXP: number): number {
-    return Math.floor(Math.sqrt(totalXP / 100));
+    return Math.floor(Math.sqrt(totalXP / 85));
 }
 
 /**
  * Calcule l'XP nécessaire pour un niveau donné
  */
 export function getXPForLevel(level: number): number {
-    return level * level * 100;
+    return level * level * 85;
 }
 
 /**

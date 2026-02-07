@@ -15,20 +15,20 @@ export const DEFAULT_MEMBER_ROLE = "875495187491733524"; // Beheaded
 // Level Roles (Prefix roles based on level)
 export const LEVEL_ROLES = {
     HATCHLING: "1469149644293410866", // Niveau 1-9
-    JUVENILE: "1469149867644293183",   // Niveau 10-24
-    ADULT: "1469150100260524214",         // Niveau 25-49
-    COMMANDO: "1469150429794402344",   // Niveau 50-74
-    ELITE: "1469150566038114579",         // Niveau 75-99
-    ELDER: "1469150762259976327"          // Niveau 100+
+    JUVENILE: "1469149867644293183",   // Niveau 10-19
+    ADULT: "1469150100260524214",      // Niveau 20-34
+    COMMANDO: "1469150429794402344",   // Niveau 35-54
+    ELITE: "1469150566038114579",      // Niveau 55-79
+    ELDER: "1469150762259976327"       // Niveau 80+
 } as const;
 
 export const LEVEL_THRESHOLDS = [
     {level: 1, role: "HATCHLING", name: "Hatchling"},
     {level: 10, role: "JUVENILE", name: "Juvenile"},
-    {level: 25, role: "ADULT", name: "Adult"},
-    {level: 50, role: "COMMANDO", name: "Commando"},
-    {level: 75, role: "ELITE", name: "Elite"},
-    {level: 100, role: "ELDER", name: "Elder"}
+    {level: 20, role: "ADULT", name: "Adult"},
+    {level: 35, role: "COMMANDO", name: "Commando"},
+    {level: 55, role: "ELITE", name: "Elite"},
+    {level: 80, role: "ELDER", name: "Elder"}
 ] as const;
 
 // Memory Configuration - Sliding Window System

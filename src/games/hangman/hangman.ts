@@ -371,6 +371,16 @@ async function displayResult(message: any, gameState: GameState, isWon: boolean,
         // Passer le message pour permettre la notification de level up
         recordWin(gameState.player, 'hangman', true, message.channel);
 
+        // Vérifier l'achievement "Sans Faute"
+        const {checkHangmanPerfectAchievement} = require("../../services/gameAchievementChecker");
+        await checkHangmanPerfectAchievement(
+            gameState.player,
+            "Player",
+            gameState.wrongGuesses,
+            message.client,
+            message.channel.id
+        );
+
         // Mettre à jour la plus haute streak
         if (gameState.currentStreak > gameState.highestStreak) {
             gameState.highestStreak = gameState.currentStreak;

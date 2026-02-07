@@ -135,8 +135,516 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Faire 1000 contributions au compteur",
         emoji: "🌟",
         secret: false,
-        xpReward: 2000
+        xpReward: 1500           // Réduit de 2000 à 1500
     },
+
+    // === ACHIEVEMENTS JEUX - GÉNÉRAUX ===
+    {
+        id: "game_first",
+        category: AchievementCategory.JEUX,
+        name: "Première Partie",
+        description: "Jouer sa première partie",
+        emoji: "🎲",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "game_played_50",
+        category: AchievementCategory.JEUX,
+        name: "Joueur Régulier",
+        description: "Jouer 50 parties au total",
+        emoji: "🎮",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "game_played_200",
+        category: AchievementCategory.JEUX,
+        name: "Accro aux Jeux",
+        description: "Jouer 200 parties au total",
+        emoji: "🎯",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "game_polyvalent",
+        category: AchievementCategory.JEUX,
+        name: "Polyvalent",
+        description: "Jouer à tous les jeux disponibles",
+        emoji: "🌟",
+        secret: false,
+        xpReward: 150
+    },
+    {
+        id: "game_first_win",
+        category: AchievementCategory.JEUX,
+        name: "Premier Sang",
+        description: "Gagner sa première partie",
+        emoji: "🏆",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "game_win_25",
+        category: AchievementCategory.JEUX,
+        name: "Champion en Herbe",
+        description: "Gagner 25 parties au total",
+        emoji: "⭐",
+        secret: false,
+        xpReward: 150
+    },
+    {
+        id: "game_win_100",
+        category: AchievementCategory.JEUX,
+        name: "Maître des Jeux",
+        description: "Gagner 100 parties au total",
+        emoji: "👑",
+        secret: false,
+        xpReward: 300
+    },
+    {
+        id: "game_win_500",
+        category: AchievementCategory.JEUX,
+        name: "Légende Vivante",
+        description: "Gagner 500 parties au total",
+        emoji: "🔥",
+        secret: false,
+        xpReward: 400            // Réduit de 500 à 400
+    },
+    {
+        id: "game_streak_3",
+        category: AchievementCategory.JEUX,
+        name: "Hot Streak",
+        description: "Gagner 3 parties d'affilée",
+        emoji: "🔥",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "game_streak_5",
+        category: AchievementCategory.JEUX,
+        name: "Unstoppable",
+        description: "Gagner 5 parties d'affilée",
+        emoji: "⚡",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "game_streak_10",
+        category: AchievementCategory.JEUX,
+        name: "Domination",
+        description: "Gagner 10 parties d'affilée",
+        emoji: "🌟",
+        secret: false,
+        xpReward: 400
+    },
+    {
+        id: "game_streak_20",
+        category: AchievementCategory.JEUX,
+        name: "Perfection",
+        description: "Gagner 20 parties d'affilée",
+        emoji: "💎",
+        secret: false,
+        xpReward: 500            // Réduit de 800 à 500
+    },
+    {
+        id: "game_loss_10",
+        category: AchievementCategory.JEUX,
+        name: "Persévérant",
+        description: "Perdre 10 parties mais continuer à jouer",
+        emoji: "💪",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "game_loss_50",
+        category: AchievementCategory.JEUX,
+        name: "Inébranlable",
+        description: "Perdre 50 parties mais continuer à jouer",
+        emoji: "🛡️",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "game_loss_100",
+        category: AchievementCategory.JEUX,
+        name: "Titan",
+        description: "Perdre 100 parties mais continuer à jouer",
+        emoji: "🦾",
+        secret: false,
+        xpReward: 300
+    },
+
+    // === ACHIEVEMENTS JEUX - ROCHE-PAPIER-CISEAUX ===
+    {
+        id: "rps_win_10",
+        category: AchievementCategory.JEUX,
+        name: "Débutant RPS",
+        description: "Gagner 10 parties de Roche-Papier-Ciseaux",
+        emoji: "✊",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "rps_win_50",
+        category: AchievementCategory.JEUX,
+        name: "Amateur RPS",
+        description: "Gagner 50 parties de Roche-Papier-Ciseaux",
+        emoji: "🪨",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "rps_win_200",
+        category: AchievementCategory.JEUX,
+        name: "Expert RPS",
+        description: "Gagner 200 parties de Roche-Papier-Ciseaux",
+        emoji: "📜",
+        secret: false,
+        xpReward: 400
+    },
+    {
+        id: "rps_pvp_25",
+        category: AchievementCategory.JEUX,
+        name: "Duelliste RPS",
+        description: "Gagner 25 parties de RPS contre des joueurs",
+        emoji: "⚔️",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "rps_pvp_100",
+        category: AchievementCategory.JEUX,
+        name: "Maître du Duel RPS",
+        description: "Gagner 100 parties de RPS contre des joueurs",
+        emoji: "👊",
+        secret: false,
+        xpReward: 500
+    },
+    {
+        id: "rps_pve_50",
+        category: AchievementCategory.JEUX,
+        name: "Entraîneur RPS",
+        description: "Gagner 50 parties de RPS contre Netricsa",
+        emoji: "🤖",
+        secret: false,
+        xpReward: 150
+    },
+    {
+        id: "rps_pve_200",
+        category: AchievementCategory.JEUX,
+        name: "Destructeur de Bot RPS",
+        description: "Gagner 200 parties de RPS contre Netricsa",
+        emoji: "🎯",
+        secret: false,
+        xpReward: 300
+    },
+    {
+        id: "rps_triple",
+        category: AchievementCategory.JEUX,
+        name: "Triple Menace",
+        description: "Gagner avec chaque choix (Roche, Papier, Ciseaux)",
+        emoji: "✊📜✂️",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "rps_only_rock",
+        category: AchievementCategory.JEUX,
+        name: "Têtu comme une Roche",
+        description: "Gagner 10 parties en ne jouant QUE Roche",
+        emoji: "🪨",
+        secret: true,
+        xpReward: 100
+    },
+    {
+        id: "rps_only_paper",
+        category: AchievementCategory.JEUX,
+        name: "L'Écrivain",
+        description: "Gagner 10 parties en ne jouant QUE Papier",
+        emoji: "📜",
+        secret: true,
+        xpReward: 100
+    },
+    {
+        id: "rps_only_scissors",
+        category: AchievementCategory.JEUX,
+        name: "Le Coiffeur",
+        description: "Gagner 10 parties en ne jouant QUE Ciseaux",
+        emoji: "✂️",
+        secret: true,
+        xpReward: 100
+    },
+    {
+        id: "rps_streak_5",
+        category: AchievementCategory.JEUX,
+        name: "Prédicateur",
+        description: "Gagner 5 parties d'affilée en RPS",
+        emoji: "🔮",
+        secret: false,
+        xpReward: 200
+    },
+
+    // === ACHIEVEMENTS JEUX - TIC-TAC-TOE ===
+    {
+        id: "ttt_win_10",
+        category: AchievementCategory.JEUX,
+        name: "Débutant TTT",
+        description: "Gagner 10 parties de Tic-Tac-Toe",
+        emoji: "⭕",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "ttt_win_50",
+        category: AchievementCategory.JEUX,
+        name: "Amateur TTT",
+        description: "Gagner 50 parties de Tic-Tac-Toe",
+        emoji: "❌",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "ttt_win_200",
+        category: AchievementCategory.JEUX,
+        name: "Expert TTT",
+        description: "Gagner 200 parties de Tic-Tac-Toe",
+        emoji: "🎯",
+        secret: false,
+        xpReward: 400
+    },
+    {
+        id: "ttt_pvp_25",
+        category: AchievementCategory.JEUX,
+        name: "Stratège TTT",
+        description: "Gagner 25 parties de TTT contre des joueurs",
+        emoji: "🤝",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "ttt_pvp_100",
+        category: AchievementCategory.JEUX,
+        name: "Grand Maître TTT",
+        description: "Gagner 100 parties de TTT contre des joueurs",
+        emoji: "🧠",
+        secret: false,
+        xpReward: 500
+    },
+    {
+        id: "ttt_pve_50",
+        category: AchievementCategory.JEUX,
+        name: "Élève Studieux",
+        description: "Gagner 50 parties de TTT contre Netricsa",
+        emoji: "🤖",
+        secret: false,
+        xpReward: 150
+    },
+    {
+        id: "ttt_pve_200",
+        category: AchievementCategory.JEUX,
+        name: "Diplômé TTT",
+        description: "Gagner 200 parties de TTT contre Netricsa",
+        emoji: "🎓",
+        secret: false,
+        xpReward: 300
+    },
+    {
+        id: "ttt_draw_20",
+        category: AchievementCategory.JEUX,
+        name: "Le Mur",
+        description: "Faire 20 égalités en TTT",
+        emoji: "🧱",
+        secret: false,
+        xpReward: 100
+    },
+
+    // === ACHIEVEMENTS JEUX - CONNECT 4 ===
+    {
+        id: "c4_win_10",
+        category: AchievementCategory.JEUX,
+        name: "Débutant C4",
+        description: "Gagner 10 parties de Connect 4",
+        emoji: "🟡",
+        secret: false,
+        xpReward: 150
+    },
+    {
+        id: "c4_win_50",
+        category: AchievementCategory.JEUX,
+        name: "Amateur C4",
+        description: "Gagner 50 parties de Connect 4",
+        emoji: "🔴",
+        secret: false,
+        xpReward: 250
+    },
+    {
+        id: "c4_win_200",
+        category: AchievementCategory.JEUX,
+        name: "Expert C4",
+        description: "Gagner 200 parties de Connect 4",
+        emoji: "⚫",
+        secret: false,
+        xpReward: 500
+    },
+    {
+        id: "c4_pvp_25",
+        category: AchievementCategory.JEUX,
+        name: "Tacticien C4",
+        description: "Gagner 25 parties de C4 contre des joueurs",
+        emoji: "🎯",
+        secret: false,
+        xpReward: 300
+    },
+    {
+        id: "c4_pvp_100",
+        category: AchievementCategory.JEUX,
+        name: "Génie C4",
+        description: "Gagner 100 parties de C4 contre des joueurs",
+        emoji: "🧠",
+        secret: false,
+        xpReward: 600
+    },
+    {
+        id: "c4_pve_50",
+        category: AchievementCategory.JEUX,
+        name: "Calculateur",
+        description: "Gagner 50 parties de C4 contre Netricsa",
+        emoji: "🤖",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "c4_pve_200",
+        category: AchievementCategory.JEUX,
+        name: "Maître Algorithmique",
+        description: "Gagner 200 parties de C4 contre Netricsa",
+        emoji: "🎓",
+        secret: false,
+        xpReward: 400
+    },
+
+    // === ACHIEVEMENTS JEUX - PENDU ===
+    {
+        id: "hangman_win_10",
+        category: AchievementCategory.JEUX,
+        name: "Débutant Pendu",
+        description: "Gagner 10 parties de Pendu",
+        emoji: "📝",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "hangman_win_50",
+        category: AchievementCategory.JEUX,
+        name: "Amateur Pendu",
+        description: "Gagner 50 parties de Pendu",
+        emoji: "📚",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "hangman_win_200",
+        category: AchievementCategory.JEUX,
+        name: "Expert Pendu",
+        description: "Gagner 200 parties de Pendu",
+        emoji: "🎓",
+        secret: false,
+        xpReward: 400
+    },
+    {
+        id: "hangman_perfect",
+        category: AchievementCategory.JEUX,
+        name: "Sans Faute",
+        description: "Gagner une partie sans aucune erreur",
+        emoji: "🎯",
+        secret: false,
+        xpReward: 150
+    },
+    {
+        id: "hangman_perfect_10",
+        category: AchievementCategory.JEUX,
+        name: "Perfection Absolue",
+        description: "Gagner 10 parties sans aucune erreur",
+        emoji: "💎",
+        secret: false,
+        xpReward: 500
+    },
+    {
+        id: "hangman_streak_5",
+        category: AchievementCategory.JEUX,
+        name: "Série Parfaite",
+        description: "Gagner 5 parties de Pendu d'affilée",
+        emoji: "🏆",
+        secret: false,
+        xpReward: 250
+    },
+
+    // === ACHIEVEMENTS JEUX - SECRETS & FUN ===
+    {
+        id: "game_easy",
+        category: AchievementCategory.JEUX,
+        name: "Trop Facile",
+        description: "Gagner 10 parties contre Netricsa sans perdre",
+        emoji: "😎",
+        secret: true,
+        xpReward: 300
+    },
+    {
+        id: "game_beat_netricsa_100",
+        category: AchievementCategory.JEUX,
+        name: "Je Suis Ton Père",
+        description: "Battre Netricsa 100 fois au total",
+        emoji: "🤖",
+        secret: true,
+        xpReward: 400
+    },
+    {
+        id: "game_all_today",
+        category: AchievementCategory.JEUX,
+        name: "Touche-à-Tout",
+        description: "Jouer à tous les jeux dans la même journée",
+        emoji: "🔄",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "game_night_owl",
+        category: AchievementCategory.JEUX,
+        name: "Insomniac Gamer",
+        description: "Jouer entre 2h et 5h du matin",
+        emoji: "🌙",
+        secret: true,
+        xpReward: 150
+    },
+    {
+        id: "game_marathon",
+        category: AchievementCategory.JEUX,
+        name: "Marathonien",
+        description: "Jouer 20 parties en une seule session",
+        emoji: "⏰",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "game_bad_day",
+        category: AchievementCategory.JEUX,
+        name: "C'est Pas Mon Jour",
+        description: "Perdre 10 parties d'affilée",
+        emoji: "💀",
+        secret: true,
+        xpReward: 50
+    },
+    {
+        id: "game_first_10_loss",
+        category: AchievementCategory.JEUX,
+        name: "L'Apprentissage",
+        description: "Perdre ses 10 premières parties",
+        emoji: "😅",
+        secret: true,
+        xpReward: 50
+    },
+
     // === ACHIEVEMENTS NETRICSA - GÉNÉRATION D'IMAGES ===
     {
         id: "netricsa_gen_10",
