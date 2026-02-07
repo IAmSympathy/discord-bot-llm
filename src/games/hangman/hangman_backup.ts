@@ -63,7 +63,7 @@ async function fetchRandomWord(): Promise<string> {
                         return word;
                     } else if (word.includes('W')) {
                         console.log(`[Hangman] Word "${word}" contains W, refetching... (attempt ${attempt + 1})`);
-                         // Refetch si le mot contient un W
+                        // Refetch si le mot contient un W
                     }
                 }
             }
@@ -172,7 +172,7 @@ function createGameEmbed(gameState: GameState): EmbedBuilder {
 
     const embed = new EmbedBuilder()
         .setColor(0x5865F2)
-        .setTitle("🎮 Bonhomme Pendu")
+        .setTitle("🎮 Sam Pendu")
         .setDescription(description)
         .setTimestamp();
 
@@ -324,7 +324,7 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
 
             const timeoutEmbed = new EmbedBuilder()
                 .setColor(0xED4245)
-                .setTitle("🎮 Bonhomme Pendu")
+                .setTitle("🎮 Sam Pendu")
                 .setDescription(`⏱️ Temps écoulé ! La partie est annulée.\n\n**Le mot était:** \`${gameState.word}\`` + getStatsDescription(gameState))
                 .setTimestamp();
 
@@ -353,7 +353,7 @@ async function displayResult(message: any, gameState: GameState, isWon: boolean)
             gameState.highestStreak = gameState.currentStreak;
         }
     } else {
-        result = `💀 Perdu ! Le bonhomme a été pendu...`;
+        result = `💀 Perdu ! Sam a été pendu...`;
         color = 0xED4245;
         gameState.losses++;
         gameState.currentStreak = 0;
@@ -370,7 +370,7 @@ async function displayResult(message: any, gameState: GameState, isWon: boolean)
 
     const embed = new EmbedBuilder()
         .setColor(color)
-        .setTitle("🎮 Résultat - Bonhomme Pendu")
+        .setTitle("🎮 Résultat - Sam Pendu")
         .setDescription(description)
         .setTimestamp();
 
@@ -468,7 +468,7 @@ function setupRestartCollector(message: any, gameState: GameState) {
         if (reason === "time") {
             const embed = new EmbedBuilder()
                 .setColor(0xED4245)
-                .setTitle("🎮 Bonhomme Pendu")
+                .setTitle("🎮 Sam Pendu")
                 .setDescription("⏱️ Le temps pour recommencer est écoulé." + getStatsDescription(gameState))
                 .setTimestamp();
 

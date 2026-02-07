@@ -601,11 +601,11 @@ async function handleGameEnd(interaction: any, gameId: string, result: string | 
         color = 0xFEE75C;
 
         updateStatsOnDraw(gameState.stats);
-        recordDraw(gameState.player1, "connect4");
+        recordDraw(gameState.player1, "connect4", gameState.isAI);
         if (!gameState.isAI) {
-            recordDraw(gameState.player2!, "connect4");
+            recordDraw(gameState.player2!, "connect4", false);
         } else {
-            recordDraw(NETRICSA_GAME_ID, "connect4");
+            recordDraw(NETRICSA_GAME_ID, "connect4", true);
         }
     } else {
         const winnerSymbol = result;
@@ -618,8 +618,8 @@ async function handleGameEnd(interaction: any, gameId: string, result: string | 
 
         const winnerLabel = winnerId === gameState.player1 ? 'player1' : 'player2';
         updateStatsOnWin(gameState.stats, winnerLabel);
-        recordWin(winnerId, "connect4");
-        recordLoss(loserId, "connect4");
+        recordWin(winnerId, "connect4", gameState.isAI);
+        recordLoss(loserId, "connect4", gameState.isAI);
     }
 
     const statsDesc = getStatsDescription(gameState.stats, gameState.player1, gameState.player2, gameState.isAI);

@@ -34,10 +34,40 @@ export const XP_REWARDS = {
     // Stats Création
     postCreation: 1000,
 
-    // Stats Jeux
-    victoireJeu: 100,
-    defaiteJeu: 35,
-    egaliteJeu: 60
+    // === JEUX - ROCHE PAPIER CISEAUX ===
+    // Contre joueur (PvP)
+    rpsVictoireVsJoueur: 15,
+    rpsDefaiteVsJoueur: 6,
+    rpsEgaliteVsJoueur: 8,
+    // Contre Netricsa (PvE)
+    rpsVictoireVsIA: 8,
+    rpsDefaiteVsIA: 3,
+    rpsEgaliteVsIA: 4,
+
+    // === JEUX - TIC TAC TOE ===
+    // Contre joueur (PvP)
+    tttVictoireVsJoueur: 20,
+    tttDefaiteVsJoueur: 8,
+    tttEgaliteVsJoueur: 10,
+    // Contre Netricsa (PvE)
+    tttVictoireVsIA: 10,
+    tttDefaiteVsIA: 4,
+    tttEgaliteVsIA: 5,
+
+    // === JEUX - CONNECT 4 ===
+    // Contre joueur (PvP)
+    c4VictoireVsJoueur: 25,
+    c4DefaiteVsJoueur: 10,
+    c4EgaliteVsJoueur: 12,
+    // Contre Netricsa (PvE)
+    c4VictoireVsIA: 12,
+    c4DefaiteVsIA: 5,
+    c4EgaliteVsIA: 6,
+
+    // === JEUX - PENDU ===
+    // Le pendu est toujours contre l'IA
+    hangmanVictoire: 15,
+    hangmanDefaite: 5
 };
 
 /**
@@ -343,6 +373,8 @@ export function calculateTotalXPFromStats(stats: any): number {
 
 /**
  * Recalcule l'XP de tous les utilisateurs basé sur leurs stats
+ * Note: Les XP des jeux ne sont pas recalculés car chaque jeu a des valeurs différentes
+ * et on ne peut pas déterminer rétroactivement si c'était vs IA ou vs joueur
  */
 export function recalculateAllXP(userStatsService: any, gameStatsService: any): void {
     logger.info("Recalculating all user XP...");
@@ -354,13 +386,9 @@ export function recalculateAllXP(userStatsService: any, gameStatsService: any): 
         const userStat = stats as any;
         let totalXP = calculateTotalXPFromStats(userStat);
 
-        // Ajouter XP des jeux
-        const gameStats = gameStatsService.getPlayerStats(userId);
-        if (gameStats) {
-            totalXP += gameStats.global.wins * XP_REWARDS.victoireJeu;
-            totalXP += gameStats.global.losses * XP_REWARDS.defaiteJeu;
-            totalXP += gameStats.global.draws * XP_REWARDS.egaliteJeu;
-        }
+        // Note: Les XP des jeux ne sont pas recalculés car maintenant chaque jeu
+        // a des valeurs d'XP différentes selon le type d'adversaire (joueur vs IA)
+        // et on ne peut pas déterminer rétroactivement le type d'adversaire
 
         xpData[userId] = {
             userId,

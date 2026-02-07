@@ -3,21 +3,21 @@
     "global": {
       "wins": 0,
       "losses": 0,
-      "draws": 0,
+      "draws": 2,
       "currentStreak": 0,
       "highestStreak": 0
     },
     "rockpaperscissors": {
       "wins": 0,
       "losses": 0,
-      "draws": 0,
+      "draws": 1,
       "currentStreak": 0,
       "highestStreak": 0
     },
     "tictactoe": {
       "wins": 0,
       "losses": 0,
-      "draws": 0,
+      "draws": 1,
       "currentStreak": 0,
       "highestStreak": 0
     },
@@ -61,18 +61,18 @@
   },
   "351419795033423883": {
     "global": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
+      "wins": 4,
+      "losses": 7,
+      "draws": 7,
       "currentStreak": 0,
-      "highestStreak": 0
+      "highestStreak": 1
     },
     "rockpaperscissors": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
+      "wins": 4,
+      "losses": 7,
+      "draws": 7,
       "currentStreak": 0,
-      "highestStreak": 0
+      "highestStreak": 1
     },
     "tictactoe": {
       "wins": 0,
@@ -128,23 +128,23 @@
   },
   "NETRICSA_BOT": {
     "global": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
+      "wins": 7,
+      "losses": 4,
+      "draws": 9,
       "currentStreak": 0,
-      "highestStreak": 0
+      "highestStreak": 2
     },
     "rockpaperscissors": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
+      "wins": 7,
+      "losses": 4,
+      "draws": 8,
       "currentStreak": 0,
-      "highestStreak": 0
+      "highestStreak": 2
     },
     "tictactoe": {
       "wins": 0,
       "losses": 0,
-      "draws": 0,
+      "draws": 1,
       "currentStreak": 0,
       "highestStreak": 0
     },

@@ -42,7 +42,7 @@ export async function showGameMenu(interaction: any, originalUserId?: string) {
 
     const hangmanButton = new ButtonBuilder()
         .setCustomId("game_hangman")
-        .setLabel("Bonhomme Pendu (1 Joueur)")
+        .setLabel("Sam Pendu (1 Joueur)")
         .setStyle(ButtonStyle.Primary)
         .setEmoji("🔤");
 

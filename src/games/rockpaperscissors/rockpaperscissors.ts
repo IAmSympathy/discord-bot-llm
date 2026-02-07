@@ -167,15 +167,12 @@ async function waitForPlayer(interaction: any, player1Id: string, gameId: string
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(joinButton, cancelButton);
 
-    const message = await (interaction.reply ? interaction.reply({
+    // Toujours utiliser update() pour éditer le message existant
+    const message = await interaction.update({
         embeds: [embed],
         components: [row],
         fetchReply: true
-    }) : interaction.update({
-        embeds: [embed],
-        components: [row],
-        fetchReply: true
-    }));
+    });
 
     const collector = message.createMessageComponentCollector({
         componentType: ComponentType.Button,
@@ -230,7 +227,7 @@ async function waitForPlayer(interaction: any, player1Id: string, gameId: string
     });
 }
 
-async function startGameAgainstAI(interaction: ChatInputCommandInteraction, playerId: string, gameId: string, originalUserId: string) {
+async function startGameAgainstAI(interaction: any, playerId: string, gameId: string, originalUserId: string) {
     const gameState: GameState = {
         player1: playerId,
         player2: "AI",
@@ -257,7 +254,8 @@ async function startGameAgainstAI(interaction: ChatInputCommandInteraction, play
 
     const buttons = createChoiceButtons(gameId, playerId);
 
-    const message = await interaction.reply({
+    // Toujours utiliser update() pour éditer le message existant
+    const message = await interaction.update({
         embeds: [embed],
         components: [buttons],
         fetchReply: true
@@ -473,12 +471,12 @@ async function displayResult(message: any, gameState: GameState) {
         gameState.player2Winstreak = 0;
         gameState.draws++;
         // Enregistrer dans stats globales
-        recordDraw(gameState.player1, 'rockpaperscissors');
+        recordDraw(gameState.player1, 'rockpaperscissors', gameState.isAI);
         if (gameState.player2 && !gameState.isAI) {
-            recordDraw(gameState.player2, 'rockpaperscissors');
+            recordDraw(gameState.player2, 'rockpaperscissors', false);
         } else if (gameState.isAI) {
             // Netricsa fait égalité aussi
-            recordDraw(NETRICSA_GAME_ID, 'rockpaperscissors');
+            recordDraw(NETRICSA_GAME_ID, 'rockpaperscissors', true);
         }
     } else if (choices[p1Choice as keyof typeof choices].beats === p2Choice) {
         result = `🎉 <@${gameState.player1}> gagne !`;
@@ -488,12 +486,12 @@ async function displayResult(message: any, gameState: GameState) {
         gameState.player1TotalWins++;
         gameState.player2Winstreak = 0;
         // Enregistrer dans stats globales
-        recordWin(gameState.player1, 'rockpaperscissors');
+        recordWin(gameState.player1, 'rockpaperscissors', gameState.isAI);
         if (gameState.player2 && !gameState.isAI) {
-            recordLoss(gameState.player2, 'rockpaperscissors');
+            recordLoss(gameState.player2, 'rockpaperscissors', false);
         } else if (gameState.isAI) {
             // Netricsa perd
-            recordLoss(NETRICSA_GAME_ID, 'rockpaperscissors');
+            recordLoss(NETRICSA_GAME_ID, 'rockpaperscissors', true);
         }
 
         // Mettre à jour la plus haute winstreak
@@ -513,12 +511,12 @@ async function displayResult(message: any, gameState: GameState) {
         gameState.player2Winstreak++;
         gameState.player2TotalWins++;
         // Enregistrer dans stats globales
-        recordLoss(gameState.player1, 'rockpaperscissors');
+        recordLoss(gameState.player1, 'rockpaperscissors', gameState.isAI);
         if (gameState.player2 && !gameState.isAI) {
-            recordWin(gameState.player2, 'rockpaperscissors');
+            recordWin(gameState.player2, 'rockpaperscissors', false);
         } else if (gameState.isAI) {
             // Netricsa gagne
-            recordWin(NETRICSA_GAME_ID, 'rockpaperscissors');
+            recordWin(NETRICSA_GAME_ID, 'rockpaperscissors', true);
         }
 
         // Mettre à jour la plus haute winstreak

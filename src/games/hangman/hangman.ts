@@ -84,12 +84,12 @@ async function fetchRandomWord(): Promise<string> {
 
 const HANGMAN_STAGES = [
     "```\n  ┌─────┐\n  │     │\n  │     \n  │     \n  │     \n  │     \n──┴──\n```",
-    "```\n  ┌─────┐\n  │     │\n  │     😐\n  │     \n  │     \n  │     \n──┴──\n```",
-    "```\n  ┌─────┐\n  │     │\n  │     😐\n  │     │\n  │     \n  │     \n──┴──\n```",
-    "```\n  ┌─────┐\n  │     │\n  │     😐\n  │    ─│\n  │     \n  │     \n──┴──\n```",
-    "```\n  ┌─────┐\n  │     │\n  │     😐\n  │    ─│─\n  │     \n  │     \n──┴──\n```",
-    "```\n  ┌─────┐\n  │     │\n  │     😐\n  │    ─│─\n  │    ╱\n  │     \n──┴──\n```",
-    "```\n  ┌─────┐\n  │     │\n  │     😵\n  │    ─│─\n  │    ╱ ╲\n  │     \n──┴──\n```"
+    "```\n  ┌─────┐\n  │     │\n  │     <:cringesmile:1469540262849019955>\n  │     \n  │     \n  │     \n──┴──\n```",
+    "```\n  ┌─────┐\n  │     │\n  │     <:cringesmile:1469540262849019955>\n  │     │\n  │     \n  │     \n──┴──\n```",
+    "```\n  ┌─────┐\n  │     │\n  │     <:cringesmile:1469540262849019955>\n  │    ─│\n  │     \n  │     \n──┴──\n```",
+    "```\n  ┌─────┐\n  │     │\n  │     <:cringesmile:1469540262849019955>\n  │    ─│─\n  │     \n  │     \n──┴──\n```",
+    "```\n  ┌─────┐\n  │     │\n  │     <:cringesmile:1469540262849019955>\n  │    ─│─\n  │    ╱\n  │     \n──┴──\n```",
+    "```\n  ┌─────┐\n  │     │\n  │     <:outraged_sam:1469527109050306570>\n  │    ─│─\n  │    ╱ ╲\n  │     \n──┴──\n```"
 ];
 
 module.exports = {
@@ -112,7 +112,7 @@ module.exports = {
     startGame
 };
 
-async function startGame(interaction: ChatInputCommandInteraction, playerId: string, gameId: string) {
+async function startGame(interaction: any, playerId: string, gameId: string) {
     const word = await fetchRandomWord();
 
     const gameState: GameState = {
@@ -134,7 +134,8 @@ async function startGame(interaction: ChatInputCommandInteraction, playerId: str
     const embed = createGameEmbed(gameState);
     const components = createLetterSelectMenu(gameState, gameId);
 
-    const message = await interaction.reply({
+    // Toujours utiliser update() pour éditer le message existant
+    const message = await interaction.update({
         embeds: [embed],
         components: components,
         fetchReply: true
@@ -175,7 +176,7 @@ function createGameEmbed(gameState: GameState): EmbedBuilder {
 
     const embed = new EmbedBuilder()
         .setColor(0x2494DB)
-        .setTitle("🎮 Bonhomme Pendu")
+        .setTitle("🎮 Sam Pendu")
         .setDescription(description)
         .setTimestamp();
 
@@ -342,7 +343,7 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
 
             const timeoutEmbed = new EmbedBuilder()
                 .setColor(0xED4245)
-                .setTitle("🎮 Bonhomme Pendu")
+                .setTitle("🎮 Sam Pendu")
                 .setDescription(`⏱️ Temps écoulé ! La partie est annulée.\n\n**Le mot était:** \`${gameState.word}\`` + getStatsDescription(gameState))
                 .setTimestamp();
 
@@ -366,8 +367,8 @@ async function displayResult(message: any, gameState: GameState, isWon: boolean,
         gameState.wins++;
         gameState.currentStreak++;
 
-        // Enregistrer dans les stats globales
-        recordWin(gameState.player, 'hangman');
+        // Enregistrer dans les stats globales (Hangman est toujours vs IA)
+        recordWin(gameState.player, 'hangman', true);
 
         // Mettre à jour la plus haute streak
         if (gameState.currentStreak > gameState.highestStreak) {
@@ -378,14 +379,15 @@ async function displayResult(message: any, gameState: GameState, isWon: boolean,
             result = `🏳️ Partie abandonnée...`;
             color = 0xFEE75C;
         } else {
-            result = `💀 Perdu ! Le bonhomme a été pendu...`;
+            result = `💀 Perdu ! Sam a été pendu...`;
             color = 0xED4245;
             gameState.losses++;
             gameState.currentStreak = 0;
 
             // Enregistrer dans les stats globales (seulement si pas déjà enregistré lors de l'abandon)
+            // Hangman est toujours vs IA
             if (!isAbandoned) {
-                recordLoss(gameState.player, 'hangman');
+                recordLoss(gameState.player, 'hangman', true);
             }
         }
     }
@@ -401,7 +403,7 @@ async function displayResult(message: any, gameState: GameState, isWon: boolean,
 
     const embed = new EmbedBuilder()
         .setColor(color)
-        .setTitle("🎮 Résultat - Bonhomme Pendu")
+        .setTitle("🎮 Résultat - Sam Pendu")
         .setDescription(description)
         .setTimestamp();
 
@@ -517,7 +519,7 @@ function setupRestartCollector(message: any, gameState: GameState) {
         if (reason === "time") {
             const embed = new EmbedBuilder()
                 .setColor(0xED4245)
-                .setTitle("🎮 Bonhomme Pendu")
+                .setTitle("🎮 Sam Pendu")
                 .setDescription("⏱️ Le temps pour recommencer est écoulé." + getStatsDescription(gameState))
                 .setTimestamp();
 

@@ -51,9 +51,9 @@ export function registerForumThreadHandler(client: Client) {
             const userId = starterMessage.author.id;
             const username = starterMessage.author.username;
 
-            // Donner beaucoup d'XP pour poster une création
-            const {addXP, XP_REWARDS} = require("./services/xpSystem");
-            await addXP(userId, username, XP_REWARDS.postCreation, thread, starterMessage.author.bot);
+            // Envoyer une demande de validation pour l'attribution d'XP
+            const {requestCreationValidation} = require("./services/creationValidationService");
+            await requestCreationValidation(client, userId, username, thread.id, thread.name);
 
             // Vérifier rapidement s'il y a des médias
             const hasAttachments = starterMessage.attachments.size > 0;

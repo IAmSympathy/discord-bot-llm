@@ -2,8 +2,10 @@ import fs from "fs";
 import path from "path";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {DATA_DIR} from "../../utils/constants";
+import {createLogger} from "../../utils/logger";
 
 const STATS_FILE = path.join(DATA_DIR, "game_stats.json");
+const logger = createLogger("GameStats");
 
 // ID de Netricsa pour ses statistiques de jeux
 export const NETRICSA_GAME_ID = "NETRICSA_BOT";
@@ -98,8 +100,11 @@ export function getPlayerStats(userId: string): PlayerStats {
 
 /**
  * Met à jour les stats après une victoire
+ * @param userId ID de l'utilisateur
+ * @param game Nom du jeu
+ * @param isVsAI true si c'est contre Netricsa, false si contre un joueur
  */
-export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4'): void {
+export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false): void {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -130,14 +135,54 @@ export function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe
 
     // Ajouter XP (seulement pour les vrais joueurs, pas pour Netricsa)
     if (userId !== NETRICSA_GAME_ID) {
-        addXP(userId, "Player", XP_REWARDS.victoireJeu);
+        // Déterminer le montant d'XP selon le jeu et le type d'adversaire
+        let xpAmount = 0;
+
+        if (isVsAI) {
+            // Contre Netricsa (PvE)
+            switch (game) {
+                case 'rockpaperscissors':
+                    xpAmount = XP_REWARDS.rpsVictoireVsIA;
+                    break;
+                case 'tictactoe':
+                    xpAmount = XP_REWARDS.tttVictoireVsIA;
+                    break;
+                case 'connect4':
+                    xpAmount = XP_REWARDS.c4VictoireVsIA;
+                    break;
+                case 'hangman':
+                    xpAmount = XP_REWARDS.hangmanVictoire;
+                    break;
+            }
+        } else {
+            // Contre joueur (PvP)
+            switch (game) {
+                case 'rockpaperscissors':
+                    xpAmount = XP_REWARDS.rpsVictoireVsJoueur;
+                    break;
+                case 'tictactoe':
+                    xpAmount = XP_REWARDS.tttVictoireVsJoueur;
+                    break;
+                case 'connect4':
+                    xpAmount = XP_REWARDS.c4VictoireVsJoueur;
+                    break;
+                case 'hangman':
+                    xpAmount = XP_REWARDS.hangmanVictoire; // Hangman est toujours vs IA
+                    break;
+            }
+        }
+
+        addXP(userId, "Player", xpAmount);
     }
 }
 
 /**
  * Met à jour les stats après une défaite
+ * @param userId ID de l'utilisateur
+ * @param game Nom du jeu
+ * @param isVsAI true si c'est contre Netricsa, false si contre un joueur
  */
-export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4'): void {
+export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false): void {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -162,14 +207,54 @@ export function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictacto
 
     // Ajouter XP (seulement pour les vrais joueurs, pas pour Netricsa)
     if (userId !== NETRICSA_GAME_ID) {
-        addXP(userId, "Player", XP_REWARDS.defaiteJeu);
+        // Déterminer le montant d'XP selon le jeu et le type d'adversaire
+        let xpAmount = 0;
+
+        if (isVsAI) {
+            // Contre Netricsa (PvE)
+            switch (game) {
+                case 'rockpaperscissors':
+                    xpAmount = XP_REWARDS.rpsDefaiteVsIA;
+                    break;
+                case 'tictactoe':
+                    xpAmount = XP_REWARDS.tttDefaiteVsIA;
+                    break;
+                case 'connect4':
+                    xpAmount = XP_REWARDS.c4DefaiteVsIA;
+                    break;
+                case 'hangman':
+                    xpAmount = XP_REWARDS.hangmanDefaite;
+                    break;
+            }
+        } else {
+            // Contre joueur (PvP)
+            switch (game) {
+                case 'rockpaperscissors':
+                    xpAmount = XP_REWARDS.rpsDefaiteVsJoueur;
+                    break;
+                case 'tictactoe':
+                    xpAmount = XP_REWARDS.tttDefaiteVsJoueur;
+                    break;
+                case 'connect4':
+                    xpAmount = XP_REWARDS.c4DefaiteVsJoueur;
+                    break;
+                case 'hangman':
+                    xpAmount = XP_REWARDS.hangmanDefaite; // Hangman est toujours vs IA
+                    break;
+            }
+        }
+
+        addXP(userId, "Player", xpAmount);
     }
 }
 
 /**
  * Met à jour les stats après une égalité
+ * @param userId ID de l'utilisateur
+ * @param game Nom du jeu
+ * @param isVsAI true si c'est contre Netricsa, false si contre un joueur
  */
-export function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4'): void {
+export function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false): void {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -194,7 +279,46 @@ export function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictacto
 
     // Ajouter XP (seulement pour les vrais joueurs, pas pour Netricsa)
     if (userId !== NETRICSA_GAME_ID) {
-        addXP(userId, "Player", XP_REWARDS.egaliteJeu);
+        // Déterminer le montant d'XP selon le jeu et le type d'adversaire
+        let xpAmount = 0;
+
+        if (isVsAI) {
+            // Contre Netricsa (PvE)
+            switch (game) {
+                case 'rockpaperscissors':
+                    xpAmount = XP_REWARDS.rpsEgaliteVsIA;
+                    break;
+                case 'tictactoe':
+                    xpAmount = XP_REWARDS.tttEgaliteVsIA;
+                    break;
+                case 'connect4':
+                    xpAmount = XP_REWARDS.c4EgaliteVsIA;
+                    break;
+                case 'hangman':
+                    xpAmount = 0; // Pas d'égalité au pendu
+                    break;
+            }
+        } else {
+            // Contre joueur (PvP)
+            switch (game) {
+                case 'rockpaperscissors':
+                    xpAmount = XP_REWARDS.rpsEgaliteVsJoueur;
+                    break;
+                case 'tictactoe':
+                    xpAmount = XP_REWARDS.tttEgaliteVsJoueur;
+                    break;
+                case 'connect4':
+                    xpAmount = XP_REWARDS.c4EgaliteVsJoueur;
+                    break;
+                case 'hangman':
+                    xpAmount = 0; // Pas d'égalité au pendu
+                    break;
+            }
+        }
+
+        if (xpAmount > 0) {
+            addXP(userId, "Player", xpAmount);
+        }
     }
 }
 

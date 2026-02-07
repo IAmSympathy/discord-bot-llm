@@ -135,15 +135,12 @@ async function waitForPlayer(interaction: any, player1Id: string, gameId: string
     const cancelButton = createCancelButton(gameId, GAME_PREFIX);
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(joinButton, cancelButton);
 
-    const message = await (interaction.reply ? interaction.reply({
+    // Toujours utiliser update() pour éditer le message existant
+    const message = await interaction.update({
         embeds: [embed],
         components: [row],
         fetchReply: true
-    }) : interaction.update({
-        embeds: [embed],
-        components: [row],
-        fetchReply: true
-    }));
+    });
 
     const collector = message.createMessageComponentCollector({
         componentType: ComponentType.Button,
@@ -184,7 +181,7 @@ async function waitForPlayer(interaction: any, player1Id: string, gameId: string
     });
 }
 
-async function startGameAgainstAI(interaction: ChatInputCommandInteraction, playerId: string, gameId: string, originalUserId: string) {
+async function startGameAgainstAI(interaction: any, playerId: string, gameId: string, originalUserId: string) {
     const gameState: GameState = {
         player1: playerId,
         player2: "AI",
@@ -202,7 +199,8 @@ async function startGameAgainstAI(interaction: ChatInputCommandInteraction, play
     const embed = createGameEmbed(gameState);
     const buttons = createBoardButtons(gameState, gameId);
 
-    const message = await interaction.reply({
+    // Toujours utiliser update() pour éditer le message existant
+    const message = await interaction.update({
         embeds: [embed],
         components: buttons,
         fetchReply: true
@@ -497,24 +495,24 @@ async function displayResult(message: any, gameState: GameState, winner: string 
         color = 0xFEE75C;
         updateStatsOnDraw(gameState.stats);
         // Enregistrer dans stats globales
-        recordDraw(gameState.player1, 'tictactoe');
+        recordDraw(gameState.player1, 'tictactoe', gameState.isAI);
         if (gameState.player2 && !gameState.isAI) {
-            recordDraw(gameState.player2, 'tictactoe');
+            recordDraw(gameState.player2, 'tictactoe', false);
         } else if (gameState.isAI) {
             // Netricsa fait égalité aussi
-            recordDraw(NETRICSA_GAME_ID, 'tictactoe');
+            recordDraw(NETRICSA_GAME_ID, 'tictactoe', true);
         }
     } else if (winner === gameState.player1) {
         result = `🎉 <@${gameState.player1}> gagne !`;
         color = 0x57F287;
         updateStatsOnWin(gameState.stats, 'player1');
         // Enregistrer dans stats globales
-        recordWin(gameState.player1, 'tictactoe');
+        recordWin(gameState.player1, 'tictactoe', gameState.isAI);
         if (gameState.player2 && !gameState.isAI) {
-            recordLoss(gameState.player2, 'tictactoe');
+            recordLoss(gameState.player2, 'tictactoe', false);
         } else if (gameState.isAI) {
             // Netricsa perd
-            recordLoss(NETRICSA_GAME_ID, 'tictactoe');
+            recordLoss(NETRICSA_GAME_ID, 'tictactoe', true);
         }
     } else {
         if (gameState.isAI) {
@@ -526,12 +524,12 @@ async function displayResult(message: any, gameState: GameState, winner: string 
         }
         updateStatsOnWin(gameState.stats, 'player2');
         // Enregistrer dans stats globales
-        recordLoss(gameState.player1, 'tictactoe');
+        recordLoss(gameState.player1, 'tictactoe', gameState.isAI);
         if (gameState.player2 && !gameState.isAI) {
-            recordWin(gameState.player2, 'tictactoe');
+            recordWin(gameState.player2, 'tictactoe', false);
         } else if (gameState.isAI) {
             // Netricsa gagne
-            recordWin(NETRICSA_GAME_ID, 'tictactoe');
+            recordWin(NETRICSA_GAME_ID, 'tictactoe', true);
         }
     }
 

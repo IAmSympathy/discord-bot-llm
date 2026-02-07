@@ -1,7 +1,7 @@
 require("dotenv").config();
 import path from "path";
 import fs from "fs";
-import {ActivityType, ChannelType, Client, Collection, Events, GatewayIntentBits, MessageFlags, Partials, PresenceStatusData} from "discord.js";
+import {ActivityType, ChannelType, Client, Collection, EmbedBuilder, Events, GatewayIntentBits, MessageFlags, Partials, PresenceStatusData} from "discord.js";
 import {registerWatchedChannelResponder} from "./watchChannel";
 import {registerForumThreadHandler} from "./forumThreadHandler";
 import {registerCitationsThreadHandler} from "./citationsThreadHandler";
@@ -11,7 +11,7 @@ import deployCommands from "./deploy/deployCommands";
 import {initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerMessageEdit, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
 import {createErrorEmbed} from "./utils/interactionUtils";
 import {sendGoodbyeMessage, sendWelcomeMessage} from "./services/welcomeService";
-import {isLowPowerMode} from "./services/botStateService";
+import {isLowPowerMode, OWNER_ID} from "./services/botStateService";
 import {setLowPowerStatus, setNormalStatus} from "./services/statusService";
 import {initializeMemeScheduler} from "./services/memeScheduler";
 import {initializeBirthdayService} from "./services/birthdayService";
@@ -837,6 +837,69 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     // Les interactions des boutons sont maintenant toutes gérées dans userProfile.ts
     // Plus besoin de logique ici pour achievements ou stats
+
+    // Gérer les boutons de validation de création
+    if (interaction.isButton()) {
+        const customId = interaction.customId;
+
+        // Validation de création
+        if (customId.startsWith("validate_creation_") || customId.startsWith("reject_creation_")) {
+            const {validateCreation, rejectCreation} = require("./services/creationValidationService");
+
+            // Vérifier que c'est l'owner qui clique
+            if (interaction.user.id !== OWNER_ID) {
+                await interaction.reply({
+                    content: "❌ Seul le propriétaire du serveur peut valider les créations.",
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+
+            const threadId = customId.split("_")[2];
+            const isValidation = customId.startsWith("validate_creation_");
+
+            try {
+                await interaction.deferUpdate();
+
+                let result;
+                if (isValidation) {
+                    result = await validateCreation(interaction.client, threadId, interaction.user.id);
+                } else {
+                    result = await rejectCreation(threadId, interaction.user.id);
+                }
+
+                if (result.success) {
+                    // Modifier le message original pour indiquer que c'est traité
+                    const originalEmbed = interaction.message.embeds[0];
+                    const updatedEmbed = new EmbedBuilder(originalEmbed.data)
+                        .setColor(isValidation ? 0x57F287 : 0xED4245) // Vert ou rouge
+                        .setFooter({text: `${isValidation ? '✅ Validé' : '❌ Rejeté'} par ${interaction.user.username}`});
+
+                    await interaction.editReply({
+                        embeds: [updatedEmbed],
+                        components: [] // Retirer les boutons
+                    });
+
+                    // Envoyer un message de confirmation
+                    await interaction.followUp({
+                        content: result.message,
+                        flags: MessageFlags.Ephemeral
+                    });
+                } else {
+                    await interaction.followUp({
+                        content: `❌ ${result.message}`,
+                        flags: MessageFlags.Ephemeral
+                    });
+                }
+            } catch (error) {
+                logger.error("Error handling creation validation button:", error);
+                await interaction.followUp({
+                    content: "❌ Une erreur est survenue lors du traitement de la validation.",
+                    flags: MessageFlags.Ephemeral
+                });
+            }
+        }
+    }
 });
 
 // Log in with the bot's token.
