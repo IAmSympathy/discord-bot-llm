@@ -14,9 +14,7 @@ export enum AchievementCategory {
     PROFIL = "profil",
     NETRICSA = "netricsa",
     DISCORD = "discord",
-    JEUX = "jeux",
-    NIVEAU = "niveau",
-    SECRET = "secret"
+    JEUX = "jeux"
 }
 
 /**
@@ -92,6 +90,275 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         emoji: "❤️",
         secret: false,
         xpReward: 150
+    },
+    // === ACHIEVEMENTS COMPTEUR ===
+    {
+        id: "counter_10_counts",
+        category: AchievementCategory.JEUX,
+        name: "Compteur Amateur",
+        description: "Faire 10 contributions au compteur",
+        emoji: "🎯",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "counter_50_counts",
+        category: AchievementCategory.JEUX,
+        name: "Compteur Confirmé",
+        description: "Faire 50 contributions au compteur",
+        emoji: "🏅",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "counter_100_counts",
+        category: AchievementCategory.JEUX,
+        name: "Maître du Compteur",
+        description: "Faire 100 contributions au compteur",
+        emoji: "👑",
+        secret: false,
+        xpReward: 500
+    },
+    {
+        id: "counter_500_counts",
+        category: AchievementCategory.JEUX,
+        name: "Légende du Compteur",
+        description: "Faire 500 contributions au compteur",
+        emoji: "💎",
+        secret: false,
+        xpReward: 1000
+    },
+    {
+        id: "counter_1000_counts",
+        category: AchievementCategory.JEUX,
+        name: "Dieu du Compteur",
+        description: "Faire 1000 contributions au compteur",
+        emoji: "🌟",
+        secret: false,
+        xpReward: 2000
+    },
+    // === ACHIEVEMENTS NETRICSA - GÉNÉRATION D'IMAGES ===
+    {
+        id: "netricsa_gen_10",
+        category: AchievementCategory.NETRICSA,
+        name: "Créateur Amateur",
+        description: "Imaginer 10 images avec Netricsa",
+        emoji: "🎨",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "netricsa_gen_50",
+        category: AchievementCategory.NETRICSA,
+        name: "Artiste Confirmé",
+        description: "Imaginer 50 images avec Netricsa",
+        emoji: "🖌️",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "netricsa_gen_200",
+        category: AchievementCategory.NETRICSA,
+        name: "Maître Artiste",
+        description: "Imaginer 200 images avec Netricsa",
+        emoji: "🌟",
+        secret: false,
+        xpReward: 500
+    },
+    {
+        id: "netricsa_gen_500",
+        category: AchievementCategory.NETRICSA,
+        name: "Légende de l'Art",
+        description: "Imaginer 500 images avec Netricsa",
+        emoji: "🎭",
+        secret: false,
+        xpReward: 1000
+    },
+    // === ACHIEVEMENTS NETRICSA - RÉIMAGINATION ===
+    {
+        id: "netricsa_reimagine_10",
+        category: AchievementCategory.NETRICSA,
+        name: "Réimaginateur Amateur",
+        description: "Réimaginer 10 images",
+        emoji: "✨",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "netricsa_reimagine_50",
+        category: AchievementCategory.NETRICSA,
+        name: "Réimaginateur Confirmé",
+        description: "Réimaginer 50 images",
+        emoji: "🎪",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "netricsa_reimagine_200",
+        category: AchievementCategory.NETRICSA,
+        name: "Maître Réimaginateur",
+        description: "Réimaginer 200 images",
+        emoji: "🌈",
+        secret: false,
+        xpReward: 500
+    },
+    // === ACHIEVEMENTS NETRICSA - UPSCALING ===
+    {
+        id: "netricsa_upscale_10",
+        category: AchievementCategory.NETRICSA,
+        name: "HD Amateur",
+        description: "Upscaler 10 images",
+        emoji: "📸",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "netricsa_upscale_50",
+        category: AchievementCategory.NETRICSA,
+        name: "HD Master",
+        description: "Upscaler 50 images",
+        emoji: "🎬",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "netricsa_upscale_200",
+        category: AchievementCategory.NETRICSA,
+        name: "4K Legend",
+        description: "Upscaler 200 images",
+        emoji: "💎",
+        secret: false,
+        xpReward: 500
+    },
+    // === ACHIEVEMENTS NETRICSA - CONVERSATIONS IA ===
+    {
+        id: "netricsa_conv_5",
+        category: AchievementCategory.NETRICSA,
+        name: "Première Conversation",
+        description: "Avoir 5 conversations avec Netricsa",
+        emoji: "💭",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "netricsa_conv_50",
+        category: AchievementCategory.NETRICSA,
+        name: "Bavard IA",
+        description: "Avoir 50 conversations avec Netricsa",
+        emoji: "🗣️",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "netricsa_conv_200",
+        category: AchievementCategory.NETRICSA,
+        name: "Causeur Expert",
+        description: "Avoir 200 conversations avec Netricsa",
+        emoji: "💬",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "netricsa_conv_500",
+        category: AchievementCategory.NETRICSA,
+        name: "Meilleur Ami de Netricsa",
+        description: "Avoir 500 conversations avec Netricsa",
+        emoji: "🎙️",
+        secret: false,
+        xpReward: 500
+    },
+    // === ACHIEVEMENTS NETRICSA - PROMPTS ===
+    {
+        id: "netricsa_prompt_5",
+        category: AchievementCategory.NETRICSA,
+        name: "Prompt Amateur",
+        description: "Créer 5 prompts personnalisés",
+        emoji: "📋",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "netricsa_prompt_20",
+        category: AchievementCategory.NETRICSA,
+        name: "Maître du Prompt",
+        description: "Créer 20 prompts personnalisés",
+        emoji: "📝",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "netricsa_prompt_50",
+        category: AchievementCategory.NETRICSA,
+        name: "Architecte de Prompts",
+        description: "Créer 50 prompts personnalisés",
+        emoji: "🎯",
+        secret: false,
+        xpReward: 500
+    },
+    // === ACHIEVEMENTS NETRICSA - MEMES ===
+    {
+        id: "netricsa_meme_10",
+        category: AchievementCategory.NETRICSA,
+        name: "Chercheur de Memes",
+        description: "Rechercher 10 memes avec /findmeme",
+        emoji: "🤣",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "netricsa_meme_50",
+        category: AchievementCategory.NETRICSA,
+        name: "Collectionneur de Memes",
+        description: "Rechercher 50 memes avec /findmeme",
+        emoji: "🎪",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "netricsa_meme_200",
+        category: AchievementCategory.NETRICSA,
+        name: "Roi des Memes",
+        description: "Rechercher 200 memes avec /findmeme",
+        emoji: "🎭",
+        secret: false,
+        xpReward: 500
+    },
+    // === ACHIEVEMENTS NETRICSA - COMBINÉS ===
+    {
+        id: "netricsa_all_features",
+        category: AchievementCategory.NETRICSA,
+        name: "Touche-à-tout",
+        description: "Utiliser toutes les fonctions images (imaginer, réimaginer, upscaler)",
+        emoji: "🎨",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "netricsa_creator",
+        category: AchievementCategory.NETRICSA,
+        name: "Créateur Complet",
+        description: "Imaginer 100 images et créer 10 prompts",
+        emoji: "💎",
+        secret: false,
+        xpReward: 300
+    },
+    {
+        id: "netricsa_master",
+        category: AchievementCategory.NETRICSA,
+        name: "Maître Netricsa",
+        description: "200 imaginations + 100 conversations + 20 prompts",
+        emoji: "🌟",
+        secret: false,
+        xpReward: 1000
+    },
+    {
+        id: "netricsa_total_artist",
+        category: AchievementCategory.NETRICSA,
+        name: "Artiste Total",
+        description: "500 imaginations + 200 réimages + 100 upscales",
+        emoji: "🎭",
+        secret: true,
+        xpReward: 2000
     }
 ];
 
@@ -311,9 +578,26 @@ async function sendAchievementNotification(
             // Pour les autres catégories, envoyer dans le channel
             // Si c'est le startup check, on ne peut pas envoyer dans un channel
             if (!isStartupCheck && channel && channel.isTextBased()) {
-                await (channel as TextChannel).send(messageOptions);
+                const message = await (channel as TextChannel).send(messageOptions);
                 targetChannel = channel as TextChannel;
                 notificationSent = true;
+
+                // Si c'est un achievement de JEUX dans le salon compteur, supprimer après 10 secondes
+                if (achievement.category === AchievementCategory.JEUX) {
+                    const EnvConfig = await import("../utils/envConfig").then(m => m.EnvConfig);
+                    const COUNTER_CHANNEL_ID = EnvConfig.COUNTER_CHANNEL_ID;
+
+                    if (COUNTER_CHANNEL_ID && channelId === COUNTER_CHANNEL_ID) {
+                        setTimeout(async () => {
+                            try {
+                                await message.delete();
+                                logger.info(`Achievement notification deleted after 10s in counter channel`);
+                            } catch (error) {
+                                // Ignore si le message est déjà supprimé
+                            }
+                        }, 10000);
+                    }
+                }
             }
         }
 

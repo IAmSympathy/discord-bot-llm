@@ -1,19 +1,23 @@
 {
-  "currentNumber": 12,
+  "currentNumber": 297,
   "lastUserId": "288799652902469633",
-  "highestReached": 12,
+  "highestReached": 297,
   "contributions": {
-    "288799652902469633": {
-      "username": "iam_sympathy",
-      "count": 6
-    },
-    "531789001313746968": {
-      "username": "imbaduworst",
-      "count": 2
-    },
     "814998532833673246": {
       "username": "eddie64",
-      "count": 4
+      "count": 141
+    },
+    "288799652902469633": {
+      "username": "iam_sympathy",
+      "count": 24
+    },
+    "369247585556365313": {
+      "username": "furio.",
+      "count": 127
+    },
+    "351419795033423883": {
+      "username": "mr.cr4zy",
+      "count": 5
     }
   }
 }

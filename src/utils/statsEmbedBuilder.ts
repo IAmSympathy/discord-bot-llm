@@ -3,6 +3,7 @@ import {getMostUsedEmoji, getServerStats, getUserStats} from "../services/userSt
 import {getUserXP, getXPForNextLevel} from "../services/xpSystem";
 import {getPlayerStats} from "../games/common/globalStats";
 import {UserProfileService} from "../services/userProfileService";
+import {getUserCounterContributions} from "../services/counterService";
 
 /**
  * Crée une barre de progression visuelle pour l'XP
@@ -165,9 +166,10 @@ export function createGameStatsEmbed(targetUser: User): EmbedBuilder {
         }
     }
 
-    // Ajouter les contributions au compteur
-    if (userStats && userStats.discord.compteurContributions && userStats.discord.compteurContributions > 0) {
-        description += `\n\n🔢 **Compteur :** ${userStats.discord.compteurContributions} contributions`;
+    // Ajouter les contributions au compteur (lire depuis counter_state.json)
+    const compteurContributions = getUserCounterContributions(targetUser.id);
+    if (compteurContributions > 0) {
+        description += `\n\n🔢 **Compteur :** ${compteurContributions} contributions`;
     }
 
     return new EmbedBuilder()

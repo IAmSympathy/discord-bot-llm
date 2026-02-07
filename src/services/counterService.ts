@@ -3,7 +3,6 @@ import * as path from "path";
 import {createLogger} from "../utils/logger";
 import {DATA_DIR} from "../utils/constants";
 import {Message, TextChannel} from "discord.js";
-import {getUserStats} from "./userStatsService";
 
 const logger = createLogger("CounterService");
 const COUNTER_STATE_FILE = path.join(DATA_DIR, "counter_state.json");
@@ -127,8 +126,15 @@ export async function handleCounterMessage(message: Message): Promise<boolean> {
 
     saveCounterState(state);
 
-    // Synchroniser avec les stats utilisateur
-    syncUserStatsWithCounter(message.author.id);
+
+    // Vérifier les achievements du compteur
+    const {checkCounterAchievements} = require("./counterAchievementChecker");
+    await checkCounterAchievements(
+        message.author.id,
+        message.author.username,
+        message.client,
+        message.channelId
+    );
 
     logger.info(`Counter: ${message.author.username} counted ${number}`);
 
@@ -214,8 +220,6 @@ export async function forceResetCounter(channel: TextChannel): Promise<void> {
 export async function initializeCounter(channel: TextChannel): Promise<void> {
     const state = loadCounterState();
 
-    // D'abord, valider et nettoyer les messages existants
-    await validateAndCleanChannel(channel);
 
     // Si le compteur est déjà initialisé, ne pas renvoyer le message d'intro
     if (state.currentNumber !== 0 || state.lastUserId !== null) {
@@ -275,8 +279,9 @@ async function validateAndCleanChannel(channel: TextChannel): Promise<void> {
 
         // Trouver le dernier message valide pour déterminer où on en est
         for (const msg of sortedMessages) {
-            // Ignorer les messages du bot (embeds, etc.)
-            if (msg.author.bot && !msg.content.match(/^\d+$/)) {
+            // Ignorer complètement tous les messages des bots (incluant Netricsa)
+            // Cela inclut le message "0" initial et l'embed d'explication
+            if (msg.author.bot) {
                 continue;
             }
 
@@ -341,33 +346,4 @@ async function validateAndCleanChannel(channel: TextChannel): Promise<void> {
     }
 }
 
-/**
- * Synchronise les contributions du compteur avec les stats utilisateur
- */
-function syncUserStatsWithCounter(userId: string): void {
-    const state = loadCounterState();
-    const contribution = state.contributions[userId];
-
-    if (!contribution) return;
-
-    // Mettre à jour les stats utilisateur
-    const userStats = getUserStats(userId);
-    if (userStats && userStats.discord.compteurContributions !== contribution.count) {
-        userStats.discord.compteurContributions = contribution.count;
-
-        // Sauvegarder via le module userStatsService
-        const fs = require("fs");
-        const path = require("path");
-        const DATA_DIR = require("../utils/constants").DATA_DIR;
-        const STATS_FILE = path.join(DATA_DIR, "user_stats.json");
-
-        try {
-            const allStats = JSON.parse(fs.readFileSync(STATS_FILE, "utf-8"));
-            allStats[userId] = userStats;
-            fs.writeFileSync(STATS_FILE, JSON.stringify(allStats, null, 2));
-        } catch (error) {
-            logger.error("Error syncing counter contributions to user stats:", error);
-        }
-    }
-}
 

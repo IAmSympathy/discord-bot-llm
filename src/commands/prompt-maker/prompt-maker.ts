@@ -325,6 +325,15 @@ module.exports = {
             // Enregistrer la statistique de prompt créé
             recordPromptCreated(interaction.user.id, interaction.user.username);
 
+            // Vérifier les achievements Netricsa
+            const {checkNetricsaAchievements} = require("../../services/netricsaAchievementChecker");
+            await checkNetricsaAchievements(
+                interaction.user.id,
+                interaction.user.username,
+                interaction.client,
+                interaction.channelId
+            );
+
             // Ajouter XP avec notification pour la création de prompt
             if (interaction.channel) {
                 await addXP(

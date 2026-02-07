@@ -520,6 +520,15 @@ export function registerWatchedChannelResponder(client: Client) {
             // Enregistrer la conversation IA dans les statistiques
             recordAIConversation(message.author.id, message.author.displayName);
 
+            // Vérifier les achievements Netricsa
+            const {checkNetricsaAchievements} = require("./services/netricsaAchievementChecker");
+            await checkNetricsaAchievements(
+                message.author.id,
+                message.author.username,
+                message.client,
+                message.channelId
+            );
+
             await setBotPresence(client, "online");
         } catch (err) {
             logger.error("messageCreate error:", err);

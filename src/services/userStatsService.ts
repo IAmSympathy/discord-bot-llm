@@ -23,7 +23,6 @@ export interface DiscordStats {
     repliesRecues: number;
     tempsVocalMinutes: number; // Temps passé en vocal en minutes
     emojisUtilises?: { [emoji: string]: number }; // Compteur d'emojis utilisés
-    compteurContributions?: number; // Contributions au compteur
 }
 
 /**
@@ -105,8 +104,7 @@ function initUserStats(userId: string, username: string): UserStats {
             mentionsRecues: 0,
             repliesRecues: 0,
             tempsVocalMinutes: 0,
-            emojisUtilises: {},
-            compteurContributions: 0
+            emojisUtilises: {}
         },
         netricsa: {
             imagesGenerees: 0,

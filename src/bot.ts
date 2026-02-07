@@ -130,13 +130,6 @@ client.once(Events.ClientReady, async () => {
         logger.error("Error initializing level roles:", error);
     }
 
-    // Vérifier et attribuer les achievements pour les utilisateurs existants
-    try {
-        const {checkAllAchievementsOnStartup} = require("./services/achievementStartupChecker");
-        await checkAllAchievementsOnStartup(client);
-    } catch (error) {
-        logger.error("Error checking achievements on startup:", error);
-    }
 
     // Initialiser le planificateur de memes automatiques
     initializeMemeScheduler(client);
@@ -448,6 +441,12 @@ client.on(Events.ChannelDelete, async (channel) => {
 client.on(Events.MessageDelete, async (message) => {
     try {
         if (message.author?.bot) return;
+
+        // Ne pas logger les suppressions dans le salon compteur
+        const COUNTER_CHANNEL_ID = EnvConfig.COUNTER_CHANNEL_ID;
+        if (COUNTER_CHANNEL_ID && message.channelId === COUNTER_CHANNEL_ID) {
+            return; // Skip logging pour le compteur
+        }
 
         if (message.content || message.attachments.size > 0) {
             let deletedBy: string | undefined;

@@ -4,28 +4,24 @@ import {updateUserActivityFromPresence} from "../../services/activityService";
 import {createDetailedGameStatsEmbed, createDiscordStatsEmbed, createGameSelectMenu, createNetricsaStatsEmbed, createProfileEmbed, createServerStatsEmbed, createStatsNavigationButtons, StatsCategory} from "../../utils/statsEmbedBuilder";
 import {AchievementCategory} from "../../services/achievementService";
 
-const CATEGORY_EMOJIS: { [key in AchievementCategory]: string } = {
+const CATEGORY_EMOJIS: Partial<{ [key in AchievementCategory]: string }> = {
     [AchievementCategory.PROFIL]: "📋",
     [AchievementCategory.NETRICSA]: "🤖",
     [AchievementCategory.DISCORD]: "💬",
-    [AchievementCategory.JEUX]: "🎮",
-    [AchievementCategory.NIVEAU]: "⭐",
-    [AchievementCategory.SECRET]: "🔒"
+    [AchievementCategory.JEUX]: "🎮"
 };
 
-const CATEGORY_NAMES: { [key in AchievementCategory]: string } = {
+const CATEGORY_NAMES: Partial<{ [key in AchievementCategory]: string }> = {
     [AchievementCategory.PROFIL]: "Profil",
     [AchievementCategory.NETRICSA]: "Netricsa",
     [AchievementCategory.DISCORD]: "Discord",
-    [AchievementCategory.JEUX]: "Jeux",
-    [AchievementCategory.NIVEAU]: "Niveau",
-    [AchievementCategory.SECRET]: "Secrets"
+    [AchievementCategory.JEUX]: "Jeux"
 };
 
 /**
- * Crée l'embed des achievements
+ * Crée l'embed des achievements avec pagination pour toutes les catégories
  */
-function createAchievementEmbed(targetUser: any, category: AchievementCategory): any {
+function createAchievementEmbed(targetUser: any, category: AchievementCategory, page: number = 0): any {
     const {EmbedBuilder} = require("discord.js");
     const {getAchievementsByCategory, getAchievementStats, getCompletionPercentage} = require("../../services/achievementService");
 
@@ -37,29 +33,42 @@ function createAchievementEmbed(targetUser: any, category: AchievementCategory):
     const categoryName = CATEGORY_NAMES[category];
     const categoryEmoji = CATEGORY_EMOJIS[category];
 
+    // Pagination pour toutes les catégories si > 5 achievements
+    const ITEMS_PER_PAGE = 5;
+    const totalPages = Math.ceil(achievements.length / ITEMS_PER_PAGE);
+
+    // S'assurer que la page est valide
+    page = Math.max(0, Math.min(page, totalPages - 1));
+
+    const startIndex = page * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedAchievements = achievements.slice(startIndex, endIndex);
+
+    const footerText = totalPages > 1
+        ? `Page ${page + 1}/${totalPages} | Complétion globale: ${completion}% | ${categoryStats.unlocked}/${categoryStats.total} dans cette catégorie`
+        : `Complétion globale: ${completion}% | ${categoryStats.unlocked}/${categoryStats.total} dans cette catégorie`;
+
     const embed = new EmbedBuilder()
         .setColor(0xFFD700)
-        .setTitle(`${categoryEmoji} Achievements ${categoryName} - ${targetUser.displayName}`)
+        .setTitle(`${categoryEmoji} Succès ${categoryName} - ${targetUser.displayName}`)
         .setThumbnail(targetUser.displayAvatarURL({size: 128}))
-        .setFooter({
-            text: `Complétion globale: ${completion}% | ${categoryStats.unlocked}/${categoryStats.total} dans cette catégorie`
-        })
+        .setFooter({text: footerText})
         .setTimestamp();
 
     if (achievements.length === 0) {
-        embed.setDescription("Aucun achievement dans cette catégorie pour le moment.");
+        embed.setDescription("Aucun succès dans cette catégorie pour le moment.");
         return embed;
     }
 
     let description = "";
 
-    for (const {achievement, unlocked, unlockedAt} of achievements) {
+    for (const {achievement, unlocked, unlockedAt} of paginatedAchievements) {
         // Si débloqué : emoji du succès, sinon : 🔒
         const displayEmoji = unlocked ? achievement.emoji : "🔒";
 
         if (achievement.secret && !unlocked) {
             description += `**${displayEmoji} ${achievement.name}**\n`;
-            description += `*Achievement secret - Débloquez-le pour voir la description*\n\n`;
+            description += `*Succès secret - Débloquez-le pour voir la description*\n\n`;
         } else {
             description += `**${displayEmoji} ${achievement.name}**\n`;
             description += `${achievement.description}\n`;
@@ -73,38 +82,59 @@ function createAchievementEmbed(targetUser: any, category: AchievementCategory):
         }
     }
 
-    embed.setDescription(description || "Aucun achievement dans cette catégorie.");
+    embed.setDescription(description || "Aucun succès dans cette catégorie.");
     return embed;
+}
+
+/**
+ * Crée les boutons de pagination pour les achievements Netricsa
+ */
+function createPaginationButtons(currentPage: number, totalPages: number, userId: string): ActionRowBuilder<ButtonBuilder> | null {
+    if (totalPages <= 1) return null;
+
+    return new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`achievement_page_prev_${userId}`)
+            .setEmoji("⬅️")
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(currentPage === 0),
+        new ButtonBuilder()
+            .setCustomId(`achievement_page_next_${userId}`)
+            .setEmoji("➡️")
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(currentPage >= totalPages - 1)
+    );
 }
 
 /**
  * Crée les boutons de navigation des achievements
  */
 function createAchievementNavigationButtons(currentCategory: AchievementCategory, userId: string): ActionRowBuilder<ButtonBuilder>[] {
-    const categories = Object.values(AchievementCategory);
-    const row1Buttons: ButtonBuilder[] = [];
-    const row2Buttons: ButtonBuilder[] = [];
+    const categories = [
+        AchievementCategory.PROFIL,
+        AchievementCategory.NETRICSA,
+        AchievementCategory.DISCORD,
+        AchievementCategory.JEUX
+    ];
+    const buttons: ButtonBuilder[] = [];
 
-    categories.forEach((category, index) => {
+    categories.forEach((category) => {
         const emoji = CATEGORY_EMOJIS[category];
+        if (!emoji) return; // Skip si emoji non défini
+
         const isCurrentCategory = category === currentCategory;
 
         const button = new ButtonBuilder()
             .setCustomId(`achievements_${category}_${userId}`)
-            .setEmoji(emoji)
+            .setEmoji(emoji as string) // Type assertion car vérifié ci-dessus
             .setStyle(isCurrentCategory ? ButtonStyle.Success : ButtonStyle.Primary)
             .setDisabled(isCurrentCategory);
 
-        if (index < 3) {
-            row1Buttons.push(button);
-        } else {
-            row2Buttons.push(button);
-        }
+        buttons.push(button);
     });
 
     return [
-        new ActionRowBuilder<ButtonBuilder>().addComponents(row1Buttons),
-        new ActionRowBuilder<ButtonBuilder>().addComponents(row2Buttons)
+        new ActionRowBuilder<ButtonBuilder>().addComponents(buttons)
     ];
 }
 
@@ -150,6 +180,7 @@ module.exports = {
             let currentView: ViewType = "profile";
             let currentStatsCategory: StatsCategory = "discord";
             let currentAchievementCategory: AchievementCategory = AchievementCategory.PROFIL;
+            let currentAchievementPage: number = 0;
             let currentGameType = "global";
 
             // Créer l'embed initial du profil
@@ -168,7 +199,7 @@ module.exports = {
                 profileButtonsArray.push(
                     new ButtonBuilder()
                         .setCustomId(`view_achievements_${targetUser.id}`)
-                        .setLabel("🏆 Achievements")
+                        .setLabel("🏆 Succès")
                         .setStyle(ButtonStyle.Primary)
                 );
             }
@@ -213,15 +244,28 @@ module.exports = {
                     } else if (customId.startsWith("view_achievements_")) {
                         currentView = "achievements";
                         currentAchievementCategory = AchievementCategory.PROFIL;
-                        const embed = createAchievementEmbed(targetUser, currentAchievementCategory);
+                        currentAchievementPage = 0;
+                        const embed = createAchievementEmbed(targetUser, currentAchievementCategory, currentAchievementPage);
                         const navButtons = createAchievementNavigationButtons(currentAchievementCategory, targetUser.id);
+
+                        // Ajouter la pagination si nécessaire (> 10 achievements)
+                        const {getAchievementsByCategory} = require("../../services/achievementService");
+                        const achievements = getAchievementsByCategory(targetUser.id, targetUser.username, currentAchievementCategory);
+                        const totalPages = Math.ceil(achievements.length / ITEMS_PER_PAGE);
+                        const paginationButtons = createPaginationButtons(currentAchievementPage, totalPages, targetUser.id);
+
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()
                                 .setCustomId(`back_to_profile_${targetUser.id}`)
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
+
+                        const components = paginationButtons
+                            ? [paginationButtons, ...navButtons, backButton]
+                            : [...navButtons, backButton];
+
+                        await i.update({embeds: [embed], components});
                     } else if (customId.startsWith("back_to_profile_")) {
                         currentView = "profile";
                         const embed = createProfileEmbed(targetUser);
@@ -285,15 +329,65 @@ module.exports = {
                     else if (customId.startsWith("achievements_")) {
                         const [, categoryStr] = customId.split("_");
                         currentAchievementCategory = categoryStr as AchievementCategory;
-                        const embed = createAchievementEmbed(targetUser, currentAchievementCategory);
+                        currentAchievementPage = 0; // Reset page quand on change de catégorie
+
+                        const embed = createAchievementEmbed(targetUser, currentAchievementCategory, currentAchievementPage);
                         const navButtons = createAchievementNavigationButtons(currentAchievementCategory, targetUser.id);
+
+                        // Ajouter la pagination si nécessaire (> 10 achievements)
+                        const {getAchievementsByCategory} = require("../../services/achievementService");
+                        const achievements = getAchievementsByCategory(targetUser.id, targetUser.username, currentAchievementCategory);
+                        const totalPages = Math.ceil(achievements.length / ITEMS_PER_PAGE);
+                        const paginationButtons = createPaginationButtons(currentAchievementPage, totalPages, targetUser.id);
+
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()
                                 .setCustomId(`back_to_profile_${targetUser.id}`)
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
+
+                        const components = paginationButtons
+                            ? [paginationButtons, ...navButtons, backButton]
+                            : [...navButtons, backButton];
+
+                        await i.update({embeds: [embed], components});
+                    }
+                    // === PAGINATION ACHIEVEMENTS ===
+                    else if (customId.startsWith("achievement_page_")) {
+                        const action = customId.includes("prev") ? "prev" : "next";
+
+                        if (action === "prev" && currentAchievementPage > 0) {
+                            currentAchievementPage--;
+                        } else if (action === "next") {
+                            const {getAchievementsByCategory} = require("../../services/achievementService");
+                            const achievements = getAchievementsByCategory(targetUser.id, targetUser.username, currentAchievementCategory);
+                            const totalPages = Math.ceil(achievements.length / ITEMS_PER_PAGE);
+                            if (currentAchievementPage < totalPages - 1) {
+                                currentAchievementPage++;
+                            }
+                        }
+
+                        const embed = createAchievementEmbed(targetUser, currentAchievementCategory, currentAchievementPage);
+                        const navButtons = createAchievementNavigationButtons(currentAchievementCategory, targetUser.id);
+
+                        const {getAchievementsByCategory} = require("../../services/achievementService");
+                        const achievements = getAchievementsByCategory(targetUser.id, targetUser.username, currentAchievementCategory);
+                        const totalPages = Math.ceil(achievements.length / ITEMS_PER_PAGE);
+                        const paginationButtons = createPaginationButtons(currentAchievementPage, totalPages, targetUser.id);
+
+                        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`back_to_profile_${targetUser.id}`)
+                                .setLabel("◀️ Retour au profil")
+                                .setStyle(ButtonStyle.Danger)
+                        );
+
+                        const components = paginationButtons
+                            ? [paginationButtons, ...navButtons, backButton]
+                            : [...navButtons, backButton];
+
+                        await i.update({embeds: [embed], components});
                     }
                 } catch (error) {
                     console.error("[Profile] Error handling button:", error);

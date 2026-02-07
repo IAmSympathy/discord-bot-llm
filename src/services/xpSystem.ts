@@ -32,7 +32,7 @@ export const XP_REWARDS = {
     promptCree: 30,
 
     // Stats Création
-    postCreation: 2000,
+    postCreation: 1000,
 
     // Stats Jeux
     victoireJeu: 100,

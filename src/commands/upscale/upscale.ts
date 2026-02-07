@@ -200,6 +200,15 @@ module.exports = {
             // Enregistrer aussi pour Netricsa elle-même
             recordImageUpscaled(NETRICSA_USER_ID, NETRICSA_USERNAME);
 
+            // Vérifier les achievements Netricsa
+            const {checkNetricsaAchievements} = require("../../services/netricsaAchievementChecker");
+            await checkNetricsaAchievements(
+                interaction.user.id,
+                interaction.user.username,
+                interaction.client,
+                interaction.channelId
+            );
+
             // Ajouter XP avec notification de level up (message non-éphémère)
             const {addXP, XP_REWARDS} = require("../../services/xpSystem");
             if (interaction.channel) {
