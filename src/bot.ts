@@ -655,6 +655,10 @@ client.on(Events.MessageReactionAdd, async (reaction, user) => {
         if (user.username) {
             recordReactionAdded(user.id, user.username);
 
+            // Vérifier les achievements Discord (réactions)
+            const {checkDiscordAchievements} = require("./services/discordAchievementChecker");
+            await checkDiscordAchievements(user.id, user.username, reaction.client, reaction.message.channelId);
+
             // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
             const {addXP, XP_REWARDS} = require("./services/xpSystem");
             if (reaction.message.channel) {
@@ -718,6 +722,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
             // Enregistrer l'utilisation de la commande dans les statistiques
             recordCommandUsed(interaction.user.id, interaction.user.username);
 
+            // Vérifier les achievements Discord (commandes)
+            const {checkDiscordAchievements} = require("./services/discordAchievementChecker");
+            await checkDiscordAchievements(interaction.user.id, interaction.user.username, interaction.client, interaction.channelId);
+
             // Ajouter XP avec notification pour l'utilisation de commande
             const {addXP, XP_REWARDS} = require("./services/xpSystem");
             if (interaction.channel) {
@@ -778,6 +786,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
             // Les commandes de menu contextuel sont toujours autorisées (pas de restrictions)
             // Enregistrer l'utilisation dans les statistiques
             recordCommandUsed(interaction.user.id, interaction.user.username);
+
+            // Vérifier les achievements Discord (commandes)
+            const {checkDiscordAchievements} = require("./services/discordAchievementChecker");
+            await checkDiscordAchievements(interaction.user.id, interaction.user.username, interaction.client, interaction.channelId);
 
             // Ajouter XP pour l'utilisation de commande contextuelle
             const {addXP, XP_REWARDS} = require("./services/xpSystem");

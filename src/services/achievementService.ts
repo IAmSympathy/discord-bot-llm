@@ -359,6 +359,274 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         emoji: "🎭",
         secret: true,
         xpReward: 2000
+    },
+    // === ACHIEVEMENTS DISCORD - MESSAGES ===
+    {
+        id: "discord_msg_10",
+        category: AchievementCategory.DISCORD,
+        name: "Première Parole",
+        description: "Envoyer 10 messages sur le serveur",
+        emoji: "💬",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "discord_msg_100",
+        category: AchievementCategory.DISCORD,
+        name: "Bavard",
+        description: "Envoyer 100 messages sur le serveur",
+        emoji: "🗨️",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "discord_msg_500",
+        category: AchievementCategory.DISCORD,
+        name: "Causeur",
+        description: "Envoyer 500 messages sur le serveur",
+        emoji: "💭",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "discord_msg_1000",
+        category: AchievementCategory.DISCORD,
+        name: "Orateur",
+        description: "Envoyer 1000 messages sur le serveur",
+        emoji: "🗣️",
+        secret: false,
+        xpReward: 300
+    },
+    {
+        id: "discord_msg_5000",
+        category: AchievementCategory.DISCORD,
+        name: "Porte-Parole",
+        description: "Envoyer 5000 messages sur le serveur",
+        emoji: "📢",
+        secret: false,
+        xpReward: 500
+    },
+    // === ACHIEVEMENTS DISCORD - RÉACTIONS DONNÉES ===
+    {
+        id: "discord_react_50",
+        category: AchievementCategory.DISCORD,
+        name: "Réactif",
+        description: "Ajouter 50 réactions",
+        emoji: "👍",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "discord_react_200",
+        category: AchievementCategory.DISCORD,
+        name: "Expressif",
+        description: "Ajouter 200 réactions",
+        emoji: "😄",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "discord_react_500",
+        category: AchievementCategory.DISCORD,
+        name: "Émotif",
+        description: "Ajouter 500 réactions",
+        emoji: "🎭",
+        secret: false,
+        xpReward: 200
+    },
+    // === ACHIEVEMENTS DISCORD - COMMANDES ===
+    {
+        id: "discord_cmd_10",
+        category: AchievementCategory.DISCORD,
+        name: "Découvreur",
+        description: "Utiliser 10 commandes",
+        emoji: "⚡",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "discord_cmd_50",
+        category: AchievementCategory.DISCORD,
+        name: "Commandant",
+        description: "Utiliser 50 commandes",
+        emoji: "🎮",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "discord_cmd_200",
+        category: AchievementCategory.DISCORD,
+        name: "Expert des Commandes",
+        description: "Utiliser 200 commandes",
+        emoji: "🎯",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "discord_cmd_500",
+        category: AchievementCategory.DISCORD,
+        name: "Maître des Commandes",
+        description: "Utiliser 500 commandes",
+        emoji: "🏅",
+        secret: false,
+        xpReward: 300
+    },
+    // === ACHIEVEMENTS DISCORD - VOCAL ===
+    {
+        id: "discord_voice_1h",
+        category: AchievementCategory.DISCORD,
+        name: "Première Voix",
+        description: "Passer 1h en vocal",
+        emoji: "🎤",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "discord_voice_10h",
+        category: AchievementCategory.DISCORD,
+        name: "Causeur Vocal",
+        description: "Passer 10h en vocal",
+        emoji: "🎧",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "discord_voice_50h",
+        category: AchievementCategory.DISCORD,
+        name: "Habitué du Vocal",
+        description: "Passer 50h en vocal",
+        emoji: "🎙️",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "discord_voice_100h",
+        category: AchievementCategory.DISCORD,
+        name: "Marathonien Vocal",
+        description: "Passer 100h en vocal",
+        emoji: "📻",
+        secret: false,
+        xpReward: 300
+    },
+    {
+        id: "discord_voice_500h",
+        category: AchievementCategory.DISCORD,
+        name: "Légende du Vocal",
+        description: "Passer 500h en vocal",
+        emoji: "🔊",
+        secret: false,
+        xpReward: 500
+    },
+    {
+        id: "discord_voice_1000h",
+        category: AchievementCategory.DISCORD,
+        name: "Roi du Vocal",
+        description: "Passer 1000h en vocal",
+        emoji: "📡",
+        secret: false,
+        xpReward: 1000
+    },
+    // === ACHIEVEMENTS DISCORD - EMOJIS ===
+    {
+        id: "discord_emoji_100",
+        category: AchievementCategory.DISCORD,
+        name: "Amateur d'Emojis",
+        description: "Utiliser 100 emojis",
+        emoji: "😊",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "discord_emoji_500",
+        category: AchievementCategory.DISCORD,
+        name: "Fan d'Emojis",
+        description: "Utiliser 500 emojis",
+        emoji: "😎",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "discord_emoji_1000",
+        category: AchievementCategory.DISCORD,
+        name: "Maître des Emojis",
+        description: "Utiliser 1000 emojis",
+        emoji: "🤩",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "discord_emoji_5000",
+        category: AchievementCategory.DISCORD,
+        name: "Emoji Addict",
+        description: "Utiliser 5000 emojis",
+        emoji: "🌈",
+        secret: false,
+        xpReward: 300
+    },
+    {
+        id: "discord_emoji_fav",
+        category: AchievementCategory.DISCORD,
+        name: "Collectionneur",
+        description: "Utiliser le même emoji 100 fois",
+        emoji: "😄",
+        secret: false,
+        xpReward: 100
+    },
+    // === ACHIEVEMENTS DISCORD - COMBINÉS ===
+    {
+        id: "discord_social",
+        category: AchievementCategory.DISCORD,
+        name: "Social Butterfly",
+        description: "500 messages + 200 réactions + 50h vocal",
+        emoji: "🎭",
+        secret: false,
+        xpReward: 300
+    },
+    {
+        id: "discord_active",
+        category: AchievementCategory.DISCORD,
+        name: "Hyperactif",
+        description: "1000 messages + 500 emojis + 100 commandes",
+        emoji: "💎",
+        secret: false,
+        xpReward: 500
+    },
+    {
+        id: "discord_legend",
+        category: AchievementCategory.DISCORD,
+        name: "Légende Vivante",
+        description: "5000 messages + 500 réactions + 500h vocal",
+        emoji: "👑",
+        secret: true,
+        xpReward: 1000
+    },
+    // === ACHIEVEMENTS DISCORD - SPÉCIAUX ===
+    {
+        id: "discord_night_owl",
+        category: AchievementCategory.DISCORD,
+        name: "Noctambule",
+        description: "Envoyer un message à 3h du matin",
+        emoji: "🌙",
+        secret: true,
+        xpReward: 100
+    },
+    {
+        id: "discord_early_bird",
+        category: AchievementCategory.DISCORD,
+        name: "Lève-tôt",
+        description: "Envoyer un message à 6h du matin",
+        emoji: "☀️",
+        secret: true,
+        xpReward: 100
+    },
+    {
+        id: "discord_birthday",
+        category: AchievementCategory.DISCORD,
+        name: "Anniversaire !",
+        description: "Se connecter le jour de son anniversaire",
+        emoji: "🎂",
+        secret: false,
+        xpReward: 200
     }
 ];
 

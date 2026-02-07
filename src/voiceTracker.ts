@@ -46,6 +46,12 @@ function startVoiceSession(userId: string, channelId: string, username: string, 
         // Enregistrer 1 minute de temps vocal dans les stats (en temps réel)
         recordVoiceTime(userId, username, 1);
 
+        // Vérifier les achievements Discord (vocal)
+        const {checkDiscordAchievements} = require("./services/discordAchievementChecker");
+        checkDiscordAchievements(userId, username, client, channelId).catch((error: any) => {
+            console.error("Error checking Discord achievements:", error);
+        });
+
         // Donner de l'XP pour cette minute
         try {
             const channel = client.guilds.cache

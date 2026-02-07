@@ -189,6 +189,12 @@ export function registerWatchedChannelResponder(client: Client) {
             // Enregistrer les emojis utilisés dans le message
             recordEmojisUsed(message.author.id, message.author.username, message.content);
 
+            // Vérifier les achievements Discord (messages, emojis, spéciaux)
+            const {checkDiscordAchievements, checkTimeBasedAchievements, checkBirthdayAchievement} = require("./services/discordAchievementChecker");
+            await checkDiscordAchievements(message.author.id, message.author.username, message.client, message.channelId);
+            await checkTimeBasedAchievements(message.author.id, message.author.username, message.client, message.channelId);
+            await checkBirthdayAchievement(message.author.id, message.author.username, message.client, message.channelId);
+
             // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
             await addXP(
                 message.author.id,

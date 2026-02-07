@@ -100,16 +100,189 @@ export async function handleCounterMessage(message: Message): Promise<boolean> {
         logger.info(`🎉 New record reached: ${number}`);
 
         // Réagir au message pour célébrer le nouveau record
-        if (number % 100 === 0) {
+        if (number % 1000 === 0) {
+            // Palier 1000 - ÉNORME célébration
+            await message.react("🏆").catch(() => {
+            });
+            await message.react("👑").catch(() => {
+            });
+            await message.react("💎").catch(() => {
+            });
+            await message.react("🌟").catch(() => {
+            });
+            await message.react("🎆").catch(() => {
+            });
+        } else if (number % 500 === 0) {
+            // Palier 500 - Grande célébration
+            await message.react("🎊").catch(() => {
+            });
+            await message.react("🎉").catch(() => {
+            });
+            await message.react("💫").catch(() => {
+            });
+            await message.react("🔥").catch(() => {
+            });
+        } else if (number % 250 === 0) {
+            // Palier 250 - Célébration importante
+            await message.react("⭐").catch(() => {
+            });
+            await message.react("💥").catch(() => {
+            });
+            await message.react("🌈").catch(() => {
+            });
+        } else if (number % 100 === 0) {
+            // Palier 100 - Grosse célébration
             await message.react("🎉").catch(() => {
             });
             await message.react("💯").catch(() => {
             });
+            await message.react("✨").catch(() => {
+            });
+        } else if (number === 666) {
+            // Palier 666 - Le nombre de la bête
+            await message.react("😈").catch(() => {
+            });
+            await message.react("🔥").catch(() => {
+            });
+            await message.react("👹").catch(() => {
+            });
+        } else if (number === 420) {
+            // Palier 420 - Référence cannabis
+            await message.react("🌿").catch(() => {
+            });
+            await message.react("🍃").catch(() => {
+            });
+            await message.react("😎").catch(() => {
+            });
+        } else if (number === 404) {
+            // Palier 404 - Not Found
+            await message.react("❓").catch(() => {
+            });
+            await message.react("🔍").catch(() => {
+            });
+            await message.react("🤷").catch(() => {
+            });
+        } else if (number === 360) {
+            // Palier 360 - No scope
+            await message.react("🎯").catch(() => {
+            });
+            await message.react("🔫").catch(() => {
+            });
+        } else if (number === 322) {
+            // Palier 322 - Référence Dota 2 (throw)
+            await message.react("💰").catch(() => {
+            });
+            await message.react("🤡").catch(() => {
+            });
+        } else if (number === 300) {
+            // Palier 300 - Référence Spartan
+            await message.react("⚔️").catch(() => {
+            });
+            await message.react("🛡️").catch(() => {
+            });
+        } else if (number === 256) {
+            // Palier 256 - 2^8
+            await message.react("💾").catch(() => {
+            });
+            await message.react("🖥️").catch(() => {
+            });
+        } else if (number === 200) {
+            // Palier 200 - HTTP OK
+            await message.react("✅").catch(() => {
+            });
+            await message.react("🌐").catch(() => {
+            });
+        } else if (number === 177013) {
+            // Palier 177013 - Si vous savez, vous savez
+            await message.react("💀").catch(() => {
+            });
+            await message.react("😱").catch(() => {
+            });
+            await message.react("⚠️").catch(() => {
+            });
+        } else if (number === 1337) {
+            // Palier 1337 - LEET
+            await message.react("🤓").catch(() => {
+            });
+            await message.react("💻").catch(() => {
+            });
+            await message.react("🔧").catch(() => {
+            });
+        } else if (number === 911) {
+            // Palier 911 - Emergency
+            await message.react("🚨").catch(() => {
+            });
+            await message.react("🚑").catch(() => {
+            });
+        } else if (number === 777) {
+            // Palier 777 - Jackpot
+            await message.react("🎰").catch(() => {
+            });
+            await message.react("💰").catch(() => {
+            });
+            await message.react("🍀").catch(() => {
+            });
+        } else if (number === 69) {
+            // Palier 69 - Nice
+            await message.react("😏").catch(() => {
+            });
+            await message.react("👀").catch(() => {
+            });
+        } else if (number === 67) {
+            // Palier 67 - Nice
+            await message.react("6️⃣").catch(() => {
+            });
+            await message.react("7️⃣").catch(() => {
+            });
+        } else if (number === 42) {
+            // Palier 42 - La réponse à la grande question
+            await message.react("🌌").catch(() => {
+            });
+            await message.react("📖").catch(() => {
+            });
+            await message.react("🤔").catch(() => {
+            });
+        } else if (number === 21) {
+            // Palier 21 - Blackjack
+            await message.react("🃏").catch(() => {
+            });
+            await message.react("🎲").catch(() => {
+            });
+        } else if (number === 13) {
+            // Palier 13 - Malchance
+            await message.react("🖤").catch(() => {
+            });
+            await message.react("🐈‍⬛").catch(() => {
+            });
+        } else if (number === 7) {
+            // Palier 7 - Chance
+            await message.react("🍀").catch(() => {
+            });
+            await message.react("✨").catch(() => {
+            });
+        } else if (number % 69 === 0 && number !== 69) {
+            // Multiples de 69
+            await message.react("😏").catch(() => {
+            });
         } else if (number % 50 === 0) {
+            // Palier 50 - Célébration moyenne
             await message.react("🎊").catch(() => {
             });
+            await message.react("🎯").catch(() => {
+            });
+        } else if (number % 25 === 0) {
+            // Palier 25
+            await message.react("⚡").catch(() => {
+            });
+            await message.react("💪").catch(() => {
+            });
         } else if (number % 10 === 0) {
+            // Palier 10 - Petite célébration
             await message.react("✨").catch(() => {
+            });
+        } else if (number % 5 === 0) {
+            // Palier 5 - Encouragement
+            await message.react("👍").catch(() => {
             });
         }
     }

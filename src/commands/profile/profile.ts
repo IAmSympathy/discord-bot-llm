@@ -248,10 +248,10 @@ module.exports = {
                         const embed = createAchievementEmbed(targetUser, currentAchievementCategory, currentAchievementPage);
                         const navButtons = createAchievementNavigationButtons(currentAchievementCategory, targetUser.id);
 
-                        // Ajouter la pagination si nécessaire (> 10 achievements)
+                        // Ajouter la pagination si nécessaire (> 5 achievements)
                         const {getAchievementsByCategory} = require("../../services/achievementService");
                         const achievements = getAchievementsByCategory(targetUser.id, targetUser.username, currentAchievementCategory);
-                        const totalPages = Math.ceil(achievements.length / ITEMS_PER_PAGE);
+                        const totalPages = Math.ceil(achievements.length / 5);
                         const paginationButtons = createPaginationButtons(currentAchievementPage, totalPages, targetUser.id);
 
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -334,10 +334,10 @@ module.exports = {
                         const embed = createAchievementEmbed(targetUser, currentAchievementCategory, currentAchievementPage);
                         const navButtons = createAchievementNavigationButtons(currentAchievementCategory, targetUser.id);
 
-                        // Ajouter la pagination si nécessaire (> 10 achievements)
+                        // Ajouter la pagination si nécessaire (> 5 achievements)
                         const {getAchievementsByCategory} = require("../../services/achievementService");
                         const achievements = getAchievementsByCategory(targetUser.id, targetUser.username, currentAchievementCategory);
-                        const totalPages = Math.ceil(achievements.length / ITEMS_PER_PAGE);
+                        const totalPages = Math.ceil(achievements.length / 5);
                         const paginationButtons = createPaginationButtons(currentAchievementPage, totalPages, targetUser.id);
 
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -362,7 +362,7 @@ module.exports = {
                         } else if (action === "next") {
                             const {getAchievementsByCategory} = require("../../services/achievementService");
                             const achievements = getAchievementsByCategory(targetUser.id, targetUser.username, currentAchievementCategory);
-                            const totalPages = Math.ceil(achievements.length / ITEMS_PER_PAGE);
+                            const totalPages = Math.ceil(achievements.length / 5);
                             if (currentAchievementPage < totalPages - 1) {
                                 currentAchievementPage++;
                             }
@@ -373,7 +373,7 @@ module.exports = {
 
                         const {getAchievementsByCategory} = require("../../services/achievementService");
                         const achievements = getAchievementsByCategory(targetUser.id, targetUser.username, currentAchievementCategory);
-                        const totalPages = Math.ceil(achievements.length / ITEMS_PER_PAGE);
+                        const totalPages = Math.ceil(achievements.length / 5);
                         const paginationButtons = createPaginationButtons(currentAchievementPage, totalPages, targetUser.id);
 
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
