@@ -255,7 +255,7 @@ module.exports = {
                 return;
             }
 
-            await interaction.deferReply({flags: MessageFlags.Ephemeral});
+            await interaction.deferReply({});
 
             const description = interaction.options.getString("description", true);
             const type = interaction.options.getString("type", true) as "text2img" | "img2img";
