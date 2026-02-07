@@ -1,7 +1,111 @@
 import {ActionRowBuilder, ApplicationCommandType, ButtonBuilder, ButtonStyle, ComponentType, ContextMenuCommandBuilder, MessageFlags, UserContextMenuCommandInteraction} from "discord.js";
 import {UserProfileService} from "../../services/userProfileService";
 import {updateUserActivityFromPresence} from "../../services/activityService";
-import {createBackToProfileButton, createDetailedGameStatsEmbed, createDiscordStatsEmbed, createGameSelectMenu, createNetricsaStatsEmbed, createProfileEmbed, createServerStatsEmbed, createStatsNavigationButtons, StatsCategory} from "../../utils/statsEmbedBuilder";
+import {createDetailedGameStatsEmbed, createDiscordStatsEmbed, createGameSelectMenu, createNetricsaStatsEmbed, createProfileEmbed, createServerStatsEmbed, createStatsNavigationButtons, StatsCategory} from "../../utils/statsEmbedBuilder";
+import {AchievementCategory} from "../../services/achievementService";
+
+const CATEGORY_EMOJIS: { [key in AchievementCategory]: string } = {
+    [AchievementCategory.PROFIL]: "📋",
+    [AchievementCategory.NETRICSA]: "🤖",
+    [AchievementCategory.DISCORD]: "💬",
+    [AchievementCategory.JEUX]: "🎮",
+    [AchievementCategory.NIVEAU]: "⭐",
+    [AchievementCategory.SECRET]: "🔒"
+};
+
+const CATEGORY_NAMES: { [key in AchievementCategory]: string } = {
+    [AchievementCategory.PROFIL]: "Profil",
+    [AchievementCategory.NETRICSA]: "Netricsa",
+    [AchievementCategory.DISCORD]: "Discord",
+    [AchievementCategory.JEUX]: "Jeux",
+    [AchievementCategory.NIVEAU]: "Niveau",
+    [AchievementCategory.SECRET]: "Secrets"
+};
+
+/**
+ * Crée l'embed des achievements
+ */
+function createAchievementEmbed(targetUser: any, category: AchievementCategory): any {
+    const {EmbedBuilder} = require("discord.js");
+    const {getAchievementsByCategory, getAchievementStats, getCompletionPercentage} = require("../../services/achievementService");
+
+    const achievements = getAchievementsByCategory(targetUser.id, targetUser.username, category);
+    const stats = getAchievementStats(targetUser.id);
+    const completion = getCompletionPercentage(targetUser.id);
+
+    const categoryStats = stats[category];
+    const categoryName = CATEGORY_NAMES[category];
+    const categoryEmoji = CATEGORY_EMOJIS[category];
+
+    const embed = new EmbedBuilder()
+        .setColor(0xFFD700)
+        .setTitle(`${categoryEmoji} Achievements ${categoryName} - ${targetUser.displayName}`)
+        .setThumbnail(targetUser.displayAvatarURL({size: 128}))
+        .setFooter({
+            text: `Complétion globale: ${completion}% | ${categoryStats.unlocked}/${categoryStats.total} dans cette catégorie`
+        })
+        .setTimestamp();
+
+    if (achievements.length === 0) {
+        embed.setDescription("Aucun achievement dans cette catégorie pour le moment.");
+        return embed;
+    }
+
+    let description = "";
+
+    for (const {achievement, unlocked, unlockedAt} of achievements) {
+        const status = unlocked ? "✅" : "🔒";
+
+        if (achievement.secret && !unlocked) {
+            description += `${status} **${achievement.emoji} ${achievement.name}**\n`;
+            description += `*Achievement secret - Débloquez-le pour voir la description*\n\n`;
+        } else {
+            description += `${status} **${achievement.emoji} ${achievement.name}**\n`;
+            description += `${achievement.description}\n`;
+
+            if (unlocked && unlockedAt) {
+                const date = new Date(unlockedAt);
+                description += `*Débloqué le ${date.toLocaleDateString("fr-FR")}*\n`;
+            }
+
+            description += `\n`;
+        }
+    }
+
+    embed.setDescription(description || "Aucun achievement dans cette catégorie.");
+    return embed;
+}
+
+/**
+ * Crée les boutons de navigation des achievements
+ */
+function createAchievementNavigationButtons(currentCategory: AchievementCategory, userId: string): ActionRowBuilder<ButtonBuilder>[] {
+    const categories = Object.values(AchievementCategory);
+    const row1Buttons: ButtonBuilder[] = [];
+    const row2Buttons: ButtonBuilder[] = [];
+
+    categories.forEach((category, index) => {
+        const emoji = CATEGORY_EMOJIS[category];
+        const isCurrentCategory = category === currentCategory;
+
+        const button = new ButtonBuilder()
+            .setCustomId(`achievements_${category}_${userId}`)
+            .setEmoji(emoji)
+            .setStyle(isCurrentCategory ? ButtonStyle.Success : ButtonStyle.Primary)
+            .setDisabled(isCurrentCategory);
+
+        if (index < 3) {
+            row1Buttons.push(button);
+        } else {
+            row2Buttons.push(button);
+        }
+    });
+
+    return [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(row1Buttons),
+        new ActionRowBuilder<ButtonBuilder>().addComponents(row2Buttons)
+    ];
+}
 
 module.exports = {
     data: new ContextMenuCommandBuilder()
@@ -14,10 +118,9 @@ module.exports = {
         try {
             const targetUser = interaction.targetUser;
 
-            // Mettre à jour l'activité actuelle de l'utilisateur
+            // Mettre à jour l'activité et les rôles
             await updateUserActivityFromPresence(interaction.client, targetUser.id);
 
-            // Mettre à jour les rôles Discord de l'utilisateur si possible
             if (interaction.guild) {
                 try {
                     const member = await interaction.guild.members.fetch(targetUser.id);
@@ -31,145 +134,168 @@ module.exports = {
                         }
                     }
                 } catch (error) {
-                    console.log(`[Profile Context Menu] Could not fetch member roles for ${targetUser.username}`);
+                    console.log(`[Profile] Could not fetch member roles for ${targetUser.username}`);
                 }
             }
 
-            // Créer l'embed de profil
-            const embed = createProfileEmbed(targetUser);
+            // État de navigation
+            type ViewType = "profile" | "stats" | "achievements";
+            let currentView: ViewType = "profile";
+            let currentStatsCategory: StatsCategory = "discord";
+            let currentAchievementCategory: AchievementCategory = AchievementCategory.PROFIL;
+            let currentGameType = "global";
 
-            // Créer le bouton pour accéder aux stats
-            const statsButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+            // Créer l'embed initial du profil
+            const profileEmbed = createProfileEmbed(targetUser);
+
+            // Boutons principaux du profil
+            const profileButtons = new ActionRowBuilder<ButtonBuilder>().addComponents(
                 new ButtonBuilder()
-                    .setCustomId(`profile_view_stats_${targetUser.id}`)
-                    .setLabel("📊 Afficher les statistiques")
-                    .setStyle(ButtonStyle.Success)
+                    .setCustomId(`view_stats_${targetUser.id}`)
+                    .setLabel("📊 Statistiques")
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId(`view_achievements_${targetUser.id}`)
+                    .setLabel("🏆 Achievements")
+                    .setStyle(ButtonStyle.Primary)
             );
 
             const message = await interaction.editReply({
-                embeds: [embed],
-                components: [statsButton],
+                embeds: [profileEmbed],
+                components: [profileButtons]
             });
 
-            // Créer un collector pour tous les boutons (profil et stats)
-            const mainCollector = message.createMessageComponentCollector({
+            // Collector unique pour tout
+            const collector = message.createMessageComponentCollector({
                 time: 300000 // 5 minutes
             });
 
-            mainCollector.on("collect", async (buttonInteraction) => {
-                if (buttonInteraction.user.id !== interaction.user.id) {
-                    await buttonInteraction.reply({
-                        content: "❌ Ce bouton n'est pas pour vous !",
+            collector.on("collect", async (i: any) => {
+                if (i.user.id !== interaction.user.id) {
+                    await i.reply({
+                        content: "❌ Ce bouton n'est pas pour toi !",
                         flags: MessageFlags.Ephemeral
                     });
                     return;
                 }
 
-                if (buttonInteraction.customId.startsWith("profile_view_stats_")) {
-                    // Afficher les stats avec navigation (importé depuis statsEmbedBuilder)
-                    await showStatsFromProfile(buttonInteraction, targetUser, interaction);
+                try {
+                    const customId = i.customId;
+
+                    // === NAVIGATION PRINCIPALE ===
+                    if (customId.startsWith("view_stats_")) {
+                        currentView = "stats";
+                        currentStatsCategory = "discord";
+                        const embed = createDiscordStatsEmbed(targetUser);
+                        const navButtons = createStatsNavigationButtons(currentStatsCategory);
+                        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`back_to_profile_${targetUser.id}`)
+                                .setLabel("◀️ Retour au profil")
+                                .setStyle(ButtonStyle.Danger)
+                        );
+                        await i.update({embeds: [embed], components: [navButtons, backButton]});
+                    } else if (customId.startsWith("view_achievements_")) {
+                        currentView = "achievements";
+                        currentAchievementCategory = AchievementCategory.PROFIL;
+                        const embed = createAchievementEmbed(targetUser, currentAchievementCategory);
+                        const navButtons = createAchievementNavigationButtons(currentAchievementCategory, targetUser.id);
+                        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`back_to_profile_${targetUser.id}`)
+                                .setLabel("◀️ Retour au profil")
+                                .setStyle(ButtonStyle.Danger)
+                        );
+                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
+                    } else if (customId.startsWith("back_to_profile_")) {
+                        currentView = "profile";
+                        const embed = createProfileEmbed(targetUser);
+                        await i.update({embeds: [embed], components: [profileButtons]});
+                    }
+
+                    // === NAVIGATION STATS ===
+                    else if (customId === "stats_discord") {
+                        currentStatsCategory = "discord";
+                        const embed = createDiscordStatsEmbed(targetUser);
+                        const navButtons = createStatsNavigationButtons(currentStatsCategory);
+                        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`back_to_profile_${targetUser.id}`)
+                                .setLabel("◀️ Retour au profil")
+                                .setStyle(ButtonStyle.Danger)
+                        );
+                        await i.update({embeds: [embed], components: [navButtons, backButton]});
+                    } else if (customId === "stats_netricsa") {
+                        currentStatsCategory = "netricsa";
+                        const embed = createNetricsaStatsEmbed(targetUser);
+                        const navButtons = createStatsNavigationButtons(currentStatsCategory);
+                        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`back_to_profile_${targetUser.id}`)
+                                .setLabel("◀️ Retour au profil")
+                                .setStyle(ButtonStyle.Danger)
+                        );
+                        await i.update({embeds: [embed], components: [navButtons, backButton]});
+                    } else if (customId === "stats_jeux") {
+                        currentStatsCategory = "jeux";
+                        currentGameType = "global";
+                        const embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
+                        const navButtons = createStatsNavigationButtons(currentStatsCategory);
+                        const gameMenu = createGameSelectMenu();
+                        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`back_to_profile_${targetUser.id}`)
+                                .setLabel("◀️ Retour au profil")
+                                .setStyle(ButtonStyle.Danger)
+                        );
+                        await i.update({embeds: [embed], components: [navButtons, gameMenu, backButton]});
+                    } else if (customId === "stats_serveur") {
+                        currentStatsCategory = "serveur";
+                        const embed = createServerStatsEmbed(i.guild);
+                        const navButtons = createStatsNavigationButtons(currentStatsCategory);
+                        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`back_to_profile_${targetUser.id}`)
+                                .setLabel("◀️ Retour au profil")
+                                .setStyle(ButtonStyle.Danger)
+                        );
+                        await i.update({embeds: [embed], components: [navButtons, backButton]});
+                    } else if (customId === "stats_game_select" && i.isStringSelectMenu()) {
+                        currentGameType = i.values[0];
+                        const embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
+                        await i.update({embeds: [embed]});
+                    }
+
+                    // === NAVIGATION ACHIEVEMENTS ===
+                    else if (customId.startsWith("achievements_")) {
+                        const [, categoryStr] = customId.split("_");
+                        currentAchievementCategory = categoryStr as AchievementCategory;
+                        const embed = createAchievementEmbed(targetUser, currentAchievementCategory);
+                        const navButtons = createAchievementNavigationButtons(currentAchievementCategory, targetUser.id);
+                        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`back_to_profile_${targetUser.id}`)
+                                .setLabel("◀️ Retour au profil")
+                                .setStyle(ButtonStyle.Danger)
+                        );
+                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
+                    }
+                } catch (error) {
+                    console.error("[Profile] Error handling button:", error);
                 }
             });
 
-            mainCollector.on("end", () => {
+            collector.on("end", () => {
                 // Désactiver les boutons après expiration
-                statsButton.components[0].setDisabled(true);
-                interaction.editReply({
-                    embeds: [embed],
-                    components: [statsButton],
-                }).catch(() => {
+                interaction.editReply({components: []}).catch(() => {
                 });
             });
 
         } catch (error) {
-            console.error("[Profile Context Menu] Error:", error);
+            console.error("[Profile] Error:", error);
             await interaction.editReply({
                 content: "❌ Une erreur est survenue lors de l'affichage du profil."
             });
         }
     }
 };
-
-/**
- * Affiche les stats avec navigation complète
- */
-async function showStatsFromProfile(buttonInteraction: any, targetUser: any, originalInteraction: any) {
-    await buttonInteraction.deferUpdate();
-
-    let currentCategory: StatsCategory = "discord";
-    let currentGameType = "global";
-
-    let embed = createDiscordStatsEmbed(targetUser);
-    let navigationButtons = createStatsNavigationButtons(currentCategory);
-    const backToProfileButton = createBackToProfileButton(targetUser.id);
-    const gameSelectMenu = createGameSelectMenu();
-
-    await buttonInteraction.editReply({
-        embeds: [embed],
-        components: [navigationButtons, backToProfileButton]
-    });
-
-    const message = await buttonInteraction.fetchReply();
-
-    // Créer un collector pour les interactions dans les stats
-    const statsCollector = message.createMessageComponentCollector({
-        time: 300000 // 5 minutes
-    });
-
-    statsCollector.on("collect", async (i: any) => {
-        if (i.user.id !== buttonInteraction.user.id) {
-            await i.reply({
-                content: "❌ Ce bouton n'est pas pour vous !",
-                flags: MessageFlags.Ephemeral
-            });
-            return;
-        }
-
-        try {
-            if (i.customId === "stats_discord") {
-                currentCategory = "discord";
-                embed = createDiscordStatsEmbed(targetUser);
-                navigationButtons = createStatsNavigationButtons(currentCategory);
-                await i.update({embeds: [embed], components: [navigationButtons, backToProfileButton]});
-            } else if (i.customId === "stats_netricsa") {
-                currentCategory = "netricsa";
-                embed = createNetricsaStatsEmbed(targetUser);
-                navigationButtons = createStatsNavigationButtons(currentCategory);
-                await i.update({embeds: [embed], components: [navigationButtons, backToProfileButton]});
-            } else if (i.customId === "stats_jeux") {
-                currentCategory = "jeux";
-                currentGameType = "global";
-                embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
-                navigationButtons = createStatsNavigationButtons(currentCategory);
-                await i.update({embeds: [embed], components: [navigationButtons, gameSelectMenu, backToProfileButton]});
-            } else if (i.customId === "stats_serveur") {
-                currentCategory = "serveur";
-                embed = createServerStatsEmbed(i.guild);
-                navigationButtons = createStatsNavigationButtons(currentCategory);
-                await i.update({embeds: [embed], components: [navigationButtons, backToProfileButton]});
-            } else if (i.customId.startsWith("stats_back_to_profile_")) {
-                // Retour au profil
-                const profileEmbed = createProfileEmbed(targetUser);
-                const statsButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
-                    new ButtonBuilder()
-                        .setCustomId(`profile_view_stats_${targetUser.id}`)
-                        .setLabel("📊 Afficher les statistiques")
-                        .setStyle(ButtonStyle.Success)
-                );
-                await i.update({embeds: [profileEmbed], components: [statsButton]});
-                // Arrêter seulement ce collector, pas le collector principal
-                statsCollector.stop();
-            } else if (i.customId === "stats_game_select" && i.isStringSelectMenu()) {
-                currentGameType = i.values[0];
-                embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
-                await i.update({embeds: [embed]});
-            }
-        } catch (error) {
-            console.error("[Profile Stats] Error handling button:", error);
-        }
-    });
-
-    statsCollector.on("end", () => {
-        // Ne rien faire ici, le collector principal gère l'expiration
-    });
-}

@@ -215,7 +215,8 @@ export function registerWatchedChannelResponder(client: Client) {
             }
 
             // Enregistrer les réponses (replies) dans les statistiques
-            if (message.reference?.messageId) {
+            // Exclure les commandes slash et les messages des bots
+            if (message.reference?.messageId && !message.author.bot && !message.content?.startsWith('/')) {
                 try {
                     const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
                     if (referencedMessage) {

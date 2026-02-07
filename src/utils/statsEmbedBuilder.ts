@@ -457,20 +457,6 @@ export function createStatsNavigationButtons(currentCategory?: StatsCategory): i
     );
 }
 
-/**
- * Crée le bouton "Retour au profil"
- */
-export function createBackToProfileButton(userId: string): import("discord.js").ActionRowBuilder<import("discord.js").ButtonBuilder> {
-    const {ActionRowBuilder, ButtonBuilder, ButtonStyle} = require("discord.js");
-
-    return new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId(`stats_back_to_profile_${userId}`)
-            .setLabel("Retour au profil")
-            .setEmoji("◀️")
-            .setStyle(ButtonStyle.Danger)
-    );
-}
 
 /**
  * Crée le menu de sélection des jeux

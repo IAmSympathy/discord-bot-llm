@@ -33,7 +33,8 @@ const GLOBAL_COMMANDS = [
     'stats',
     'stop',
     'reset-dm',
-    'leaderboard'
+    'leaderboard',
+    'achievements'
     // Ajoutez ici d'autres commandes qui peuvent être utilisées n'importe où
 ];
 

@@ -815,6 +815,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
         }
         return;
     }
+
+    // Les interactions des boutons sont maintenant toutes gérées dans userProfile.ts
+    // Plus besoin de logique ici pour achievements ou stats
 });
 
 // Log in with the bot's token.
