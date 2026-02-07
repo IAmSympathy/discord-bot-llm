@@ -66,6 +66,10 @@ module.exports = {
                     break;
             }
 
+            // Vérifier les achievements de profil
+            const {checkProfileAchievements} = require("../../services/achievementChecker");
+            await checkProfileAchievements(userId, username, interaction.client, interaction.channelId);
+
             await interaction.editReply({embeds: [successEmbed!]});
 
             console.log(`[Note Command] ${interaction.user.username} added ${noteType} to ${username}: "${content}"`);

@@ -54,16 +54,52 @@ interface AchievementsDatabase {
 
 /**
  * Liste de tous les achievements disponibles
- * Pour l'instant vide, sera rempli par batch plus tard
  */
 export const ALL_ACHIEVEMENTS: Achievement[] = [
-    // Les achievements seront ajoutés ici par batch
+    // === ACHIEVEMENTS PROFIL ===
+    {
+        id: "profile_birthday_set",
+        category: AchievementCategory.PROFIL,
+        name: "Gâteau d'anniversaire",
+        description: "Ajouter sa date d'anniversaire à son profil avec notification activée",
+        emoji: "🎂",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "profile_nickname",
+        category: AchievementCategory.PROFIL,
+        name: "Surnommé",
+        description: "Avoir au moins 1 surnom enregistré par Netricsa",
+        emoji: "🏷️",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "profile_facts_3",
+        category: AchievementCategory.PROFIL,
+        name: "Livre ouvert",
+        description: "Avoir 3 faits enregistrés dans son profil par Netricsa",
+        emoji: "📚",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "profile_interests_5",
+        category: AchievementCategory.PROFIL,
+        name: "Passionné",
+        description: "Avoir 5 centres d'intérêt enregistrés par Netricsa",
+        emoji: "❤️",
+        secret: false,
+        xpReward: 150
+    }
 ];
 
 /**
- * Charge les achievements des utilisateurs depuis le fichier
+ * Charge les achievements depuis le fichier
+ * @internal - Exposé pour le startup checker
  */
-function loadAchievements(): AchievementsDatabase {
+export function loadAchievements(): AchievementsDatabase {
     try {
         if (fs.existsSync(ACHIEVEMENTS_FILE)) {
             const data = fs.readFileSync(ACHIEVEMENTS_FILE, "utf-8");
@@ -77,8 +113,9 @@ function loadAchievements(): AchievementsDatabase {
 
 /**
  * Sauvegarde les achievements dans le fichier
+ * @internal - Exposé pour le startup checker
  */
-function saveAchievements(data: AchievementsDatabase): void {
+export function saveAchievements(data: AchievementsDatabase): void {
     try {
         const dir = path.dirname(ACHIEVEMENTS_FILE);
         if (!fs.existsSync(dir)) {
@@ -92,8 +129,9 @@ function saveAchievements(data: AchievementsDatabase): void {
 
 /**
  * Initialise les achievements pour un utilisateur
+ * @internal - Exposé pour le startup checker
  */
-function initUserAchievements(userId: string, username: string): void {
+export function initUserAchievements(userId: string, username: string): void {
     const data = loadAchievements();
 
     if (!data[userId]) {
@@ -148,10 +186,12 @@ export async function unlockAchievement(
     client?: Client,
     channelId?: string
 ): Promise<boolean> {
-    const data = loadAchievements();
+    let data = loadAchievements();
 
     if (!data[userId]) {
         initUserAchievements(userId, username);
+        // Recharger les données après l'initialisation
+        data = loadAchievements();
     }
 
     const userAchievement = data[userId].achievements.find(a => a.achievementId === achievementId);
@@ -198,8 +238,15 @@ async function sendAchievementNotification(
         const achievement = ALL_ACHIEVEMENTS.find(a => a.id === achievementId);
         if (!achievement) return;
 
-        const channel = await client.channels.fetch(channelId);
-        if (!channel || !channel.isTextBased()) return;
+        // Si c'est un appel du startup check, pas besoin de fetch le channel
+        const isStartupCheck = channelId === "startup_check";
+
+        // Fetch le channel seulement si ce n'est pas le startup check et pas un achievement de profil
+        let channel: any = null;
+        if (!isStartupCheck && achievement.category !== AchievementCategory.PROFIL) {
+            channel = await client.channels.fetch(channelId);
+            if (!channel || !channel.isTextBased()) return;
+        }
 
         const {EmbedBuilder, AttachmentBuilder} = require("discord.js");
         const path = require("path");
@@ -243,13 +290,60 @@ async function sendAchievementNotification(
             messageOptions.files = [attachment];
         }
 
-        await (channel as TextChannel).send(messageOptions);
+        let notificationSent = false;
+        let targetChannel: TextChannel | null = null;
 
-        // Ajouter l'XP de l'achievement
-        const {addXP} = require("./xpSystem");
-        const member = await client.guilds.cache.first()?.members.fetch(userId);
-        if (member) {
-            await addXP(userId, member.user.username, achievement.xpReward, channel as TextChannel, member.user.bot);
+        // Si c'est un achievement de PROFIL, envoyer en DM
+        if (achievement.category === AchievementCategory.PROFIL) {
+            try {
+                const user = await client.users.fetch(userId);
+                await user.send(messageOptions);
+                logger.info(`Achievement notification sent via DM to ${user.username}`);
+                notificationSent = true;
+                // Pour les notifications de level up, on utilisera le DM du user
+                targetChannel = await user.createDM() as any;
+            } catch (error) {
+                logger.warn(`Failed to send DM to user ${userId} (DMs probably closed), no notification sent`, error);
+                // NE PAS envoyer de fallback dans le channel - simplement ne rien envoyer
+                notificationSent = false;
+            }
+        } else {
+            // Pour les autres catégories, envoyer dans le channel
+            // Si c'est le startup check, on ne peut pas envoyer dans un channel
+            if (!isStartupCheck && channel && channel.isTextBased()) {
+                await (channel as TextChannel).send(messageOptions);
+                targetChannel = channel as TextChannel;
+                notificationSent = true;
+            }
+        }
+
+        // Ajouter l'XP de l'achievement SEULEMENT si la notification a été envoyée
+        // ET envoyer la notification de level up au même endroit
+        if (notificationSent) {
+            // Log Discord pour l'achievement
+            const {logCommand} = require("../utils/discordLogger");
+            const user = await client.users.fetch(userId);
+            await logCommand("🏆 Achievement Débloqué", undefined, [
+                {name: "👤 Utilisateur", value: user.username, inline: true},
+                {name: "🎯 Achievement", value: `${achievement.emoji} ${achievement.name}`, inline: true},
+                {name: "🎁 XP", value: `+${achievement.xpReward} XP`, inline: true},
+                {name: "📋 Catégorie", value: achievement.category, inline: true},
+                {name: "📨 Notification", value: achievement.category === AchievementCategory.PROFIL ? "DM" : "Channel", inline: true}
+            ]);
+
+            const {addXP} = require("./xpSystem");
+            const member = await client.guilds.cache.first()?.members.fetch(userId);
+            if (member) {
+                if (targetChannel) {
+                    // La notification de level up sera envoyée dans targetChannel (DM ou channel)
+                    await addXP(userId, member.user.username, achievement.xpReward, targetChannel, member.user.bot);
+                } else {
+                    // Pas de targetChannel (startup check sans DM) - attribuer XP sans notification de level up
+                    await addXP(userId, member.user.username, achievement.xpReward, undefined, member.user.bot);
+                }
+            }
+        } else {
+            logger.info(`XP not awarded for achievement ${achievementId} because notification could not be sent`);
         }
 
     } catch (error) {

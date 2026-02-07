@@ -54,18 +54,19 @@ function createAchievementEmbed(targetUser: any, category: AchievementCategory):
     let description = "";
 
     for (const {achievement, unlocked, unlockedAt} of achievements) {
-        const status = unlocked ? "✅" : "🔒";
+        // Si débloqué : emoji du succès, sinon : 🔒
+        const displayEmoji = unlocked ? achievement.emoji : "🔒";
 
         if (achievement.secret && !unlocked) {
-            description += `${status} **${achievement.emoji} ${achievement.name}**\n`;
+            description += `**${displayEmoji} ${achievement.name}**\n`;
             description += `*Achievement secret - Débloquez-le pour voir la description*\n\n`;
         } else {
-            description += `${status} **${achievement.emoji} ${achievement.name}**\n`;
+            description += `**${displayEmoji} ${achievement.name}**\n`;
             description += `${achievement.description}\n`;
 
             if (unlocked && unlockedAt) {
                 const date = new Date(unlockedAt);
-                description += `*Débloqué le ${date.toLocaleDateString("fr-FR")}*\n`;
+                description += `*✅ Débloqué le ${date.toLocaleDateString("fr-FR")}*\n`;
             }
 
             description += `\n`;
@@ -155,16 +156,24 @@ module.exports = {
             const profileEmbed = createProfileEmbed(targetUser);
 
             // Boutons principaux du profil (identiques au context menu)
-            const profileButtons = new ActionRowBuilder<ButtonBuilder>().addComponents(
+            const profileButtonsArray = [
                 new ButtonBuilder()
                     .setCustomId(`view_stats_${targetUser.id}`)
                     .setLabel("📊 Statistiques")
-                    .setStyle(ButtonStyle.Primary),
-                new ButtonBuilder()
-                    .setCustomId(`view_achievements_${targetUser.id}`)
-                    .setLabel("🏆 Achievements")
                     .setStyle(ButtonStyle.Primary)
-            );
+            ];
+
+            // N'ajouter le bouton achievements que si ce n'est pas un bot
+            if (!targetUser.bot) {
+                profileButtonsArray.push(
+                    new ButtonBuilder()
+                        .setCustomId(`view_achievements_${targetUser.id}`)
+                        .setLabel("🏆 Achievements")
+                        .setStyle(ButtonStyle.Primary)
+                );
+            }
+
+            const profileButtons = new ActionRowBuilder<ButtonBuilder>().addComponents(...profileButtonsArray);
 
             const message = await interaction.editReply({
                 embeds: [profileEmbed],

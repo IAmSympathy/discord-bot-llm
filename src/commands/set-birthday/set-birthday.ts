@@ -64,6 +64,10 @@ module.exports = {
             // Enregistrer la date d'anniversaire
             await UserProfileService.setBirthday(userId, username, day, month, year, notify);
 
+            // Vérifier les achievements de profil
+            const {checkProfileAchievements} = require("../../services/achievementChecker");
+            await checkProfileAchievements(userId, username, interaction.client, interaction.channelId);
+
             // Formater la date pour l'affichage
             const monthNames = [
                 "janvier", "février", "mars", "avril", "mai", "juin",

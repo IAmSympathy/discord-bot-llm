@@ -137,6 +137,10 @@ export async function sendGoodbyeMessage(member: GuildMember | PartialGuildMembe
                 `A quitté le serveur`
             );
             logger.info(`✅ Added departure fact to profile for ${member.user.username}`);
+
+            // Vérifier les achievements de profil (ne pas notifier car l'utilisateur a quitté)
+            const {checkProfileAchievements} = require("./achievementChecker");
+            await checkProfileAchievements(member.user.id, member.user.username);
         } catch (error) {
             logger.error(`Error adding departure fact to profile:`, error);
         }

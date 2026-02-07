@@ -275,6 +275,28 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
 
             logger.info(`Level up message sent for ${username} (Level ${newLevel}) in ${channel.name || 'channel'}`);
         }
+
+        // Log Discord pour le level up
+        const {logCommand} = require("../utils/discordLogger");
+        const xpData = loadXP();
+        const userXP = xpData[userId];
+
+        const fields: any[] = [
+            {name: "👤 Utilisateur", value: username, inline: true},
+            {name: "⭐ Niveau", value: `${newLevel}`, inline: true},
+            {name: "🎯 XP Total", value: `${userXP?.totalXP || 0} XP`, inline: true}
+        ];
+
+        if (roleResult.changed && roleResult.newRole) {
+            fields.push({name: "🎖️ Nouveau Rôle", value: roleResult.newRole, inline: true});
+        }
+
+        if (nextRole) {
+            fields.push({name: "⬆️ Prochain Rôle", value: `${nextRole.levelsNeeded} niveau${nextRole.levelsNeeded > 1 ? 'x' : ''}`, inline: true});
+        }
+
+        await logCommand("⭐ Level Up", undefined, fields);
+
     } catch (error) {
         logger.error(`Error sending level up message for ${username}:`, error);
     }

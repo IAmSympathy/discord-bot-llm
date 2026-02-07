@@ -406,26 +406,6 @@ export class UserProfileService {
     }
 
     /**
-     * Récupère tous les profils (pour debug)
-     */
-    static getAllProfiles(): UserProfile[] {
-        this.ensureDirectoryExists();
-
-        const files = readdirSync(PROFILES_DIR).filter((f) => f.endsWith(".json"));
-        const profiles: UserProfile[] = [];
-
-        for (const file of files) {
-            const userId = file.replace(".json", "");
-            const profile = this.getProfile(userId);
-            if (profile) {
-                profiles.push(profile);
-            }
-        }
-
-        return profiles;
-    }
-
-    /**
      * Supprime le profil d'un utilisateur
      */
     static deleteProfile(userId: string): boolean {
@@ -558,12 +538,37 @@ export class UserProfileService {
             if (!profile.aliases) profile.aliases = [];
             if (!profile.interests) profile.interests = [];
             if (!profile.roles) profile.roles = [];
-            if (!profile.facts) profile.facts = [];
 
             return profile;
         } catch (error) {
             logger.error(`Error reading profile for ${userId}:`, error);
             return null;
+        }
+    }
+
+    /**
+     * Récupère tous les profils utilisateurs
+     */
+    static getAllProfiles(): UserProfile[] {
+        try {
+            this.ensureDirectoryExists();
+            const files = readdirSync(PROFILES_DIR);
+            const profiles: UserProfile[] = [];
+
+            for (const file of files) {
+                if (file.endsWith('.json')) {
+                    const userId = file.replace('.json', '');
+                    const profile = this.getProfile(userId);
+                    if (profile) {
+                        profiles.push(profile);
+                    }
+                }
+            }
+
+            return profiles;
+        } catch (error) {
+            logger.error("Error reading all profiles:", error);
+            return [];
         }
     }
 

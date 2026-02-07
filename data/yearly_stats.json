@@ -3,13 +3,13 @@
     "288799652902469633": {
       "username": "iam_sympathy",
       "discord": {
-        "messagesEnvoyes": 25,
+        "messagesEnvoyes": 26,
         "reactionsAjoutees": 1,
         "reactionsRecues": 7,
-        "commandesUtilisees": 118,
-        "mentionsRecues": 9,
+        "commandesUtilisees": 129,
+        "mentionsRecues": 13,
         "repliesRecues": 7,
-        "tempsVocalMinutes": 322
+        "tempsVocalMinutes": 341
       },
       "netricsa": {
         "imagesGenerees": 0,
@@ -23,7 +23,7 @@
     "1462959115528835092": {
       "username": "Netricsa",
       "discord": {
-        "messagesEnvoyes": 235,
+        "messagesEnvoyes": 276,
         "reactionsAjoutees": 6,
         "reactionsRecues": 0,
         "commandesUtilisees": 0,
@@ -46,9 +46,9 @@
         "reactionsAjoutees": 0,
         "reactionsRecues": 0,
         "commandesUtilisees": 2,
-        "mentionsRecues": 2,
+        "mentionsRecues": 3,
         "repliesRecues": 0,
-        "tempsVocalMinutes": 239
+        "tempsVocalMinutes": 258
       },
       "netricsa": {
         "imagesGenerees": 0,
@@ -62,11 +62,11 @@
     "369247585556365313": {
       "username": "furio.",
       "discord": {
-        "messagesEnvoyes": 5,
+        "messagesEnvoyes": 6,
         "reactionsAjoutees": 1,
         "reactionsRecues": 1,
-        "commandesUtilisees": 0,
-        "mentionsRecues": 1,
+        "commandesUtilisees": 1,
+        "mentionsRecues": 2,
         "repliesRecues": 0,
         "tempsVocalMinutes": 271
       },
@@ -167,7 +167,7 @@
         "reactionsAjoutees": 1,
         "reactionsRecues": 1,
         "commandesUtilisees": 0,
-        "mentionsRecues": 2,
+        "mentionsRecues": 3,
         "repliesRecues": 1,
         "tempsVocalMinutes": 128
       },
@@ -203,11 +203,11 @@
     "814998532833673246": {
       "username": "eddie64",
       "discord": {
-        "messagesEnvoyes": 4,
+        "messagesEnvoyes": 5,
         "reactionsAjoutees": 0,
         "reactionsRecues": 0,
         "commandesUtilisees": 1,
-        "mentionsRecues": 1,
+        "mentionsRecues": 2,
         "repliesRecues": 1,
         "tempsVocalMinutes": 14
       },
@@ -248,6 +248,106 @@
         "reactionsRecues": 0,
         "commandesUtilisees": 0,
         "mentionsRecues": 0,
+        "repliesRecues": 0,
+        "tempsVocalMinutes": 0
+      },
+      "netricsa": {
+        "imagesGenerees": 0,
+        "imagesReimaginee": 0,
+        "imagesUpscalee": 0,
+        "conversationsIA": 0,
+        "memesRecherches": 0,
+        "promptsCrees": 0
+      }
+    },
+    "1142841613555597424": {
+      "username": "quoi.__90267",
+      "discord": {
+        "messagesEnvoyes": 0,
+        "reactionsAjoutees": 0,
+        "reactionsRecues": 0,
+        "commandesUtilisees": 0,
+        "mentionsRecues": 1,
+        "repliesRecues": 0,
+        "tempsVocalMinutes": 0
+      },
+      "netricsa": {
+        "imagesGenerees": 0,
+        "imagesReimaginee": 0,
+        "imagesUpscalee": 0,
+        "conversationsIA": 0,
+        "memesRecherches": 0,
+        "promptsCrees": 0
+      }
+    },
+    "394498137202491412": {
+      "username": "_bigpanda",
+      "discord": {
+        "messagesEnvoyes": 0,
+        "reactionsAjoutees": 0,
+        "reactionsRecues": 0,
+        "commandesUtilisees": 0,
+        "mentionsRecues": 1,
+        "repliesRecues": 0,
+        "tempsVocalMinutes": 0
+      },
+      "netricsa": {
+        "imagesGenerees": 0,
+        "imagesReimaginee": 0,
+        "imagesUpscalee": 0,
+        "conversationsIA": 0,
+        "memesRecherches": 0,
+        "promptsCrees": 0
+      }
+    },
+    "401510331416838144": {
+      "username": "nikeurdezebi",
+      "discord": {
+        "messagesEnvoyes": 0,
+        "reactionsAjoutees": 0,
+        "reactionsRecues": 0,
+        "commandesUtilisees": 0,
+        "mentionsRecues": 1,
+        "repliesRecues": 0,
+        "tempsVocalMinutes": 0
+      },
+      "netricsa": {
+        "imagesGenerees": 0,
+        "imagesReimaginee": 0,
+        "imagesUpscalee": 0,
+        "conversationsIA": 0,
+        "memesRecherches": 0,
+        "promptsCrees": 0
+      }
+    },
+    "442399295962873877": {
+      "username": "krome5276",
+      "discord": {
+        "messagesEnvoyes": 0,
+        "reactionsAjoutees": 0,
+        "reactionsRecues": 0,
+        "commandesUtilisees": 0,
+        "mentionsRecues": 1,
+        "repliesRecues": 0,
+        "tempsVocalMinutes": 0
+      },
+      "netricsa": {
+        "imagesGenerees": 0,
+        "imagesReimaginee": 0,
+        "imagesUpscalee": 0,
+        "conversationsIA": 0,
+        "memesRecherches": 0,
+        "promptsCrees": 0
+      }
+    },
+    "542486982459129877": {
+      "username": "astolfo_uwu_69",
+      "discord": {
+        "messagesEnvoyes": 0,
+        "reactionsAjoutees": 0,
+        "reactionsRecues": 0,
+        "commandesUtilisees": 0,
+        "mentionsRecues": 1,
         "repliesRecues": 0,
         "tempsVocalMinutes": 0
       },

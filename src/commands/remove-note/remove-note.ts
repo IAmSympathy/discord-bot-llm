@@ -47,7 +47,7 @@ module.exports = {
                     } else {
                         const warningEmbed = createWarningEmbed(
                             "Fait non trouvé",
-                            `⚠️ Le fait spécifié n'a pas été trouvé dans le profil de Netricsa concernant **${username}**.\n\n` +
+                            `Le fait spécifié n'a pas été trouvé dans le profil de Netricsa concernant **${username}**.\n\n` +
                             `Essayez avec un texte plus court ou vérifiez le profil avec \`/profile\`.`
                         );
                         await interaction.editReply({embeds: [warningEmbed]});
