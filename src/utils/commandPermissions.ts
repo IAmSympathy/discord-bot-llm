@@ -35,6 +35,10 @@ const GLOBAL_COMMANDS = [
     'leaderboard',
     'rollthedice',
     'yesorno',
+    'choose',
+    'coinflip',
+    'daily',
+    'ascii',
     // Ajoutez ici d'autres commandes qui peuvent être utilisées n'importe où
 ];
 

@@ -4,6 +4,31 @@ import {getUserXP, getXPForNextLevel} from "../services/xpSystem";
 import {getPlayerStats} from "../games/common/globalStats";
 import {UserProfileService} from "../services/userProfileService";
 import {getUserCounterContributions} from "../services/counterService";
+import * as fs from "fs";
+import * as path from "path";
+
+const DAILY_FILE = path.join(process.cwd(), "data", "daily_streaks.json");
+
+/**
+ * Récupère les données du daily streak d'un utilisateur
+ */
+function getDailyStreak(userId: string): { streak: number; totalClaims: number } | null {
+    try {
+        if (fs.existsSync(DAILY_FILE)) {
+            const data = fs.readFileSync(DAILY_FILE, "utf-8");
+            const dailyData = JSON.parse(data);
+            if (dailyData[userId]) {
+                return {
+                    streak: dailyData[userId].streak || 0,
+                    totalClaims: dailyData[userId].totalClaims || 0
+                };
+            }
+        }
+    } catch (error) {
+        // Silently fail
+    }
+    return null;
+}
 
 /**
  * Crée une barre de progression visuelle pour l'XP
@@ -75,6 +100,11 @@ export function createDiscordStatsEmbed(targetUser: User): EmbedBuilder {
         description += `💬 **Replies reçues :** ${userStats.discord.repliesRecues}\n`;
         description += `🎤 **Temps en vocal :** ${formatVoiceTime(userStats.discord.tempsVocalMinutes)}\n`;
 
+        // Afficher le daily streak
+        const dailyData = getDailyStreak(targetUser.id);
+        if (dailyData && dailyData.streak > 0) {
+            description += `🔥 **Série quotidienne :** ${dailyData.streak} jour${dailyData.streak > 1 ? 's' : ''} (${dailyData.totalClaims} total)\n`;
+        }
 
         // Afficher l'emoji le plus utilisé
         const mostUsedEmoji = getMostUsedEmoji(targetUser.id);

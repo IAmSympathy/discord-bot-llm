@@ -6,10 +6,10 @@
       "messagesEnvoyes": 58,
       "reactionsAjoutees": 1,
       "reactionsRecues": 11,
-      "commandesUtilisees": 164,
+      "commandesUtilisees": 165,
       "mentionsRecues": 23,
       "repliesRecues": 7,
-      "tempsVocalMinutes": 727,
+      "tempsVocalMinutes": 739,
       "emojisUtilises": {
         "🗿": 1,
         ":outraged_sam:": 1,
@@ -26,13 +26,13 @@
       "conversationsIA": 16,
       "promptsCrees": null
     },
-    "lastUpdate": 1770454654878
+    "lastUpdate": 1770455374952
   },
   "1462959115528835092": {
     "userId": "1462959115528835092",
     "username": "Netricsa",
     "discord": {
-      "messagesEnvoyes": 458,
+      "messagesEnvoyes": 466,
       "reactionsAjoutees": 40,
       "reactionsRecues": 0,
       "commandesUtilisees": 0,
@@ -53,7 +53,7 @@
       "conversationsIA": 2,
       "memesRecherches": 0
     },
-    "lastUpdate": 1770454670989
+    "lastUpdate": 1770456027765
   },
   "351419795033423883": {
     "userId": "351419795033423883",
@@ -65,7 +65,7 @@
       "commandesUtilisees": 12,
       "mentionsRecues": 10,
       "repliesRecues": 0,
-      "tempsVocalMinutes": 643,
+      "tempsVocalMinutes": 647,
       "compteurContributions": 5,
       "emojisUtilises": {
         "🤓": 1
@@ -79,7 +79,7 @@
       "memesRecherches": 0,
       "promptsCrees": 0
     },
-    "lastUpdate": 1770454670500
+    "lastUpdate": 1770454894916
   },
   "369247585556365313": {
     "userId": "369247585556365313",

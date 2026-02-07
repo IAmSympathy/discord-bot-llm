@@ -9,8 +9,8 @@ module.exports = {
         .addStringOption((option) =>
             option
                 .setName("question")
-                .setDescription("Ta question (optionnel)")
-                .setRequired(false)
+                .setDescription("Ta question")
+                .setRequired(true)
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
@@ -37,7 +37,7 @@ module.exports = {
                 {answer: "Peu probable", emoji: "💀", color: 0xED4245},
                 {answer: "C'est incertain", emoji: "🎲", color: 0xFEE75C},
                 {answer: "Absolument", emoji: "🔥", color: 0x57F287},
-                {answer: " Absolument pas", emoji: "❄️", color: 0xED4245},
+                {answer: "Absolument pas", emoji: "❄️", color: 0xED4245},
                 {answer: "Tu peux compter dessus", emoji: "🌠", color: 0x57F287}
             ];
 
