@@ -31,7 +31,6 @@ function createAchievementEmbed(targetUser: any, category: AchievementCategory, 
 
     const categoryStats = stats[category];
     const categoryName = CATEGORY_NAMES[category];
-    const categoryEmoji = CATEGORY_EMOJIS[category];
 
     // Vérifier si on regarde le profil de quelqu'un d'autre
     const isViewingOtherProfile = viewerId && viewerId !== targetUser.id;
@@ -53,7 +52,7 @@ function createAchievementEmbed(targetUser: any, category: AchievementCategory, 
 
     const embed = new EmbedBuilder()
         .setColor(0xFFD700)
-        .setTitle(`${categoryEmoji} Succès ${categoryName} - ${targetUser.displayName}`)
+        .setTitle(`🏆 Succès ${categoryName} - ${targetUser.displayName}`)
         .setThumbnail(targetUser.displayAvatarURL({size: 128}))
         .setFooter({text: footerText})
         .setTimestamp();
@@ -144,13 +143,14 @@ function createAchievementNavigationButtons(currentCategory: AchievementCategory
 
     categories.forEach((category) => {
         const emoji = CATEGORY_EMOJIS[category];
-        if (!emoji) return; // Skip si emoji non défini
+        const name = CATEGORY_NAMES[category];
+        if (!emoji || !name) return; // Skip si emoji ou nom non défini
 
         const isCurrentCategory = category === currentCategory;
 
         const button = new ButtonBuilder()
             .setCustomId(`achievements_${category}_${userId}`)
-            .setEmoji(emoji)
+            .setLabel(`${emoji} ${name}`)
             .setStyle(isCurrentCategory ? ButtonStyle.Success : ButtonStyle.Primary)
             .setDisabled(isCurrentCategory);
 
