@@ -721,13 +721,11 @@ export async function unlockAchievement(
     client?: Client,
     channelId?: string
 ): Promise<boolean> {
+    // Utiliser getUserAchievements pour s'assurer que tous les achievements sont synchronisés
+    getUserAchievements(userId, username);
+
     let data = loadAchievements();
 
-    if (!data[userId]) {
-        initUserAchievements(userId, username);
-        // Recharger les données après l'initialisation
-        data = loadAchievements();
-    }
 
     const userAchievement = data[userId].achievements.find(a => a.achievementId === achievementId);
 
