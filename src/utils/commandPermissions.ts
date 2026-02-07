@@ -10,7 +10,8 @@ const OWNER_COMMANDS = [
     'lowpower',
     'auto-lowpower',
     'blacklist-game',
-    'test-rewind'
+    'test-rewind',
+    'set-status'
 ];
 
 /**
@@ -39,6 +40,7 @@ const GLOBAL_COMMANDS = [
     'coinflip',
     'daily',
     'ascii',
+    'ship',
     // Ajoutez ici d'autres commandes qui peuvent être utilisées n'importe où
 ];
 

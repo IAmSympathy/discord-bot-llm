@@ -1,11 +1,56 @@
 import {ActivityType, Client} from "discord.js";
 import {createLogger} from "../utils/logger";
+import * as fs from "fs";
+import * as path from "path";
+import {DATA_DIR} from "../utils/constants";
 
 /**
  * Service pour gérer les statuts dynamiques de Netricsa avec système de pile
  */
 
 const logger = createLogger("StatusService");
+
+const STATUS_FILE = path.join(DATA_DIR, "bot_default_status.json");
+
+interface StatusData {
+    text: string;
+    type: "PLAYING" | "WATCHING" | "LISTENING" | "COMPETING";
+}
+
+function loadDefaultStatus(): StatusData {
+    try {
+        if (fs.existsSync(STATUS_FILE)) {
+            const data = fs.readFileSync(STATUS_FILE, "utf-8");
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        logger.error("Error loading default status:", error);
+    }
+    return {text: "", type: "PLAYING"};
+}
+
+export function applyDefaultStatus(client: Client): void {
+    if (!client.user) return;
+
+    const statusData = loadDefaultStatus();
+
+    const activityType = {
+        PLAYING: 0,
+        STREAMING: 1,
+        LISTENING: 2,
+        WATCHING: 3,
+        COMPETING: 5
+    }[statusData.type];
+
+    client.user.setPresence({
+        activities: statusData.text ? [{name: statusData.text, type: activityType}] : [],
+        status: "online"
+    });
+
+    if (statusData.text) {
+        logger.info(`✨ Default status applied: ${statusData.type} ${statusData.text}`);
+    }
+}
 
 /**
  * Interface pour un élément de la pile de statuts
@@ -40,12 +85,9 @@ async function applyCurrentStatus(client: Client): Promise<void> {
 
     try {
         if (statusStack.length === 0) {
-            // Aucun statut dans la pile, effacer
-            await client.user.setPresence({
-                status: "online",
-                activities: []
-            });
-            logger.info("📭 Status cleared (stack empty)");
+            // Aucun statut dans la pile, appliquer le statut par défaut
+            applyDefaultStatus(client);
+            logger.info("📭 Status cleared (applying default status)");
         } else {
             // Afficher le statut au sommet de la pile
             const currentStatus = statusStack[statusStack.length - 1];
@@ -196,12 +238,10 @@ export async function setNormalStatus(client: Client): Promise<void> {
     // Vider la pile des statuts
     await clearAllStatuses(client);
 
-    await client.user.setPresence({
-        status: "online",
-        activities: []
-    });
+    // Appliquer le statut par défaut
+    applyDefaultStatus(client);
 
-    logger.info("⚡ Status set to Online - Normal Mode (stack cleared)");
+    logger.info("⚡ Status set to Online - Normal Mode (default status applied)");
 }
 
 /**
