@@ -1,10 +1,11 @@
 import * as fs from "fs";
 import * as path from "path";
 import {createLogger} from "../utils/logger";
-import {EmbedBuilder, TextChannel, VoiceChannel} from "discord.js";
+import {AttachmentBuilder, EmbedBuilder, TextChannel, VoiceChannel} from "discord.js";
 import {getNextLevelRole, updateUserLevelRoles} from "./levelRoleService";
 import {DATA_DIR} from "../utils/constants";
 import {recordYearlyXP} from "./yearlyXPService";
+import {getRoleUpImage} from "./levelUpImageService";
 
 const logger = createLogger("XPSystem");
 const XP_FILE = path.join(DATA_DIR, "user_xp.json");
@@ -267,22 +268,108 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
             }
         }
 
-        // Créer un embed de level up
+        // Récupérer l'image appropriée (toujours basée sur le rôle actuel)
+        let imageAttachment: AttachmentBuilder | null = null;
+        let embedTitle = "🎉 Level Up !";
+
+        // Récupérer le rôle actuel pour l'image
+        const currentRoleName = levelRoleInfo?.roleKey || "HATCHLING";
+        imageAttachment = getRoleUpImage(currentRoleName);
+
+        // Si c'est un changement de rôle, changer le titre
+        if (roleResult.changed && roleResult.newRole) {
+            embedTitle = "🎖️ Nouveau Rôle !";
+        }
+
+        // Récupérer les données XP pour la progression
+        const xpData = loadXP();
+        const userXP = xpData[userId];
+        const currentXP = userXP?.totalXP || 0;
+        const currentLevelXP = getXPForLevel(newLevel);
+        const nextLevelXP = getXPForNextLevel(newLevel);
+        const xpInCurrentLevel = currentXP - currentLevelXP;
+        const xpNeededForNext = nextLevelXP - currentLevelXP;
+        const progressPercent = Math.min(100, Math.round((xpInCurrentLevel / xpNeededForNext) * 100));
+
+        // Créer une barre de progression visuelle
+        const barLength = 10;
+        const filledBars = Math.round((progressPercent / 100) * barLength);
+        const emptyBars = barLength - filledBars;
+        const progressBar = "█".repeat(filledBars) + "░".repeat(emptyBars);
+
+        // Construire la description avec sections séparées
+        let description = `### Félicitations <@${userId}> ! 🎊\n\n`;
+        description += `Tu as atteint le **niveau ${newLevel}** !\n\n`;
+
+        // Section changement de rôle (si applicable)
+        if (roleResult.changed && roleResult.newRole) {
+            description += `### 🎖️ Nouveau Rôle Débloqué\n`;
+            description += `Tu es maintenant **${roleResult.newRole}** !\n\n`;
+        }
+
+        // Section progression XP
+        description += `### 📊 Progression\n`;
+        description += `\`\`\`\n`;
+        description += `${progressBar} ${progressPercent}%\n`;
+        description += `\`\`\`\n`;
+        description += `**${xpInCurrentLevel.toLocaleString()} / ${xpNeededForNext.toLocaleString()} XP**\n`;
+        description += `*${(xpNeededForNext - xpInCurrentLevel).toLocaleString()} XP restants jusqu'au niveau ${newLevel + 1}*\n\n`;
+
+        // Section prochain rôle
+        if (nextRole) {
+            description += `### 🎯 Prochain Objectif\n`;
+            description += `Plus que **${nextRole.levelsNeeded} niveau${nextRole.levelsNeeded > 1 ? 'x' : ''}** avant <@&${nextRole.roleId}> !`;
+        } else {
+            description += `### 👑 Rang Maximum\n`;
+            description += `Tu as atteint le rang suprême ! Continue à accumuler de l'XP pour dominer le classement !`;
+        }
+
+        // Créer un embed de level up amélioré
         const embed = new EmbedBuilder()
             .setColor(embedColor)
-            .setTitle("🎉 Level Up !")
-            .setDescription(`Félicitations <@${userId}> !\n\nTu viens d'atteindre le **niveau ${newLevel}** ! ⭐${roleChangeInfo}${nextRoleInfo}`)
+            .setTitle(embedTitle)
+            .setDescription(description)
+            .addFields(
+                {
+                    name: "💎 XP Total",
+                    value: `**${currentXP.toLocaleString()}** XP`,
+                    inline: true
+                },
+                {
+                    name: "⭐ Niveau",
+                    value: `**${newLevel}**`,
+                    inline: true
+                },
+                {
+                    name: "🏆 Rang",
+                    value: `${currentRoleName}`,
+                    inline: true
+                }
+            )
+            .setFooter({text: "Continue à être actif pour gagner plus d'XP !"})
             .setTimestamp();
+
+        // Ajouter l'image si disponible
+        if (imageAttachment) {
+            embed.setImage(`attachment://${imageAttachment.name}`);
+        }
+
+        // Préparer le message avec les pièces jointes
+        const messageOptions: any = {
+            content: `||<@${userId}>||`,
+            embeds: [embed],
+            allowedMentions: {
+                users: [userId]
+            }
+        };
+
+        if (imageAttachment) {
+            messageOptions.files = [imageAttachment];
+        }
 
         // Dans le salon compteur, envoyer un message éphémère qui se supprime après 10 secondes
         if (isCounterChannel) {
-            const msg = await channel.send({
-                content: `||<@${userId}>||`,
-                embeds: [embed],
-                allowedMentions: {
-                    users: [userId]
-                }
-            });
+            const msg = await channel.send(messageOptions);
 
             // Supprimer le message après 10 secondes
             setTimeout(async () => {
@@ -296,26 +383,20 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
             logger.info(`Level up message sent (ephemeral) for ${username} (Level ${newLevel}) in counter channel`);
         } else {
             // Message normal dans les autres salons
-            await channel.send({
-                content: `||<@${userId}>||`,
-                embeds: [embed],
-                allowedMentions: {
-                    users: [userId]
-                }
-            });
+            await channel.send(messageOptions);
 
             logger.info(`Level up message sent for ${username} (Level ${newLevel}) in ${channel.name || 'channel'}`);
         }
 
         // Log Discord pour le level up
         const {logCommand} = require("../utils/discordLogger");
-        const xpData = loadXP();
-        const userXP = xpData[userId];
+        const xpDataForLog = loadXP();
+        const userXPForLog = xpDataForLog[userId];
 
         const fields: any[] = [
             {name: "👤 Utilisateur", value: username, inline: true},
             {name: "⭐ Niveau", value: `${newLevel}`, inline: true},
-            {name: "🎯 XP Total", value: `${userXP?.totalXP || 0} XP`, inline: true}
+            {name: "🎯 XP Total", value: `${userXPForLog?.totalXP || 0} XP`, inline: true}
         ];
 
         if (roleResult.changed && roleResult.newRole) {

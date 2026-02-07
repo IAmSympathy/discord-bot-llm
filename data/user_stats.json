@@ -7,9 +7,9 @@
       "reactionsAjoutees": 1,
       "reactionsRecues": 10,
       "commandesUtilisees": 147,
-      "mentionsRecues": 18,
+      "mentionsRecues": 20,
       "repliesRecues": 7,
-      "tempsVocalMinutes": 476,
+      "tempsVocalMinutes": 619,
       "emojisUtilises": {
         "🗿": 1,
         ":outraged_sam:": 1,
@@ -25,13 +25,13 @@
       "conversationsIA": 16,
       "promptsCrees": null
     },
-    "lastUpdate": 1770438955064
+    "lastUpdate": 1770447578980
   },
   "1462959115528835092": {
     "userId": "1462959115528835092",
     "username": "Netricsa",
     "discord": {
-      "messagesEnvoyes": 382,
+      "messagesEnvoyes": 394,
       "reactionsAjoutees": 38,
       "reactionsRecues": 0,
       "commandesUtilisees": 0,
@@ -41,7 +41,7 @@
       "emojisUtilises": {
         "🏆": 1,
         "🎬": 1,
-        "🎉": 25
+        "🎉": 28
       }
     },
     "netricsa": {
@@ -51,7 +51,7 @@
       "conversationsIA": 0,
       "memesRecherches": 0
     },
-    "lastUpdate": 1770438910361
+    "lastUpdate": 1770446439835
   },
   "351419795033423883": {
     "userId": "351419795033423883",
@@ -63,7 +63,7 @@
       "commandesUtilisees": 4,
       "mentionsRecues": 4,
       "repliesRecues": 0,
-      "tempsVocalMinutes": 393,
+      "tempsVocalMinutes": 537,
       "compteurContributions": 5
     },
     "netricsa": {
@@ -74,7 +74,7 @@
       "memesRecherches": 0,
       "promptsCrees": 0
     },
-    "lastUpdate": 1770438955070
+    "lastUpdate": 1770447596157
   },
   "369247585556365313": {
     "userId": "369247585556365313",
@@ -86,7 +86,7 @@
       "commandesUtilisees": 2,
       "mentionsRecues": 6,
       "repliesRecues": 0,
-      "tempsVocalMinutes": 406,
+      "tempsVocalMinutes": 469,
       "compteurContributions": 127
     },
     "netricsa": {
@@ -97,7 +97,7 @@
       "memesRecherches": 0,
       "promptsCrees": 0
     },
-    "lastUpdate": 1770438955075
+    "lastUpdate": 1770442735196
   },
   "NETRICSA_BOT": {
     "userId": "NETRICSA_BOT",
@@ -380,9 +380,9 @@
       "reactionsAjoutees": 0,
       "reactionsRecues": 0,
       "commandesUtilisees": 0,
-      "mentionsRecues": 1,
+      "mentionsRecues": 3,
       "repliesRecues": 0,
-      "tempsVocalMinutes": 19,
+      "tempsVocalMinutes": 111,
       "emojisUtilises": {},
       "compteurContributions": 0
     },
@@ -394,7 +394,7 @@
       "memesRecherches": 0,
       "promptsCrees": 0
     },
-    "lastUpdate": 1770438955080
+    "lastUpdate": 1770444475754
   },
   "542486982459129877": {
     "userId": "542486982459129877",
@@ -404,9 +404,9 @@
       "reactionsAjoutees": 0,
       "reactionsRecues": 0,
       "commandesUtilisees": 0,
-      "mentionsRecues": 1,
+      "mentionsRecues": 3,
       "repliesRecues": 0,
-      "tempsVocalMinutes": 6,
+      "tempsVocalMinutes": 98,
       "emojisUtilises": {},
       "compteurContributions": 0
     },
@@ -418,6 +418,6 @@
       "memesRecherches": 0,
       "promptsCrees": 0
     },
-    "lastUpdate": 1770438955083
+    "lastUpdate": 1770444475757
   }
 }
