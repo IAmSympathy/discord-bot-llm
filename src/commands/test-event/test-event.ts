@@ -2,7 +2,7 @@ import {ChatInputCommandInteraction, GuildMember, SlashCommandBuilder} from "dis
 import {createLogger} from "../../utils/logger";
 import {hasOwnerPermission} from "../../utils/permissions";
 import {replyWithError} from "../../utils/interactionUtils";
-import {startCounterChallenge} from "../../services/randomEventsService";
+import {startCounterChallenge, testMysteryBoxEmbed} from "../../services/randomEventsService";
 
 const logger = createLogger("TestEventCmd");
 
@@ -16,7 +16,8 @@ module.exports = {
                 .setDescription("Type d'événement à tester")
                 .setRequired(true)
                 .addChoices(
-                    {name: "🎯 Défi du Compteur", value: "counter_challenge"}
+                    {name: "🎯 Défi du Compteur", value: "counter_challenge"},
+                    {name: "📦 Colis Mystère (Fake)", value: "mystery_box_test"}
                 )
         ),
 
@@ -48,6 +49,15 @@ module.exports = {
                 case "counter_challenge":
                     await startCounterChallenge(interaction.client, interaction.guild);
                     await interaction.editReply({content: "✅ Défi du compteur démarré !"});
+                    break;
+
+                case "mystery_box_test":
+                    try {
+                        await testMysteryBoxEmbed(interaction.client, interaction.user.id);
+                        await interaction.editReply({content: "✅ Colis mystère envoyé en DM (test sans XP) !"});
+                    } catch (error: any) {
+                        await interaction.editReply({content: `❌ Erreur : ${error.message}`});
+                    }
                     break;
 
                 default:

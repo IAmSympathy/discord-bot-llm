@@ -377,7 +377,7 @@ Tous utiliseront :
 
 ## ✅ Résumé
 
-**2 améliorations majeures implémentées** :
+**3 améliorations majeures implémentées** :
 
 1. 📁 **Catégorie "ÉVÉNEMENTS"**
     - Tous les canaux d'événements regroupés
@@ -389,6 +389,11 @@ Tous utiliseront :
     - Message rouge si expiré, vert si complété
     - Délai de 1 minute avant suppression
     - Meilleure UX
+
+3. 📢 **Annonce dans le Salon Général**
+    - Message d'annonce au démarrage de l'événement
+    - Envoyé dans `#général` sans ping
+    - Visibilité pour les utilisateurs actifs
 
 **Le code compile sans erreurs et est prêt à être utilisé ! 🚀**
 
