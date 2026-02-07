@@ -301,7 +301,7 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
         const progressBar = "█".repeat(filledBars) + "░".repeat(emptyBars);
 
         // Construire la description avec sections séparées
-        let description = `### Félicitations <@${userId}> ! 🎊\n\n`;
+        let description = `### Félicitations ! 🎊\n\n`;
         description += `Tu as atteint le **niveau ${newLevel}** !\n\n`;
 
         // Section changement de rôle (si applicable)
@@ -354,12 +354,12 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
 
         // Ajouter l'image si disponible
         if (imageAttachment) {
-            embed.setImage(`attachment://${imageAttachment.name}`);
+            embed.setThumbnail(`attachment://${imageAttachment.name}`);
         }
 
         // Préparer le message avec les pièces jointes
         const messageOptions: any = {
-            content: `||<@${userId}>||`,
+            content: `<@${userId}>`,
             embeds: [embed],
             allowedMentions: {
                 users: [userId]

@@ -3,7 +3,7 @@
     "userId": "288799652902469633",
     "username": "iam_sympathy",
     "discord": {
-      "messagesEnvoyes": 58,
+      "messagesEnvoyes": 59,
       "reactionsAjoutees": 1,
       "reactionsRecues": 11,
       "commandesUtilisees": 178,
@@ -26,14 +26,14 @@
       "conversationsIA": 16,
       "promptsCrees": null
     },
-    "lastUpdate": 1770456880973
+    "lastUpdate": 1770480302923
   },
   "1462959115528835092": {
     "userId": "1462959115528835092",
-    "username": "Netricsa",
+    "username": "Netricsa 💞",
     "discord": {
-      "messagesEnvoyes": 490,
-      "reactionsAjoutees": 40,
+      "messagesEnvoyes": 513,
+      "reactionsAjoutees": 43,
       "reactionsRecues": 0,
       "commandesUtilisees": 0,
       "mentionsRecues": 9,
@@ -42,19 +42,22 @@
       "emojisUtilises": {
         "🏆": 1,
         "🎬": 1,
-        "🎉": 35,
-        "😊": 2,
-        "🌀": 4
+        "🎉": 38,
+        "😊": 3,
+        "🌀": 4,
+        "❗": 1,
+        "⌛": 1,
+        "😕": 1
       }
     },
     "netricsa": {
       "imagesGenerees": 0,
       "imagesReimaginee": 0,
       "imagesUpscalee": 0,
-      "conversationsIA": 2,
+      "conversationsIA": 5,
       "memesRecherches": 0
     },
-    "lastUpdate": 1770456881465
+    "lastUpdate": 1770480357715
   },
   "351419795033423883": {
     "userId": "351419795033423883",
@@ -241,13 +244,13 @@
   },
   "814998532833673246": {
     "userId": "814998532833673246",
-    "username": "eddie64",
+    "username": "Eddie64",
     "discord": {
-      "messagesEnvoyes": 152,
+      "messagesEnvoyes": 156,
       "reactionsAjoutees": 0,
-      "reactionsRecues": 3,
+      "reactionsRecues": 6,
       "commandesUtilisees": 1,
-      "mentionsRecues": 2,
+      "mentionsRecues": 9,
       "repliesRecues": 1,
       "tempsVocalMinutes": 59,
       "compteurContributions": 141
@@ -256,11 +259,11 @@
       "imagesGenerees": 0,
       "imagesReimaginee": 0,
       "imagesUpscalee": 0,
-      "conversationsIA": 0,
+      "conversationsIA": 7,
       "memesRecherches": 0,
       "promptsCrees": 0
     },
-    "lastUpdate": 1770433300782
+    "lastUpdate": 1770480260272
   },
   "1017530434604769281": {
     "userId": "1017530434604769281",

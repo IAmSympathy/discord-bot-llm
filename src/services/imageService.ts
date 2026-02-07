@@ -16,6 +16,56 @@ export interface ImageAnalysisResult {
 }
 
 /**
+ * Redimensionne une image pour l'analyse tout en gardant le ratio
+ * Réduit la résolution à un maximum de 768px sur le côté le plus long
+ * Cela accélère considérablement l'analyse sans perte significative de qualité
+ */
+async function resizeForAnalysis(buffer: Buffer): Promise<Buffer> {
+    try {
+        const metadata = await sharp(buffer).metadata();
+        const width = metadata.width || 0;
+        const height = metadata.height || 0;
+        const maxDimension = 768;
+
+        // Si l'image est déjà petite, ne pas la redimensionner
+        if (width <= maxDimension && height <= maxDimension) {
+            console.log(`[ImageService] Image already optimal size (${width}x${height}), skipping resize`);
+            return buffer;
+        }
+
+        // Calculer les nouvelles dimensions en gardant le ratio
+        let newWidth: number;
+        let newHeight: number;
+
+        if (width > height) {
+            // Image horizontale
+            newWidth = maxDimension;
+            newHeight = Math.round((height / width) * maxDimension);
+        } else {
+            // Image verticale ou carrée
+            newHeight = maxDimension;
+            newWidth = Math.round((width / height) * maxDimension);
+        }
+
+        const resizedBuffer = await sharp(buffer)
+            .resize(newWidth, newHeight, {
+                fit: 'inside',
+                withoutEnlargement: true
+            })
+            .toBuffer();
+
+        const originalSizeKB = (buffer.length / 1024).toFixed(2);
+        const resizedSizeKB = (resizedBuffer.length / 1024).toFixed(2);
+        console.log(`[ImageService] Resized from ${width}x${height} (${originalSizeKB} KB) to ${newWidth}x${newHeight} (${resizedSizeKB} KB)`);
+
+        return resizedBuffer;
+    } catch (error) {
+        console.error(`[ImageService] Error resizing image:`, error);
+        return buffer; // Retourner l'original en cas d'erreur
+    }
+}
+
+/**
  * Convertit un buffer d'image (GIF, WebP, etc.) en PNG
  * Pour les GIFs animés, extrait la DERNIÈRE frame
  */
@@ -48,6 +98,7 @@ async function convertToPNG(buffer: Buffer): Promise<Buffer> {
 /**
  * Télécharge une image ou GIF et la convertit en base64
  * Les GIFs et WebP sont automatiquement convertis en PNG pour compatibilité Ollama
+ * Les images sont redimensionnées à 768px max pour accélérer l'analyse
  */
 export async function downloadImageAsBase64(url: string): Promise<string | null> {
     try {
@@ -78,6 +129,9 @@ export async function downloadImageAsBase64(url: string): Promise<string | null>
                 // Continue avec le buffer original si la conversion échoue
             }
         }
+
+        // Redimensionner l'image pour accélérer l'analyse
+        buffer = await resizeForAnalysis(buffer);
 
         const base64 = buffer.toString("base64");
         return base64;
@@ -203,6 +257,9 @@ export async function processImagesWithMetadata(imageUrls: string[], context?: '
             if (isGif || isWebP) {
                 buffer = await convertToPNG(buffer);
             }
+
+            // Redimensionner l'image pour accélérer l'analyse
+            buffer = await resizeForAnalysis(buffer);
 
             // Générer la description avec le contexte approprié
             const base64 = buffer.toString("base64");
