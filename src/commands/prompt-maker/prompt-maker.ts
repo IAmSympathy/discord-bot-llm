@@ -5,7 +5,7 @@ import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {createErrorEmbed} from "../../utils/embedBuilder";
 import {isLowPowerMode} from "../../services/botStateService";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
-import {recordPromptCreated} from "../../services/userStatsService";
+import {recordPromptCreatedStats} from "../../services/statsRecorder";
 import {logBotCommand} from "../../utils/discordLogger";
 
 const logger = createLogger("PromptMakerCmd");
@@ -348,8 +348,8 @@ module.exports = {
                 optionsText
             );
 
-            // Enregistrer la statistique de prompt créé
-            recordPromptCreated(interaction.user.id, interaction.user.username);
+            // Enregistrer dans les statistiques utilisateur
+            recordPromptCreatedStats(interaction.user.id, interaction.user.username);
 
             // Vérifier les achievements Netricsa
             const {checkNetricsaAchievements} = require("../../services/netricsaAchievementChecker");

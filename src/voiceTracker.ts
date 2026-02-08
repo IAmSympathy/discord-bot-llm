@@ -1,7 +1,7 @@
 import {Client, Events, VoiceState} from "discord.js";
-import {recordVoiceTime} from "./services/userStatsService";
 import {createLogger} from "./utils/logger";
 import {addXP, XP_REWARDS} from "./services/xpSystem";
+import {recordVoiceTimeStats} from "./services/statsRecorder";
 
 const logger = createLogger("VoiceTracker");
 
@@ -44,7 +44,7 @@ function startVoiceSession(userId: string, channelId: string, username: string, 
         session.minutesTracked++;
 
         // Enregistrer 1 minute de temps vocal dans les stats (en temps réel)
-        recordVoiceTime(userId, username, 1);
+        recordVoiceTimeStats(userId, username, 1);
 
         // Vérifier les achievements Discord (vocal)
         const {checkDiscordAchievements} = require("./services/discordAchievementChecker");
@@ -102,7 +102,7 @@ async function endVoiceSession(userId: string, username: string, voiceState: Voi
     // Mais enregistrer les minutes partielles restantes (moins d'une minute)
     const remainingTime = totalMinutes - session.minutesTracked;
     if (remainingTime > 0) {
-        recordVoiceTime(userId, username, remainingTime);
+        recordVoiceTimeStats(userId, username, remainingTime);
     }
 
     logger.info(`Voice session ended for ${username}: ${formatVoiceTime(totalMinutes)} (XP given in real-time: ${session.minutesTracked} min)`);
@@ -183,7 +183,7 @@ export function registerVoiceTracker(client: Client): void {
             const duration = Date.now() - session.startTime;
             const minutes = Math.floor(duration / 60000);
             if (minutes >= 1) {
-                recordVoiceTime(userId, "User", minutes);
+                recordVoiceTimeStats(userId, "User", minutes);
             }
         });
         voiceSessions.clear();

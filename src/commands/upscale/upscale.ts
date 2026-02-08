@@ -8,7 +8,8 @@ import {formatTime} from "../../utils/timeFormat";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 import {isLowPowerMode} from "../../services/botStateService";
-import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordImageUpscaled} from "../../services/userStatsService";
+import {NETRICSA_USER_ID, NETRICSA_USERNAME} from "../../services/userStatsService";
+import {recordImageUpscaledStats} from "../../services/statsRecorder";
 import * as fs from "fs";
 import * as path from "path";
 import * as https from "https";
@@ -194,9 +195,9 @@ module.exports = {
             );
 
             // Enregistrer dans les statistiques utilisateur
-            recordImageUpscaled(interaction.user.id, interaction.user.username);
+            recordImageUpscaledStats(interaction.user.id, interaction.user.username);
             // Enregistrer aussi pour Netricsa elle-même
-            recordImageUpscaled(NETRICSA_USER_ID, NETRICSA_USERNAME);
+            recordImageUpscaledStats(NETRICSA_USER_ID, NETRICSA_USERNAME);
 
             // Vérifier les achievements Netricsa
             const {checkNetricsaAchievements} = require("../../services/netricsaAchievementChecker");

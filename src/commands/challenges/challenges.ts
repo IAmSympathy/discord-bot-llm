@@ -4,9 +4,7 @@ import {addXP} from "../../services/xpSystem";
 import * as fs from "fs";
 import * as path from "path";
 import {createLogger} from "../../utils/logger";
-import {getUserStats} from "../../services/userStatsService";
-import {getPlayerStats} from "../../games/common/globalStats";
-import {getUserCounterContributions} from "../../services/counterService";
+import {getCurrentDate, getUserDailyStats} from "../../services/dailyStatsService";
 
 const logger = createLogger("DailyChallengesCmd");
 const CHALLENGES_FILE = path.join(process.cwd(), "data", "daily_challenges.json");
@@ -43,8 +41,8 @@ interface ChallengeDefinition {
  */
 interface UserChallengeProgress {
     challengeId: string;
-    progress: number;
     completed: boolean;
+    rewardClaimed: boolean; // Si la récompense a été réclamée
 }
 
 /**
@@ -276,64 +274,48 @@ function generateDailyChallenges(): ChallengeDefinition[] {
 }
 
 /**
- * Obtient la date actuelle au format YYYY-MM-DD
- */
-function getCurrentDate(): string {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-}
-
-/**
  * Calcule la progression actuelle d'un utilisateur sur un défi
  */
-function calculateProgress(userId: string, challenge: ChallengeDefinition, challengesData: DailyChallengesData): number {
-    const stats = getUserStats(userId);
-    if (!stats) return 0;
+function calculateProgress(userId: string, challenge: ChallengeDefinition): number {
+    const today = getCurrentDate();
+    const dailyStats = getUserDailyStats(userId, today);
 
-    // Récupérer la progression de la veille
-    const userData = challengesData.users[userId];
-    const yesterdayProgress = userData ? userData.progress.find(p => p.challengeId === challenge.id) : null;
-    const baselineProgress = yesterdayProgress ? yesterdayProgress.progress : 0;
+    if (!dailyStats) return 0;
 
-    let currentTotal = 0;
+    let currentProgress = 0;
 
     switch (challenge.type) {
         case ChallengeType.MESSAGES:
-            currentTotal = stats.discord.messagesEnvoyes;
+            currentProgress = dailyStats.messagesEnvoyes;
             break;
         case ChallengeType.REACTIONS:
-            currentTotal = stats.discord.reactionsAjoutees;
+            currentProgress = dailyStats.reactionsAjoutees;
             break;
         case ChallengeType.VOCAL:
-            currentTotal = stats.discord.tempsVocalMinutes;
+            currentProgress = dailyStats.tempsVocalMinutes;
             break;
         case ChallengeType.GAMES:
-            const gameStats = getPlayerStats(userId);
             if (challenge.id.includes("win")) {
-                currentTotal = gameStats?.global?.wins || 0;
+                currentProgress = dailyStats.gamesWon;
             } else {
-                currentTotal = (gameStats?.global?.wins || 0) +
-                    (gameStats?.global?.losses || 0) +
-                    (gameStats?.global?.draws || 0);
+                currentProgress = dailyStats.gamesPlayed;
             }
             break;
         case ChallengeType.IMAGES:
-            currentTotal = stats.netricsa.imagesGenerees;
+            currentProgress = dailyStats.imagesGenerees;
             break;
         case ChallengeType.COUNTER:
-            currentTotal = getUserCounterContributions(userId);
+            currentProgress = dailyStats.counterContributions;
             break;
         case ChallengeType.AI_CHAT:
-            currentTotal = stats.netricsa.conversationsIA;
+            currentProgress = dailyStats.conversationsIA;
             break;
         case ChallengeType.COMMANDS:
-            currentTotal = stats.discord.commandesUtilisees;
+            currentProgress = dailyStats.commandesUtilisees;
             break;
     }
 
-    // Calculer la progression du jour (différence avec hier)
-    const todayProgress = Math.max(0, currentTotal - baselineProgress);
-    return Math.min(todayProgress, challenge.goal);
+    return Math.min(currentProgress, challenge.goal);
 }
 
 module.exports = {
@@ -365,8 +347,8 @@ module.exports = {
                     lastCheck: Date.now(),
                     progress: challengesData.challenges.map(c => ({
                         challengeId: c.id,
-                        progress: 0,
-                        completed: false
+                        completed: false,
+                        rewardClaimed: false
                     }))
                 };
             }
@@ -380,19 +362,20 @@ module.exports = {
                 const progressEntry = userProgress.progress.find(p => p.challengeId === challenge.id);
                 if (!progressEntry) continue;
 
-                const currentProgress = calculateProgress(userId, challenge, challengesData);
+                const currentProgress = calculateProgress(userId, challenge);
                 const wasCompleted = progressEntry.completed;
                 const isNowCompleted = currentProgress >= challenge.goal;
 
-                // Mettre à jour la progression
-                progressEntry.progress = currentProgress;
-
-                // Si le défi vient d'être complété
-                if (isNowCompleted && !wasCompleted) {
+                // Si le défi vient d'être complété et que la récompense n'a pas été réclamée
+                if (isNowCompleted && !wasCompleted && !progressEntry.rewardClaimed) {
                     progressEntry.completed = true;
+                    progressEntry.rewardClaimed = true;
                     totalXPEarned += challenge.xpReward;
                     newCompletions++;
                     logger.info(`User ${interaction.user.username} completed challenge ${challenge.id}`);
+                } else if (isNowCompleted) {
+                    // Si déjà complété, juste mettre à jour le statut
+                    progressEntry.completed = true;
                 }
             }
 
@@ -424,7 +407,7 @@ module.exports = {
                 const progressEntry = userProgress.progress.find(p => p.challengeId === challenge.id);
                 if (!progressEntry) continue;
 
-                const progress = progressEntry.progress;
+                const progress = calculateProgress(userId, challenge);
                 const completed = progressEntry.completed;
 
                 // Barre de progression

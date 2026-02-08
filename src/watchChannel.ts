@@ -10,7 +10,8 @@ import {isLowPowerMode} from "./services/botStateService";
 import {appendDMTurn, getDMRecentTurns} from "./services/dmMemoryService";
 import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
-import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordAIConversation, recordEmojisUsed, recordMentionReceived, recordMessageSent, recordReactionAdded, recordReplyReceived} from "./services/userStatsService";
+import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordEmojisUsed} from "./services/userStatsService";
+import {recordAIConversationStats, recordMentionReceivedStats, recordMessageStats, recordReactionAddedStats, recordReplyReceivedStats} from "./services/statsRecorder";
 import {addXP, XP_REWARDS} from "./services/xpSystem";
 import {handleCounterMessage} from "./services/counterService";
 
@@ -51,7 +52,7 @@ async function handleNettieReaction(client: Client, message: Message): Promise<s
         logger.info(`Reacted with: ${emoji}`);
 
         // Enregistrer la réaction de Netricsa dans les stats
-        recordReactionAdded(NETRICSA_USER_ID, NETRICSA_USERNAME);
+        recordReactionAddedStats(NETRICSA_USER_ID, NETRICSA_USERNAME);
 
         await clearStatus(client, statusId);
         return emoji;
@@ -61,7 +62,7 @@ async function handleNettieReaction(client: Client, message: Message): Promise<s
         await message.react("🤗");
 
         // Enregistrer la réaction de fallback de Netricsa
-        recordReactionAdded(NETRICSA_USER_ID, NETRICSA_USERNAME);
+        recordReactionAddedStats(NETRICSA_USER_ID, NETRICSA_USERNAME);
 
         return "🤗";
     }
@@ -184,7 +185,7 @@ export function registerWatchedChannelResponder(client: Client) {
             }
 
             // Enregistrer le message envoyé dans les statistiques
-            recordMessageSent(message.author.id, message.author.username);
+            recordMessageStats(message.author.id, message.author.username);
 
             // Enregistrer les emojis utilisés dans le message
             recordEmojisUsed(message.author.id, message.author.username, message.content);
@@ -209,7 +210,7 @@ export function registerWatchedChannelResponder(client: Client) {
                 message.mentions.users.forEach(async (user) => {
                     // Exclure les bots (incluant Netricsa) de l'enregistrement des mentions
                     if (!user.bot) {
-                        recordMentionReceived(user.id, user.username);
+                        recordMentionReceivedStats(user.id, user.username);
 
                         // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
                         await addXP(
@@ -229,7 +230,7 @@ export function registerWatchedChannelResponder(client: Client) {
                 try {
                     const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
                     if (referencedMessage) {
-                        recordReplyReceived(referencedMessage.author.id, referencedMessage.author.username);
+                        recordReplyReceivedStats(referencedMessage.author.id, referencedMessage.author.username);
 
                         // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
                         await addXP(
@@ -462,7 +463,7 @@ export function registerWatchedChannelResponder(client: Client) {
             });
 
             // Enregistrer la conversation IA dans les statistiques
-            recordAIConversation(message.author.id, message.author.displayName);
+            recordAIConversationStats(message.author.id, message.author.displayName);
 
             // Vérifier les achievements Netricsa
             const {checkNetricsaAchievements} = require("./services/netricsaAchievementChecker");

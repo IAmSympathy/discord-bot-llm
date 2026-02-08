@@ -20,7 +20,7 @@ import {initializeCounter} from "./services/counterService";
 import {initializeActivityMonitor} from "./services/activityMonitor";
 import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
-import {recordCommandUsed, recordReactionAdded, recordReactionReceived} from "./services/userStatsService";
+import {recordCommandStats, recordReactionAddedStats, recordReactionReceivedStats} from "./services/statsRecorder";
 import {canExecuteCommand, getCommandRestrictionMessage} from "./utils/commandPermissions";
 import {getAllXP} from "./services/xpSystem";
 import {initializeLevelRolesForGuild} from "./services/levelRoleService";
@@ -661,7 +661,7 @@ client.on(Events.MessageReactionAdd, async (reaction, user) => {
 
         // Enregistrer la réaction ajoutée pour l'utilisateur qui réagit
         if (user.username) {
-            recordReactionAdded(user.id, user.username);
+            recordReactionAddedStats(user.id, user.username);
 
             // Enregistrer l'emoji utilisé dans la réaction pour les stats d'emoji favori
             const {recordEmojisUsed} = require("./services/userStatsService");
@@ -681,7 +681,7 @@ client.on(Events.MessageReactionAdd, async (reaction, user) => {
 
         // Enregistrer la réaction reçue pour l'auteur du message
         if (reaction.message.author && reaction.message.author.username) {
-            recordReactionReceived(reaction.message.author.id, reaction.message.author.username);
+            recordReactionReceivedStats(reaction.message.author.id, reaction.message.author.username);
 
             // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
             const {addXP, XP_REWARDS} = require("./services/xpSystem");
@@ -733,7 +733,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             }
 
             // Enregistrer l'utilisation de la commande dans les statistiques
-            recordCommandUsed(interaction.user.id, interaction.user.username);
+            recordCommandStats(interaction.user.id, interaction.user.username);
 
             // Vérifier les achievements Discord (commandes)
             const {checkDiscordAchievements} = require("./services/discordAchievementChecker");
@@ -798,7 +798,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         try {
             // Les commandes de menu contextuel sont toujours autorisées (pas de restrictions)
             // Enregistrer l'utilisation dans les statistiques
-            recordCommandUsed(interaction.user.id, interaction.user.username);
+            recordCommandStats(interaction.user.id, interaction.user.username);
 
             // Vérifier les achievements Discord (commandes)
             const {checkDiscordAchievements} = require("./services/discordAchievementChecker");
@@ -851,9 +851,115 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // Les interactions des boutons sont maintenant toutes gérées dans userProfile.ts
     // Plus besoin de logique ici pour achievements ou stats
 
+    // Gérer les menus de sélection (String Select Menu) pour l'imposteur
+    if (interaction.isStringSelectMenu()) {
+        if (interaction.customId === 'impostor_suspect_select') {
+            try {
+                if (!interaction.guild) {
+                    await interaction.reply({
+                        content: "❌ Cette action doit être effectuée dans un serveur.",
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                const suspectId = interaction.values[0];
+                const {handleImpostorGuess} = require("./services/randomEventsService");
+
+                await interaction.deferReply({flags: MessageFlags.Ephemeral});
+
+                const result = await handleImpostorGuess(
+                    interaction.client,
+                    interaction.user.id,
+                    interaction.user.username,
+                    suspectId,
+                    interaction.guild
+                );
+
+                await interaction.editReply({
+                    content: result.message
+                });
+
+            } catch (error) {
+                console.error("[Impostor Suspect Select Error]", error);
+                if (interaction.deferred) {
+                    await interaction.editReply({
+                        content: "❌ Une erreur s'est produite. Réessaie plus tard."
+                    }).catch(() => {
+                    });
+                } else {
+                    await interaction.reply({
+                        content: "❌ Une erreur s'est produite. Réessaie plus tard.",
+                        flags: MessageFlags.Ephemeral
+                    }).catch(() => {
+                    });
+                }
+            }
+            return;
+        }
+    }
+
     // Gérer les boutons de validation de création
     if (interaction.isButton()) {
         const customId = interaction.customId;
+
+        // Bouton de guess d'imposteur
+        if (customId === "impostor_guess") {
+            try {
+                if (!interaction.guild) {
+                    await interaction.reply({
+                        content: "❌ Cette action doit être effectuée dans un serveur.",
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                // Afficher un menu de sélection d'utilisateur
+                const {StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder} = require("discord.js");
+
+                // Récupérer les membres du serveur (limité aux 25 plus actifs pour le menu)
+                const members = await interaction.guild.members.fetch();
+                const activeMembers = members
+                    .filter((m: any) => !m.user.bot) // Exclure les bots
+                    .sort((a: any, b: any) => {
+                        // Trier par présence (en ligne d'abord)
+                        if (a.presence?.status === 'online' && b.presence?.status !== 'online') return -1;
+                        if (a.presence?.status !== 'online' && b.presence?.status === 'online') return 1;
+                        return 0;
+                    })
+                    .first(25); // Limiter à 25 (limite Discord)
+
+                const selectMenu = new StringSelectMenuBuilder()
+                    .setCustomId('impostor_suspect_select')
+                    .setPlaceholder('🔍 Sélectionne le suspect...')
+                    .addOptions(
+                        activeMembers.map((member: any) =>
+                            new StringSelectMenuOptionBuilder()
+                                .setLabel(member.user.username)
+                                .setDescription(`ID: ${member.id}`)
+                                .setValue(member.id)
+                        )
+                    );
+
+                const row = new ActionRowBuilder()
+                    .addComponents(selectMenu);
+
+                await interaction.reply({
+                    content: "🔍 **Qui est l'imposteur selon toi ?**\n\nChoisis un suspect ci-dessous :",
+                    components: [row],
+                    flags: MessageFlags.Ephemeral
+                });
+
+            } catch (error) {
+                console.error("[Impostor Guess Button Error]", error);
+                await interaction.reply({
+                    content: "❌ Une erreur s'est produite. Réessaie plus tard.",
+                    flags: MessageFlags.Ephemeral
+                }).catch(() => {
+                });
+            }
+            return;
+        }
 
         // Validation de création
         if (customId.startsWith("validate_creation_") || customId.startsWith("reject_creation_")) {

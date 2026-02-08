@@ -3,6 +3,7 @@ import path from "path";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {DATA_DIR} from "../../utils/constants";
 import {createLogger} from "../../utils/logger";
+import {recordGamePlayedStats} from "../../services/statsRecorder";
 
 const STATS_FILE = path.join(DATA_DIR, "game_stats.json");
 const logger = createLogger("GameStats");
@@ -134,6 +135,10 @@ export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tic
 
     saveStats(allStats);
 
+    // Enregistrer dans les stats quotidiennes (pour tous, y compris Netricsa)
+    const username = userId === NETRICSA_GAME_ID ? NETRICSA_GAME_NAME : "Player";
+    recordGamePlayedStats(userId, username, true);
+
     // Ajouter XP (seulement pour les vrais joueurs, pas pour Netricsa)
     if (userId !== NETRICSA_GAME_ID) {
         // Déterminer le montant d'XP selon le jeu et le type d'adversaire
@@ -222,6 +227,10 @@ export async function recordLoss(userId: string, game: 'rockpaperscissors' | 'ti
 
     saveStats(allStats);
 
+    // Enregistrer dans les stats quotidiennes (pour tous, y compris Netricsa)
+    const username = userId === NETRICSA_GAME_ID ? NETRICSA_GAME_NAME : "Player";
+    recordGamePlayedStats(userId, username, false);
+
     // Ajouter XP (seulement pour les vrais joueurs, pas pour Netricsa)
     if (userId !== NETRICSA_GAME_ID) {
         // Déterminer le montant d'XP selon le jeu et le type d'adversaire
@@ -309,6 +318,10 @@ export async function recordDraw(userId: string, game: 'rockpaperscissors' | 'ti
     allStats[userId].global.currentStreak = 0;
 
     saveStats(allStats);
+
+    // Enregistrer dans les stats quotidiennes (pour tous, y compris Netricsa)
+    const username = userId === NETRICSA_GAME_ID ? NETRICSA_GAME_NAME : "Player";
+    recordGamePlayedStats(userId, username, false); // Match nul = pas de victoire
 
     // Ajouter XP (seulement pour les vrais joueurs, pas pour Netricsa)
     if (userId !== NETRICSA_GAME_ID) {

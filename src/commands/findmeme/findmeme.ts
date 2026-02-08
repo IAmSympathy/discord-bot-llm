@@ -3,7 +3,8 @@ import {getRandomMeme} from "../../services/memeService";
 import {logCommand} from "../../utils/discordLogger";
 import {EnvConfig} from "../../utils/envConfig";
 import {handleInteractionError, replyWithError} from "../../utils/interactionUtils";
-import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordMemeSearched} from "../../services/userStatsService";
+import {NETRICSA_USER_ID, NETRICSA_USERNAME} from "../../services/userStatsService";
+import {recordMemeSearchedStats} from "../../services/statsRecorder";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -82,9 +83,9 @@ module.exports = {
             console.log(`[FindMeme] Posted meme: "${meme.title}" (${meme.id})`);
 
             // Enregistrer dans les statistiques utilisateur
-            recordMemeSearched(interaction.user.id, interaction.user.username);
+            recordMemeSearchedStats(interaction.user.id, interaction.user.username);
             // Enregistrer aussi pour Netricsa elle-même
-            recordMemeSearched(NETRICSA_USER_ID, NETRICSA_USERNAME);
+            recordMemeSearchedStats(NETRICSA_USER_ID, NETRICSA_USERNAME);
 
             // Vérifier les achievements Netricsa
             const {checkNetricsaAchievements} = require("../../services/netricsaAchievementChecker");

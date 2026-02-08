@@ -4,6 +4,7 @@ import {createLogger} from "../utils/logger";
 import {DATA_DIR} from "../utils/constants";
 import {Message, TextChannel} from "discord.js";
 import {checkCounterChallengeProgress} from "./randomEventsService";
+import {recordCounterContributionStats} from "./statsRecorder";
 
 const logger = createLogger("CounterService");
 const COUNTER_STATE_FILE = path.join(DATA_DIR, "counter_state.json");
@@ -297,6 +298,9 @@ export async function handleCounterMessage(message: Message): Promise<boolean> {
     }
     state.contributions[message.author.id].count++;
     state.contributions[message.author.id].username = message.author.username;
+
+    // Enregistrer dans les stats quotidiennes
+    recordCounterContributionStats(message.author.id, message.author.username);
 
     saveCounterState(state);
 

@@ -13,7 +13,8 @@ import {logBotImageAnalysis, logBotResponse, logBotWebSearch, logError} from "..
 import {BotStatus, clearStatus, setStatus} from "../services/statusService";
 import {getDMRecentTurns} from "../services/dmMemoryService";
 import {createLogger} from "../utils/logger";
-import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordAIConversation, recordNetricsaWebSearch} from "../services/userStatsService";
+import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordNetricsaWebSearch} from "../services/userStatsService";
+import {recordAIConversationStats} from "../services/statsRecorder";
 
 const wait = require("node:timers/promises").setTimeout;
 const logger = createLogger("Queue");
@@ -553,10 +554,10 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                     }
 
                                     // Enregistrer la conversation IA pour l'utilisateur
-                                    recordAIConversation(userId, userName);
+                                    recordAIConversationStats(userId, userName);
 
                                     // Enregistrer la conversation IA pour Netricsa elle-même
-                                    recordAIConversation(NETRICSA_USER_ID, NETRICSA_USERNAME);
+                                    recordAIConversationStats(NETRICSA_USER_ID, NETRICSA_USERNAME);
 
                                     // Ajouter XP avec notification pour l'utilisateur (conversation IA inclut les recherches web)
                                     const {addXP, XP_REWARDS} = require("../services/xpSystem");

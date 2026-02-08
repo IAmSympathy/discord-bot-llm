@@ -8,7 +8,8 @@ import {formatTime} from "../../utils/timeFormat";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 import {isLowPowerMode} from "../../services/botStateService";
-import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordImageGenerated} from "../../services/userStatsService";
+import {NETRICSA_USER_ID, NETRICSA_USERNAME} from "../../services/userStatsService";
+import {recordImageGeneratedStats} from "../../services/statsRecorder";
 
 const logger = createLogger("GenerateImageCmd");
 
@@ -177,9 +178,9 @@ module.exports = {
             );
 
             // Enregistrer dans les statistiques utilisateur (UNE SEULE fois par commande, peu importe le nombre de variantes)
-            recordImageGenerated(interaction.user.id, interaction.user.username);
+            recordImageGeneratedStats(interaction.user.id, interaction.user.username);
             // Enregistrer aussi pour Netricsa elle-même (une seule fois)
-            recordImageGenerated(NETRICSA_USER_ID, NETRICSA_USERNAME);
+            recordImageGeneratedStats(NETRICSA_USER_ID, NETRICSA_USERNAME);
 
             // Vérifier les achievements Netricsa
             const {checkNetricsaAchievements} = require("../../services/netricsaAchievementChecker");
