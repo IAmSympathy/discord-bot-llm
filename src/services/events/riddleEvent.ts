@@ -9,38 +9,26 @@ import {generateOrFallbackRiddle} from "./riddleLLMGenerator";
 
 const logger = createLogger("RiddleEvent");
 
-const RIDDLE_DURATION = 24 * 60 * 60 * 1000; // 24 heures
-const HINT_DELAY = 2 * 60 * 60 * 1000; // Indice après 2 heures
+const RIDDLE_DURATION = 12 * 60 * 60 * 1000; // 12 heures (8h → 20h)
+const HINT_DELAY = 4 * 60 * 60 * 1000; // Indice après 4 heures (à midi)
 const CHANNEL_CLOSE_DELAY = 60 * 60 * 1000; // 1 heure après la fin pour fermer le salon
 
 /**
  * Crée l'embed d'annonce de l'énigme
  */
 function createRiddleAnnouncementEmbed(riddle: Riddle, endTime: number, isTest: boolean): EmbedBuilder {
-    const difficultyEmoji = {
-        'facile': '🟢',
-        'moyen': '🟡',
-        'difficile': '🔴'
-    };
-
     return new EmbedBuilder()
-        .setColor(0x9B59B6) // Violet
-        .setTitle("🧩 ÉNIGME DU JOUR")
+        .setColor(0x73A955) // vert
+        .setTitle("🧩 ÉNIGME")
         .setDescription(
-            `Une énigme quotidienne est apparue ! Trouvez la réponse pour gagner de l'XP !\n\n` +
-            `**${riddle.question}**\n\n` +
-            `⏱️ **Tout le monde peut participer** - Les premiers à trouver gagnent le plus d'XP !`
+            `Une énigme est apparue ! Trouvez la réponse pour gagner de l'XP !\n\n` +
+            `**${riddle.question}**\n\n`
         )
         .addFields(
             {
                 name: "💡 Comment jouer",
-                value: "**Envoie ta réponse dans ce salon !** Tes messages seront automatiquement supprimés. Plus tu réponds vite, plus tu gagnes d'XP.",
+                value: "Utilise `/answer` pour soumettre ta réponse ! \nLes premiers à trouver gagnent le plus d'XP !",
                 inline: false
-            },
-            {
-                name: "📊 Difficulté",
-                value: `${difficultyEmoji[riddle.difficulty]} ${riddle.difficulty.charAt(0).toUpperCase() + riddle.difficulty.slice(1)}`,
-                inline: true
             },
             {
                 name: "🏆 Récompenses",
@@ -79,7 +67,7 @@ function createRiddleVictoryEmbed(riddle: Riddle, winner: string, position: numb
         .setDescription(
             `<@${winner}> a trouvé la réponse en **${timeString}** !\n\n` +
             `**Position :** ${positionText}\n` +
-            `🎁 **+${xpEarned} XP**` +
+            `💫 **+${xpEarned} XP**` +
             (isTest ? '\n\n⚠️ *Mode test - Aucun XP distribué*' : '')
         )
         .setTimestamp();
@@ -93,7 +81,7 @@ function createRiddleFailureEmbed(riddle: Riddle, leaderboard: Array<{ userId: s
         .setColor(0xE74C3C) // Rouge
         .setTitle("⏰ ÉVÉNEMENT TERMINÉ !")
         .setDescription(
-            `L'énigme du jour est maintenant terminée !\n\n` +
+            `L'énigme est maintenant terminée !\n\n` +
             `**La réponse était :** ${riddle.answer}`
         );
 
@@ -119,13 +107,13 @@ function createRiddleFailureEmbed(riddle: Riddle, leaderboard: Array<{ userId: s
         });
 
         embed.setDescription(
-            `L'énigme du jour est maintenant terminée !\n\n` +
+            `L'énigme est maintenant terminée !\n\n` +
             `**La réponse était :** ${riddle.answer}\n\n` +
             `Félicitations aux ${leaderboard.length} participant(s) ! 🎉`
         );
     } else {
         embed.setDescription(
-            `L'énigme du jour est maintenant terminée...\n\n` +
+            `L'énigme est maintenant terminée...\n\n` +
             `**La réponse était :** ${riddle.answer}\n\n` +
             `Personne n'a trouvé la réponse cette fois ! 😢\nMeilleure chance la prochaine fois !`
         );
@@ -174,8 +162,8 @@ export async function startRiddleEvent(client: Client, guild: Guild, isTest: boo
             client,
             guild,
             EventType.RIDDLE,
-            "🧩 Énigme du Jour",
-            "enigme-du-jour",
+            "🧩 Énigme",
+            "enigme",
             "🧩",
             RIDDLE_DURATION,
             {
@@ -243,56 +231,39 @@ export async function startRiddleEvent(client: Client, guild: Guild, isTest: boo
 }
 
 /**
- * Gère un message dans le salon d'énigme
+ * Gère une réponse à l'énigme via la commande /repondre
+ * Retourne les informations sur le résultat de la réponse
  */
-export async function handleRiddleMessage(client: Client, message: Message): Promise<void> {
+export async function handleRiddleAnswer(
+    client: Client,
+    userId: string,
+    username: string,
+    answer: string,
+    channelId: string
+): Promise<{
+    correct: boolean;
+    alreadySolved: boolean;
+    position?: number;
+    positionText?: string;
+    positionEmoji?: string;
+    xpEarned?: number;
+    timeString?: string;
+    isTest?: boolean;
+} | null> {
     try {
         const eventsData = loadEventsData();
         const riddleEvent = eventsData.activeEvents.find(e => e.type === EventType.RIDDLE);
 
-        if (!riddleEvent || riddleEvent.channelId !== message.channelId) {
-            return; // Pas d'événement riddle actif dans ce salon
-        }
-
-        // Ignorer les messages du bot
-        if (message.author.bot) {
-            return;
-        }
-
-        const userId = message.author.id;
-        const username = message.author.username;
-
-        // Supprimer le message immédiatement
-        try {
-            await message.delete();
-        } catch (error) {
-            logger.warn("Could not delete message:", error);
+        if (!riddleEvent) {
+            return null; // Pas d'événement riddle actif
         }
 
         // Vérifier si l'utilisateur a déjà trouvé la réponse
         if (riddleEvent.data.leaderboard.some((entry: any) => entry.userId === userId)) {
-            // L'utilisateur a déjà trouvé, envoyer un message éphémère dans le salon
-            try {
-                const channel = message.channel as TextChannel;
-                const alreadyFoundEmbed = new EmbedBuilder()
-                    .setColor(0x3498DB)
-                    .setTitle("🧩 Énigme du Jour")
-                    .setDescription(`<@${userId}>, tu as déjà trouvé la réponse ! 🎉\n\nTu ne peux pas répondre une deuxième fois.`)
-                    .setTimestamp();
-                const msg = await channel.send({embeds: [alreadyFoundEmbed]});
-
-                // Supprimer le message après 5 secondes
-                setTimeout(async () => {
-                    try {
-                        await msg.delete();
-                    } catch (error) {
-                        // Ignorer les erreurs de suppression
-                    }
-                }, 5000);
-            } catch (error) {
-                logger.warn("Could not send already found message:", error);
-            }
-            return;
+            return {
+                correct: false,
+                alreadySolved: true
+            };
         }
 
         // Ajouter l'utilisateur aux tentatives s'il n'y est pas déjà
@@ -313,7 +284,7 @@ export async function handleRiddleMessage(client: Client, message: Message): Pro
         };
 
         // Vérifier la réponse
-        const isCorrect = checkAnswer(riddle, message.content);
+        const isCorrect = checkAnswer(riddle, answer);
 
         if (isCorrect) {
             // BONNE RÉPONSE !
@@ -351,74 +322,82 @@ export async function handleRiddleMessage(client: Client, message: Message): Pro
             const positionEmoji = positionEmojis[position] || "🎖️";
             const positionText = position === 1 ? "1er" : position === 2 ? "2ème" : position === 3 ? "3ème" : `${position}ème`;
 
-            // Envoyer la réponse détaillée dans le salon (sera supprimée après 10 secondes)
-            try {
-                const channel = message.channel as TextChannel;
-                const victoryEmbed = createRiddleVictoryEmbed(riddle, userId, position, xpEarned, timeTaken, riddleEvent.data.isTest);
-                const detailedMsg = await channel.send({embeds: [victoryEmbed]});
-
-                // Supprimer le message détaillé après 10 secondes
-                setTimeout(async () => {
-                    try {
-                        await detailedMsg.delete();
-                    } catch (error) {
-                        // Ignorer les erreurs de suppression
-                    }
-                }, 10000);
-            } catch (error) {
-                logger.error("Could not send victory message:", error);
-            }
-
             // Afficher dans le salon de manière permanente que quelqu'un a trouvé
             try {
-                const channel = message.channel as TextChannel;
-                const publicVictoryEmbed = new EmbedBuilder()
-                    .setColor(position === 1 ? 0xFFD700 : position === 2 ? 0xC0C0C0 : position === 3 ? 0xCD7F32 : 0x2ECC71)
-                    .setDescription(
-                        `${positionEmoji} <@${userId}> a trouvé la réponse ! (**${positionText}** en ${timeString})`
-                    )
-                    .setTimestamp();
-                await channel.send({embeds: [publicVictoryEmbed]});
+                const channel = await client.channels.fetch(riddleEvent.channelId) as TextChannel;
+                if (channel) {
+                    const publicVictoryEmbed = new EmbedBuilder()
+                        .setColor(position === 1 ? 0xFFD700 : position === 2 ? 0xC0C0C0 : position === 3 ? 0xCD7F32 : 0x2ECC71)
+                        .setDescription(
+                            `${positionEmoji} <@${userId}> a trouvé la réponse ! (**${positionText}** en ${timeString})`
+                        )
+                        .setTimestamp();
+                    await channel.send({embeds: [publicVictoryEmbed]});
+                }
             } catch (error) {
                 logger.error("Could not send public victory message:", error);
             }
 
             // Donner l'XP (sauf si c'est un test)
             if (!riddleEvent.data.isTest) {
-                const channel = message.channel as TextChannel;
+                const channel = await client.channels.fetch(riddleEvent.channelId) as TextChannel;
                 await addXP(userId, username, xpEarned, channel, false);
             }
 
             logger.info(`Riddle solved by ${username} (${userId}) in ${timeTaken}ms - Position: ${position}, XP: ${xpEarned}`);
 
-        } else {
-            // Mauvaise réponse - envoyer un message dans le salon (supprimé après 5 secondes)
-            try {
-                const channel = message.channel as TextChannel;
-                const wrongAnswerEmbed = new EmbedBuilder()
-                    .setColor(0xE74C3C)
-                    .setTitle("❌ Mauvaise réponse")
-                    .setDescription(
-                        `<@${userId}>, ta réponse **"${message.content}"** n'est pas correcte.\n\n` +
-                        `Réessaye ! L'énigme est toujours active.`
-                    )
-                    .setTimestamp();
-                const wrongMsg = await channel.send({embeds: [wrongAnswerEmbed]});
+            return {
+                correct: true,
+                alreadySolved: false,
+                position,
+                positionText,
+                positionEmoji,
+                xpEarned,
+                timeString,
+                isTest: riddleEvent.data.isTest
+            };
 
-                // Supprimer le message après 5 secondes
-                setTimeout(async () => {
-                    try {
-                        await wrongMsg.delete();
-                    } catch (error) {
-                        // Ignorer les erreurs de suppression
-                    }
-                }, 5000);
-            } catch (error) {
-                logger.warn("Could not send wrong answer message:", error);
-            }
+        } else {
+            // Mauvaise réponse
+            saveEventsData(eventsData);
+            return {
+                correct: false,
+                alreadySolved: false
+            };
         }
 
-        saveEventsData(eventsData);
+    } catch (error) {
+        logger.error("Error handling riddle answer:", error);
+        return null;
+    }
+}
+
+/**
+ * Gère un message dans le salon d'énigme
+ * Les messages des utilisateurs sont supprimés pour garder le salon propre
+ * Les réponses doivent être soumises via /answer
+ */
+export async function handleRiddleMessage(client: Client, message: Message): Promise<void> {
+    try {
+        const eventsData = loadEventsData();
+        const riddleEvent = eventsData.activeEvents.find(e => e.type === EventType.RIDDLE);
+
+        if (!riddleEvent || riddleEvent.channelId !== message.channelId) {
+            return; // Pas d'événement riddle actif dans ce salon
+        }
+
+        // Ignorer les messages du bot (pour ne pas supprimer les annonces)
+        if (message.author.bot) {
+            return;
+        }
+
+        // Supprimer tous les messages des utilisateurs pour garder le salon propre
+        try {
+            await message.delete();
+            logger.debug(`Deleted message from ${message.author.username} in riddle channel`);
+        } catch (error) {
+            logger.warn("Could not delete message in riddle channel:", error);
+        }
 
     } catch (error) {
         logger.error("Error handling riddle message:", error);

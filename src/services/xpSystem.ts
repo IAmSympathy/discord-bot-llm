@@ -282,7 +282,6 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
 
         // Récupérer le rôle actuel pour l'image
         const currentRoleName = levelRoleInfo?.roleKey || "HATCHLING";
-        const currentRoleId = LEVEL_ROLES[currentRoleName as keyof typeof LEVEL_ROLES];
         imageAttachment = getRoleUpImage(currentRoleName);
 
         // Si c'est un changement de rôle, changer le titre
@@ -325,7 +324,7 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
         // Section prochain rôle
         if (nextRole) {
             description += `### 🎯 Prochain Objectif\n`;
-            description += `Plus que **${nextRole.levelsNeeded} niveau${nextRole.levelsNeeded > 1 ? 'x' : ''}** avant <@&${nextRole.roleId}> !`;
+            description += `Plus que **${nextRole.levelsNeeded} niveau${nextRole.levelsNeeded > 1 ? 'x' : ''}** avant **${nextRole.roleName}** !`;
         } else {
             description += `### 👑 Rang Maximum\n`;
             description += `Tu as atteint le rang suprême ! Continue à accumuler de l'XP pour dominer le classement !`;
@@ -350,7 +349,7 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
                 },
                 {
                     name: "🏆 Rang",
-                    value: currentRoleId ? `<@&${currentRoleId}>` : currentRoleName,
+                    value: currentRoleName,
                     inline: true
                 }
             )
@@ -520,7 +519,7 @@ async function sendLevelDownMessage(
                 },
                 {
                     name: "🏆 Rang",
-                    value: currentRoleId ? `<@&${currentRoleId}>` : currentRoleName,
+                    value: currentRoleName,
                     inline: true
                 }
             )

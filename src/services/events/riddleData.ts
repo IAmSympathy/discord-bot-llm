@@ -287,24 +287,66 @@ export function getRandomRiddleByDifficulty(difficulty: 'facile' | 'moyen' | 'di
 }
 
 /**
+ * Enlève les déterminants français d'une chaîne
+ */
+function removeArticles(text: string): string {
+    const lowerText = text.toLowerCase().trim();
+
+    // Liste des déterminants français à enlever
+    const articles = [
+        /^le\s+/,      // "le "
+        /^la\s+/,      // "la "
+        /^l'/,         // "l'"
+        /^les\s+/,     // "les "
+        /^un\s+/,      // "un "
+        /^une\s+/,     // "une "
+        /^des\s+/,     // "des "
+        /^du\s+/,      // "du "
+        /^de\s+la\s+/, // "de la "
+        /^de\s+l'/,    // "de l'"
+        /^de\s+/,      // "de "
+    ];
+
+    let cleaned = lowerText;
+    for (const article of articles) {
+        cleaned = cleaned.replace(article, '');
+    }
+
+    return cleaned.trim();
+}
+
+/**
  * Vérifie si une réponse est correcte
  */
 export function checkAnswer(riddle: Riddle, userAnswer: string): boolean {
     const normalizedAnswer = userAnswer.toLowerCase().trim();
+    const cleanedAnswer = removeArticles(normalizedAnswer);
 
-    // Vérifier la réponse principale
-    if (normalizedAnswer === riddle.answer.toLowerCase()) {
+    const riddleAnswer = riddle.answer.toLowerCase();
+    const cleanedRiddleAnswer = removeArticles(riddleAnswer);
+
+    // Vérifier la réponse principale (avec et sans déterminants)
+    if (normalizedAnswer === riddleAnswer ||
+        cleanedAnswer === riddleAnswer ||
+        normalizedAnswer === cleanedRiddleAnswer ||
+        cleanedAnswer === cleanedRiddleAnswer) {
         return true;
     }
 
     // Vérifier les réponses alternatives
     if (riddle.alternativeAnswers) {
-        return riddle.alternativeAnswers.some(alt =>
-            normalizedAnswer === alt.toLowerCase() ||
-            normalizedAnswer.includes(alt.toLowerCase())
-        );
+        return riddle.alternativeAnswers.some(alt => {
+            const altLower = alt.toLowerCase();
+            const cleanedAlt = removeArticles(altLower);
+
+            return normalizedAnswer === altLower ||
+                cleanedAnswer === altLower ||
+                normalizedAnswer === cleanedAlt ||
+                cleanedAnswer === cleanedAlt ||
+                normalizedAnswer.includes(altLower) ||
+                cleanedAnswer.includes(cleanedAlt);
+        });
     }
 
     return false;
 }
-

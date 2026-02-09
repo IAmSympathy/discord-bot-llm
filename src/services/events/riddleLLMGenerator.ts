@@ -26,13 +26,23 @@ export async function generateRiddleWithLLM(difficulty: 'facile' | 'moyen' | 'di
             'difficile': 'Une énigme complexe et challenging qui demande de la logique avancée'
         };
 
-        const systemPrompt = `Tu es un créateur d'énigmes expert. Tu dois créer une énigme originale et intéressante en français.
+        const systemPrompt = `Tu es un créateur d'énigmes expert. Tu dois créer une énigme LOGIQUE et COHÉRENTE en français.
 
-L'énigme doit :
-- Être claire et bien formulée
-- Avoir une réponse précise et unique
-- Inclure un indice qui aide sans donner directement la réponse
-- Être adaptée au niveau de difficulté demandé
+RÈGLES IMPORTANTES :
+1. L'énigme doit avoir UNE SEULE réponse claire et évidente
+2. La réponse doit faire SENS avec la description
+3. Évite les énigmes abstraites ou métaphoriques difficiles à deviner
+4. Préfère les énigmes concrètes basées sur la logique, les jeux de mots ou les observations
+
+EXEMPLES DE BONNES ÉNIGMES :
+- "Plus je sèche, plus je deviens mouillé. Qui suis-je ?" → Réponse: serviette (LOGIQUE : elle absorbe l'eau)
+- "Qu'est-ce qui a des dents mais ne peut pas mordre ?" → Réponse: peigne (JEU DE MOTS : les dents du peigne)
+- "Je commence la nuit et termine le matin. Qui suis-je ?" → Réponse: n (JEU DE MOTS : la lettre)
+
+EXEMPLES DE MAUVAISES ÉNIGMES À ÉVITER :
+- "Je me brise si je tends trop" → Trop abstrait, pas logique
+- "Je suis invisible mais toujours là" → Trop vague
+- Énigmes où la réponse ne correspond pas vraiment à la description
 
 Réponds UNIQUEMENT avec un objet JSON dans ce format exact (sans markdown, sans balises) :
 {
@@ -46,12 +56,29 @@ Réponds UNIQUEMENT avec un objet JSON dans ce format exact (sans markdown, sans
         const userPrompt = `Crée une énigme de niveau ${difficulty}.
 Description du niveau : ${difficultyDescriptions[difficulty]}
 
-Exemples de bonnes énigmes :
-- Facile : "Plus je sèche, plus je deviens mouillé. Qui suis-je ?" (Réponse: serviette)
-- Moyen : "Plus tu m'enlèves, plus je deviens grand. Qui suis-je ?" (Réponse: trou)
-- Difficile : "Je suis au début de l'éternité, à la fin du temps et de l'espace. Qui suis-je ?" (Réponse: e)
+EXEMPLES D'ÉNIGMES DE QUALITÉ (NE PAS COPIER, JUSTE S'EN INSPIRER) :
 
-Crée maintenant une énigme ORIGINALE (différente de ces exemples).`;
+Facile :
+- "Plus je sèche, plus je deviens mouillé. Qui suis-je ?" (Réponse: serviette) - LOGIQUE claire
+- "Qu'est-ce qui monte mais ne descend jamais ?" (Réponse: âge) - OBSERVATION logique
+- "J'ai des dents mais je ne mords pas. Qui suis-je ?" (Réponse: peigne) - JEU DE MOTS simple
+
+Moyen :
+- "Plus tu m'enlèves, plus je deviens grand. Qui suis-je ?" (Réponse: trou) - LOGIQUE paradoxale
+- "Je cours sans jambes, j'ai un lit mais ne dors pas. Qui suis-je ?" (Réponse: rivière) - MÉTAPHORE claire
+- "Qu'est-ce qui appartient à toi mais que les autres utilisent plus que toi ?" (Réponse: nom) - RÉFLEXION
+
+Difficile :
+- "Je suis au début de l'éternité, à la fin du temps. Qui suis-je ?" (Réponse: e) - JEU DE MOTS avancé
+- "Deux pères et deux fils, mais seulement 3 personnes. Comment ?" (Réponse: grand-père, père, fils) - LOGIQUE complexe
+
+IMPORTANT :
+- La réponse doit VRAIMENT correspondre à la description
+- Évite les concepts trop abstraits (reflet, ombre, silence, etc.)
+- Préfère des objets concrets ou des concepts clairs
+- La logique doit être évidente une fois qu'on a la réponse
+
+Crée maintenant une énigme ORIGINALE et LOGIQUE de niveau ${difficulty} :`;
 
         const messages: LLMMessage[] = [
             {role: "system", content: systemPrompt},
@@ -66,13 +93,17 @@ Crée maintenant une énigme ORIGINALE (différente de ces exemples).`;
         }, false); // stream = false pour avoir la réponse complète
 
         const responseText = await response.text();
-        logger.info(`LLM response received: ${responseText.substring(0, 200)}...`);
+        logger.info(`LLM response received (first 200 chars): ${responseText.substring(0, 200)}...`);
 
         // Parser la réponse JSON
         let riddleData: LLMRiddleResponse;
         try {
+            // La réponse d'Ollama est un objet JSON avec { message: { content: "..." } }
+            const ollamaResponse = JSON.parse(responseText);
+            let contentText = ollamaResponse.message?.content || responseText;
+
             // Nettoyer la réponse (enlever les balises markdown si présentes)
-            let cleanedResponse = responseText.trim();
+            let cleanedResponse = contentText.trim();
 
             // Enlever les balises ```json si présentes
             cleanedResponse = cleanedResponse.replace(/```json\s*/g, '');
@@ -85,6 +116,7 @@ Crée maintenant une énigme ORIGINALE (différente de ces exemples).`;
             }
 
             riddleData = JSON.parse(cleanedResponse);
+            logger.info(`Parsed riddle data: ${JSON.stringify(riddleData)}`);
         } catch (parseError) {
             logger.error("Failed to parse LLM response as JSON:", parseError);
             logger.error("Raw response:", responseText);

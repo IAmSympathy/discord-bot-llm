@@ -37,7 +37,8 @@ const GLOBAL_COMMANDS = [
     'reset-dm',
     'leaderboard',
     'test-mission',
-    'challenges'
+    'challenges',
+    'answer'
     // Ajoutez ici d'autres commandes qui peuvent être utilisées n'importe où
 ];
 
