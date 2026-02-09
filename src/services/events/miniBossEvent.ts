@@ -203,7 +203,7 @@ function createExpirationEmbed(boss: BossData, currentHp: number, totalMessages:
         .setColor(0xED4245) // Rouge
         .setTitle("⏰ TEMPS ÉCOULÉ !")
         .setDescription(
-            `Le temps est écoulé ! Le **${boss.name}** s'est enfui...\n\n` +
+            `Le temps est écoulé ! **${boss.name}** a fait un ravage s'est enfui...\n\n` +
             `**HP restants :** ${currentHp}/${boss.hp}\n` +
             `**Messages envoyés :** ${totalMessages}\n\n` +
             `**💔 Pénalité : ${boss.failurePenalty} XP pour TOUS les ${memberCount} membres du serveur !**\n\n` +
