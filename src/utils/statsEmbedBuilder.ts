@@ -163,7 +163,7 @@ export function createNetricsaStatsEmbed(targetUser: User): EmbedBuilder {
         description += `🎨 **Images générées :** ${userStats.netricsa.imagesGenerees}\n`;
         description += `🖼️ **Images réimaginées :** ${userStats.netricsa.imagesReimaginee}\n`;
         description += `🔍 **Images upscalées :** ${userStats.netricsa.imagesUpscalee}\n`;
-        description += `✨ **Prompts créés :** ${userStats.netricsa.promptsCrees || 0}\n`;
+        description += `✍️ **Prompts créés :** ${userStats.netricsa.promptsCrees || 0}\n`;
         description += `💬 **Conversations IA :** ${userStats.netricsa.conversationsIA}\n`;
 
         // Afficher les recherches web uniquement pour Netricsa
@@ -171,11 +171,7 @@ export function createNetricsaStatsEmbed(targetUser: User): EmbedBuilder {
             description += `🌐 **Recherches web effectuées :** ${userStats.netricsa.recherchesWebNetricsa}\n`;
         }
 
-        description += `🎭 **Memes recherchés :** ${userStats.netricsa.memesRecherches || 0}\n`;
-
-
-        const totalImages = userStats.netricsa.imagesGenerees + userStats.netricsa.imagesReimaginee;
-        description += `\n📊 **Total d'images créées :** ${totalImages}`;
+        description += `🐸 **Memes recherchés :** ${userStats.netricsa.memesRecherches || 0}`;
 
         // Si c'est Netricsa, ajouter un message personnalisé
         if (isBot) {

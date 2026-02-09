@@ -245,9 +245,9 @@ async function startGame(interaction: any, gameId: string) {
             gameState.currentTurn = gameState.currentTurn === gameState.player1 ? gameState.player2! : gameState.player1;
 
             if (gameState.isAI && gameState.currentTurn === NETRICSA_GAME_ID) {
-                await i.update({content: "🤖 Netricsa réfléchit...", embeds: [], components: []});
+                const updatedMessage = await i.update({content: "🤖 Netricsa réfléchit...", embeds: [], components: [], fetchReply: true});
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                await makeAIMove(gameState, gameId, i, collector);
+                await makeAIMove(gameState, gameId, updatedMessage, collector);
             } else {
                 await updateGameDisplay(i, gameId);
             }
@@ -335,7 +335,7 @@ function isBoardFull(board: (string | null)[]): boolean {
     return board.every(cell => cell !== null);
 }
 
-async function makeAIMove(gameState: GameState, gameId: string, interaction: any, collector: any) {
+async function makeAIMove(gameState: GameState, gameId: string, message: any, collector: any) {
     const aiSymbol = gameState.player2Symbol;
     const playerSymbol = gameState.player1Symbol;
 
@@ -351,16 +351,16 @@ async function makeAIMove(gameState: GameState, gameId: string, interaction: any
 
             const winner = checkWinner(gameState.board);
             if (winner) {
-                await handleGameEnd(interaction, gameId, winner, collector, true);
+                await handleGameEndWithMessage(message, gameId, winner, collector);
                 return;
             }
 
             if (isBoardFull(gameState.board)) {
-                await handleGameEnd(interaction, gameId, "draw", collector, true);
+                await handleGameEndWithMessage(message, gameId, "draw", collector);
                 return;
             }
 
-            await updateGameDisplay(interaction, gameId, true);
+            await updateGameDisplayWithMessage(message, gameId);
         }
     }
 }
@@ -562,6 +562,43 @@ async function updateGameDisplay(interaction: any, gameId: string, useEditReply:
     }
 }
 
+async function updateGameDisplayWithMessage(message: any, gameId: string) {
+    const gameState = activeGames.get(gameId);
+    if (!gameState) return;
+
+    const embed = new EmbedBuilder()
+        .setColor(0x2494DB)
+        .setTitle(`🔴 ${GAME_TITLE} 🟡`)
+        .setDescription(getBoardDisplay(gameState))
+        .setFooter({text: `${gameState.player1Symbol} vs ${gameState.player2Symbol}`})
+        .setTimestamp();
+
+    const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+
+    // Créer les boutons de colonnes (divisés en 2 lignes: 4 + 3)
+    const colButtonsRow1: ButtonBuilder[] = [];
+    const colButtonsRow2: ButtonBuilder[] = [];
+
+    for (let col = 0; col < COLS; col++) {
+        const colButton = new ButtonBuilder()
+            .setCustomId(`${GAME_PREFIX}_col_${col}_${gameId}`)
+            .setLabel(`${col + 1}`)
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(dropPiece(gameState.board, col) === -1);
+
+        if (col < 4) {
+            colButtonsRow1.push(colButton);
+        } else {
+            colButtonsRow2.push(colButton);
+        }
+    }
+
+    rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(colButtonsRow1));
+    rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(colButtonsRow2));
+
+    return await message.edit({content: null, embeds: [embed], components: rows});
+}
+
 function getBoardDisplay(gameState: GameState): string {
     let display = "";
     const currentPlayerSymbol = gameState.currentTurn === gameState.player1 ? gameState.player1Symbol : gameState.player2Symbol;
@@ -643,6 +680,67 @@ async function handleGameEnd(interaction: any, gameId: string, result: string | 
     }
 
     setupRematchCollector(interaction, gameId);
+}
+
+async function handleGameEndWithMessage(message: any, gameId: string, result: string | null, collector: any) {
+    const gameState = activeGames.get(gameId);
+    if (!gameState) return;
+
+    collector.stop("game_ended");
+
+    let title = "";
+    let description = getBoardDisplay(gameState);
+    let color = 0x2494DB;
+
+    if (result === "draw") {
+        title = "🤝 Match Nul !";
+        color = 0xFEE75C;
+
+        updateStatsOnDraw(gameState.stats);
+        recordDraw(gameState.player1, "connect4", gameState.isAI, message.channel);
+        if (!gameState.isAI) {
+            recordDraw(gameState.player2!, "connect4", false, message.channel);
+        } else {
+            recordDraw(NETRICSA_GAME_ID, "connect4", true, message.channel);
+        }
+    } else {
+        const winnerSymbol = result;
+        const winnerId = winnerSymbol === gameState.player1Symbol ? gameState.player1 : gameState.player2!;
+        const loserId = winnerId === gameState.player1 ? gameState.player2! : gameState.player1;
+
+        const winnerName = winnerId === NETRICSA_GAME_ID ? "Netricsa" : `<@${winnerId}>`;
+        title = `🎉 ${winnerName} a gagné !`;
+        color = 0x57F287;
+
+        const winnerLabel = winnerId === gameState.player1 ? 'player1' : 'player2';
+        updateStatsOnWin(gameState.stats, winnerLabel);
+        recordWin(winnerId, "connect4", gameState.isAI, message.channel);
+        recordLoss(loserId, "connect4", gameState.isAI, message.channel);
+    }
+
+    const statsDesc = getStatsDescription(gameState.stats, gameState.player1, gameState.player2, gameState.isAI);
+    const winstreakDisplay = getWinstreakDisplay(gameState.stats, gameState.player1, gameState.player2, gameState.isAI);
+
+    const embed = new EmbedBuilder()
+        .setColor(color)
+        .setTitle(title)
+        .setDescription(description + "\n" + statsDesc + winstreakDisplay)
+        .setFooter({text: getStatsFooter(gameState.stats)})
+        .setTimestamp();
+
+    const rematchButton = createRematchButton(gameId, GAME_PREFIX);
+    const backButton = createBackToMenuButton();
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton, backButton);
+
+    const updatedMessage = await message.edit({content: null, embeds: [embed], components: [row]});
+
+    // Créer un objet interaction-like pour setupRematchCollector
+    const fakeInteraction = {
+        message: updatedMessage,
+        channel: message.channel
+    };
+
+    setupRematchCollector(fakeInteraction, gameId);
 }
 
 function setupRematchCollector(interaction: any, gameId: string) {

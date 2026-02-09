@@ -15,8 +15,9 @@ let currentGameName: string | null = null;
 
 /**
  * Vérifie si l'owner est en train de jouer à un jeu
+ * Exportée pour permettre une vérification manuelle
  */
-async function checkOwnerActivity(client: Client): Promise<void> {
+export async function checkOwnerActivity(client: Client): Promise<void> {
     if (!OWNER_ID) return;
 
     try {
@@ -61,7 +62,7 @@ async function checkOwnerActivity(client: Client): Promise<void> {
 
                         // Activer le Low Power Mode automatiquement (si pas en mode manuel)
                         if (!isManualMode()) {
-                            const enabled = enableLowPowerModeAuto();
+                            const enabled = enableLowPowerModeAuto(client);
                             if (enabled) {
                                 await setLowPowerStatus(client);
                                 logger.info(`🎮 Enabled Low Power Mode (Owner playing "${gameName}")`);
@@ -77,7 +78,7 @@ async function checkOwnerActivity(client: Client): Promise<void> {
                     logger.info(`Owner stopped playing "${currentGameName}"`);
                     currentGameName = null;
 
-                    const disabled = disableLowPowerModeAuto();
+                    const disabled = disableLowPowerModeAuto(client);
                     if (disabled) {
                         await setNormalStatus(client);
                         logger.info(`⚡ Disabled Low Power Mode (Owner stopped gaming)`);
@@ -96,7 +97,7 @@ async function checkOwnerActivity(client: Client): Promise<void> {
  * Initialise le monitoring de l'activité de l'owner
  */
 export function initializeActivityMonitor(client: Client): void {
-    logger.info("✅ Activity monitor initialized");
+    logger.info("✅ Activity monitor initialized (Auto Low Power Mode enabled by default)");
     logger.info(`Watching owner: ${OWNER_ID}`);
 
     // Écouter les changements de présence
@@ -107,11 +108,23 @@ export function initializeActivityMonitor(client: Client): void {
         }
     });
 
-    // Vérification initiale après 10 secondes
-    setTimeout(() => {
-        logger.info("Initial activity check...");
-        checkOwnerActivity(client);
-    }, 10000);
+    // Vérification initiale immédiate pour déterminer le statut de démarrage
+    (async () => {
+        try {
+            logger.info("🔍 Initial activity check (determining startup status)...");
+            await checkOwnerActivity(client);
+
+            // Si aucun jeu n'est détecté, s'assurer que le bot est en mode normal
+            if (!currentGameName && !isManualMode()) {
+                await setNormalStatus(client);
+                logger.info("⚡ Bot started in Normal Mode (no game detected)");
+            }
+        } catch (error) {
+            logger.error("Error in initial activity check:", error);
+            // En cas d'erreur, mettre en mode normal par défaut
+            await setNormalStatus(client);
+        }
+    })();
 
     // Vérification périodique toutes les 5 minutes (au cas où)
     setInterval(() => {

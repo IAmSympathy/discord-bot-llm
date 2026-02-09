@@ -11,8 +11,7 @@ import deployCommands from "./deploy/deployCommands";
 import {initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerMessageEdit, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
 import {createErrorEmbed} from "./utils/interactionUtils";
 import {sendGoodbyeMessage, sendWelcomeMessage} from "./services/welcomeService";
-import {isLowPowerMode, OWNER_ID} from "./services/botStateService";
-import {setLowPowerStatus, setNormalStatus} from "./services/statusService";
+import {OWNER_ID} from "./services/botStateService";
 import {initializeMemeScheduler} from "./services/memeScheduler";
 import {initializeBirthdayService} from "./services/birthdayService";
 import {initializeYearlyRewindService} from "./services/yearlyRewindService";
@@ -111,14 +110,9 @@ client.once(Events.ClientReady, async () => {
     logger.info("Bot is online!");
     initializeDiscordLogger(client);
 
-    // Initialiser le statut Discord en fonction du mode Low Power
-    if (isLowPowerMode()) {
-        await setLowPowerStatus(client);
-        logger.info("Bot started in Low Power Mode");
-    } else {
-        await setNormalStatus(client);
-        logger.info("Bot started in Normal Mode");
-    }
+    // Note: Le statut initial sera géré par l'activityMonitor
+    // qui détecte automatiquement si l'owner joue dès le démarrage
+    logger.info("Bot started with Auto Low Power Mode enabled by default");
 
     // Initialiser les rôles de niveau pour tous les utilisateurs
     try {
@@ -668,6 +662,11 @@ client.on(Events.MessageReactionAdd, async (reaction, user) => {
             const emojiUsed = reaction.emoji.name || reaction.emoji.toString();
             recordEmojisUsed(user.id, user.username, emojiUsed);
 
+            // Tracker la réaction pour l'imposteur
+            const {trackImpostorReaction} = require("./services/events/impostorMissionTracker");
+            const messageTimestamp = reaction.message.createdTimestamp;
+            await trackImpostorReaction(reaction.client, user.id, reaction.message.author?.id || "", messageTimestamp);
+
             // Vérifier les achievements Discord (réactions)
             const {checkDiscordAchievements} = require("./services/discordAchievementChecker");
             await checkDiscordAchievements(user.id, user.username, reaction.client, reaction.message.channelId);
@@ -752,6 +751,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
             }
 
             await command.execute(interaction);
+
+            // Tracker les commandes fun pour la mission imposteur
+            const funCommands = ['rollthedice', 'crystalball', '8ball', 'choose', 'coinflip', 'daily', 'ascii', 'ship'];
+            if (funCommands.includes(interaction.commandName)) {
+                const {trackImpostorFunCommand} = require("./services/events/impostorMissionTracker");
+                await trackImpostorFunCommand(interaction.client, interaction.user.id, interaction.commandName);
+            }
         } catch (error: any) {
             console.error("[Command Error]", error);
 
@@ -856,17 +862,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
         if (interaction.customId === 'impostor_suspect_select') {
             try {
                 if (!interaction.guild) {
-                    await interaction.reply({
+                    await interaction.update({
                         content: "❌ Cette action doit être effectuée dans un serveur.",
-                        flags: MessageFlags.Ephemeral
+                        components: []
                     });
                     return;
                 }
 
                 const suspectId = interaction.values[0];
                 const {handleImpostorGuess} = require("./services/randomEventsService");
-
-                await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
                 const result = await handleImpostorGuess(
                     interaction.client,
@@ -876,24 +880,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     interaction.guild
                 );
 
-                await interaction.editReply({
-                    content: result.message
+                // Éditer la réponse éphémère avec le résultat
+                await interaction.update({
+                    content: result.message,
+                    components: []
                 });
 
             } catch (error) {
                 console.error("[Impostor Suspect Select Error]", error);
-                if (interaction.deferred) {
-                    await interaction.editReply({
-                        content: "❌ Une erreur s'est produite. Réessaie plus tard."
-                    }).catch(() => {
-                    });
-                } else {
-                    await interaction.reply({
-                        content: "❌ Une erreur s'est produite. Réessaie plus tard.",
-                        flags: MessageFlags.Ephemeral
-                    }).catch(() => {
-                    });
-                }
+                await interaction.update({
+                    content: "❌ Une erreur s'est produite. Réessaie plus tard.",
+                    components: []
+                }).catch(() => {
+                });
             }
             return;
         }
@@ -914,30 +913,113 @@ client.on(Events.InteractionCreate, async (interaction) => {
                     return;
                 }
 
-                // Afficher un menu de sélection d'utilisateur
+                // Afficher un menu de sélection d'utilisateur en éphémère
                 const {StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder} = require("discord.js");
+                const {getAllStats} = require("./services/userStatsService");
+                const {loadEventsData} = require("./services/events/eventsDataManager");
 
-                // Récupérer les membres du serveur (limité aux 25 plus actifs pour le menu)
-                const members = await interaction.guild.members.fetch();
-                const activeMembers = members
-                    .filter((m: any) => !m.user.bot) // Exclure les bots
-                    .sort((a: any, b: any) => {
-                        // Trier par présence (en ligne d'abord)
-                        if (a.presence?.status === 'online' && b.presence?.status !== 'online') return -1;
-                        if (a.presence?.status !== 'online' && b.presence?.status === 'online') return 1;
-                        return 0;
+                const allStats = getAllStats();
+                const eventsData = loadEventsData();
+
+                // Vérifier si l'utilisateur est l'imposteur
+                const impostorEvent = eventsData.activeEvents.find((e: any) => e.type === "impostor");
+                if (impostorEvent && impostorEvent.data.impostorId === interaction.user.id) {
+                    await interaction.reply({
+                        content: "🤫 Tu ne peux pas dénoncer quelqu'un alors que tu es l'imposteur !",
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                // Vérifier si l'utilisateur a déjà guess
+                if (impostorEvent) {
+                    if (!eventsData.impostorGuesses) eventsData.impostorGuesses = {};
+                    if (!eventsData.impostorGuesses[impostorEvent.id]) eventsData.impostorGuesses[impostorEvent.id] = {};
+
+                    if (eventsData.impostorGuesses[impostorEvent.id][interaction.user.id]) {
+                        await interaction.reply({
+                            content: "Tu as déjà dénoncé quelqu'un ! Une seule tentative par événement.",
+                            flags: MessageFlags.Ephemeral
+                        });
+                        return;
+                    }
+                }
+
+                const now = Date.now();
+                const fiveDayAgo = now - (120 * 60 * 60 * 1000);
+
+                // Filtrer les utilisateurs éligibles (mêmes critères que pour la sélection d'imposteur)
+                let eligibleUsers = Object.entries(allStats)
+                    .filter(([userId, stats]: [string, any]) => {
+                        // Exclure les bots
+                        if (stats.username?.toLowerCase().includes('bot')) return false;
+
+                        // Exclure Netricsa
+                        if (userId === '1462959115528835092') return false;
+
+                        // Vérifier les préférences
+                        if (eventsData.userPreferences[userId]?.disableImpostor) return false;
+
+                        // Vérifier l'activité récente (5 derniers jours)
+                        return stats.lastUpdate && stats.lastUpdate > fiveDayAgo;
                     })
-                    .first(25); // Limiter à 25 (limite Discord)
+                    .map(([userId, stats]: [string, any]) => ({
+                        userId,
+                        username: stats.username
+                    }));
+
+                if (eligibleUsers.length === 0) {
+                    await interaction.reply({
+                        content: "❌ Aucun utilisateur éligible trouvé.",
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                // Récupérer les display names depuis le serveur ET vérifier qu'ils sont toujours membres
+                const membersWithDisplayNames = (await Promise.all(
+                    eligibleUsers.map(async (user) => {
+                        try {
+                            const member = await interaction.guild!.members.fetch(user.userId);
+
+                            // Exclure les vrais bots Discord
+                            if (member.user.bot) {
+                                return null;
+                            }
+
+                            return {
+                                userId: user.userId,
+                                displayName: member.displayName || user.username
+                            };
+                        } catch {
+                            // Si on ne peut pas récupérer le membre, il n'est plus sur le serveur
+                            return null;
+                        }
+                    })
+                )).filter(member => member !== null) as Array<{ userId: string, displayName: string }>;
+
+                // Vérifier qu'il reste des membres éligibles
+                if (membersWithDisplayNames.length === 0) {
+                    await interaction.reply({
+                        content: "❌ Aucun membre éligible trouvé sur le serveur.",
+                        flags: MessageFlags.Ephemeral
+                    });
+                    return;
+                }
+
+                // Limiter à 25 options (limite Discord) et trier par nom
+                const sortedMembers = membersWithDisplayNames
+                    .sort((a, b) => a.displayName.localeCompare(b.displayName))
+                    .slice(0, 25);
 
                 const selectMenu = new StringSelectMenuBuilder()
                     .setCustomId('impostor_suspect_select')
                     .setPlaceholder('🔍 Sélectionne le suspect...')
                     .addOptions(
-                        activeMembers.map((member: any) =>
+                        sortedMembers.map((user: any) =>
                             new StringSelectMenuOptionBuilder()
-                                .setLabel(member.user.username)
-                                .setDescription(`ID: ${member.id}`)
-                                .setValue(member.id)
+                                .setLabel(user.displayName)
+                                .setValue(user.userId)
                         )
                     );
 

@@ -137,16 +137,26 @@ export async function getWebContext(prompt: string): Promise<WebContext | null> 
             // Vérifier si on mentionne des personnes du serveur
             const mentionsPeople = allProfiles.some((profile: any) => {
                 const lowerUsername = profile.username.toLowerCase();
-                const usernameBase = lowerUsername.split(/[0-9_-]/)[0]; // "eddie" de "eddie64"
 
-                if (lowerPrompt.includes(lowerUsername) || lowerPrompt.includes(usernameBase)) {
+                // Utiliser word boundary pour éviter les faux positifs
+                // Exemple: "ps5" ne devrait pas matcher "ps" d'un username
+                const usernameRegex = new RegExp(`\\b${lowerUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+
+                if (usernameRegex.test(lowerPrompt)) {
+                    logger.debug(`Detected mention of user: ${profile.username}`);
                     return true;
                 }
 
+                // Vérifier les alias avec word boundary aussi
                 if (profile.aliases && Array.isArray(profile.aliases)) {
-                    return profile.aliases.some((alias: string) =>
-                        lowerPrompt.includes(alias.toLowerCase())
-                    );
+                    return profile.aliases.some((alias: string) => {
+                        const aliasRegex = new RegExp(`\\b${alias.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+                        if (aliasRegex.test(lowerPrompt)) {
+                            logger.debug(`Detected mention of alias: ${alias}`);
+                            return true;
+                        }
+                        return false;
+                    });
                 }
 
                 return false;

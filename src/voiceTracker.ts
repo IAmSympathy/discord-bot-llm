@@ -52,13 +52,23 @@ function startVoiceSession(userId: string, channelId: string, username: string, 
             console.error("Error checking Discord achievements:", error);
         });
 
-        // Donner de l'XP pour cette minute
+        // Tracker le temps vocal pour la mission imposteur
         try {
             const channel = client.guilds.cache
                 .flatMap(guild => guild.channels.cache)
                 .find(c => c.id === channelId);
 
             if (channel && channel.isVoiceBased()) {
+                // Compter le nombre de personnes dans le canal (excluant les bots)
+                const members = Array.from(channel.members.values());
+                const humanMembers = members.filter(m => !m.user.bot);
+                const isAlone = humanMembers.length === 1 && humanMembers[0].id === userId;
+
+                // Tracker pour la mission imposteur (1 minute à la fois, cumulatif)
+                const {trackImpostorVoiceTime} = require("./services/events/impostorMissionTracker");
+                await trackImpostorVoiceTime(client, userId, 1, !isAlone);
+
+                // Donner de l'XP pour cette minute
                 await addXP(
                     userId,
                     username,

@@ -1,9 +1,8 @@
 import {ChatInputCommandInteraction, EmbedBuilder, GuildMember, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {disableLowPowerModeAuto, isLowPowerMode, resetToAutoMode} from "../../services/botStateService";
 import {logCommand} from "../../utils/discordLogger";
-import {setNormalStatus} from "../../services/statusService";
 import {hasOwnerPermission} from "../../utils/permissions";
-import {getCurrentGame} from "../../services/activityMonitor";
+import {checkOwnerActivity, getCurrentGame} from "../../services/activityMonitor";
 import {handleInteractionError, replyWithError, safeReply} from "../../utils/interactionUtils";
 
 module.exports = {
@@ -33,15 +32,11 @@ module.exports = {
                 disableLowPowerModeAuto();
             }
 
-            // Mettre à jour le statut en fonction du jeu actuel
+            // Forcer une vérification immédiate de l'activité pour appliquer le bon statut
+            await checkOwnerActivity(interaction.client);
+
+            // Récupérer le jeu actuel après vérification
             const currentGame = getCurrentGame();
-            if (currentGame) {
-                // L'utilisateur joue, le statut sera géré par l'activityMonitor
-                console.log(`[AutoLowPower] Owner is currently playing "${currentGame}", activityMonitor will handle status`);
-            } else {
-                // Pas de jeu en cours, mettre en mode normal
-                await setNormalStatus(interaction.client);
-            }
 
             const embed = new EmbedBuilder()
                 .setColor(0x3498db)

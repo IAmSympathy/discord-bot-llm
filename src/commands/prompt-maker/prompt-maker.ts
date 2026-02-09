@@ -267,7 +267,7 @@ module.exports = {
 
             // Message de progression avec animation de points
             progressMessage = await interaction.reply({
-                content: "> 📝 Génération du prompt."
+                content: "\`Génération du prompt.\`"
             });
 
             // Animation des points
@@ -277,7 +277,7 @@ module.exports = {
                 const dots = ".".repeat(dotCount);
 
                 await progressMessage
-                    .edit(`> 📝 Génération du prompt${dots}\n`)
+                    .edit(`\`Génération du prompt${dots}\``)
                     .catch(() => {
                     });
             }, TYPING_ANIMATION_INTERVAL);
@@ -350,6 +350,10 @@ module.exports = {
 
             // Enregistrer dans les statistiques utilisateur
             recordPromptCreatedStats(interaction.user.id, interaction.user.username);
+
+            // Tracker la création de prompt pour l'imposteur
+            const {trackImpostorPromptCreation} = require("../../services/events/impostorMissionTracker");
+            await trackImpostorPromptCreation(interaction.client, interaction.user.id);
 
             // Vérifier les achievements Netricsa
             const {checkNetricsaAchievements} = require("../../services/netricsaAchievementChecker");

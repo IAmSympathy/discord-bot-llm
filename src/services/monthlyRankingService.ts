@@ -311,7 +311,6 @@ export async function processMonthlyRanking(client: Client): Promise<void> {
 
         // Envoyer l'annonce avec @everyone
         await announcementChannel.send({
-            content: "@everyone",
             embeds: [embed]
         });
 

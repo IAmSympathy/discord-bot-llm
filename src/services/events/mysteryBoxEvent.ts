@@ -74,7 +74,7 @@ export async function startMysteryBox(client: Client, guild: Guild, testUserId?:
                         `Retente ta chance la prochaine fois !` +
                         (isTest ? "\n\n⚠️ *Ceci est un TEST. Aucun XP ne serait réellement perdu.*" : "")
                         : `Tu as reçu un **colis mystère** ! 🎁\n\n` +
-                        `**Contenu :** ${xpAmount} XP 💎\n\n` +
+                        `**Contenu :** ${xpAmount} XP 💫\n\n` +
                         `Ce colis a été livré aléatoirement parmi les utilisateurs actifs du serveur.\n\n` +
                         `🍀 C'est ton jour de chance !` +
                         (isTest ? "\n\n⚠️ *Ceci est un événement de TEST. Les récompenses réelles ne seront pas distribuées.*" : "")

@@ -104,8 +104,8 @@ module.exports = {
                 }
             } else {
                 embed.addFields({
-                    name: "💫 Résultat",
-                    value: `${resultEmoji} **${resultText}**`,
+                    name: "Résultat",
+                    value: `${resultEmoji} ${resultText}`,
                     inline: false
                 });
 

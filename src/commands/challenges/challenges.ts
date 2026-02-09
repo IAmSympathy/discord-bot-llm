@@ -457,7 +457,7 @@ module.exports = {
                     [
                         {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
                         {name: "✅ Complétés", value: `${newCompletions}`, inline: true},
-                        {name: "💎 XP gagné", value: `${totalXPEarned}`, inline: true}
+                        {name: "💫 XP gagné", value: `${totalXPEarned}`, inline: true}
                     ]
                 );
             }

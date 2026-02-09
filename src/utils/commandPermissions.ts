@@ -12,7 +12,8 @@ const OWNER_COMMANDS = [
     'blacklist-game',
     'test-rewind',
     'set-status',
-    'test-event'
+    'test-event',
+    'stop-event',
 ];
 
 /**
@@ -34,7 +35,8 @@ const GLOBAL_COMMANDS = [
     'remove-birthday',
     'stop',
     'reset-dm',
-    'leaderboard'
+    'leaderboard',
+    'test-mission',
     // Ajoutez ici d'autres commandes qui peuvent être utilisées n'importe où
 ];
 
@@ -46,9 +48,10 @@ const SPECIAL_COMMANDS = {
     imagine: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
     reimagine: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
     upscale: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
+    'prompt-maker': 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
     games: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
     rollthedice: 'COMMAND_CHANNEL', // Uniquement dans le salon jeux ou en DM
-    '8ball': 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
+    'crystalball': 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
     choose: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
     coinflip: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
     daily: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM

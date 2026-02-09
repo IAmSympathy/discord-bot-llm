@@ -302,6 +302,7 @@ export async function handleCounterMessage(message: Message): Promise<boolean> {
     // Enregistrer dans les stats quotidiennes
     recordCounterContributionStats(message.author.id, message.author.username);
 
+
     saveCounterState(state);
 
     // Vérifier si l'objectif du défi du compteur est atteint
@@ -430,7 +431,7 @@ export async function initializeCounter(channel: TextChannel): Promise<void> {
                 "╭ 📝 Comptez en séquence (1, 2, 3, 4...)\n" +
                 "├ 👥 Pas deux fois de suite le même utilisateur\n" +
                 "├ ❌ Messages invalides supprimés automatiquement\n" +
-                "├ ✨ Réactions spéciales aux paliers (10, 50, 100)\n" +
+                "├ ✨ Réactions spéciales aux paliers et à certains nombres\n" +
                 "╰ 🏆 Vos contributions sont trackées dans vos stats !\n\n" +
                 "**Bonne chance et amusez-vous ! 🎉**",
             footer: {

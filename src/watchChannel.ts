@@ -190,6 +190,11 @@ export function registerWatchedChannelResponder(client: Client) {
             // Enregistrer les emojis utilisés dans le message
             recordEmojisUsed(message.author.id, message.author.username, message.content);
 
+            // Tracker la mission imposteur si l'utilisateur est un imposteur actif
+            const {trackImpostorMessage} = require("./services/events/impostorMissionTracker");
+            const mentionedUsers = message.mentions.users.filter(u => !u.bot).map(u => u.id);
+            await trackImpostorMessage(message.client, message.author.id, message.content, mentionedUsers);
+
             // Vérifier les achievements Discord (messages, emojis, spéciaux)
             const {checkDiscordAchievements, checkTimeBasedAchievements, checkBirthdayAchievement} = require("./services/discordAchievementChecker");
             await checkDiscordAchievements(message.author.id, message.author.username, message.client, message.channelId);
@@ -464,6 +469,10 @@ export function registerWatchedChannelResponder(client: Client) {
 
             // Enregistrer la conversation IA dans les statistiques
             recordAIConversationStats(message.author.id, message.author.displayName);
+
+            // Tracker la conversation IA pour l'imposteur
+            const {trackImpostorAIConversation} = require("./services/events/impostorMissionTracker");
+            await trackImpostorAIConversation(message.client, message.author.id);
 
             // Vérifier les achievements Netricsa
             const {checkNetricsaAchievements} = require("./services/netricsaAchievementChecker");

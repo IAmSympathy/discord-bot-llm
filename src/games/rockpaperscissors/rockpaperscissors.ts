@@ -271,49 +271,37 @@ async function startPvPGame(interaction: any, gameState: GameState, gameId: stri
         .setDescription(`⚔️ <@${gameState.player1}> vs <@${gameState.player2}>\n\nFaites vos choix ! (invisible pour l'adversaire)`)
         .setTimestamp();
 
-    await interaction.update({
+    // Créer les boutons pour les deux joueurs
+    const buttons = createChoiceButtons(gameId, "both");
+
+    // Mettre à jour le message existant avec les boutons
+    const message = await interaction.update({
         embeds: [embed],
-        components: []
-    });
-
-    // Envoyer les boutons de choix aux deux joueurs en DM ou dans le canal
-    await sendChoiceButtons(interaction, gameState, gameId);
-}
-
-async function sendChoiceButtons(interaction: any, gameState: GameState, gameId: string) {
-    const embed = new EmbedBuilder()
-        .setColor(0x2494DB)
-        .setTitle("🎮 Fais ton choix")
-        .setDescription("Clique sur un bouton pour faire ton choix !")
-        .setTimestamp();
-
-    const buttons1 = createChoiceButtons(gameId, gameState.player1);
-
-    // Envoyer un message dans le canal avec les boutons pour chaque joueur
-    const message = await interaction.channel.send({
-        content: `<@${gameState.player1}> <@${gameState.player2}>`,
-        embeds: [embed],
-        components: [buttons1]
+        components: [buttons],
+        fetchReply: true
     });
 
     setupGameCollector(message, gameState, gameId);
 }
 
-function createChoiceButtons(gameId: string, playerId: string): ActionRowBuilder<ButtonBuilder> {
+function createChoiceButtons(gameId: string, playerId: string | "both"): ActionRowBuilder<ButtonBuilder> {
+    // Si playerId est "both", ne pas l'inclure dans le customId - le collector gérera la validation
+    const idSuffix = playerId === "both" ? "" : `_${playerId}`;
+
     const rockButton = new ButtonBuilder()
-        .setCustomId(`rps_choice_${gameId}_${playerId}_rock`)
+        .setCustomId(`rps_choice_${gameId}${idSuffix}_rock`)
         .setLabel("Roche")
         .setStyle(ButtonStyle.Primary)
         .setEmoji("🪨");
 
     const paperButton = new ButtonBuilder()
-        .setCustomId(`rps_choice_${gameId}_${playerId}_paper`)
+        .setCustomId(`rps_choice_${gameId}${idSuffix}_paper`)
         .setLabel("Papier")
         .setStyle(ButtonStyle.Primary)
         .setEmoji("📄");
 
     const scissorsButton = new ButtonBuilder()
-        .setCustomId(`rps_choice_${gameId}_${playerId}_scissors`)
+        .setCustomId(`rps_choice_${gameId}${idSuffix}_scissors`)
         .setLabel("Ciseaux")
         .setStyle(ButtonStyle.Primary)
         .setEmoji("✂️");
@@ -360,9 +348,11 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
 
     collector.on("collect", async (i: any) => {
         try {
-            // Extraire le choice (dernier élément après le dernier underscore)
+            // Parser le customId pour extraire le choix
+            // Format AI: rps_choice_${gameId}_${playerId}_${choice}
+            // Format PvP: rps_choice_${gameId}_${choice}
             const parts = i.customId.split("_");
-            const choice = parts[parts.length - 1];
+            const choice = parts[parts.length - 1]; // Toujours le dernier élément
             const clickerId = i.user.id;
 
             // Vérifier que le joueur a le droit de cliquer
@@ -645,7 +635,7 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
                     .setTimestamp();
 
                 const newGameId = i.customId.split("_")[2] + "_" + Date.now();
-                const buttons = createChoiceButtons(newGameId, gameState.player1);
+                const buttons = createChoiceButtons(newGameId, "both"); // Utiliser "both" pour PvP
 
                 await i.update({embeds: [embed], components: [buttons]});
 

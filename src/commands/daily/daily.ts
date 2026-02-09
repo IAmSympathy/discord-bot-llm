@@ -177,19 +177,19 @@ module.exports = {
             if (newStreak < 7) {
                 embed.addFields({
                     name: "Prochain palier",
-                    value: `Encore **${7 - newStreak} jour${7 - newStreak > 1 ? 's' : ''}** pour le bonus de 7 jours (+50 XP)`,
+                    value: `Encore **${7 - newStreak} jour${7 - newStreak > 1 ? 's' : ''}** pour le bonus de 7 jours (+50 XP 💫)`,
                     inline: false
                 });
             } else if (newStreak < 30) {
                 embed.addFields({
                     name: "🎯 Prochain palier",
-                    value: `Encore **${30 - newStreak} jours** pour le bonus de 30 jours (+150 XP)`,
+                    value: `Encore **${30 - newStreak} jours** pour le bonus de 30 jours (+150 XP 💫)`,
                     inline: false
                 });
             } else if (newStreak < 100) {
                 embed.addFields({
                     name: "🎯 Prochain palier",
-                    value: `Encore **${100 - newStreak} jours** pour le bonus de 100 jours (+500 XP)`,
+                    value: `Encore **${100 - newStreak} jours** pour le bonus de 100 jours (+500 XP 💫)`,
                     inline: false
                 });
             }

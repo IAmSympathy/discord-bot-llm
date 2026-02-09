@@ -180,20 +180,29 @@ export async function addXP(
     }
 
     const oldLevel = xpData[userId].level;
+    const oldTotalXP = xpData[userId].totalXP;
+
     xpData[userId].totalXP += amount;
+
+    // Empêcher l'XP de devenir négatif
+    if (xpData[userId].totalXP < 0) {
+        xpData[userId].totalXP = 0;
+    }
+
     xpData[userId].username = username;
     xpData[userId].level = calculateLevel(xpData[userId].totalXP);
     xpData[userId].lastUpdate = Date.now();
 
     const newLevel = xpData[userId].level;
     const levelUp = newLevel > oldLevel;
+    const levelDown = newLevel < oldLevel;
 
     saveXP(xpData);
 
-    // Enregistrer l'XP gagné pour l'année en cours
+    // Enregistrer l'XP gagné/perdu pour l'année en cours
     recordYearlyXP(userId, username, amount);
 
-    // Enregistrer l'XP gagné pour le mois en cours
+    // Enregistrer l'XP gagné/perdu pour le mois en cours
     recordMonthlyXP(userId, username, amount);
 
     if (levelUp) {
@@ -202,6 +211,13 @@ export async function addXP(
         // Envoyer une notification seulement si c'est un humain et qu'un canal est fourni
         if (!isBot && channel) {
             await sendLevelUpMessage(channel, userId, username, newLevel);
+        }
+    } else if (levelDown) {
+        logger.warn(`${username} level down! ${oldLevel} → ${newLevel} (${oldTotalXP} → ${xpData[userId].totalXP} XP, penalty: ${amount})`);
+
+        // Envoyer une notification de descente de niveau
+        if (!isBot && channel) {
+            await sendLevelDownMessage(channel, userId, username, oldLevel, newLevel, Math.abs(amount));
         }
     }
 
@@ -273,7 +289,7 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
 
         // Récupérer l'image appropriée (toujours basée sur le rôle actuel)
         let imageAttachment: AttachmentBuilder | null = null;
-        let embedTitle = "🎉 Level Up !";
+        let embedTitle = "🎉 Niveau Gagné !";
 
         // Récupérer le rôle actuel pour l'image
         const currentRoleName = levelRoleInfo?.roleKey || "HATCHLING";
@@ -307,7 +323,6 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
 
         // Section changement de rôle (si applicable)
         if (roleResult.changed && roleResult.newRole) {
-            description += `### 🎖️ Nouveau Rôle Débloqué\n`;
             description += `Tu es maintenant **${roleResult.newRole}** !\n`;
         }
 
@@ -415,6 +430,123 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
 
     } catch (error) {
         logger.error(`Error sending level up message for ${username}:`, error);
+    }
+}
+
+/**
+ * Envoie un message de level down dans le canal approprié
+ */
+async function sendLevelDownMessage(
+    channel: TextChannel | VoiceChannel,
+    userId: string,
+    username: string,
+    oldLevel: number,
+    newLevel: number,
+    xpLost: number
+): Promise<void> {
+    try {
+        const guild = channel.guild;
+        if (!guild) {
+            logger.warn("No guild found for level down message");
+            return;
+        }
+
+        const member = await guild.members.fetch(userId).catch(() => null);
+        if (!member || member.user.bot) {
+            return;
+        }
+
+        // Mettre à jour les rôles de niveau (descente)
+        await updateUserLevelRoles(guild, userId, newLevel);
+
+        // Récupérer les informations XP
+        const xpData = loadXP();
+        const userXP = xpData[userId];
+        const currentXP = userXP?.totalXP || 0;
+        const currentLevelXP = getXPForLevel(newLevel);
+        const nextLevelXP = getXPForNextLevel(newLevel);
+        const xpInCurrentLevel = currentXP - currentLevelXP;
+        const xpNeededForNext = nextLevelXP - currentLevelXP;
+        const progressPercent = Math.min(100, Math.round((xpInCurrentLevel / xpNeededForNext) * 100));
+
+        // Barre de progression
+        const barLength = 10;
+        const filledBars = Math.round((progressPercent / 100) * barLength);
+        const emptyBars = barLength - filledBars;
+        const progressBar = "█".repeat(filledBars) + "░".repeat(emptyBars);
+
+        // Récupérer les informations du rôle actuel
+        const levelRoleInfo = await import("./levelRoleService").then(m => m.getLevelRoleForLevel(newLevel));
+        const currentRoleName = levelRoleInfo?.roleKey || "HATCHLING";
+        const currentRoleId = LEVEL_ROLES[currentRoleName as keyof typeof LEVEL_ROLES];
+
+        // Récupérer la couleur du rôle de niveau (rouge par défaut pour level down)
+        let embedColor = 0xED4245; // Rouge par défaut
+        const levelRole = guild.roles.cache.get(currentRoleId);
+        if (levelRole && levelRole.color !== 0) {
+            // Utiliser une version plus foncée de la couleur du rôle pour indiquer la descente
+            embedColor = levelRole.color;
+        }
+
+        // Récupérer l'image du rôle actuel
+        const imageAttachment = getRoleUpImage(currentRoleName);
+
+        const description = `### ⚠️ Pénalité de niveau\n\n` +
+            `Tu es descendu du **niveau ${oldLevel}** au **niveau ${newLevel}** suite à une pénalité de **${xpLost} XP**.\n\n` +
+            `### 📊 Progression Actuelle\n` +
+            `\`\`\`${progressBar} ${progressPercent}%\`\`\`\n` +
+            `💫 ${xpInCurrentLevel.toLocaleString()} XP / ${xpNeededForNext.toLocaleString()} XP\n\n` +
+            `### 💪 Récupération\n` +
+            `Il te faut **${xpNeededForNext - xpInCurrentLevel} XP** pour retrouver le niveau ${newLevel + 1} !\n` +
+            `---\n`;
+
+        const embed = new EmbedBuilder()
+            .setColor(0xED4245)
+            .setTitle("📉 Niveau Perdu")
+            .setDescription(description)
+            .addFields(
+                {
+                    name: "💫 XP Total",
+                    value: `${currentXP.toLocaleString()} XP`,
+                    inline: true
+                },
+                {
+                    name: "⭐ Niveau",
+                    value: `${newLevel}`,
+                    inline: true
+                },
+                {
+                    name: "🏆 Rang",
+                    value: currentRoleId ? `<@&${currentRoleId}>` : currentRoleName,
+                    inline: true
+                }
+            )
+            .setFooter({text: "Sois plus prudent la prochaine fois !"})
+            .setTimestamp();
+
+        // Ajouter l'image du rôle si disponible
+        if (imageAttachment) {
+            embed.setThumbnail(`attachment://${imageAttachment.name}`);
+        }
+
+        // Préparer le message avec l'image
+        const messageOptions: any = {
+            content: `<@${userId}>`,
+            embeds: [embed],
+            allowedMentions: {
+                users: [userId]
+            }
+        };
+
+        if (imageAttachment) {
+            messageOptions.files = [imageAttachment];
+        }
+
+        await channel.send(messageOptions);
+
+        logger.info(`Level down message sent for ${username} (${oldLevel} → ${newLevel}) in ${channel.name || 'channel'}`);
+    } catch (error) {
+        logger.error(`Error sending level down message for ${username}:`, error);
     }
 }
 

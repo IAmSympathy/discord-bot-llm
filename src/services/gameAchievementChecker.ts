@@ -43,11 +43,13 @@ export async function checkGameAchievements(
         }
 
         // Polyvalent (joué à tous les jeux)
-        if (stats.rockpaperscissors.wins + stats.rockpaperscissors.losses + stats.rockpaperscissors.draws >= 1 &&
-            stats.tictactoe.wins + stats.tictactoe.losses + stats.tictactoe.draws >= 1 &&
-            stats.connect4.wins + stats.connect4.losses + stats.connect4.draws >= 1 &&
-            stats.hangman.wins + stats.hangman.losses >= 1) {
-            await unlockAchievement(userId, username, "game_polyvalent", client, channelId);
+        if (stats.rockpaperscissors && stats.tictactoe && stats.connect4 && stats.hangman) {
+            if ((stats.rockpaperscissors.wins + stats.rockpaperscissors.losses + stats.rockpaperscissors.draws) >= 1 &&
+                (stats.tictactoe.wins + stats.tictactoe.losses + stats.tictactoe.draws) >= 1 &&
+                (stats.connect4.wins + stats.connect4.losses + stats.connect4.draws) >= 1 &&
+                (stats.hangman.wins + stats.hangman.losses) >= 1) {
+                await unlockAchievement(userId, username, "game_polyvalent", client, channelId);
+            }
         }
 
         // Victoires
@@ -90,71 +92,79 @@ export async function checkGameAchievements(
         }
 
         // === ROCHE-PAPIER-CISEAUX ===
-        const rpsWins = stats.rockpaperscissors.wins;
+        if (stats.rockpaperscissors) {
+            const rpsWins = stats.rockpaperscissors.wins;
 
-        if (rpsWins >= 10) {
-            await unlockAchievement(userId, username, "rps_win_10", client, channelId);
-        }
-        if (rpsWins >= 50) {
-            await unlockAchievement(userId, username, "rps_win_50", client, channelId);
-        }
-        if (rpsWins >= 200) {
-            await unlockAchievement(userId, username, "rps_win_200", client, channelId);
-        }
+            if (rpsWins >= 10) {
+                await unlockAchievement(userId, username, "rps_win_10", client, channelId);
+            }
+            if (rpsWins >= 50) {
+                await unlockAchievement(userId, username, "rps_win_50", client, channelId);
+            }
+            if (rpsWins >= 200) {
+                await unlockAchievement(userId, username, "rps_win_200", client, channelId);
+            }
 
-        // Streak RPS
-        if (stats.rockpaperscissors.highestStreak >= 5) {
-            await unlockAchievement(userId, username, "rps_streak_5", client, channelId);
+            // Streak RPS
+            if (stats.rockpaperscissors.highestStreak >= 5) {
+                await unlockAchievement(userId, username, "rps_streak_5", client, channelId);
+            }
         }
 
         // === TIC-TAC-TOE ===
-        const tttWins = stats.tictactoe.wins;
-        const tttDraws = stats.tictactoe.draws;
+        if (stats.tictactoe) {
+            const tttWins = stats.tictactoe.wins;
+            const tttDraws = stats.tictactoe.draws;
 
-        if (tttWins >= 10) {
-            await unlockAchievement(userId, username, "ttt_win_10", client, channelId);
-        }
-        if (tttWins >= 50) {
-            await unlockAchievement(userId, username, "ttt_win_50", client, channelId);
-        }
-        if (tttWins >= 200) {
-            await unlockAchievement(userId, username, "ttt_win_200", client, channelId);
-        }
+            if (tttWins >= 10) {
+                await unlockAchievement(userId, username, "ttt_win_10", client, channelId);
+            }
+            if (tttWins >= 50) {
+                await unlockAchievement(userId, username, "ttt_win_50", client, channelId);
+            }
+            if (tttWins >= 200) {
+                await unlockAchievement(userId, username, "ttt_win_200", client, channelId);
+            }
 
-        // Le Mur (égalités)
-        if (tttDraws >= 20) {
-            await unlockAchievement(userId, username, "ttt_draw_20", client, channelId);
+            // Le Mur (égalités)
+            if (tttDraws >= 20) {
+                await unlockAchievement(userId, username, "ttt_draw_20", client, channelId);
+            }
         }
 
         // === CONNECT 4 ===
-        const c4Wins = stats.connect4.wins;
+        if (stats.connect4) {
+            const c4Wins = stats.connect4.wins;
 
-        if (c4Wins >= 10) {
-            await unlockAchievement(userId, username, "c4_win_10", client, channelId);
-        }
-        if (c4Wins >= 50) {
-            await unlockAchievement(userId, username, "c4_win_50", client, channelId);
-        }
-        if (c4Wins >= 200) {
-            await unlockAchievement(userId, username, "c4_win_200", client, channelId);
+            if (c4Wins >= 10) {
+                await unlockAchievement(userId, username, "c4_win_10", client, channelId);
+            }
+            if (c4Wins >= 50) {
+                await unlockAchievement(userId, username, "c4_win_50", client, channelId);
+            }
+            if (c4Wins >= 200) {
+                await unlockAchievement(userId, username, "c4_win_200", client, channelId);
+            }
         }
 
         // === PENDU ===
-        const hangmanWins = stats.hangman.wins;
+        if (stats.hangman) {
+            const hangmanWins = stats.hangman.wins;
 
-        if (hangmanWins >= 10) {
-            await unlockAchievement(userId, username, "hangman_win_10", client, channelId);
-        }
-        if (hangmanWins >= 50) {
-            await unlockAchievement(userId, username, "hangman_win_50", client, channelId);
-        }
-        if (hangmanWins >= 200) {
-            await unlockAchievement(userId, username, "hangman_win_200", client, channelId);
-        }
+            if (hangmanWins >= 10) {
+                await unlockAchievement(userId, username, "hangman_win_10", client, channelId);
+            }
+            if (hangmanWins >= 50) {
+                await unlockAchievement(userId, username, "hangman_win_50", client, channelId);
+            }
+            if (hangmanWins >= 200) {
+                await unlockAchievement(userId, username, "hangman_win_200", client, channelId);
+            }
 
-        // Streak Pendu
-        if (stats.hangman.highestStreak >= 5) {
-            await unlockAchievement(userId, username, "hangman_streak_5", client, channelId);
+            // Streak Pendu
+            if (stats.hangman.highestStreak >= 5) {
+                await unlockAchievement(userId, username, "hangman_streak_5", client, channelId);
+            }
         }
 
         // === ACHIEVEMENTS BASÉS SUR LE TRACKING ===

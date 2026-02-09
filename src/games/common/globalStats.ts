@@ -119,6 +119,11 @@ export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tic
         };
     }
 
+    // S'assurer que le jeu spécifique existe (pour la rétrocompatibilité)
+    if (!allStats[userId][game]) {
+        allStats[userId][game] = initGameStats();
+    }
+
     // Mettre à jour les stats du jeu spécifique
     allStats[userId][game].wins++;
     allStats[userId][game].currentStreak++;
@@ -185,6 +190,12 @@ export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tic
         trackWin(userId, game, isVsAI);
         trackGamePlayed(userId, game);
 
+        // Tracker le jeu pour la mission imposteur
+        if (channel && channel.client) {
+            const {trackImpostorGamePlayed} = require("../../services/events/impostorMissionTracker");
+            await trackImpostorGamePlayed(channel.client, userId, game);
+        }
+
         // Vérifier les achievements de jeux
         if (channel) {
             const {checkGameAchievements, checkGameTimeAchievements, checkGameSessionAchievements, checkGameDailyAchievements} = require("../../services/gameAchievementChecker");
@@ -215,6 +226,11 @@ export async function recordLoss(userId: string, game: 'rockpaperscissors' | 'ti
             hangman: initGameStats(),
             connect4: initGameStats()
         };
+    }
+
+    // S'assurer que le jeu spécifique existe (pour la rétrocompatibilité)
+    if (!allStats[userId][game]) {
+        allStats[userId][game] = initGameStats();
     }
 
     // Mettre à jour les stats du jeu spécifique
@@ -277,6 +293,12 @@ export async function recordLoss(userId: string, game: 'rockpaperscissors' | 'ti
         trackLoss(userId, isVsAI);
         trackGamePlayed(userId, game);
 
+        // Tracker le jeu pour la mission imposteur
+        if (channel && channel.client) {
+            const {trackImpostorGamePlayed} = require("../../services/events/impostorMissionTracker");
+            await trackImpostorGamePlayed(channel.client, userId, game);
+        }
+
         // Vérifier les achievements de jeux
         if (channel) {
             const {checkGameAchievements, checkGameTimeAchievements, checkGameSessionAchievements, checkGameDailyAchievements} = require("../../services/gameAchievementChecker");
@@ -307,6 +329,11 @@ export async function recordDraw(userId: string, game: 'rockpaperscissors' | 'ti
             hangman: initGameStats(),
             connect4: initGameStats()
         };
+    }
+
+    // S'assurer que le jeu spécifique existe (pour la rétrocompatibilité)
+    if (!allStats[userId][game]) {
+        allStats[userId][game] = initGameStats();
     }
 
     // Mettre à jour les stats du jeu spécifique
@@ -370,6 +397,12 @@ export async function recordDraw(userId: string, game: 'rockpaperscissors' | 'ti
         const {trackDraw, trackGamePlayed} = require("../../services/gameTracker");
         trackDraw(userId);
         trackGamePlayed(userId, game);
+
+        // Tracker le jeu pour la mission imposteur
+        if (channel && channel.client) {
+            const {trackImpostorGamePlayed} = require("../../services/events/impostorMissionTracker");
+            await trackImpostorGamePlayed(channel.client, userId, game);
+        }
 
         // Vérifier les achievements de jeux
         if (channel) {

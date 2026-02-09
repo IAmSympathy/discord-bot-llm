@@ -3,9 +3,100 @@ import {createLogger} from "../../utils/logger";
 import {addXP} from "../xpSystem";
 import {EventType} from "./eventTypes";
 import {loadEventsData, saveEventsData} from "./eventsDataManager";
-import {createEventChannel, endEvent} from "./eventChannelManager";
+import {endEvent, sendGeneralAnnouncement, startEvent} from "./eventChannelManager";
+import {EnvConfig} from "../../utils/envConfig";
 
 const logger = createLogger("CounterChallenge");
+
+// ========== CONSTANTES ==========
+
+/**
+ * Durée de l'événement en millisecondes (30 minutes)
+ */
+const EVENT_DURATION = 30 * 60 * 1000;
+
+/**
+ * Récompense XP pour le gagnant
+ */
+const WINNER_XP_REWARD = 500;
+
+/**
+ * Objectif minimum à ajouter au compteur actuel
+ */
+const MIN_TARGET_ADDITION = 50;
+
+/**
+ * Objectif maximum à ajouter au compteur actuel
+ */
+const MAX_TARGET_ADDITION = 125;
+
+// ========== FONCTIONS UTILITAIRES ==========
+
+/**
+ * Crée l'embed d'annonce pour le salon d'événement
+ */
+function createEventAnnouncementEmbed(targetCount: number, currentCount: number, endTime: number, isTest: boolean): EmbedBuilder {
+    // Calculer la fourchette (±25 autour de la cible)
+    const rangeMin = Math.max(currentCount + 1, targetCount - 25);
+    const rangeMax = targetCount + 25;
+
+    return new EmbedBuilder()
+        .setColor(0xF6AD55)
+        .setTitle("🎯 DÉFI DU COMPTEUR !")
+        .setDescription(
+            `Un événement mystérieux vient d'apparaître !\n\n` +
+            `**Objectif :** Atteindre un nombre **secret** dans le compteur !\n` +
+            `**Cible :** Le nombre est entre **${rangeMin}** et **${rangeMax}** 🤫\n` +
+            `**Temps limite :** <t:${Math.floor(endTime / 1000)}:R>\n` +
+            `**Récompense :** Le premier à atteindre le nombre secret gagne **${WINNER_XP_REWARD} XP** 💫 !\n\n` +
+            `**État actuel :** Le compteur est à **${currentCount}**\n\n` +
+            `🏃 Rendez-vous dans <#${EnvConfig.COUNTER_CHANNEL_ID}> et commencez à compter !\n\n` +
+            (isTest ? "\n\n⚠️ *Ceci est un événement de TEST. Les récompenses réelles ne seront pas distribuées.*" : "")
+        )
+        .setFooter({text: "Bonne chance ! 🍀"})
+        .setTimestamp();
+}
+
+/**
+ * Crée l'embed d'annonce pour le salon général
+ */
+function createGeneralAnnouncementEmbed(targetCount: number, currentCount: number, endTime: number, eventChannelId: string): EmbedBuilder {
+    // Calculer la fourchette (±10 autour de la cible)
+    const rangeMin = Math.max(currentCount + 1, targetCount - 10);
+    const rangeMax = targetCount + 10;
+
+    return new EmbedBuilder()
+        .setColor(0xF6AD55)
+        .setTitle("🎯 Nouvel Événement : Défi du Compteur !")
+        .setDescription(
+            `Un événement temporaire vient d'apparaître !\n\n` +
+            `**Objectif :** Atteindre un nombre **secret** dans le compteur\n` +
+            `**Cible :** Entre **${rangeMin}** et **${rangeMax}** 🤫\n` +
+            `**Temps limite :** <t:${Math.floor(endTime / 1000)}:R>\n` +
+            `**Récompense :** ${WINNER_XP_REWARD} XP pour le gagnant 💫\n\n` +
+            `📋 Consultez les détails dans <#${eventChannelId}>\n` +
+            `🏃 Participez dans <#${EnvConfig.COUNTER_CHANNEL_ID}>`
+        )
+        .setTimestamp();
+}
+
+/**
+ * Crée l'embed de victoire
+ */
+function createVictoryEmbed(userId: string, targetCount: number): EmbedBuilder {
+    return new EmbedBuilder()
+        .setColor(0x57F287) // Vert
+        .setTitle("🏆 DÉFI COMPLÉTÉ !")
+        .setDescription(
+            `🎉 **<@${userId}>** a atteint l'objectif de **${targetCount}** !\n\n` +
+            `**Récompense :** ${WINNER_XP_REWARD} XP 💫`
+        )
+        .setFooter({text: "Le salon se fermera dans 5 minutes..."})
+        .setTimestamp();
+
+}
+
+// ========== FONCTIONS PRINCIPALES ==========
 
 /**
  * ÉVÉNEMENT : COMPTEUR CHALLENGE
@@ -21,93 +112,49 @@ export async function startCounterChallenge(client: Client, guild: Guild, isTest
             return;
         }
 
-        // Générer un objectif aléatoire (entre 100 et 250 au-dessus du compteur actuel)
-        const {getCurrentCount} = require("./counterService");
+        // Générer un objectif aléatoire
+        const {getCurrentCount} = require("../counterService");
         const currentCount = getCurrentCount();
-        const targetCount = currentCount + Math.floor(Math.random() * 151) + 100; // +100 à +250
+        const targetCount = currentCount + Math.floor(Math.random() * (MAX_TARGET_ADDITION - MIN_TARGET_ADDITION + 1)) + MIN_TARGET_ADDITION;
 
-        // Durée : 30 minutes
-        const duration = 30 * 60 * 1000;
-        const endTime = Date.now() + duration;
-
-        // Créer le canal d'événement
-        const channel = await createEventChannel(guild, "défi-compteur", "🎯");
-        if (!channel) {
-            logger.error("Failed to create counter challenge channel");
-            return;
-        }
-
-        // Créer l'embed des règles
-        const rulesEmbed = new EmbedBuilder()
-            .setColor(0xF6AD55)
-            .setTitle("🎯 DÉFI DU COMPTEUR !")
-            .setDescription(
-                `Un défi temporaire vient d'apparaître !\n\n` +
-                `**Objectif :** Atteindre **${targetCount}** dans le compteur !\n` +
-                `**Temps limite :** <t:${Math.floor(endTime / 1000)}:R>\n` +
-                `**Récompense :** Le premier à atteindre exactement ${targetCount} gagne **500 XP** 💫 !\n\n` +
-                `**État actuel :** Le compteur est à **${currentCount}**\n` +
-                `**Progression :** 0/${targetCount - currentCount} nombres restants\n\n` +
-                `🏃 Rendez-vous dans <#${require("../utils/envConfig").EnvConfig.COUNTER_CHANNEL_ID}> et commencez à compter !\n\n` +
-                `*Cet événement se terminera automatiquement dans 30 minutes ou dès que l'objectif est atteint.*` +
-                (isTest ? "\n\n⚠️ *Ceci est un événement de TEST. Les récompenses réelles ne seront pas distribuées.*" : "")
-            )
-            .setFooter({text: "Bonne chance ! 🍀"})
-            .setTimestamp();
-
-        // Envoyer les règles dans le canal d'événement (sans ping)
-        await channel.send({embeds: [rulesEmbed]});
-
-        // Envoyer une annonce dans le salon général
-        const generalChannelId = require("../utils/envConfig").EnvConfig.WELCOME_CHANNEL_ID;
-        if (generalChannelId) {
-            try {
-                const generalChannel = guild.channels.cache.get(generalChannelId) as TextChannel;
-                if (generalChannel) {
-                    const announcementEmbed = new EmbedBuilder()
-                        .setColor(0xF6AD55)
-                        .setTitle("🎯 Nouvel Événement : Défi du Compteur !")
-                        .setDescription(
-                            `Un événement temporaire vient d'apparaître !\n\n` +
-                            `**Objectif :** Atteindre **${targetCount}** dans le compteur\n` +
-                            `**Temps limite :** <t:${Math.floor(endTime / 1000)}:R>\n` +
-                            `**Récompense :** 500 XP pour le gagnant 💎\n\n` +
-                            `📋 Consultez les détails dans <#${channel.id}>\n` +
-                            `🏃 Participez dans <#${require("../utils/envConfig").EnvConfig.COUNTER_CHANNEL_ID}>`
-                        )
-                        .setTimestamp();
-
-                    await generalChannel.send({embeds: [announcementEmbed]});
-                    logger.info("Event announcement sent to general channel");
-                }
-            } catch (error) {
-                logger.error("Error sending event announcement:", error);
-            }
-        }
-
-        // Enregistrer l'événement
-        const eventId = `counter_${Date.now()}`;
-        eventsData.activeEvents.push({
-            id: eventId,
-            type: EventType.COUNTER_CHALLENGE,
-            channelId: channel.id,
-            startTime: Date.now(),
-            endTime: endTime,
-            data: {
+        // Créer et enregistrer l'événement via l'event manager
+        const result = await startEvent(
+            client,
+            guild,
+            EventType.COUNTER_CHALLENGE,
+            "défi-compteur",
+            "🎯",
+            EVENT_DURATION,
+            {
                 targetCount: targetCount,
                 startCount: currentCount,
                 winnerId: null,
-                isTest: isTest // Marquer si c'est un test
+                isTest: isTest
             }
-        });
-        saveEventsData(eventsData);
+        );
 
-        logger.info(`Counter challenge started! Target: ${targetCount}, Duration: 30 minutes`);
+        if (!result) {
+            logger.error("Failed to start counter challenge");
+            return;
+        }
 
-        // Programmer la fin automatique après 30 minutes
+        const {eventId, channel} = result;
+        const endTime = Date.now() + EVENT_DURATION;
+
+        // Envoyer les règles dans le canal d'événement
+        const rulesEmbed = createEventAnnouncementEmbed(targetCount, currentCount, endTime, isTest);
+        await channel.send({embeds: [rulesEmbed]});
+
+        // Envoyer une annonce dans le salon général (sauf si test)
+        const generalEmbed = createGeneralAnnouncementEmbed(targetCount, currentCount, endTime, channel.id);
+        await sendGeneralAnnouncement(guild, generalEmbed, isTest);
+
+        logger.info(`Counter challenge started! Target: ${targetCount}, Duration: ${EVENT_DURATION / 60000} minutes`);
+
+        // Programmer la fin automatique après expiration
         setTimeout(async () => {
-            await endEvent(client, eventId, "expired");
-        }, duration);
+            await endCounterChallenge(client, eventId, guild);
+        }, EVENT_DURATION);
 
     } catch (error) {
         logger.error("Error starting counter challenge:", error);
@@ -130,36 +177,52 @@ export async function checkCounterChallengeProgress(
         return; // Pas d'événement actif ou déjà gagné
     }
 
+    // Ajouter le participant à la liste (s'il n'y est pas déjà)
+    if (!counterEvent.data.participants) {
+        counterEvent.data.participants = [];
+    }
+    if (!counterEvent.data.participants.includes(userId)) {
+        counterEvent.data.participants.push(userId);
+        saveEventsData(eventsData);
+    }
+
     // Vérifier si l'objectif est atteint
     if (newCount === counterEvent.data.targetCount) {
         logger.info(`Counter challenge completed by ${username} at ${newCount}!`);
 
         // Marquer le gagnant
         counterEvent.data.winnerId = userId;
+
+        // Ajouter le participant à la liste (s'il n'y est pas déjà)
+        if (!counterEvent.data.participants) {
+            counterEvent.data.participants = [];
+        }
+        if (!counterEvent.data.participants.includes(userId)) {
+            counterEvent.data.participants.push(userId);
+        }
+
         saveEventsData(eventsData);
 
-        // Trouver le canal de l'événement
+        // Trouver le canal de l'événement et annoncer le gagnant
         for (const guild of client.guilds.cache.values()) {
             const channel = guild.channels.cache.get(counterEvent.channelId) as TextChannel;
             if (channel) {
-                // Annoncer le gagnant
-                const winEmbed = new EmbedBuilder()
-                    .setColor(0x57F287)
-                    .setTitle("🏆 DÉFI COMPLÉTÉ !")
-                    .setDescription(
-                        `🎉 **<@${userId}>** a atteint l'objectif de **${counterEvent.data.targetCount}** !\n\n` +
-                        `**Récompense :** 500 XP 💎\n\n` +
-                        `*Le salon se fermera dans 1 minute...*`
-                    )
-                    .setTimestamp();
-
-                await channel.send({embeds: [winEmbed]});
+                // Annoncer le gagnant avec ping de tous les participants
+                const winEmbed = createVictoryEmbed(userId, counterEvent.data.targetCount);
+                const participantPings = counterEvent.data.participants.map((id: string) => `<@${id}>`).join(' ');
+                await channel.send({
+                    content: participantPings,
+                    embeds: [winEmbed]
+                });
 
                 // Donner l'XP au gagnant (sauf si c'est un test)
                 if (!counterEvent.data.isTest) {
-                    const counterChannel = guild.channels.cache.get(require("../utils/envConfig").EnvConfig.COUNTER_CHANNEL_ID);
-                    if (counterChannel && (counterChannel instanceof TextChannel)) {
-                        await addXP(userId, username, 500, counterChannel, false);
+                    if (EnvConfig.COUNTER_CHANNEL_ID) {
+                        const counterChannel = guild.channels.cache.get(EnvConfig.COUNTER_CHANNEL_ID);
+                        if (counterChannel && (counterChannel instanceof TextChannel)) {
+                            await addXP(userId, username, WINNER_XP_REWARD, counterChannel, false);
+                            logger.info(`${username} gained ${WINNER_XP_REWARD} XP for completing counter challenge`);
+                        }
                     }
                 } else {
                     logger.info("Test mode: XP reward skipped");
@@ -175,13 +238,62 @@ export async function checkCounterChallengeProgress(
                 });
                 saveEventsData(eventsData);
 
-                // Fermer l'événement après 60 secondes (complété avec succès)
-                setTimeout(async () => {
-                    await endEvent(client, counterEvent.id, "completed");
-                }, 60000);
+                // Terminer l'événement avec un délai de 5 minutes (géré par l'event manager)
+                await endEvent(client, counterEvent.id, guild, "completed", 300000); // 5 minutes
 
                 break;
             }
         }
     }
 }
+
+/**
+ * Termine l'événement Counter Challenge
+ * Envoie un message d'expiration si l'événement n'est pas complété
+ */
+async function endCounterChallenge(client: Client, eventId: string, guild: Guild): Promise<void> {
+    const eventsData = loadEventsData();
+    const event = eventsData.activeEvents.find(e => e.id === eventId);
+
+    if (!event) {
+        logger.warn(`Counter challenge ${eventId} not found`);
+        return;
+    }
+
+    const isCompleted = !!event.data.winnerId;
+
+    // Si pas complété, envoyer un message d'expiration avant de terminer
+    if (!isCompleted && event.channelId) {
+        try {
+            const channel = guild.channels.cache.get(event.channelId) as TextChannel;
+            if (channel) {
+                const expiredEmbed = new EmbedBuilder()
+                    .setColor(0xED4245)
+                    .setTitle("⏰ TEMPS ÉCOULÉ !")
+                    .setDescription(
+                        `Le temps est écoulé ! Personne n'a atteint l'objectif de **${event.data.targetCount}**.\n\n` +
+                        `Mieux vaut être plus rapide la prochaine fois ! 🏃`
+                    )
+                    .setFooter({text: "Le salon se fermera dans 5 minutes..."})
+                    .setTimestamp();
+
+                // Ping tous les participants s'il y en a
+                const participants = event.data.participants || [];
+                const content = participants.length > 0
+                    ? participants.map((id: string) => `<@${id}>`).join(' ')
+                    : undefined;
+
+                await channel.send({
+                    content: content,
+                    embeds: [expiredEmbed]
+                });
+            }
+        } catch (error) {
+            logger.error("Error sending expiration message:", error);
+        }
+    }
+
+    // Terminer l'événement via l'event manager (qui gère la fermeture du salon)
+    await endEvent(client, eventId, guild, isCompleted ? "completed" : "expired");
+}
+

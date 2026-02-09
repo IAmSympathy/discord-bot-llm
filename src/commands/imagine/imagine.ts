@@ -83,7 +83,7 @@ module.exports = {
 
             // Message de progression avec animation de points
             progressMessage = await interaction.reply({
-                content: "> 🎨 Imagination de l'image."
+                content: "`Imagination de l'image.`"
             });
 
             // Animation des points
@@ -95,7 +95,7 @@ module.exports = {
                 const label = amount === 1 ? "image" : "images";
 
                 await progressMessage
-                    .edit(`> 🎨 Imagination de ${amount === 1 ? "l’" : `${amount} `}${label}${dots}\n`)
+                    .edit(`\`Imagination de ${amount === 1 ? "l’" : `${amount} `}${label}${dots}\n\``)
                     .catch(() => {
                     });
             }, TYPING_ANIMATION_INTERVAL);
@@ -181,6 +181,10 @@ module.exports = {
             recordImageGeneratedStats(interaction.user.id, interaction.user.username);
             // Enregistrer aussi pour Netricsa elle-même (une seule fois)
             recordImageGeneratedStats(NETRICSA_USER_ID, NETRICSA_USERNAME);
+
+            // Tracker la génération d'image pour l'imposteur
+            const {trackImpostorImageGeneration} = require("../../services/events/impostorMissionTracker");
+            await trackImpostorImageGeneration(interaction.client, interaction.user.id);
 
             // Vérifier les achievements Netricsa
             const {checkNetricsaAchievements} = require("../../services/netricsaAchievementChecker");

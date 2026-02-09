@@ -87,7 +87,7 @@ export function toggleLowPowerMode(): boolean {
  * Active le Low Power Mode automatiquement (par détection de jeu)
  * Ne fait rien si le mode est manuel
  */
-export function enableLowPowerModeAuto(): boolean {
+export function enableLowPowerModeAuto(client?: any): boolean {
     if (botState.isManualMode) {
         logger.info(`⚠️ Low Power Mode is in MANUAL mode, ignoring auto-enable`);
         return false;
@@ -96,6 +96,18 @@ export function enableLowPowerModeAuto(): boolean {
     if (!botState.lowPowerMode) {
         botState.lowPowerMode = true;
         logger.info(`🔋 Low Power Mode ENABLED (AUTO - gaming detected)`);
+
+        // Remplacer les missions impossibles dans les événements actifs
+        if (client) {
+            (async () => {
+                try {
+                    const {handleLowPowerModeTransition} = require('./events/impostorEvent');
+                    await handleLowPowerModeTransition(client);
+                } catch (error) {
+                    logger.error('Error handling Low Power Mode transition:', error);
+                }
+            })();
+        }
     }
     return true;
 }
@@ -104,7 +116,7 @@ export function enableLowPowerModeAuto(): boolean {
  * Désactive le Low Power Mode automatiquement (arrêt du jeu)
  * Ne fait rien si le mode est manuel
  */
-export function disableLowPowerModeAuto(): boolean {
+export function disableLowPowerModeAuto(client?: any): boolean {
     if (botState.isManualMode) {
         logger.info(`⚠️ Low Power Mode is in MANUAL mode, ignoring auto-disable`);
         return false;
@@ -113,6 +125,18 @@ export function disableLowPowerModeAuto(): boolean {
     if (botState.lowPowerMode) {
         botState.lowPowerMode = false;
         logger.info(`⚡ Low Power Mode DISABLED (AUTO - gaming stopped)`);
+
+        // Restaurer les missions originales dans les événements actifs
+        if (client) {
+            (async () => {
+                try {
+                    const {handleLowPowerModeExit} = require('./events/impostorEvent');
+                    await handleLowPowerModeExit(client);
+                } catch (error) {
+                    logger.error('Error handling Low Power Mode exit:', error);
+                }
+            })();
+        }
     }
     return true;
 }

@@ -311,10 +311,6 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             prompt.toLowerCase().includes("cherche") ||
             prompt.includes("?");
 
-        if (needsWebSearch) {
-            await setStatus(client, BotStatus.SEARCHING_WEB);
-        }
-
         const webContext = await getWebContext(prompt);
         if (webContext) {
             const webSearchTime = Date.now() - webSearchStartTime;
@@ -325,6 +321,10 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
             // Enregistrer la recherche web uniquement pour Netricsa elle-même
             recordNetricsaWebSearch();
+
+            // Tracker la recherche web pour la mission imposteur
+            const {trackImpostorWebSearch} = require("../services/events/impostorMissionTracker");
+            await trackImpostorWebSearch(client, userId);
         }
 
         // Récupérer le profil de l'utilisateur actuel
