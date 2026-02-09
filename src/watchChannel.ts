@@ -156,13 +156,15 @@ export function registerWatchedChannelResponder(client: Client) {
             // Ne plus ignorer complètement les bots - ils peuvent aussi gagner de l'XP
             // Mais on évite les réponses automatiques du bot lui-même pour éviter les boucles
 
-            // Vérifier si c'est un événement de boss (mini boss ou boss)
+            // Vérifier si c'est un événement de boss (mini boss ou boss) ou riddle
             if (!message.author.bot) {
                 const {handleMiniBossMessage} = require("./services/events/miniBossEvent");
                 const {handleBossMessage} = require("./services/events/bossEvent");
+                const {handleRiddleMessage} = require("./services/events/riddleEvent");
 
                 await handleMiniBossMessage(client, message);
                 await handleBossMessage(client, message);
+                await handleRiddleMessage(client, message);
             }
 
             // Vérifier si c'est le salon compteur

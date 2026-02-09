@@ -56,6 +56,12 @@ export {
     handleImpostorGuess
 } from "./events/impostorEvent";
 
+// Énigme
+export {
+    startRiddleEvent as startRiddle,
+    handleRiddleMessage
+} from "./events/riddleEvent";
+
 // ========== INITIALISATION ==========
 
 /**

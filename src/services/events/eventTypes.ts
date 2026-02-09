@@ -9,7 +9,8 @@ export enum EventType {
     SERVER_BIRTHDAY = "server_birthday",
     HOLIDAY = "holiday",
     SECRET_WORD = "secret_word",
-    IMPOSTOR = "impostor"
+    IMPOSTOR = "impostor",
+    RIDDLE = "riddle"
 }
 
 /**

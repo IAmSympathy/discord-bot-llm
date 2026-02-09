@@ -1,7 +1,7 @@
 import {ChatInputCommandInteraction, GuildMember, SlashCommandBuilder} from "discord.js";
 import {createLogger} from "../../utils/logger";
 import {hasOwnerPermission} from "../../utils/permissions";
-import {startBoss, startCounterChallenge, startImpostorEvent, startMiniBoss, startMysteryBox} from "../../services/randomEventsService";
+import {startBoss, startCounterChallenge, startImpostorEvent, startMiniBoss, startMysteryBox, startRiddle} from "../../services/randomEventsService";
 import {replyWithError} from "../../utils/interactionUtils";
 
 const logger = createLogger("TestEventCmd");
@@ -20,7 +20,8 @@ module.exports = {
                     {name: "⚔️ Combat de Mini Boss", value: "mini_boss"},
                     {name: "👑 Combat de Boss", value: "boss"},
                     {name: "📦 Colis Mystère", value: "mystery_box_test"},
-                    {name: "🕵️ Imposteur", value: "impostor_test"}
+                    {name: "🕵️ Imposteur", value: "impostor_test"},
+                    {name: "🧩 Énigme", value: "riddle"}
                 )
         ),
 
@@ -80,6 +81,11 @@ module.exports = {
                     } catch (error: any) {
                         await interaction.editReply({content: `❌ Erreur : ${error.message}`});
                     }
+                    break;
+
+                case "riddle":
+                    await startRiddle(interaction.client, interaction.guild, true);
+                    await interaction.editReply({content: "✅ Énigme démarrée en mode TEST (aucun XP ne sera distribué) !"});
                     break;
 
                 default:

@@ -5,7 +5,8 @@ import {EnvConfig} from "../utils/envConfig";
 
 const logger = createLogger("WeatherChannelManager");
 
-const WEATHER_CHANNEL_NAME_PREFIX = "🌡️";
+// Liste des emojis météo possibles
+const WEATHER_EMOJIS = ['☀️', '🌤️', '⛅', '☁️', '🌧️', '🌦️', '⛈️', '🌨️', '❄️', '🌫️', '💨', '🌪️', '🌡️'];
 const UPDATE_INTERVAL = 10 * 60 * 1000; // 10 minutes
 
 let weatherChannelId: string | null = null;
@@ -19,14 +20,25 @@ async function findWeatherChannel(guild: Guild): Promise<VoiceChannel | null> {
         // Rafraîchir les canaux
         await guild.channels.fetch();
 
-        // Chercher un canal vocal qui commence par l'emoji météo
+        // Chercher un canal vocal qui commence par un emoji météo et contient une température (ex: "☁️ Nuageux, -10°")
         const channels = guild.channels.cache.filter(
-            channel => channel.type === ChannelType.GuildVoice &&
-                channel.name.startsWith(WEATHER_CHANNEL_NAME_PREFIX)
+            channel => {
+                if (channel.type !== ChannelType.GuildVoice) return false;
+
+                // Vérifier si le nom commence par un des emojis météo
+                const startsWithWeatherEmoji = WEATHER_EMOJIS.some(emoji => channel.name.startsWith(emoji));
+
+                // Vérifier si le nom contient "°" (température)
+                const hasTemperature = channel.name.includes('°');
+
+                return startsWithWeatherEmoji && hasTemperature;
+            }
         );
 
         if (channels.size > 0) {
-            return channels.first() as VoiceChannel;
+            const foundChannel = channels.first() as VoiceChannel;
+            logger.info(`Found existing weather channel: ${foundChannel.name} (ID: ${foundChannel.id})`);
+            return foundChannel;
         }
 
         return null;

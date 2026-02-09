@@ -9,62 +9,88 @@ interface WeatherData {
 }
 
 /**
- * Traduit les conditions météo en français avec emoji
+ * Trouve l'emoji approprié pour une condition météo (la description est déjà en français grâce à lang=fr)
  */
-function translateWeatherCondition(condition: string): { text: string; emoji: string } {
+function getWeatherEmoji(condition: string): string {
     const conditionLower = condition.toLowerCase();
 
-    // Conditions principales avec émojis
-    const weatherMap: { [key: string]: { text: string; emoji: string } } = {
-        // Ciel dégagé
-        'clear': {text: 'Dégagé', emoji: '☀️'},
-        'sunny': {text: 'Ensoleillé', emoji: '☀️'},
+    // Chercher l'emoji qui correspond (ordre important : vérifier "peu nuageux" avant "nuageux")
+    if (conditionLower.includes('peu nuageux') || conditionLower.includes('few')) {
+        return '🌤️';
+    }
 
-        // Nuages
-        'clouds': {text: 'Nuageux', emoji: '☁️'},
-        'cloudy': {text: 'Nuageux', emoji: '☁️'},
-        'overcast': {text: 'Couvert', emoji: '☁️'},
-        'partly cloudy': {text: 'Partiellement nuageux', emoji: '⛅'},
-        'few clouds': {text: 'Quelques nuages', emoji: '🌤️'},
-        'scattered clouds': {text: 'Nuages épars', emoji: '⛅'},
-        'broken clouds': {text: 'Nuageux', emoji: '☁️'},
+    // Map simplifiée : chercher des mots-clés et retourner l'emoji approprié
+    const emojiMap: Record<string, string> = {
+        // Ciel dégagé
+        'dégagé': '☀️',
+        'clear': '☀️',
+        'ensoleillé': '☀️',
+
+        // Nuages épars / partiellement
+        'épars': '⛅',
+        'scattered': '⛅',
+        'partiellement': '⛅',
+
+        // Couvert / très nuageux
+        'couvert': '☁️',
+        'overcast': '☁️',
+        'broken': '☁️',
+
+        // Nuageux (par défaut pour clouds)
+        'nuageux': '☁️',
+        'nuages': '☁️',
+        'clouds': '☁️',
 
         // Pluie
-        'rain': {text: 'Pluie', emoji: '🌧️'},
-        'light rain': {text: 'Pluie légère', emoji: '🌦️'},
-        'moderate rain': {text: 'Pluie modérée', emoji: '🌧️'},
-        'heavy rain': {text: 'Forte pluie', emoji: '🌧️'},
-        'shower rain': {text: 'Averses', emoji: '🌦️'},
-        'drizzle': {text: 'Bruine', emoji: '🌦️'},
+        'pluie': '🌧️',
+        'rain': '🌧️',
+
+        // Bruine / averses légères
+        'bruine': '🌦️',
+        'drizzle': '🌦️',
+        'averse': '🌦️',
+        'shower': '🌦️',
 
         // Neige
-        'snow': {text: 'Neige', emoji: '❄️'},
-        'light snow': {text: 'Neige légère', emoji: '🌨️'},
-        'heavy snow': {text: 'Forte neige', emoji: '❄️'},
-        'sleet': {text: 'Grésil', emoji: '🌨️'},
+        'neige': '❄️',
+        'snow': '❄️',
+
+        // Grésil / neige légère
+        'grésil': '🌨️',
+        'sleet': '🌨️',
 
         // Orage
-        'thunderstorm': {text: 'Orage', emoji: '⛈️'},
-        'storm': {text: 'Tempête', emoji: '⛈️'},
+        'orage': '⛈️',
+        'thunder': '⛈️',
+        'tempête': '⛈️',
+        'storm': '⛈️',
 
         // Brouillard
-        'mist': {text: 'Brume', emoji: '🌫️'},
-        'fog': {text: 'Brouillard', emoji: '🌫️'},
-        'haze': {text: 'Brume', emoji: '🌫️'},
+        'brouillard': '🌫️',
+        'fog': '🌫️',
+        'brume': '🌫️',
+        'mist': '🌫️',
+        'fumée': '🌫️',
+        'smoke': '🌫️',
 
         // Vent
-        'windy': {text: 'Venteux', emoji: '💨'},
+        'vent': '💨',
+        'wind': '💨',
+        'rafales': '💨',
+
+        // Autres
+        'tornade': '🌪️',
+        'tornado': '🌪️',
     };
 
-    // Rechercher une correspondance
-    for (const [key, value] of Object.entries(weatherMap)) {
+    for (const [key, emoji] of Object.entries(emojiMap)) {
         if (conditionLower.includes(key)) {
-            return value;
+            return emoji;
         }
     }
 
     // Par défaut
-    return {text: condition, emoji: '🌡️'};
+    return '🌡️';
 }
 
 /**
@@ -127,15 +153,22 @@ export async function getSherbrookeWeather(): Promise<WeatherData | null> {
         const weatherCondition = data.weather[0].main;
         const weatherDescription = data.weather[0].description;
 
-        // Utiliser la description détaillée si disponible, sinon la condition principale
-        const translated = translateWeatherCondition(weatherDescription || weatherCondition);
+        // Log détaillé pour debug
+        logger.info(`API Response - Main: "${weatherCondition}", Description: "${weatherDescription}"`);
 
-        logger.info(`Weather for Sherbrooke: ${temperature}°C, ${translated.text}`);
+        // Utiliser la description (déjà en français grâce à lang=fr)
+        // Capitaliser la première lettre
+        const condition = weatherDescription.charAt(0).toUpperCase() + weatherDescription.slice(1);
+
+        // Trouver l'emoji approprié
+        const emoji = getWeatherEmoji(weatherDescription);
+
+        logger.info(`Weather for Sherbrooke: ${temperature}°C, ${condition} (${emoji})`);
 
         return {
             temperature,
-            condition: translated.text,
-            emoji: translated.emoji
+            condition,
+            emoji
         };
 
     } catch (error) {
@@ -154,4 +187,20 @@ export function formatWeatherChannelName(weather: WeatherData): string {
     return `${weather.emoji} ${weather.condition}, ${weather.temperature}°`;
 }
 
+/**
+ * Calcule le multiplicateur d'XP basé sur la météo
+ * TODO: Implémenter la logique de multiplicateur basée sur les conditions météo
+ */
+export function getWeatherXPMultiplier(weather: WeatherData): number {
+    // Pour l'instant, retourne 1.0 (pas de modification)
+    // Cette fonction sera utilisée plus tard pour modifier l'XP selon la météo
+
+    // Exemples de logique future:
+    // - Temps ensoleillé: +10% XP
+    // - Neige: +15% XP
+    // - Orage: +20% XP
+    // - Pluie: +5% XP
+
+    return 1.0;
+}
 
