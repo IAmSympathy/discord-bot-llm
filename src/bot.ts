@@ -7,6 +7,7 @@ import {registerForumThreadHandler} from "./forumThreadHandler";
 import {registerCitationsThreadHandler} from "./citationsThreadHandler";
 import {registerRoleReactionHandler} from "./roleReactionHandler";
 import {registerVoiceTracker} from "./voiceTracker";
+import {registerWeatherChannel} from "./services/weatherChannelManager";
 import deployCommands from "./deploy/deployCommands";
 import {initializeDiscordLogger, logServerBan, logServerChannelCreate, logServerChannelDelete, logServerMemberJoin, logServerMemberLeave, logServerMemberTimeout, logServerMemberTimeoutRemove, logServerMessageDelete, logServerMessageEdit, logServerNicknameChange, logServerRoleUpdate, logServerUnban, logServerVoiceDeaf, logServerVoiceMove, logServerVoiceMute} from "./utils/discordLogger";
 import {createErrorEmbed} from "./utils/interactionUtils";
@@ -104,6 +105,9 @@ registerRoleReactionHandler(client);
 
 // Register the voice tracker
 registerVoiceTracker(client);
+
+// Register the weather channel manager
+registerWeatherChannel(client);
 
 // Once the WebSocket is connected, log a message to the console.
 client.once(Events.ClientReady, async () => {

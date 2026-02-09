@@ -16,6 +16,7 @@ Follow along: https://youtu.be/aNzc8BsPIkQ
     - 💾 Stockage persistant
 - 📝 Mode passif - L'IA voit tous les messages et garde les conversations importantes en mémoire
 - 🧵 Support des threads Discord
+- 🌤️ **Canal vocal météo** - Affichage en temps réel de la météo de Sherbrooke (en haut du serveur)
 
 ## Commandes
 
