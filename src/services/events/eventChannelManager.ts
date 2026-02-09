@@ -75,8 +75,12 @@ async function getOrCreateEventsCategory(guild: Guild): Promise<string | null> {
 
 /**
  * Crée un canal d'événement
+ * @param guild - Le serveur Discord
+ * @param name - Le nom du canal (sans emoji)
+ * @param emoji - L'emoji à afficher avant le nom
+ * @param allowMessages - Si true, les utilisateurs peuvent envoyer des messages (pour les boss)
  */
-export async function createEventChannel(guild: Guild, name: string, emoji: string): Promise<TextChannel | null> {
+export async function createEventChannel(guild: Guild, name: string, emoji: string, allowMessages: boolean = false): Promise<TextChannel | null> {
     try {
         // Obtenir l'ID de la catégorie
         const categoryId = await getOrCreateEventsCategory(guild);
@@ -113,14 +117,18 @@ export async function createEventChannel(guild: Guild, name: string, emoji: stri
         // MÉTHODE 1: Créer avec guild.channels.create et parent explicite
         logger.info("Attempting to create channel with parent parameter...");
         const channel = await guild.channels.create({
-            name: `${emoji}┃${name}`,
+            name: `${emoji}-${name}`,
             type: ChannelType.GuildText,
             parent: categoryId,
             permissionOverwrites: [
                 {
                     id: guild.roles.everyone.id,
-                    allow: [PermissionFlagsBits.ViewChannel],
-                    deny: [PermissionFlagsBits.SendMessages]
+                    allow: allowMessages
+                        ? [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
+                        : [PermissionFlagsBits.ViewChannel],
+                    deny: allowMessages
+                        ? []
+                        : [PermissionFlagsBits.SendMessages]
                 },
                 {
                     id: guild.members.me!.id,
@@ -262,6 +270,7 @@ export async function sendGeneralAnnouncement(guild: Guild, eventEmbed: EmbedBui
  * @param channelEmoji - L'emoji du canal
  * @param duration - La durée de l'événement en millisecondes
  * @param eventData - Les données spécifiques à l'événement
+ * @param allowMessages - Si true, les utilisateurs peuvent envoyer des messages (pour les boss)
  * @returns L'ID de l'événement et le canal créé, ou null si échec
  */
 export async function startEvent(
@@ -271,11 +280,12 @@ export async function startEvent(
     channelName: string,
     channelEmoji: string,
     duration: number,
-    eventData: any
+    eventData: any,
+    allowMessages: boolean = false
 ): Promise<{ eventId: string; channel: TextChannel } | null> {
     try {
         // Créer le canal d'événement
-        const channel = await createEventChannel(guild, channelName, channelEmoji);
+        const channel = await createEventChannel(guild, channelName, channelEmoji, allowMessages);
         if (!channel) {
             logger.error(`Failed to create event channel for ${eventType}`);
             return null;

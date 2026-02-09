@@ -4,7 +4,7 @@
 export enum EventType {
     COUNTER_CHALLENGE = "counter_challenge",
     MINI_BOSS = "mini_boss",
-    MEGA_BOSS = "mega_boss",
+    BOSS = "boss",
     MYSTERY_BOX = "mystery_box",
     SERVER_BIRTHDAY = "server_birthday",
     HOLIDAY = "holiday",

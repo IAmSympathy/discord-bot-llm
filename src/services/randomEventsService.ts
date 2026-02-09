@@ -33,6 +33,18 @@ export {
     checkCounterChallengeProgress
 } from "./events/counterChallengeEvent";
 
+// Mini Boss
+export {
+    startMiniBossEvent as startMiniBoss,
+    handleMiniBossMessage
+} from "./events/miniBossEvent";
+
+// Boss
+export {
+    startBossEvent as startBoss,
+    handleBossMessage
+} from "./events/bossEvent";
+
 // Colis Mystère
 export {
     startMysteryBox

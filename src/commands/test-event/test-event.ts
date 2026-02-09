@@ -1,7 +1,7 @@
 import {ChatInputCommandInteraction, GuildMember, SlashCommandBuilder} from "discord.js";
 import {createLogger} from "../../utils/logger";
 import {hasOwnerPermission} from "../../utils/permissions";
-import {startCounterChallenge, startImpostorEvent, startMysteryBox} from "../../services/randomEventsService";
+import {startBoss, startCounterChallenge, startImpostorEvent, startMiniBoss, startMysteryBox} from "../../services/randomEventsService";
 
 const logger = createLogger("TestEventCmd");
 
@@ -16,8 +16,10 @@ module.exports = {
                 .setRequired(true)
                 .addChoices(
                     {name: "🎯 Défi du Compteur", value: "counter_challenge"},
-                    {name: "📦 Colis Mystère (test embed)", value: "mystery_box_test"},
-                    {name: "🕵️ Imposteur (test embed)", value: "impostor_test"}
+                    {name: "⚔️ Combat de Mini Boss", value: "mini_boss"},
+                    {name: "👑 Combat de Boss", value: "boss"},
+                    {name: "📦 Colis Mystère", value: "mystery_box_test"},
+                    {name: "🕵️ Imposteur", value: "impostor_test"}
                 )
         ),
 
@@ -47,6 +49,16 @@ module.exports = {
                 case "counter_challenge":
                     await startCounterChallenge(interaction.client, interaction.guild, true);
                     await interaction.editReply({content: "✅ Défi du compteur démarré en mode TEST (aucun XP ne sera distribué) !"});
+                    break;
+
+                case "mini_boss":
+                    await startMiniBoss(interaction.client, interaction.guild, true);
+                    await interaction.editReply({content: "✅ Combat de mini boss démarré en mode TEST (aucun XP ne sera distribué) !"});
+                    break;
+
+                case "boss":
+                    await startBoss(interaction.client, interaction.guild, true);
+                    await interaction.editReply({content: "✅ Combat de boss démarré en mode TEST (aucun XP ne sera distribué) !"});
                     break;
 
                 case "mystery_box_test":

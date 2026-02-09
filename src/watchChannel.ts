@@ -156,6 +156,15 @@ export function registerWatchedChannelResponder(client: Client) {
             // Ne plus ignorer complètement les bots - ils peuvent aussi gagner de l'XP
             // Mais on évite les réponses automatiques du bot lui-même pour éviter les boucles
 
+            // Vérifier si c'est un événement de boss (mini boss ou boss)
+            if (!message.author.bot) {
+                const {handleMiniBossMessage} = require("./services/events/miniBossEvent");
+                const {handleBossMessage} = require("./services/events/bossEvent");
+
+                await handleMiniBossMessage(client, message);
+                await handleBossMessage(client, message);
+            }
+
             // Vérifier si c'est le salon compteur
             const COUNTER_CHANNEL_ID = EnvConfig.COUNTER_CHANNEL_ID;
             if (COUNTER_CHANNEL_ID && message.channelId === COUNTER_CHANNEL_ID && !message.author.bot) {
@@ -184,9 +193,20 @@ export function registerWatchedChannelResponder(client: Client) {
                 return;
             }
 
+            // Vérifier si c'est un salon d'événement de boss (ne pas compter dans les stats)
+            const {loadEventsData} = require("./services/events/eventsDataManager");
+            const {EventType} = require("./services/events/eventTypes");
+            const eventsData = loadEventsData();
+            const isBossEventChannel = eventsData.activeEvents.some((e: any) =>
+                (e.type === EventType.MINI_BOSS || e.type === EventType.BOSS) &&
+                e.channelId === message.channelId
+            );
+            if (isBossEventChannel) {
+                return;
+            }
+
             // Enregistrer le message envoyé dans les statistiques
             recordMessageStats(message.author.id, message.author.username);
-
             // Enregistrer les emojis utilisés dans le message
             recordEmojisUsed(message.author.id, message.author.username, message.content);
 
