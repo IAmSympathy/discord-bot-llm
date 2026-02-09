@@ -1,17 +1,18 @@
 import {ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder} from "discord.js";
 import {createLogger} from "../../utils/logger";
 import {handleRiddleAnswer} from "../../services/events/riddleEvent";
+import {handleSequenceAnswer} from "../../services/events/sequenceEvent";
 
 const logger = createLogger("AnswerCmd");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("answer")
-        .setDescription("🧩 Réponds à l'énigme du jour")
+        .setDescription("🔴 Réponds à l'événement actuel")
         .addStringOption((option) =>
             option
                 .setName("answer")
-                .setDescription("Ta réponse à l'énigme")
+                .setDescription("Ta réponse")
                 .setRequired(true)
         ),
 
@@ -22,8 +23,8 @@ module.exports = {
             // Répondre de manière éphémère (seulement visible par l'utilisateur)
             await interaction.deferReply({ephemeral: true});
 
-            // Vérifier s'il y a un événement riddle actif
-            const result = await handleRiddleAnswer(
+            // Essayer d'abord pour une énigme
+            const riddleResult = await handleRiddleAnswer(
                 interaction.client,
                 interaction.user.id,
                 interaction.user.username,
@@ -31,11 +32,22 @@ module.exports = {
                 interaction.channelId || ""
             );
 
+            // Si pas d'énigme, essayer pour une suite logique
+            const sequenceResult = !riddleResult ? await handleSequenceAnswer(
+                interaction.client,
+                interaction.user.id,
+                interaction.user.username,
+                answer,
+                interaction.channelId || ""
+            ) : null;
+
+            const result = riddleResult || sequenceResult;
+
             if (!result) {
                 const noEventEmbed = new EmbedBuilder()
                     .setColor(0xE74C3C)
-                    .setTitle("❌ Aucune énigme active")
-                    .setDescription("Il n'y a pas d'énigme active en ce moment.\n\nAttends qu'une énigme soit lancée pour pouvoir répondre !")
+                    .setTitle("❌ Aucun événement actif")
+                    .setDescription("Il n'y a pas d'énigme ou de suite logique active en ce moment.\n\nAttends qu'un événement soit lancé pour pouvoir répondre !")
                     .setTimestamp();
 
                 await interaction.editReply({embeds: [noEventEmbed]});
@@ -103,5 +115,3 @@ module.exports = {
         }
     },
 };
-
-

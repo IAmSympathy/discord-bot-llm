@@ -62,6 +62,12 @@ export {
     handleRiddleMessage
 } from "./events/riddleEvent";
 
+// Suite logique
+export {
+    startSequenceEvent as startSequence,
+    handleSequenceMessage
+} from "./events/sequenceEvent";
+
 // ========== INITIALISATION ==========
 
 /**

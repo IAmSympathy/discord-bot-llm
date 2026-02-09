@@ -17,9 +17,15 @@ const CHANNEL_CLOSE_DELAY = 60 * 60 * 1000; // 1 heure après la fin pour fermer
  * Crée l'embed d'annonce de l'énigme
  */
 function createRiddleAnnouncementEmbed(riddle: Riddle, endTime: number, isTest: boolean): EmbedBuilder {
+    const difficultyEmoji = {
+        'facile': '🟢',
+        'moyen': '🟡',
+        'difficile': '🔴'
+    };
+
     return new EmbedBuilder()
         .setColor(0x73A955) // vert
-        .setTitle("🧩 ÉNIGME")
+        .setTitle("🧩 ÉNIGME DU JOUR !")
         .setDescription(
             `Une énigme est apparue ! Trouvez la réponse pour gagner de l'XP !\n\n` +
             `**${riddle.question}**\n\n`
@@ -29,6 +35,11 @@ function createRiddleAnnouncementEmbed(riddle: Riddle, endTime: number, isTest: 
                 name: "💡 Comment jouer",
                 value: "Utilise `/answer` pour soumettre ta réponse ! \nLes premiers à trouver gagnent le plus d'XP !",
                 inline: false
+            },
+            {
+                name: "📊 Difficulté",
+                value: `${difficultyEmoji[riddle.difficulty]} ${riddle.difficulty.charAt(0).toUpperCase() + riddle.difficulty.slice(1)}`,
+                inline: true
             },
             {
                 name: "🏆 Récompenses",
@@ -81,7 +92,7 @@ function createRiddleFailureEmbed(riddle: Riddle, leaderboard: Array<{ userId: s
         .setColor(0xE74C3C) // Rouge
         .setTitle("⏰ ÉVÉNEMENT TERMINÉ !")
         .setDescription(
-            `L'énigme est maintenant terminée !\n\n` +
+            `L'énigme du jour est maintenant terminée !\n\n` +
             `**La réponse était :** ${riddle.answer}`
         );
 
@@ -107,13 +118,13 @@ function createRiddleFailureEmbed(riddle: Riddle, leaderboard: Array<{ userId: s
         });
 
         embed.setDescription(
-            `L'énigme est maintenant terminée !\n\n` +
+            `L'énigme du jour est maintenant terminée !\n\n` +
             `**La réponse était :** ${riddle.answer}\n\n` +
             `Félicitations aux ${leaderboard.length} participant(s) ! 🎉`
         );
     } else {
         embed.setDescription(
-            `L'énigme est maintenant terminée...\n\n` +
+            `L'énigme du jour est maintenant terminée...\n\n` +
             `**La réponse était :** ${riddle.answer}\n\n` +
             `Personne n'a trouvé la réponse cette fois ! 😢\nMeilleure chance la prochaine fois !`
         );
@@ -162,8 +173,8 @@ export async function startRiddleEvent(client: Client, guild: Guild, isTest: boo
             client,
             guild,
             EventType.RIDDLE,
-            "🧩 Énigme",
-            "enigme",
+            "🧩 Énigme du jour",
+            "enigme-du-jour",
             "🧩",
             RIDDLE_DURATION,
             {
