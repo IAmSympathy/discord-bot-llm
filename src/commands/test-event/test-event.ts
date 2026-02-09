@@ -2,13 +2,14 @@ import {ChatInputCommandInteraction, GuildMember, SlashCommandBuilder} from "dis
 import {createLogger} from "../../utils/logger";
 import {hasOwnerPermission} from "../../utils/permissions";
 import {startBoss, startCounterChallenge, startImpostorEvent, startMiniBoss, startMysteryBox} from "../../services/randomEventsService";
+import {replyWithError} from "../../utils/interactionUtils";
 
 const logger = createLogger("TestEventCmd");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("test-event")
-        .setDescription("🎲 Teste un événement aléatoire (Owner uniquement)")
+        .setDescription("[TAH-UM] 🎲 Teste un événement aléatoire")
         .addStringOption((option) =>
             option
                 .setName("type")
@@ -30,16 +31,18 @@ module.exports = {
 
             const member = interaction.member instanceof GuildMember ? interaction.member : null;
 
-            // Vérifier si l'utilisateur a la permission owner
             if (!hasOwnerPermission(member)) {
-                await interaction.editReply({
-                    content: "❌ **Permission refusée**\n\nVous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*"
-                });
+                await replyWithError(
+                    interaction,
+                    "Permission refusée",
+                    "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*",
+                    true
+                );
                 return;
             }
 
             if (!interaction.guild) {
-                await interaction.editReply({content: "❌ Cette commande doit être utilisée dans un serveur."});
+                await interaction.editReply({content: "Cette commande doit être utilisée dans un serveur."});
                 return;
             }
 

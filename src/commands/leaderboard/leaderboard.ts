@@ -356,7 +356,7 @@ function createLeaderboardButtons(currentCategory: LeaderboardCategory, currentM
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("leaderboard")
-        .setDescription("Affiche le classement des utilisateurs"),
+        .setDescription("🏆 Affiche le classement des utilisateurs"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {

@@ -5,7 +5,7 @@ import {createInfoEmbed, createSuccessEmbed, createWarningEmbed, logCommand} fro
 import {handleInteractionError, replyWithError} from "../../utils/interactionUtils";
 
 module.exports = {
-    data: new SlashCommandBuilder().setName("reset").setDescription("(TAH-UM, UGH-ZAN) Efface la mémoire de conversation de Netricsa sur le serveur"),
+    data: new SlashCommandBuilder().setName("reset").setDescription("[TAH-UM] 🔄 Efface la mémoire de conversation de Netricsa sur le serveur"),
     async execute(interaction: ChatInputCommandInteraction) {
         try {
             const member = interaction.member instanceof GuildMember ? interaction.member : null;

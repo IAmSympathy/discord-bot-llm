@@ -76,7 +76,7 @@ function isConsecutiveDay(lastClaim: number, now: number): boolean {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("daily")
-        .setDescription("Récupère ta récompense quotidienne et maintiens ta série !"),
+        .setDescription("📅 Récupère ta récompense quotidienne et maintiens ta série !"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {

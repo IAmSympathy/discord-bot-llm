@@ -57,7 +57,8 @@ const SPECIAL_COMMANDS = {
     daily: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
     ascii: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
     ship: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
-    challenges: 'COMMAND_CHANNEL' // Uniquement dans le salon commande ou en DM
+    challenges: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
+    cucumber: 'COMMAND_CHANNEL' // Uniquement dans le salon commande ou en DM
 } as const;
 
 /**

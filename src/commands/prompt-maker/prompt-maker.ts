@@ -220,7 +220,7 @@ async function generateOptimizedPrompt(userRequest: string, isImg2Img: boolean):
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("prompt-maker")
-        .setDescription("Génère un prompt optimisé pour /imagine ou /reimagine")
+        .setDescription("📝 Génère un prompt optimisé pour /imagine ou /reimagine")
         .addStringOption((option) =>
             option
                 .setName("type")

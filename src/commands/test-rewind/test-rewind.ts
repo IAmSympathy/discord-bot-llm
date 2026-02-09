@@ -1,30 +1,31 @@
-import {ChatInputCommandInteraction, PermissionFlagsBits, SlashCommandBuilder} from "discord.js";
+import {ChatInputCommandInteraction, GuildMember, PermissionFlagsBits, SlashCommandBuilder} from "discord.js";
 import {createLogger} from "../../utils/logger";
-import {createErrorEmbed, createSuccessEmbed} from "../../utils/interactionUtils";
+import {createErrorEmbed, createSuccessEmbed, replyWithError} from "../../utils/interactionUtils";
 import {logCommand} from "../../utils/discordLogger";
 import {publishYearlyRewind} from "../../services/yearlyRewindService";
 import * as fs from "fs";
 import * as path from "path";
 import {EnvConfig} from "../../utils/envConfig";
+import {hasOwnerPermission} from "../../utils/permissions";
 
 const logger = createLogger("TestRewindCmd");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("test-rewind")
-        .setDescription("[OWNER] Déclenche manuellement le rewind annuel pour tester")
+        .setDescription("[TAH-UM] ⏪ Déclenche manuellement le rewind annuel pour tester")
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
-            // Vérifier que c'est l'owner
-            const OWNER_ID = "288799652902469633";
-            if (interaction.user.id !== OWNER_ID) {
-                const errorEmbed = createErrorEmbed(
-                    "❌ Accès refusé",
-                    "Cette commande est réservée au propriétaire du bot."
+            const member = interaction.member instanceof GuildMember ? interaction.member : null;
+            if (!hasOwnerPermission(member)) {
+                await replyWithError(
+                    interaction,
+                    "Permission refusée",
+                    "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*",
+                    true
                 );
-                await interaction.reply({embeds: [errorEmbed], ephemeral: true});
                 return;
             }
 

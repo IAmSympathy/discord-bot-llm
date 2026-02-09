@@ -47,7 +47,7 @@ function saveMemeToHistory(meme: { id: string; title: string; url: string }): vo
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("findmeme")
-        .setDescription("Demande à Netricsa de trouver un meme sur internet"),
+        .setDescription("🐸 Demande à Netricsa de trouver un meme sur internet"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {

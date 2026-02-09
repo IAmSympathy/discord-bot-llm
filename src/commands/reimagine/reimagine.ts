@@ -16,7 +16,7 @@ const logger = createLogger("ReimageCmd");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("reimagine")
-        .setDescription("Demande à Netricsa de transformer une image")
+        .setDescription("🌀 Demande à Netricsa de transformer une image")
         .addAttachmentOption((option) =>
             option
                 .setName("image")

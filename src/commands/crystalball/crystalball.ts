@@ -5,7 +5,7 @@ import {addXP, XP_REWARDS} from "../../services/xpSystem";
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("crystalball")
-        .setDescription("Pose une question et laisse le destin décider")
+        .setDescription("🔮 Pose une question et laisse le destin décider")
         .addStringOption((option) =>
             option
                 .setName("question")
@@ -46,19 +46,19 @@ module.exports = {
 
             // Créer l'embed de résultat
             const embed = new EmbedBuilder()
-                .setColor("#0c061c")
+                .setColor(0xA589D2)
                 .setTitle(`🔮 Réponse du destin`);
 
             if (question) {
                 embed.addFields({
-                    name: "Question",
+                    name: "❓ Question",
                     value: question,
                     inline: false
                 });
             }
 
             embed.addFields({
-                name: "Réponse",
+                name: "✨ Réponse",
                 value: `${randomResponse.answer}`,
                 inline: false
             });

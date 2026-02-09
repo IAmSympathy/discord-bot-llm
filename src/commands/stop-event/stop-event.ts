@@ -3,13 +3,14 @@ import {createLogger} from "../../utils/logger";
 import {hasOwnerPermission} from "../../utils/permissions";
 import {loadEventsData, saveEventsData} from "../../services/events/eventsDataManager";
 import {deleteEventChannel} from "../../services/events/eventChannelManager";
+import {replyWithError} from "../../utils/interactionUtils";
 
 const logger = createLogger("StopEventCmd");
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("stop-event")
-        .setDescription("[OWNER] Arrête un événement aléatoire en cours")
+        .setDescription("[TAH-UM] 🛑 Arrête un événement aléatoire en cours")
         .addStringOption(option =>
             option
                 .setName("event-id")
@@ -20,11 +21,13 @@ module.exports = {
     async execute(interaction: ChatInputCommandInteraction) {
         // Vérifier que c'est l'owner
         const member = interaction.member instanceof GuildMember ? interaction.member : null;
-        if (!member || !hasOwnerPermission(member)) {
-            await interaction.reply({
-                content: "❌ Cette commande est réservée au propriétaire du bot.",
-                ephemeral: true
-            });
+        if (!hasOwnerPermission(member)) {
+            await replyWithError(
+                interaction,
+                "Permission refusée",
+                "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*",
+                true
+            );
             return;
         }
 

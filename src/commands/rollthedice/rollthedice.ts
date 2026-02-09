@@ -5,7 +5,7 @@ import {addXP, XP_REWARDS} from "../../services/xpSystem";
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("rollthedice")
-        .setDescription("Lance un ou plusieurs dés")
+        .setDescription("🎲 Lance un ou plusieurs dés")
         .addStringOption((option) =>
             option
                 .setName("type")

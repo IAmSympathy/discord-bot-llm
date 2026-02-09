@@ -16,7 +16,7 @@ const logger = createLogger("GenerateImageCmd");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("imagine")
-        .setDescription("Demande à Netricsa de générer une image")
+        .setDescription("🎨 Demande à Netricsa de générer une image")
         .addStringOption((option) =>
             option
                 .setName("prompt")

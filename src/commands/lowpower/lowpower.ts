@@ -7,7 +7,7 @@ import {handleInteractionError, safeReply} from "../../utils/interactionUtils";
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("lowpower")
-        .setDescription("(TAH-UM) Active/Désactive le Low Power Mode manuellement (désactive l'automatique)"),
+        .setDescription("[TAH-UM] 🔋 Active/Désactive le Low Power Mode manuellement (désactive l'automatique)"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {

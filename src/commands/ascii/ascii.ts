@@ -6,7 +6,7 @@ import figlet from "figlet";
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("ascii")
-        .setDescription("Convertit du texte en art ASCII")
+        .setDescription("🔤 Convertit du texte en art ASCII")
         .addStringOption((option) =>
             option
                 .setName("text")

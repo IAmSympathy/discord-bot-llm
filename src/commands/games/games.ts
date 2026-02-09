@@ -4,7 +4,7 @@ import {handleInteractionError} from "../../utils/interactionUtils";
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("games")
-        .setDescription("Affiche le menu des jeux disponibles"),
+        .setDescription("🎮 Affiche le menu des jeux disponibles"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {

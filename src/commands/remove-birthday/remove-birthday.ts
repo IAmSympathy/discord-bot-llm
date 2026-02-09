@@ -6,7 +6,7 @@ import {createErrorEmbed, createSuccessEmbed} from "../../utils/interactionUtils
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("remove-birthday")
-        .setDescription("Supprime ta date d'anniversaire de ton profil NETRICSA"),
+        .setDescription("🧹 Supprime ta date d'anniversaire de ton profil NETRICSA"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply({flags: MessageFlags.Ephemeral});

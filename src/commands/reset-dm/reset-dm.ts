@@ -6,7 +6,7 @@ import {createSuccessEmbed, handleInteractionError, safeReply} from "../../utils
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("reset-dm")
-        .setDescription("Réinitialise la mémoire de conversation de Netricsa en DM"),
+        .setDescription("🔄 Réinitialise la mémoire de conversation de Netricsa en DM"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {

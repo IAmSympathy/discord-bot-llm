@@ -5,7 +5,7 @@ import {addXP, XP_REWARDS} from "../../services/xpSystem";
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("coinflip")
-        .setDescription("Lance une pièce (pile ou face)")
+        .setDescription("🪙 Lance une pièce (pile ou face)")
         .addStringOption((option) =>
             option
                 .setName("choice")

@@ -91,7 +91,7 @@ function shouldRig(userId1: string, userId2: string, name1: string, name2: strin
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("ship")
-        .setDescription("Calcule la compatibilité entre deux personnes ❤️")
+        .setDescription("💘 Calcule la compatibilité entre deux personnes")
         .addStringOption((option) =>
             option
                 .setName("person1")

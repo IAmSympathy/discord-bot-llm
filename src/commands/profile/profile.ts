@@ -163,7 +163,7 @@ function createAchievementNavigationButtons(currentCategory: AchievementCategory
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("profile")
-        .setDescription("Affiche le profil d'un utilisateur")
+        .setDescription("👤 Affiche le profil d'un utilisateur")
         .addUserOption((option) =>
             option
                 .setName("user")

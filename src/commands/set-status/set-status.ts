@@ -38,7 +38,7 @@ function saveDefaultStatus(status: StatusData): void {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("set-status")
-        .setDescription("[TAH-UM) Modifie le statut par défaut de Netricsa")
+        .setDescription("[TAH-UM] 🎭 Modifie le statut par défaut de Netricsa")
         .addStringOption((option) =>
             option
                 .setName("text")

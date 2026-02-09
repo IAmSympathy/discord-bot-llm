@@ -7,7 +7,7 @@ import {createInfoEmbed, handleInteractionError, safeReply} from "../../utils/in
 import {hasModeratorPermission, hasOwnerPermission} from "../../utils/permissions";
 
 module.exports = {
-    data: new SlashCommandBuilder().setName("stop").setDescription("Arrête de force le raisonnement, l'analyse d'image(s) et la génération d'image de Netricsa"),
+    data: new SlashCommandBuilder().setName("stop").setDescription("🛑 Arrête de force le raisonnement, l'analyse d'image(s) et la génération d'image de Netricsa"),
     async execute(interaction: ChatInputCommandInteraction) {
         try {
             const channelKey = EnvConfig.WATCH_CHANNEL_ID || interaction.channelId;

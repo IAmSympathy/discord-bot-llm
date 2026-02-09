@@ -5,7 +5,7 @@ import {addXP, XP_REWARDS} from "../../services/xpSystem";
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("choose")
-        .setDescription("Choisit aléatoirement parmi plusieurs options")
+        .setDescription("🎯 Choisit aléatoirement parmi plusieurs options")
         .addStringOption((option) =>
             option
                 .setName("options")

@@ -56,7 +56,7 @@ async function downloadImage(url: string): Promise<string> {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("upscale")
-        .setDescription("Demande à Netricsa d'upscaler une image")
+        .setDescription("🔍 Demande à Netricsa d'upscaler une image")
         .addAttachmentOption((option) =>
             option
                 .setName("image")

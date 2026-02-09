@@ -1,10 +1,11 @@
-import {ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder} from "discord.js";
-import {OWNER_ID} from "../../services/botStateService";
+import {ChatInputCommandInteraction, EmbedBuilder, GuildMember, SlashCommandBuilder} from "discord.js";
+import {hasOwnerPermission} from "../../utils/permissions";
+import {replyWithError} from "../../utils/interactionUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("test-mission")
-        .setDescription("[OWNER] Tester les missions imposteur")
+        .setDescription("[TAH-UM] 🕵️ Tester les missions imposteur")
         .addStringOption(option =>
             option
                 .setName("mission")
@@ -33,12 +34,14 @@ module.exports = {
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
-        // Vérifier que c'est l'owner
-        if (interaction.user.id !== OWNER_ID) {
-            await interaction.reply({
-                content: "❌ Cette commande est réservée au propriétaire du bot.",
-                flags: 64
-            });
+        const member = interaction.member instanceof GuildMember ? interaction.member : null;
+        if (!hasOwnerPermission(member)) {
+            await replyWithError(
+                interaction,
+                "Permission refusée",
+                "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*",
+                true
+            );
             return;
         }
 
@@ -149,7 +152,7 @@ function getTestInstructions(missionType: string, mission: any): string {
 
         "use_fun_commands": "🎲 **Comment tester:**\n" +
             "• Utilise 3 commandes fun **différentes**\n" +
-            "• Exemples: `/8ball`, `/ascii`, `/rollthedice`, `/coinflip`, `/choose`, `/ship`\n" +
+            "• Exemples: `/8ball`, `/ascii`, `/rollthedice`, `/coinflip`, `/choose`, `/ship`, `/cucumber`\n" +
             "• Chaque commande ne compte qu'une fois",
 
         // Moyennes

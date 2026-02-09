@@ -321,7 +321,7 @@ function calculateProgress(userId: string, challenge: ChallengeDefinition): numb
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("challenges")
-        .setDescription("Consulte tes défis quotidiens et gagne de l'XP bonus ! 🎯"),
+        .setDescription("🎯 Consulte tes défis quotidiens et gagne de l'XP bonus !"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
