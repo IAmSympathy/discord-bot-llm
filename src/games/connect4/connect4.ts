@@ -245,9 +245,7 @@ async function startGame(interaction: any, gameId: string) {
             gameState.currentTurn = gameState.currentTurn === gameState.player1 ? gameState.player2! : gameState.player1;
 
             if (gameState.isAI && gameState.currentTurn === NETRICSA_GAME_ID) {
-                const updatedMessage = await i.update({content: "🤖 Netricsa réfléchit...", embeds: [], components: [], fetchReply: true});
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                await makeAIMove(gameState, gameId, updatedMessage, collector);
+                await makeAIMove(gameState, gameId, i, collector);
             } else {
                 await updateGameDisplay(i, gameId);
             }
@@ -335,7 +333,7 @@ function isBoardFull(board: (string | null)[]): boolean {
     return board.every(cell => cell !== null);
 }
 
-async function makeAIMove(gameState: GameState, gameId: string, message: any, collector: any) {
+async function makeAIMove(gameState: GameState, gameId: string, interaction: any, collector: any) {
     const aiSymbol = gameState.player2Symbol;
     const playerSymbol = gameState.player1Symbol;
 
@@ -351,16 +349,16 @@ async function makeAIMove(gameState: GameState, gameId: string, message: any, co
 
             const winner = checkWinner(gameState.board);
             if (winner) {
-                await handleGameEndWithMessage(message, gameId, winner, collector);
+                await handleGameEnd(interaction, gameId, winner, collector);
                 return;
             }
 
             if (isBoardFull(gameState.board)) {
-                await handleGameEndWithMessage(message, gameId, "draw", collector);
+                await handleGameEnd(interaction, gameId, "draw", collector);
                 return;
             }
 
-            await updateGameDisplayWithMessage(message, gameId);
+            await updateGameDisplay(interaction, gameId);
         }
     }
 }
@@ -525,35 +523,8 @@ async function updateGameDisplay(interaction: any, gameId: string, useEditReply:
     const gameState = activeGames.get(gameId);
     if (!gameState) return;
 
-    const embed = new EmbedBuilder()
-        .setColor(0x2494DB)
-        .setTitle(`🔴 ${GAME_TITLE} 🟡`)
-        .setDescription(getBoardDisplay(gameState))
-        .setFooter({text: `${gameState.player1Symbol} vs ${gameState.player2Symbol}`})
-        .setTimestamp();
-
-    const rows: ActionRowBuilder<ButtonBuilder>[] = [];
-
-    // Créer les boutons de colonnes (divisés en 2 lignes: 4 + 3)
-    const colButtonsRow1: ButtonBuilder[] = [];
-    const colButtonsRow2: ButtonBuilder[] = [];
-
-    for (let col = 0; col < COLS; col++) {
-        const colButton = new ButtonBuilder()
-            .setCustomId(`${GAME_PREFIX}_col_${col}_${gameId}`)
-            .setLabel(`${col + 1}`)
-            .setStyle(ButtonStyle.Primary)
-            .setDisabled(dropPiece(gameState.board, col) === -1);
-
-        if (col < 4) {
-            colButtonsRow1.push(colButton);
-        } else {
-            colButtonsRow2.push(colButton);
-        }
-    }
-
-    rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(colButtonsRow1));
-    rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(colButtonsRow2));
+    const embed = createGameEmbed(gameState);
+    const rows = createBoardButtons(gameState, gameId);
 
     if (useEditReply) {
         return await interaction.editReply({embeds: [embed], components: rows});
@@ -562,17 +533,16 @@ async function updateGameDisplay(interaction: any, gameId: string, useEditReply:
     }
 }
 
-async function updateGameDisplayWithMessage(message: any, gameId: string) {
-    const gameState = activeGames.get(gameId);
-    if (!gameState) return;
-
-    const embed = new EmbedBuilder()
+function createGameEmbed(gameState: GameState): EmbedBuilder {
+    return new EmbedBuilder()
         .setColor(0x2494DB)
         .setTitle(`🔴 ${GAME_TITLE} 🟡`)
         .setDescription(getBoardDisplay(gameState))
         .setFooter({text: `${gameState.player1Symbol} vs ${gameState.player2Symbol}`})
         .setTimestamp();
+}
 
+function createBoardButtons(gameState: GameState, gameId: string): ActionRowBuilder<ButtonBuilder>[] {
     const rows: ActionRowBuilder<ButtonBuilder>[] = [];
 
     // Créer les boutons de colonnes (divisés en 2 lignes: 4 + 3)
@@ -596,17 +566,21 @@ async function updateGameDisplayWithMessage(message: any, gameId: string) {
     rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(colButtonsRow1));
     rows.push(new ActionRowBuilder<ButtonBuilder>().addComponents(colButtonsRow2));
 
-    return await message.edit({content: null, embeds: [embed], components: rows});
+    return rows;
 }
 
-function getBoardDisplay(gameState: GameState): string {
-    let display = "";
-    const currentPlayerSymbol = gameState.currentTurn === gameState.player1 ? gameState.player1Symbol : gameState.player2Symbol;
-    const currentPlayerName = gameState.currentTurn === gameState.player1
-        ? `<@${gameState.player1}>`
-        : (gameState.isAI ? "Netricsa" : `<@${gameState.player2}>`);
 
-    display += `**Tour de ${currentPlayerName} ${currentPlayerSymbol}**\n\n`;
+function getBoardDisplay(gameState: GameState, showTurn: boolean = true): string {
+    let display = "";
+
+    if (showTurn) {
+        const currentPlayerSymbol = gameState.currentTurn === gameState.player1 ? gameState.player1Symbol : gameState.player2Symbol;
+        const currentPlayerName = gameState.currentTurn === gameState.player1
+            ? `<@${gameState.player1}>`
+            : (gameState.isAI ? "Netricsa" : `<@${gameState.player2}>`);
+
+        display += `**Tour de ${currentPlayerName} ${currentPlayerSymbol}**\n\n`;
+    }
 
     // Numéros de colonnes
     display += "1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣7️⃣\n";
@@ -629,12 +603,11 @@ async function handleGameEnd(interaction: any, gameId: string, result: string | 
 
     collector.stop("game_ended");
 
-    let title = "";
-    let description = getBoardDisplay(gameState);
+    let resultText = "";
     let color = 0x2494DB;
 
     if (result === "draw") {
-        title = "🤝 Match Nul !";
+        resultText = "🤝 Égalité !";
         color = 0xFEE75C;
 
         updateStatsOnDraw(gameState.stats);
@@ -649,9 +622,13 @@ async function handleGameEnd(interaction: any, gameId: string, result: string | 
         const winnerId = winnerSymbol === gameState.player1Symbol ? gameState.player1 : gameState.player2!;
         const loserId = winnerId === gameState.player1 ? gameState.player2! : gameState.player1;
 
-        const winnerName = winnerId === NETRICSA_GAME_ID ? "Netricsa" : `<@${winnerId}>`;
-        title = `🎉 ${winnerName} a gagné !`;
-        color = 0x57F287;
+        if (winnerId === NETRICSA_GAME_ID) {
+            resultText = "<@1462959115528835092> gagne !";
+            color = 0xED4245;
+        } else {
+            resultText = `🎉 <@${winnerId}> gagne !`;
+            color = 0x57F287;
+        }
 
         const winnerLabel = winnerId === gameState.player1 ? 'player1' : 'player2';
         updateStatsOnWin(gameState.stats, winnerLabel);
@@ -659,15 +636,22 @@ async function handleGameEnd(interaction: any, gameId: string, result: string | 
         recordLoss(loserId, "connect4", gameState.isAI, interaction.channel);
     }
 
-    const statsDesc = getStatsDescription(gameState.stats, gameState.player1, gameState.player2, gameState.isAI);
-    const winstreakDisplay = getWinstreakDisplay(gameState.stats, gameState.player1, gameState.player2, gameState.isAI);
+    // Construire la description : grille finale + résultat + winstreaks
+    let description = "Grille finale:\n";
+    description += getBoardDisplay(gameState, false); // Ne pas afficher le tour
+    description += `\n**${resultText}**\n`;
+    description += getWinstreakDisplay(gameState.stats, gameState.player1, gameState.player2, gameState.isAI);
 
     const embed = new EmbedBuilder()
         .setColor(color)
-        .setTitle(title)
-        .setDescription(description + "\n" + statsDesc + winstreakDisplay)
-        .setFooter({text: getStatsFooter(gameState.stats)})
+        .setTitle(`🎮 Résultat - ${GAME_TITLE}`)
+        .setDescription(description)
         .setTimestamp();
+
+    const footerText = getStatsFooter(gameState.stats);
+    if (footerText) {
+        embed.setFooter({text: footerText});
+    }
 
     const rematchButton = createRematchButton(gameId, GAME_PREFIX);
     const backButton = createBackToMenuButton();
@@ -679,71 +663,14 @@ async function handleGameEnd(interaction: any, gameId: string, result: string | 
         await interaction.update({embeds: [embed], components: [row]});
     }
 
-    setupRematchCollector(interaction, gameId);
+    gameState.player1WantsRematch = false;
+    gameState.player2WantsRematch = false;
+
+    setupRematchCollector(interaction, gameId, embed);
 }
 
-async function handleGameEndWithMessage(message: any, gameId: string, result: string | null, collector: any) {
-    const gameState = activeGames.get(gameId);
-    if (!gameState) return;
 
-    collector.stop("game_ended");
-
-    let title = "";
-    let description = getBoardDisplay(gameState);
-    let color = 0x2494DB;
-
-    if (result === "draw") {
-        title = "🤝 Match Nul !";
-        color = 0xFEE75C;
-
-        updateStatsOnDraw(gameState.stats);
-        recordDraw(gameState.player1, "connect4", gameState.isAI, message.channel);
-        if (!gameState.isAI) {
-            recordDraw(gameState.player2!, "connect4", false, message.channel);
-        } else {
-            recordDraw(NETRICSA_GAME_ID, "connect4", true, message.channel);
-        }
-    } else {
-        const winnerSymbol = result;
-        const winnerId = winnerSymbol === gameState.player1Symbol ? gameState.player1 : gameState.player2!;
-        const loserId = winnerId === gameState.player1 ? gameState.player2! : gameState.player1;
-
-        const winnerName = winnerId === NETRICSA_GAME_ID ? "Netricsa" : `<@${winnerId}>`;
-        title = `🎉 ${winnerName} a gagné !`;
-        color = 0x57F287;
-
-        const winnerLabel = winnerId === gameState.player1 ? 'player1' : 'player2';
-        updateStatsOnWin(gameState.stats, winnerLabel);
-        recordWin(winnerId, "connect4", gameState.isAI, message.channel);
-        recordLoss(loserId, "connect4", gameState.isAI, message.channel);
-    }
-
-    const statsDesc = getStatsDescription(gameState.stats, gameState.player1, gameState.player2, gameState.isAI);
-    const winstreakDisplay = getWinstreakDisplay(gameState.stats, gameState.player1, gameState.player2, gameState.isAI);
-
-    const embed = new EmbedBuilder()
-        .setColor(color)
-        .setTitle(title)
-        .setDescription(description + "\n" + statsDesc + winstreakDisplay)
-        .setFooter({text: getStatsFooter(gameState.stats)})
-        .setTimestamp();
-
-    const rematchButton = createRematchButton(gameId, GAME_PREFIX);
-    const backButton = createBackToMenuButton();
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton, backButton);
-
-    const updatedMessage = await message.edit({content: null, embeds: [embed], components: [row]});
-
-    // Créer un objet interaction-like pour setupRematchCollector
-    const fakeInteraction = {
-        message: updatedMessage,
-        channel: message.channel
-    };
-
-    setupRematchCollector(fakeInteraction, gameId);
-}
-
-function setupRematchCollector(interaction: any, gameId: string) {
+function setupRematchCollector(interaction: any, gameId: string, originalEmbed: EmbedBuilder) {
     const gameState = activeGames.get(gameId);
     if (!gameState) return;
 
@@ -781,18 +708,78 @@ function setupRematchCollector(interaction: any, gameId: string) {
                 gameState.player2WantsRematch = true;
             }
 
-            if (gameState.isAI || (gameState.player1WantsRematch && gameState.player2WantsRematch)) {
+            // Mode IA : rematch instantané
+            if (gameState.isAI) {
                 collector.stop("rematch");
                 gameState.board = Array(ROWS * COLS).fill(null);
                 gameState.currentTurn = gameState.player1;
-                gameState.player1WantsRematch = false;
-                gameState.player2WantsRematch = false;
-                await startGame(i, gameId);
+
+                const newGameId = i.channelId + "_" + Date.now();
+                activeGames.set(newGameId, gameState);
+                activeGames.delete(gameId);
+
+                await startGame(i, newGameId);
+                return;
+            }
+
+            // Mode PvP
+            if (gameState.player1WantsRematch && gameState.player2WantsRematch) {
+                collector.stop("rematch");
+                gameState.board = Array(ROWS * COLS).fill(null);
+                gameState.currentTurn = gameState.player1;
+
+                const newGameId = i.channelId + "_" + Date.now();
+                activeGames.set(newGameId, gameState);
+                activeGames.delete(gameId);
+
+                await startGame(i, newGameId);
             } else {
-                await i.reply({content: "✅ Demande de rematch envoyée !", ephemeral: true});
+                // Afficher l'état du rematch
+                const updatedEmbed = EmbedBuilder.from(originalEmbed);
+                const currentDesc = updatedEmbed.data.description || "";
+
+                let rematchStatus = "\n\n**Rematch:**\n";
+                if (gameState.player1WantsRematch) {
+                    rematchStatus += `✅ <@${gameState.player1}> veut un rematch\n`;
+                } else {
+                    rematchStatus += `⏳ <@${gameState.player1}> n'a pas encore accepté\n`;
+                }
+                if (gameState.player2WantsRematch) {
+                    rematchStatus += `✅ <@${gameState.player2}> veut un rematch`;
+                } else {
+                    rematchStatus += `⏳ <@${gameState.player2}> n'a pas encore accepté`;
+                }
+
+                const baseDesc = currentDesc.split("\n\n**Rematch:**")[0];
+                updatedEmbed.setDescription(baseDesc + rematchStatus);
+
+                const rematchButton = createRematchButton(gameId, GAME_PREFIX);
+                const backButton = createBackToMenuButton();
+                const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton, backButton);
+
+                await i.update({embeds: [updatedEmbed], components: [row]});
             }
         } catch (error) {
             console.error("[Connect4] Error in rematch collector:", error);
+        }
+    });
+
+    collector.on("end", async (_collected: any, reason: string) => {
+        if (reason === "time") {
+            const description = `⏱️ Le temps pour accepter un rematch est écoulé.${getStatsDescription(gameState.stats, gameState.player1, gameState.player2, gameState.isAI)}`;
+
+            const embed = new EmbedBuilder()
+                .setColor(0xED4245)
+                .setTitle(`🎮 ${GAME_TITLE}`)
+                .setDescription(description)
+                .setTimestamp();
+
+            const footerText = getStatsFooter(gameState.stats);
+            if (footerText) {
+                embed.setFooter({text: footerText});
+            }
+
+            await interaction.message.edit({embeds: [embed], components: []});
         }
     });
 }

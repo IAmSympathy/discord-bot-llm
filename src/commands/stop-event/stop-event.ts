@@ -82,6 +82,21 @@ module.exports = {
             await deleteEventChannel(interaction.guild, event.channelId);
         }
 
+        // Supprimer l'événement Discord programmé s'il existe
+        if (event.data?.scheduledEventId && interaction.guild) {
+            try {
+                const scheduledEvent = await interaction.guild.scheduledEvents.fetch(event.data.scheduledEventId);
+                if (scheduledEvent) {
+                    await scheduledEvent.delete("Event ended");
+                    logger.info(`Discord scheduled event ${event.data.scheduledEventId} deleted`);
+                }
+            } catch (error) {
+                logger.error("Error deleting Discord scheduled event:", error);
+                // Continuer même si la suppression échoue
+            }
+        }
+
+
         // Retirer de la liste
         eventsData.activeEvents.splice(eventIndex, 1);
 
@@ -100,7 +115,7 @@ module.exports = {
             try {
                 const category = interaction.guild.channels.cache.find(
                     c => c.type === ChannelType.GuildCategory &&
-                        c.name.toLowerCase() === "🔴 événements");
+                        c.name.toLowerCase() === "🔴 événement");
 
                 if (category) {
                     await category.delete();

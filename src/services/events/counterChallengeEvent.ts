@@ -124,6 +124,7 @@ export async function startCounterChallenge(client: Client, guild: Guild, isTest
             client,
             guild,
             EventType.COUNTER_CHALLENGE,
+            "🎯 Défi du Compteur",
             "défi-compteur",
             "🎯",
             EVENT_DURATION,
@@ -132,7 +133,9 @@ export async function startCounterChallenge(client: Client, guild: Guild, isTest
                 startCount: currentCount,
                 winnerId: null,
                 isTest: isTest
-            }
+            },
+            false,
+            `Atteignez le nombre ${targetCount} dans le compteur avant la fin du temps ! Le premier à atteindre ce nombre gagnera de l'XP.`
         );
 
         if (!result) {

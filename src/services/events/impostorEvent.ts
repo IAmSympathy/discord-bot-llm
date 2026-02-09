@@ -502,7 +502,7 @@ export async function startImpostorEvent(client: Client, guild: Guild, testUserI
             {type: MissionType.ADD_REACTIONS_ONLINE, description: "Ajouter 3 réactions à des messages récents (2 semaines max) de 3 personnes différentes (excluant toi-même et les bots)", difficulty: "easy", goal: 3},
             {type: MissionType.USE_EMOJIS, description: "Envoyer 3 messages contenant des emojis différents", difficulty: "easy", goal: 3},
             {type: MissionType.MENTION_USERS, description: "Mentionner 3 personnes différentes dans tes messages", difficulty: "easy", goal: 3},
-            {type: MissionType.USE_FUN_COMMANDS, description: "Utiliser 3 commandes fun différentes de Netricsa", difficulty: "easy", goal: 3}
+            {type: MissionType.USE_FUN_COMMANDS, description: "Utiliser 3 commandes fun différentes de Netricsa (Sauf /games et /findmeme)", difficulty: "easy", goal: 3}
         ];
 
         const mediumMissions: MissionDefinition[] = [
@@ -561,6 +561,7 @@ export async function startImpostorEvent(client: Client, guild: Guild, testUserI
             client,
             guild,
             EventType.IMPOSTOR,
+            "🔍 Chasse à l'Imposteur",
             "chasse-imposteur",
             "🔍",
             duration,
@@ -572,7 +573,9 @@ export async function startImpostorEvent(client: Client, guild: Guild, testUserI
                 discovered: false,
                 discoveredBy: null,
                 isTest: isTest || !!testUserId
-            }
+            },
+            false,
+            `Un imposteur se cache parmi nous ! Tentez de le démasquer avant qu'il n'accomplisse sa mission secrète.`
         );
 
         if (!result) {

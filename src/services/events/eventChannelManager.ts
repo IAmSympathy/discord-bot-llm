@@ -1,4 +1,4 @@
-import {CategoryChannel, ChannelType, Client, EmbedBuilder, Guild, PermissionFlagsBits, TextChannel} from "discord.js";
+import {CategoryChannel, ChannelType, Client, EmbedBuilder, Guild, GuildScheduledEventEntityType, GuildScheduledEventPrivacyLevel, PermissionFlagsBits, TextChannel} from "discord.js";
 import {createLogger} from "../../utils/logger";
 import {loadEventsData, saveEventsData} from "./eventsDataManager";
 import {EnvConfig} from "../../utils/envConfig";
@@ -13,7 +13,7 @@ async function getOrCreateEventsCategory(guild: Guild): Promise<string | null> {
         // Chercher une catégorie existante
         let category = guild.channels.cache.find(
             c => c.type === ChannelType.GuildCategory &&
-                c.name.toLowerCase() === "🔴 événements"
+                c.name.toLowerCase() === "🔴 événement"
         );
 
         // Si elle existe déjà
@@ -36,7 +36,7 @@ async function getOrCreateEventsCategory(guild: Guild): Promise<string | null> {
         logger.info("Creating new events category...");
 
         category = await guild.channels.create({
-            name: "🔴 ÉVÉNEMENTS",
+            name: "🔴 ÉVÉNEMENT",
             type: ChannelType.GuildCategory,
             position: 0, // Créer directement en position 0
             permissionOverwrites: [
@@ -117,7 +117,7 @@ export async function createEventChannel(guild: Guild, name: string, emoji: stri
         // MÉTHODE 1: Créer avec guild.channels.create et parent explicite
         logger.info("Attempting to create channel with parent parameter...");
         const channel = await guild.channels.create({
-            name: `${emoji}-${name}`,
+            name: `${emoji}┃${name}`,
             type: ChannelType.GuildText,
             parent: categoryId,
             permissionOverwrites: [
@@ -219,7 +219,7 @@ export async function scheduleEventChannelDeletion(guild: Guild, channelId: stri
             try {
                 const category = guild.channels.cache.find(
                     c => c.type === ChannelType.GuildCategory &&
-                        c.name.toLowerCase() === "🔴 événements"
+                        c.name.toLowerCase() === "🔴 événement"
                 );
 
                 if (category) {
@@ -266,23 +266,27 @@ export async function sendGeneralAnnouncement(guild: Guild, eventEmbed: EmbedBui
  * @param client - Le client Discord
  * @param guild - Le serveur Discord
  * @param eventType - Le type d'événement
+ * @param eventName - Le nom de l'événement
  * @param channelName - Le nom du canal (sans emoji)
  * @param channelEmoji - L'emoji du canal
  * @param duration - La durée de l'événement en millisecondes
  * @param eventData - Les données spécifiques à l'événement
  * @param allowMessages - Si true, les utilisateurs peuvent envoyer des messages (pour les boss)
+ * @param eventDescription - Description personnalisée pour l'événement Discord programmé
  * @returns L'ID de l'événement et le canal créé, ou null si échec
  */
 export async function startEvent(
     client: Client,
     guild: Guild,
     eventType: string,
+    eventName: string,
     channelName: string,
     channelEmoji: string,
     duration: number,
     eventData: any,
-    allowMessages: boolean = false
-): Promise<{ eventId: string; channel: TextChannel } | null> {
+    allowMessages: boolean = false,
+    eventDescription?: string
+): Promise<{ eventId: string; channel: TextChannel; scheduledEvent?: any } | null> {
     try {
         // Créer le canal d'événement
         const channel = await createEventChannel(guild, channelName, channelEmoji, allowMessages);
@@ -291,25 +295,54 @@ export async function startEvent(
             return null;
         }
 
-        // Calculer le temps de fin
-        const endTime = Date.now() + duration;
+        // Calculer les temps
+        // Ajouter 10 secondes à la date de début pour éviter l'erreur Discord "événement dans le passé"
+        const startTime = new Date(Date.now() + 10000); // +10 secondes
+        const endTime = new Date(Date.now() + duration);
         const eventId = `${eventType}_${Date.now()}`;
 
-        // Enregistrer l'événement
+        // Créer un événement Discord programmé
+        let scheduledEvent;
+        try {
+            const eventName = `${channelEmoji} ${channelName.charAt(0).toUpperCase() + channelName.slice(1)}`;
+            const description = eventDescription || `Événement aléatoire : ${eventName}`;
+
+            scheduledEvent = await guild.scheduledEvents.create({
+                name: eventName,
+                description: description,
+                scheduledStartTime: startTime,
+                scheduledEndTime: endTime,
+                privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
+                entityType: GuildScheduledEventEntityType.External,
+                entityMetadata: {
+                    location: `<#${channel.id}>`
+                }
+            });
+
+            logger.info(`Discord scheduled event created: ${scheduledEvent.id}`);
+        } catch (eventError) {
+            logger.error("Error creating Discord scheduled event (non-critical):", eventError);
+            // Continuer même si la création de l'événement Discord échoue
+        }
+
+        // Enregistrer l'événement dans notre système
         const eventsData = loadEventsData();
         eventsData.activeEvents.push({
             id: eventId,
             type: eventType as any,
             channelId: channel.id,
             startTime: Date.now(),
-            endTime: endTime,
-            data: eventData
+            endTime: endTime.getTime(),
+            data: {
+                ...eventData,
+                scheduledEventId: scheduledEvent?.id
+            }
         });
         saveEventsData(eventsData);
 
         logger.info(`Event ${eventType} started with ID ${eventId}, duration: ${duration / 60000} minutes`);
 
-        return {eventId, channel};
+        return {eventId, channel, scheduledEvent};
     } catch (error) {
         logger.error(`Error starting event ${eventType}:`, error);
         return null;
@@ -341,6 +374,20 @@ export async function endEvent(
 
     const event = eventsData.activeEvents[eventIndex];
 
+    // Supprimer l'événement Discord programmé s'il existe
+    if (event.data?.scheduledEventId) {
+        try {
+            const scheduledEvent = await guild.scheduledEvents.fetch(event.data.scheduledEventId);
+            if (scheduledEvent) {
+                await scheduledEvent.delete("Event ended");
+                logger.info(`Discord scheduled event ${event.data.scheduledEventId} deleted`);
+            }
+        } catch (error) {
+            logger.error("Error deleting Discord scheduled event:", error);
+            // Continuer même si la suppression échoue
+        }
+    }
+
     // Retirer de la liste des événements actifs
     eventsData.activeEvents.splice(eventIndex, 1);
     const hasRemainingEvents = eventsData.activeEvents.length > 0;
@@ -355,7 +402,7 @@ export async function endEvent(
             try {
                 const category = guild.channels.cache.find(
                     c => c.type === ChannelType.GuildCategory &&
-                        c.name.toLowerCase() === "🔴 événements"
+                        c.name.toLowerCase() === "🔴 événement"
                 );
 
                 if (category) {

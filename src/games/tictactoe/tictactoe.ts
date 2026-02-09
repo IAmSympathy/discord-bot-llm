@@ -503,7 +503,7 @@ async function displayResult(message: any, gameState: GameState, winner: string 
             recordDraw(NETRICSA_GAME_ID, 'tictactoe', true, message.channel);
         }
     } else if (winner === gameState.player1) {
-        result = `🎉 <@${gameState.player1}> gagne !`;
+        result = `🎉 <@${gameState.player1}> gagne !\n`;
         color = 0x57F287;
         updateStatsOnWin(gameState.stats, 'player1');
         // Enregistrer dans stats globales
@@ -516,10 +516,10 @@ async function displayResult(message: any, gameState: GameState, winner: string 
         }
     } else {
         if (gameState.isAI) {
-            result = `<@1462959115528835092> gagne !`;
+            result = `<@1462959115528835092> gagne !\n`;
             color = 0xED4245;
         } else {
-            result = `🎉 <@${gameState.player2}> gagne !`;
+            result = `🎉 <@${gameState.player2}> gagne !\n`;
             color = 0xFEE75C;
         }
         updateStatsOnWin(gameState.stats, 'player2');
@@ -534,11 +534,10 @@ async function displayResult(message: any, gameState: GameState, winner: string 
     }
 
     // Construire la description avec les winstreaks
-    let description = `**${result}**`;
-    description += getWinstreakDisplay(gameState.stats, gameState.player1, gameState.player2, gameState.isAI);
+
 
     // Afficher la grille finale
-    description += "\n**Grille finale:**\n";
+    let description = "Grille finale:\n";
     for (let row = 0; row < 3; row++) {
         for (let col = 0; col < 3; col++) {
             const index = row * 3 + col;
@@ -547,6 +546,9 @@ async function displayResult(message: any, gameState: GameState, winner: string 
         }
         description += "\n";
     }
+
+    description += `**${result}**\n`;
+    description += getWinstreakDisplay(gameState.stats, gameState.player1, gameState.player2, gameState.isAI);
 
     const embed = new EmbedBuilder()
         .setColor(color)

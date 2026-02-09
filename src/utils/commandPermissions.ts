@@ -44,21 +44,22 @@ const GLOBAL_COMMANDS = [
  * Liste des commandes spéciales avec restrictions personnalisées
  */
 const SPECIAL_COMMANDS = {
-    findmeme: 'MEME_CHANNEL', // Uniquement dans le salon meme ou en DM
-    imagine: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
-    reimagine: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
-    upscale: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
-    'prompt-maker': 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
-    games: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
-    rollthedice: 'COMMAND_CHANNEL', // Uniquement dans le salon jeux ou en DM
-    'crystalball': 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
-    choose: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
-    coinflip: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
-    daily: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
-    ascii: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
-    ship: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
-    challenges: 'COMMAND_CHANNEL', // Uniquement dans le salon commande ou en DM
-    cucumber: 'COMMAND_CHANNEL' // Uniquement dans le salon commande ou en DM
+    findmeme: 'MEME_CHANNEL',
+    imagine: 'COMMAND_CHANNEL',
+    reimagine: 'COMMAND_CHANNEL',
+    upscale: 'COMMAND_CHANNEL',
+    'prompt-maker': 'COMMAND_CHANNEL',
+    games: 'COMMAND_CHANNEL',
+    rollthedice: 'COMMAND_CHANNEL',
+    'crystalball': 'COMMAND_CHANNEL',
+    choose: 'COMMAND_CHANNEL',
+    coinflip: 'COMMAND_CHANNEL',
+    daily: 'COMMAND_CHANNEL',
+    ascii: 'COMMAND_CHANNEL',
+    ship: 'COMMAND_CHANNEL',
+    challenges: 'COMMAND_CHANNEL',
+    cucumber: 'COMMAND_CHANNEL',
+    slots: 'COMMAND_CHANNEL',
 } as const;
 
 /**

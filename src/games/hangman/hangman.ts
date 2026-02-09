@@ -446,6 +446,9 @@ function getStatsDescription(gameState: GameState): string {
     const totalGames = gameState.wins + gameState.losses;
     if (totalGames === 0) return "";
 
+    if (gameState.highestStreak === 0) {
+        return ``;
+    }
     let stats = `\n\n**Statistiques:**\n`;
 
     if (gameState.highestStreak > 1) {

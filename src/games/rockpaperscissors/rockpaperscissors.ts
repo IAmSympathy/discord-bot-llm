@@ -312,7 +312,10 @@ function createChoiceButtons(gameId: string, playerId: string | "both"): ActionR
 function getStatsDescription(gameState: GameState): string {
     const totalGames = gameState.player1TotalWins + gameState.player2TotalWins + gameState.draws;
     if (totalGames === 0) return "";
-
+    if (gameState.player1HighestWinstreak <= 1 && gameState.player2HighestWinstreak <= 1 && gameState.draws === 0) {
+        return ``;
+    }
+    
     let stats = `\n\n**Statistiques:**\n`;
 
     if (gameState.player1HighestWinstreak > 1 || gameState.player2HighestWinstreak > 1) {

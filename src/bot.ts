@@ -753,7 +753,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             await command.execute(interaction);
 
             // Tracker les commandes fun pour la mission imposteur
-            const funCommands = ['rollthedice', 'crystalball', 'choose', 'coinflip', 'ascii', 'ship', 'cucumber'];
+            const funCommands = ['rollthedice', 'crystalball', 'choose', 'coinflip', 'ascii', 'ship', 'cucumber', 'slots'];
             if (funCommands.includes(interaction.commandName)) {
                 const {trackImpostorFunCommand} = require("./services/events/impostorMissionTracker");
                 await trackImpostorFunCommand(interaction.client, interaction.user.id, interaction.commandName);

@@ -15,7 +15,7 @@ const logger = createLogger("BossEvent");
 /**
  * Délai ENTRE les suppressions de messages (en millisecondes)
  */
-const MESSAGE_DELETE_DELAY = 800;
+const MESSAGE_DELETE_DELAY = 1500;
 
 /**
  * File d'attente pour espacer les suppressions de messages
@@ -190,6 +190,7 @@ export async function startBossEvent(client: Client, guild: Guild, isTest: boole
             client,
             guild,
             EventType.BOSS,
+            "️️️👑 Combat de Boss",
             "combat-boss",
             "👑",
             boss.duration, // Utiliser la durée du boss
@@ -209,7 +210,8 @@ export async function startBossEvent(client: Client, guild: Guild, isTest: boole
                 messageCount: 0,
                 isTest: isTest
             },
-            true // allowMessages = true pour permettre aux joueurs d'attaquer
+            true, // allowMessages = true pour permettre aux joueurs d'attaquer
+            `⚠️ BOSS ÉPIQUE : ${boss.name} ! Unissez vos forces pour le vaincre. L'XP est partagé entre tous les participants !`
         );
 
         if (!result) {

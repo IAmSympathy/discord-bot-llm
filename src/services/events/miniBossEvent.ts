@@ -15,7 +15,7 @@ const logger = createLogger("MiniBossEvent");
 /**
  * Délai ENTRE les suppressions de messages (en millisecondes)
  */
-const MESSAGE_DELETE_DELAY = 800;
+const MESSAGE_DELETE_DELAY = 1500;
 
 /**
  * File d'attente pour espacer les suppressions de messages
@@ -238,6 +238,7 @@ export async function startMiniBossEvent(client: Client, guild: Guild, isTest: b
             client,
             guild,
             EventType.MINI_BOSS,
+            "️️️⚔️ Combat de Mini-Boss",
             "combat-mini-boss",
             "⚔️",
             boss.duration, // Utiliser la durée du boss

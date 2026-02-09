@@ -152,7 +152,7 @@ function getTestInstructions(missionType: string, mission: any): string {
 
         "use_fun_commands": "🎲 **Comment tester:**\n" +
             "• Utilise 3 commandes fun **différentes**\n" +
-            "• Exemples: `/8ball`, `/ascii`, `/rollthedice`, `/coinflip`, `/choose`, `/ship`, `/cucumber`\n" +
+            "• Exemples: `/8ball`, `/ascii`, `/rollthedice`, `/coinflip`, `/choose`, `/ship`, `/cucumber`, `/slots`\n" +
             "• Chaque commande ne compte qu'une fois",
 
         // Moyennes

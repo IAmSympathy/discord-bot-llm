@@ -85,6 +85,9 @@ export function getStatsDescription(stats: GameStats, player1Id: string, player2
     const totalGames = stats.player1Wins + stats.player2Wins + stats.draws;
     if (totalGames === 0) return "";
 
+    if (stats.player1HighestWinstreak === 0 && stats.player2HighestWinstreak === 0 && stats.draws === 0) {
+        return ``;
+    }
     let description = `\n\n**Statistiques:**\n`;
 
     if (stats.player1HighestWinstreak > 1 || stats.player2HighestWinstreak > 1) {
