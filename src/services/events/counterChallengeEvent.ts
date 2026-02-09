@@ -3,7 +3,7 @@ import {createLogger} from "../../utils/logger";
 import {addXP} from "../xpSystem";
 import {EventType} from "./eventTypes";
 import {loadEventsData, saveEventsData} from "./eventsDataManager";
-import {endEvent, sendGeneralAnnouncement, startEvent} from "./eventChannelManager";
+import {endEvent, startEvent} from "./eventChannelManager";
 import {EnvConfig} from "../../utils/envConfig";
 import * as path from "path";
 
@@ -59,28 +59,6 @@ function createEventAnnouncementEmbed(targetCount: number, currentCount: number,
         .setTimestamp();
 }
 
-/**
- * Crée l'embed d'annonce pour le salon général
- */
-function createGeneralAnnouncementEmbed(targetCount: number, currentCount: number, endTime: number, eventChannelId: string): EmbedBuilder {
-    // Calculer la fourchette (±5 autour de la cible)
-    const rangeMin = Math.max(currentCount + 1, targetCount - 5);
-    const rangeMax = targetCount + 5;
-
-    return new EmbedBuilder()
-        .setColor(0xF6AD55)
-        .setTitle("🎯 Nouvel Événement : Défi du Compteur !")
-        .setDescription(
-            `Un événement temporaire vient d'apparaître !\n\n` +
-            `**Objectif :** Atteindre un nombre **secret** dans le compteur\n` +
-            `**Cible :** Entre **${rangeMin}** et **${rangeMax}** 🤫\n` +
-            `**Temps limite :** <t:${Math.floor(endTime / 1000)}:R>\n` +
-            `**Récompense :** ${WINNER_XP_REWARD} XP pour le gagnant 💫\n\n` +
-            `📋 Consultez les détails dans <#${eventChannelId}>\n` +
-            `🏃 Participez dans <#${EnvConfig.COUNTER_CHANNEL_ID}>`
-        )
-        .setTimestamp();
-}
 
 /**
  * Crée l'embed de victoire
@@ -153,10 +131,6 @@ export async function startCounterChallenge(client: Client, guild: Guild, isTest
         // Envoyer les règles dans le canal d'événement avec le badge
         const rulesEmbed = createEventAnnouncementEmbed(targetCount, currentCount, endTime, isTest);
         await channel.send({embeds: [rulesEmbed], files: [badgeAttachment]});
-
-        // Envoyer une annonce dans le salon général (sauf si test)
-        const generalEmbed = createGeneralAnnouncementEmbed(targetCount, currentCount, endTime, channel.id);
-        await sendGeneralAnnouncement(guild, generalEmbed, isTest);
 
         logger.info(`Counter challenge started! Target: ${targetCount}, Duration: ${EVENT_DURATION / 60000} minutes`);
 

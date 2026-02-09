@@ -37,6 +37,7 @@ const GLOBAL_COMMANDS = [
     'reset-dm',
     'leaderboard',
     'test-mission',
+    'challenges'
     // Ajoutez ici d'autres commandes qui peuvent être utilisées n'importe où
 ];
 
@@ -57,7 +58,6 @@ const SPECIAL_COMMANDS = {
     daily: 'COMMAND_CHANNEL',
     ascii: 'COMMAND_CHANNEL',
     ship: 'COMMAND_CHANNEL',
-    challenges: 'COMMAND_CHANNEL',
     cucumber: 'COMMAND_CHANNEL',
     slots: 'COMMAND_CHANNEL',
 } as const;

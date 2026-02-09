@@ -3,7 +3,7 @@ import {createLogger} from "../../utils/logger";
 import {addXP} from "../xpSystem";
 import {EventType} from "./eventTypes";
 import {loadEventsData, saveEventsData} from "./eventsDataManager";
-import {endEvent, sendGeneralAnnouncement, startEvent} from "./eventChannelManager";
+import {endEvent, startEvent} from "./eventChannelManager";
 import {BossData, getRandomMiniBoss} from "./bossData";
 import * as path from "path";
 import * as fs from "fs";
@@ -121,32 +121,6 @@ function createHpBar(currentHp: number, maxHp: number): string {
     const empty = "⬛".repeat(emptyBlocks);
 
     return `${filled}${empty}`;
-}
-
-/**
- * Crée l'embed d'annonce pour le salon général
- */
-function createGeneralAnnouncementEmbed(boss: BossData, endTime: number, eventChannelId: string): EmbedBuilder {
-    return new EmbedBuilder()
-        .setColor(boss.isSpecial ? 0xFF0000 : 0xFF6B6B)
-        .setTitle(boss.isSpecial ? "💥 ALERTE : Kamikaze en approche !" : "⚔️ Nouvel Événement : Combat de Mini Boss !")
-        .setDescription(
-            boss.isSpecial
-                ? `⚠️ **UN KAMIKAZE FONCE VERS LE SERVEUR !**\n\n` +
-                `Il va exploser et faire perdre ${boss.failurePenalty} XP à tous !\n\n` +
-                `**Quelqu'un doit se sacrifier pour l'arrêter !**\n` +
-                `⏰ Temps limite : <t:${Math.floor(endTime / 1000)}:R>\n\n` +
-                `⚡ Participez dans <#${eventChannelId}>`
-                : `Un **${boss.name}** vient d'apparaître !\n\n` +
-                `**Boss :** ${boss.name}\n` +
-                `**Points de Vie :** ${boss.hp} HP\n` +
-                `**Temps limite :** <t:${Math.floor(endTime / 1000)}:R>\n` +
-                `**Récompense :** +${boss.finalBlowXP} XP pour le coup final 💫\n` +
-                `**Pénalité :** ${boss.failurePenalty} XP si échec\n\n` +
-                `⚔️ Participez dans <#${eventChannelId}>\n` +
-                `🏆 Portez le coup final pour gagner !`
-        )
-        .setTimestamp();
 }
 
 /**
@@ -324,10 +298,6 @@ export async function startMiniBossEvent(client: Client, guild: Guild, isTest: b
                 clearInterval(updateInterval);
             }
         }, 3000); // 3 secondes
-
-        // Envoyer une annonce dans le salon général (sauf si test)
-        const generalEmbed = createGeneralAnnouncementEmbed(boss, endTime, channel.id);
-        await sendGeneralAnnouncement(guild, generalEmbed, isTest);
 
         logger.info(`Mini boss event started! Boss: ${boss.name}, HP: ${boss.hp}, Duration: ${boss.duration / 60000} minutes`);
 

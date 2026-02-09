@@ -265,7 +265,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
 const FIXED_HANGMAN_CHALLENGE: ChallengeDefinition = {
     id: "hangman_daily_fixed",
     type: ChallengeType.HANGMAN,
-    name: "🎭 Pendu Quotidien",
+    name: "Pendu Quotidien",
     description: "Jouer 1 partie de bonhomme pendu",
     emoji: "🎭",
     goal: 1,
@@ -329,23 +329,17 @@ function createChallengesEmbed(challenges: ChallengeDefinition[]): EmbedBuilder 
     challenges.forEach((challenge, index) => {
         embed.addFields({
             name: `${index + 1}. ${challenge.emoji} ${challenge.name}`,
-            value: `${challenge.description}\n**Récompense :** ${challenge.xpReward} XP 💫`,
+            value: `${challenge.description}\n**Récompense :** 💫 ${challenge.xpReward} XP`,
             inline: false
         });
     });
 
     // Ajouter une section séparée pour le défi permanent
     embed.addFields({
-        name: "━━━━━━━━━━━━━━━━━━━━━━",
-        value: "\u200B", // Espace invisible pour la séparation
-        inline: false
-    });
-
-    embed.addFields({
-        name: `${FIXED_HANGMAN_CHALLENGE.emoji} ${FIXED_HANGMAN_CHALLENGE.name}`,
+        name: `━━━━━━━━━━━━━━━━━━━━━━\n ${FIXED_HANGMAN_CHALLENGE.emoji} ${FIXED_HANGMAN_CHALLENGE.name}`,
         value:
             `${FIXED_HANGMAN_CHALLENGE.description}\n` +
-            `**Récompense :** ${FIXED_HANGMAN_CHALLENGE.xpReward} XP 💫\n\n`,
+            `**Récompense :** 💫 ${FIXED_HANGMAN_CHALLENGE.xpReward} XP\n\n`,
         inline: false
     });
 
@@ -610,62 +604,10 @@ module.exports = {
 
             embed.setDescription(description);
 
-            // === SECTION 1 : STATUT VOCAL ===
-            const dailyVoiceMinutes = getDailyVoiceTime(userId);
-            let currentVoiceTier = VOICE_XP_TIERS[0];
-            for (const tier of VOICE_XP_TIERS) {
-                if (dailyVoiceMinutes >= tier.minMinutes && dailyVoiceMinutes < tier.maxMinutes) {
-                    currentVoiceTier = tier;
-                    break;
-                }
-            }
-
-            const formatTime = (minutes: number): string => {
-                if (minutes === 0) return "0 min";
-                if (minutes < 60) return `${minutes} min`;
-                const hours = Math.floor(minutes / 60);
-                const mins = minutes % 60;
-                return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
-            };
-
-            const voiceXPPerMinute = Math.ceil(1 * currentVoiceTier.multiplier);
-
-            // Calculer le temps jusqu'à minuit
-            const now = new Date();
-            const midnight = new Date();
-            midnight.setHours(24, 0, 0, 0);
-            const msUntilMidnight = midnight.getTime() - now.getTime();
-            const hoursUntilReset = Math.floor(msUntilMidnight / (1000 * 60 * 60));
-            const minutesUntilReset = Math.floor((msUntilMidnight % (1000 * 60 * 60)) / (1000 * 60));
-
+            // === SECTION 1 : DÉFIS QUOTIDIENS ===
             embed.addFields({
                 name: "━━━━━━━━━━━━━━━━━━━━━━",
-                value: `${currentVoiceTier.emoji} **Statut Vocal Quotidien**`,
-                inline: false
-            });
-
-            embed.addFields({
-                name: "📊 Progression",
-                value:
-                    `**Temps aujourd'hui :** ${formatTime(dailyVoiceMinutes)}\n` +
-                    `**XP actuel :** ${voiceXPPerMinute} XP/min (${currentVoiceTier.label})\n` +
-                    `**Reset dans :** ${hoursUntilReset}h ${minutesUntilReset}min`,
-                inline: true
-            });
-
-            embed.addFields({
-                name: "💡 Info",
-                value:
-                    `Les paliers XP vocal diminuent\n` +
-                    `au fil de la journée pour\n` +
-                    `encourager la diversité.`,
-                inline: true
-            });
-
-            // === SECTION 2 : DÉFIS QUOTIDIENS ===
-            embed.addFields({
-                name: "━━━━━━━━━━━━━━━━━━━━━━",
-                value: "📋 **Défis du Jour** *(Reset à minuit)*",
+                value: "**Défis du Jour**",
                 inline: false
             });
 
@@ -695,8 +637,7 @@ module.exports = {
                     name: `${status} ${challenge.emoji} ${challenge.name}`,
                     value:
                         `${challenge.description}\n` +
-                        `${progressBar} ${progressText}\n` +
-                        `💫 **${challenge.xpReward} XP**`,
+                        `${progressBar} \n${progressText} • 💫 **${challenge.xpReward} XP**`,
                     inline: true
                 });
             }
@@ -713,7 +654,7 @@ module.exports = {
             // === SECTION 3 : DÉFI PERMANENT ===
             embed.addFields({
                 name: "━━━━━━━━━━━━━━━━━━━━━━",
-                value: "🎭 **Défi Permanent** *(Disponible tous les jours)*",
+                value: "**Disponible tous les jours**",
                 inline: false
             });
 
@@ -734,11 +675,73 @@ module.exports = {
                     name: `${status} ${FIXED_HANGMAN_CHALLENGE.emoji} ${FIXED_HANGMAN_CHALLENGE.name}`,
                     value:
                         `${FIXED_HANGMAN_CHALLENGE.description}\n` +
-                        `${progressBar} ${progressText}\n` +
-                        `💫 **${FIXED_HANGMAN_CHALLENGE.xpReward} XP**`,
+                        `${progressBar}\n${progressText} • 💫 **${FIXED_HANGMAN_CHALLENGE.xpReward} XP**`,
                     inline: false
                 });
             }
+
+            // === SECTION 4 : STATUT VOCAL (EN BAS) ===
+            const dailyVoiceMinutes = getDailyVoiceTime(userId);
+            let currentVoiceTier = VOICE_XP_TIERS[0];
+            for (const tier of VOICE_XP_TIERS) {
+                if (dailyVoiceMinutes >= tier.minMinutes && dailyVoiceMinutes < tier.maxMinutes) {
+                    currentVoiceTier = tier;
+                    break;
+                }
+            }
+
+            const formatTime = (minutes: number): string => {
+                if (minutes === 0) return "0 min";
+                if (minutes < 60) return `${minutes} min`;
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+            };
+
+            // Calculer l'XP vocal accumulé aujourd'hui
+            let totalVoiceXP = 0;
+            for (const tier of VOICE_XP_TIERS) {
+                if (dailyVoiceMinutes <= tier.minMinutes) break;
+
+                const minutesInTier = Math.min(dailyVoiceMinutes, tier.maxMinutes) - tier.minMinutes;
+                if (minutesInTier > 0) {
+                    totalVoiceXP += Math.ceil(minutesInTier * tier.multiplier);
+                }
+            }
+
+            // Barre de progression pour le temps (sur 4h = 240 min max pour visualisation)
+            const maxDisplayMinutes = 240;
+            const timeProgressPercent = Math.min((dailyVoiceMinutes / maxDisplayMinutes) * 100, 100);
+            const timeFilledBars = Math.floor(timeProgressPercent / 5);
+            const timeEmptyBars = 20 - timeFilledBars;
+            const timeProgressBar = "▰".repeat(timeFilledBars) + "▱".repeat(timeEmptyBars);
+
+            // Barre de progression pour l'XP (on estime un max à ~300 XP pour la visualisation)
+            const maxDisplayXP = 300;
+            const xpProgressPercent = Math.min((totalVoiceXP / maxDisplayXP) * 100, 100);
+            const xpFilledBars = Math.floor(xpProgressPercent / 5);
+            const xpEmptyBars = 20 - xpFilledBars;
+            const xpProgressBar = "▰".repeat(xpFilledBars) + "▱".repeat(xpEmptyBars);
+
+            const voiceXPPerMinute = Math.ceil(1 * currentVoiceTier.multiplier);
+
+            // Calculer le temps jusqu'à minuit
+            const now = new Date();
+            const midnight = new Date();
+            midnight.setHours(24, 0, 0, 0);
+            const msUntilMidnight = midnight.getTime() - now.getTime();
+            const hoursUntilReset = Math.floor(msUntilMidnight / (1000 * 60 * 60));
+            const minutesUntilReset = Math.floor((msUntilMidnight % (1000 * 60 * 60)) / (1000 * 60));
+
+
+            embed.addFields({
+                name: "━━━━━━━━━━━━━━━━━━━━━━\n🎤 XP Vocal Accumulé",
+                value:
+                    `${xpProgressBar}\n` +
+                    `💫  **${totalVoiceXP} XP** gagné • ${voiceXPPerMinute} XP/min (${currentVoiceTier.label}) • ⏰ Reset dans ${hoursUntilReset}h ${minutesUntilReset}min`,
+                inline: false
+            });
+
 
             // Footer avec statistiques
             const totalChallenges = challengesData.challenges.length + 1; // +1 pour le pendu

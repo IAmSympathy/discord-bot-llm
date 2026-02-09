@@ -1,7 +1,6 @@
-import {CategoryChannel, ChannelType, Client, EmbedBuilder, Guild, GuildScheduledEventEntityType, GuildScheduledEventPrivacyLevel, PermissionFlagsBits, TextChannel} from "discord.js";
+import {CategoryChannel, ChannelType, Client, Guild, GuildScheduledEventEntityType, GuildScheduledEventPrivacyLevel, PermissionFlagsBits, TextChannel} from "discord.js";
 import {createLogger} from "../../utils/logger";
 import {loadEventsData, saveEventsData} from "./eventsDataManager";
-import {EnvConfig} from "../../utils/envConfig";
 
 const logger = createLogger("EventChannelManager");
 
@@ -233,32 +232,6 @@ export async function scheduleEventChannelDeletion(guild: Guild, channelId: stri
     }, delayMs);
 
     logger.info(`Event channel ${channelId} scheduled for deletion in ${delayMs}ms`);
-}
-
-/**
- * Envoie une annonce d'événement dans le salon général
- * @param guild - Le serveur Discord
- * @param eventEmbed - L'embed à envoyer
- * @param isTest - Si c'est un test (pas d'annonce si true)
- */
-export async function sendGeneralAnnouncement(guild: Guild, eventEmbed: EmbedBuilder, isTest: boolean = false): Promise<void> {
-    // Ne pas envoyer d'annonce si c'est un test
-    if (isTest) {
-        logger.info("Test mode: skipping general announcement");
-        return;
-    }
-
-    if (!EnvConfig.WELCOME_CHANNEL_ID) return;
-
-    try {
-        const generalChannel = guild.channels.cache.get(EnvConfig.WELCOME_CHANNEL_ID) as TextChannel;
-        if (generalChannel) {
-            await generalChannel.send({embeds: [eventEmbed]});
-            logger.info("Event announcement sent to general channel");
-        }
-    } catch (error) {
-        logger.error("Error sending event announcement:", error);
-    }
 }
 
 /**

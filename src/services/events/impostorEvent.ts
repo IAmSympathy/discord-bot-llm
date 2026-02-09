@@ -3,7 +3,7 @@ import {createLogger} from "../../utils/logger";
 import {addXP} from "../xpSystem";
 import {EventType} from "./eventTypes";
 import {loadEventsData, saveEventsData} from "./eventsDataManager";
-import {endEvent, sendGeneralAnnouncement, startEvent} from "./eventChannelManager";
+import {endEvent, startEvent} from "./eventChannelManager";
 import {isLowPowerMode} from "../botStateService";
 import * as path from "path";
 
@@ -620,10 +620,6 @@ export async function startImpostorEvent(client: Client, guild: Guild, testUserI
 
         await huntChannel.send({embeds: [huntEmbed], components: [guessButton], files: [badgeAttachment]});
         logger.info("Impostor hunt channel created");
-
-        // Envoyer une annonce dans le salon général (sauf si test)
-        const generalEmbed = createImpostorGeneralAnnouncementEmbed(endTime, huntChannel.id);
-        await sendGeneralAnnouncement(guild, generalEmbed, isTest || !!testUserId);
 
         // Envoyer un DM à l'imposteur
         try {

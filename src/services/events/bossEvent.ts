@@ -3,7 +3,7 @@ import {createLogger} from "../../utils/logger";
 import {addXP} from "../xpSystem";
 import {EventType} from "./eventTypes";
 import {loadEventsData, saveEventsData} from "./eventsDataManager";
-import {endEvent, sendGeneralAnnouncement, startEvent} from "./eventChannelManager";
+import {endEvent, startEvent} from "./eventChannelManager";
 import {BossData, getRandomBoss} from "./bossData";
 import * as path from "path";
 import * as fs from "fs";
@@ -102,28 +102,6 @@ function createHpBar(currentHp: number, maxHp: number): string {
     const empty = "⬛".repeat(emptyBlocks);
 
     return `${filled}${empty}`;
-}
-
-/**
- * Crée l'embed d'annonce pour le salon général
- */
-function createGeneralAnnouncementEmbed(boss: BossData, endTime: number, eventChannelId: string): EmbedBuilder {
-    return new EmbedBuilder()
-        .setColor(0x9B59B6)
-        .setTitle("👑 Nouvel Événement : Combat de Boss Épique !")
-        .setDescription(
-            `Un **${boss.name}** menace le serveur !\n\n` +
-            `**Boss :** ${boss.name}\n` +
-            `**Points de Vie :** ${boss.hp} HP\n` +
-            `**Temps limite :** <t:${Math.floor(endTime / 1000)}:R>\n\n` +
-            `**Récompenses :**\n` +
-            `• ${boss.sharedXP} XP partagés 💫\n` +
-            `• +${boss.finalBlowXP} XP pour le coup final 🏆\n` +
-            `**Pénalité :** ${boss.failurePenalty} XP si échec\n\n` +
-            `⚔️ Participez dans <#${eventChannelId}>\n` +
-            `🤝 Unissez vos forces pour vaincre ce boss !`
-        )
-        .setTimestamp();
 }
 
 /**
@@ -277,11 +255,6 @@ export async function startBossEvent(client: Client, guild: Guild, isTest: boole
                 clearInterval(updateInterval);
             }
         }, 3000); // 3 secondes
-
-        // Envoyer une annonce dans le salon général (sauf si test)
-        const generalEmbed = createGeneralAnnouncementEmbed(boss, endTime, channel.id);
-        await sendGeneralAnnouncement(guild, generalEmbed, isTest);
-
         logger.info(`Boss event started! Boss: ${boss.name}, HP: ${boss.hp}, Duration: ${boss.duration / 60000} minutes`);
 
         // Programmer la fin automatique après expiration
