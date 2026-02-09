@@ -36,8 +36,8 @@ function getDailyStreak(userId: string): { streak: number; totalClaims: number }
  * Crée une barre de progression visuelle pour l'XP
  */
 export function createXPBar(currentXP: number, level: number): string {
-    const xpForCurrent = level * level * 85;
-    const xpForNext = (level + 1) * (level + 1) * 85;
+    const xpForCurrent = level * level * 75;
+    const xpForNext = (level + 1) * (level + 1) * 75;
     const xpInLevel = currentXP - xpForCurrent;
     const xpNeeded = xpForNext - xpForCurrent;
 
@@ -66,8 +66,8 @@ export function getLevelText(userId: string): string {
     const xpData = getUserXP(userId);
 
     if (xpData) {
-        const xpForCurrent = xpData.level * xpData.level * 85;
-        const xpForNext = (xpData.level + 1) * (xpData.level + 1) * 85;
+        const xpForCurrent = xpData.level * xpData.level * 75;
+        const xpForNext = (xpData.level + 1) * (xpData.level + 1) * 75;
         const xpInLevel = xpData.totalXP - xpForCurrent;
         const xpNeededInLevel = xpForNext - xpForCurrent;
 

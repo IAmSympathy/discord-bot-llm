@@ -58,6 +58,10 @@ export class EnvConfig {
         return process.env.GAMES_CHANNEL_ID;
     }
 
+    static get DAILY_CHALLENGES_CHANNEL_ID(): string | undefined {
+        return process.env.DAILY_CHALLENGES_CHANNEL_ID;
+    }
+
     static get CITATIONS_THREAD_ID(): string | undefined {
         return process.env.CITATIONS_THREAD_ID;
     }

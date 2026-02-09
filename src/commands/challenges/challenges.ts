@@ -5,9 +5,22 @@ import * as fs from "fs";
 import * as path from "path";
 import {createLogger} from "../../utils/logger";
 import {getCurrentDate, getUserDailyStats} from "../../services/dailyStatsService";
+import {getDailyVoiceTime} from "../../voiceTracker";
+import {EnvConfig} from "../../utils/envConfig";
 
 const logger = createLogger("DailyChallengesCmd");
 const CHALLENGES_FILE = path.join(process.cwd(), "data", "daily_challenges.json");
+
+/**
+ * Paliers de rendements décroissants pour l'XP vocal (doit matcher voiceTracker.ts)
+ */
+const VOICE_XP_TIERS = [
+    {minMinutes: 0, maxMinutes: 60, multiplier: 1.0, label: "100%", emoji: "🟢"},
+    {minMinutes: 60, maxMinutes: 120, multiplier: 0.75, label: "75%", emoji: "🟡"},
+    {minMinutes: 120, maxMinutes: 180, multiplier: 0.5, label: "50%", emoji: "🟠"},
+    {minMinutes: 180, maxMinutes: 240, multiplier: 0.25, label: "25%", emoji: "🔴"},
+    {minMinutes: 240, maxMinutes: Infinity, multiplier: 0.1, label: "10%", emoji: "⚫"}
+];
 
 /**
  * Types de défis disponibles
@@ -17,6 +30,7 @@ enum ChallengeType {
     REACTIONS = "reactions",
     VOCAL = "vocal",
     GAMES = "games",
+    HANGMAN = "hangman",
     IMAGES = "images",
     COUNTER = "counter",
     AI_CHAT = "ai_chat",
@@ -51,6 +65,7 @@ interface UserChallengeProgress {
 interface DailyChallengesData {
     currentDate: string; // Format: YYYY-MM-DD
     challenges: ChallengeDefinition[]; // Les 3 défis du jour
+    persistentMessageId?: string; // ID du message persistant dans le salon des défis
     users: {
         [userId: string]: {
             lastCheck: number;
@@ -63,52 +78,52 @@ interface DailyChallengesData {
  * Liste de tous les défis possibles
  */
 const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
-    // Défis Messages
+    // Défis Messages - Réduits pour éviter le spam
+    {
+        id: "msg_3",
+        type: ChallengeType.MESSAGES,
+        name: "Bavard",
+        description: "Envoyer 3 messages",
+        emoji: "💬",
+        goal: 3,
+        xpReward: 40
+    },
     {
         id: "msg_5",
         type: ChallengeType.MESSAGES,
-        name: "Bavard",
+        name: "Causeur",
         description: "Envoyer 5 messages",
         emoji: "💬",
         goal: 5,
-        xpReward: 50
+        xpReward: 60
     },
     {
-        id: "msg_10",
-        type: ChallengeType.MESSAGES,
-        name: "Causeur",
-        description: "Envoyer 10 messages",
-        emoji: "💬",
-        goal: 10,
-        xpReward: 100
-    },
-    {
-        id: "msg_20",
+        id: "msg_8",
         type: ChallengeType.MESSAGES,
         name: "Grand Parleur",
-        description: "Envoyer 20 messages",
+        description: "Envoyer 8 messages",
         emoji: "📢",
-        goal: 20,
-        xpReward: 150
+        goal: 8,
+        xpReward: 80
     },
-    // Défis Réactions
+    // Défis Réactions - Réduits drastiquement
     {
-        id: "react_10",
+        id: "react_3",
         type: ChallengeType.REACTIONS,
         name: "Réactif",
-        description: "Ajouter 10 réactions",
+        description: "Ajouter 3 réactions",
         emoji: "👍",
-        goal: 10,
-        xpReward: 50
+        goal: 3,
+        xpReward: 30
     },
     {
-        id: "react_25",
+        id: "react_5",
         type: ChallengeType.REACTIONS,
         name: "Super Réactif",
-        description: "Ajouter 25 réactions",
+        description: "Ajouter 5 réactions",
         emoji: "⭐",
-        goal: 25,
-        xpReward: 100
+        goal: 5,
+        xpReward: 50
     },
     // Défis Vocal
     {
@@ -185,55 +200,77 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         goal: 3,
         xpReward: 150
     },
-    // Défis Compteur
+    // Défis Compteur - Réduits pour éviter le spam
+    {
+        id: "counter_3",
+        type: ChallengeType.COUNTER,
+        name: "Compteur Pro",
+        description: "Contribuer 3 fois au compteur",
+        emoji: "🔢",
+        goal: 3,
+        xpReward: 50
+    },
     {
         id: "counter_5",
         type: ChallengeType.COUNTER,
-        name: "Compteur Pro",
+        name: "Maître du Compteur",
         description: "Contribuer 5 fois au compteur",
-        emoji: "🔢",
+        emoji: "💯",
         goal: 5,
         xpReward: 75
-    },
-    {
-        id: "counter_10",
-        type: ChallengeType.COUNTER,
-        name: "Maître du Compteur",
-        description: "Contribuer 10 fois au compteur",
-        emoji: "💯",
-        goal: 10,
-        xpReward: 150
     },
     // Défis IA
     {
-        id: "ai_3",
+        id: "ai_2",
         type: ChallengeType.AI_CHAT,
         name: "Causeur avec Netricsa",
-        description: "Avoir 3 conversations avec Netricsa",
+        description: "Avoir 2 conversations avec Netricsa",
         emoji: "🤖",
-        goal: 3,
-        xpReward: 75
+        goal: 2,
+        xpReward: 60
     },
     {
-        id: "ai_5",
+        id: "ai_3",
         type: ChallengeType.AI_CHAT,
         name: "Ami de Netricsa",
-        description: "Avoir 5 conversations avec Netricsa",
+        description: "Avoir 3 conversations avec Netricsa",
         emoji: "💭",
-        goal: 5,
-        xpReward: 125
+        goal: 3,
+        xpReward: 90
     },
-    // Défis Commandes
+    // Défis Commandes - Ajustés
+    {
+        id: "cmd_3",
+        type: ChallengeType.COMMANDS,
+        name: "Commandant",
+        description: "Utiliser 3 commandes",
+        emoji: "⚡",
+        goal: 3,
+        xpReward: 40
+    },
     {
         id: "cmd_5",
         type: ChallengeType.COMMANDS,
-        name: "Commandant",
+        name: "Maître des Commandes",
         description: "Utiliser 5 commandes",
         emoji: "⚡",
         goal: 5,
-        xpReward: 50
+        xpReward: 60
     }
 ];
+
+/**
+ * Défi fixe de bonhomme pendu (toujours présent en 4ème position)
+ */
+const FIXED_HANGMAN_CHALLENGE: ChallengeDefinition = {
+    id: "hangman_daily_fixed",
+    type: ChallengeType.HANGMAN,
+    name: "🎭 Pendu Quotidien",
+    description: "Jouer 1 partie de bonhomme pendu",
+    emoji: "🎭",
+    goal: 1,
+    xpReward: 50
+};
 
 /**
  * Charge les données des défis quotidiens
@@ -274,6 +311,99 @@ function generateDailyChallenges(): ChallengeDefinition[] {
 }
 
 /**
+ * Crée l'embed pour les défis quotidiens (pour le salon persistant)
+ */
+function createChallengesEmbed(challenges: ChallengeDefinition[]): EmbedBuilder {
+    const embed = new EmbedBuilder()
+        .setColor(0x5865F2)
+        .setTitle("🎯 Défis Quotidiens")
+        .setDescription(
+            "**Complète ces défis pour gagner de l'XP bonus !**\n\n" +
+            "*Les défis se renouvellent chaque jour à minuit.*\n" +
+            "*Utilise `/challenges` pour voir ta progression personnelle.*"
+        )
+        .setTimestamp()
+        .setFooter({text: "Mise à jour automatique à minuit"});
+
+    // Ajouter les 3 défis aléatoires
+    challenges.forEach((challenge, index) => {
+        embed.addFields({
+            name: `${index + 1}. ${challenge.emoji} ${challenge.name}`,
+            value: `${challenge.description}\n**Récompense :** ${challenge.xpReward} XP 💫`,
+            inline: false
+        });
+    });
+
+    // Ajouter une section séparée pour le défi permanent
+    embed.addFields({
+        name: "━━━━━━━━━━━━━━━━━━━━━━",
+        value: "\u200B", // Espace invisible pour la séparation
+        inline: false
+    });
+
+    embed.addFields({
+        name: `${FIXED_HANGMAN_CHALLENGE.emoji} ${FIXED_HANGMAN_CHALLENGE.name}`,
+        value:
+            `${FIXED_HANGMAN_CHALLENGE.description}\n` +
+            `**Récompense :** ${FIXED_HANGMAN_CHALLENGE.xpReward} XP 💫\n\n`,
+        inline: false
+    });
+
+    // Calculer le temps jusqu'à minuit pour le reset vocal
+    const now = new Date();
+    const midnight = new Date();
+    midnight.setHours(24, 0, 0, 0); // Minuit suivant
+    const msUntilMidnight = midnight.getTime() - now.getTime();
+    const hoursUntilMidnight = Math.floor(msUntilMidnight / (1000 * 60 * 60));
+    const minutesUntilMidnight = Math.floor((msUntilMidnight % (1000 * 60 * 60)) / (1000 * 60));
+
+    return embed;
+}
+
+/**
+ * Met à jour le message persistant dans le salon des défis quotidiens
+ */
+async function updatePersistentChallengesMessage(client: any, challenges: ChallengeDefinition[]): Promise<void> {
+    try {
+        const channelId = EnvConfig.DAILY_CHALLENGES_CHANNEL_ID;
+        if (!channelId) {
+            logger.warn("DAILY_CHALLENGES_CHANNEL_ID not configured");
+            return;
+        }
+
+        const channel = await client.channels.fetch(channelId);
+        if (!channel || !channel.isTextBased()) {
+            logger.error("Daily challenges channel not found or not text-based");
+            return;
+        }
+
+        const challengesData = loadChallengesData();
+        const embed = createChallengesEmbed(challenges);
+
+        // Si un message existe déjà, le mettre à jour
+        if (challengesData.persistentMessageId) {
+            try {
+                const message = await channel.messages.fetch(challengesData.persistentMessageId);
+                await message.edit({embeds: [embed]});
+                logger.info("Updated persistent challenges message");
+                return;
+            } catch (error) {
+                logger.warn("Could not fetch/update persistent message, creating new one:", error);
+            }
+        }
+
+        // Sinon, créer un nouveau message
+        const newMessage = await channel.send({embeds: [embed]});
+        challengesData.persistentMessageId = newMessage.id;
+        saveChallengesData(challengesData);
+        logger.info("Created new persistent challenges message");
+
+    } catch (error) {
+        logger.error("Error updating persistent challenges message:", error);
+    }
+}
+
+/**
  * Calcule la progression actuelle d'un utilisateur sur un défi
  */
 function calculateProgress(userId: string, challenge: ChallengeDefinition): number {
@@ -301,6 +431,13 @@ function calculateProgress(userId: string, challenge: ChallengeDefinition): numb
                 currentProgress = dailyStats.gamesPlayed;
             }
             break;
+        case ChallengeType.HANGMAN:
+            if (challenge.id.includes("win")) {
+                currentProgress = dailyStats.hangmanWon || 0;
+            } else {
+                currentProgress = dailyStats.hangmanPlayed || 0;
+            }
+            break;
         case ChallengeType.IMAGES:
             currentProgress = dailyStats.imagesGenerees;
             break;
@@ -316,6 +453,35 @@ function calculateProgress(userId: string, challenge: ChallengeDefinition): numb
     }
 
     return Math.min(currentProgress, challenge.goal);
+}
+
+/**
+ * Initialise le message persistant des défis au démarrage du bot
+ * À appeler depuis bot.ts au démarrage
+ */
+async function initializeDailyChallengesMessage(client: any): Promise<void> {
+    try {
+        const challengesData = loadChallengesData();
+        const today = getCurrentDate();
+
+        // Si nouveau jour, générer de nouveaux défis
+        if (challengesData.currentDate !== today) {
+            logger.info(`Initializing challenges for new day: ${today}`);
+            challengesData.currentDate = today;
+            challengesData.challenges = generateDailyChallenges();
+            // Ne pas réinitialiser persistentMessageId
+            saveChallengesData(challengesData);
+        }
+
+        // Mettre à jour le message persistant
+        if (challengesData.challenges && challengesData.challenges.length > 0) {
+            await updatePersistentChallengesMessage(client, challengesData.challenges);
+        }
+
+        logger.info("Daily challenges message initialized");
+    } catch (error) {
+        logger.error("Error initializing daily challenges message:", error);
+    }
 }
 
 module.exports = {
@@ -336,29 +502,54 @@ module.exports = {
                 challengesData = {
                     currentDate: today,
                     challenges: generateDailyChallenges(),
+                    persistentMessageId: challengesData.persistentMessageId, // Garder l'ID du message
                     users: {}
                 };
                 saveChallengesData(challengesData);
+
+                // Mettre à jour le message persistant dans le salon
+                await updatePersistentChallengesMessage(interaction.client, challengesData.challenges);
             }
 
             // Initialiser l'utilisateur s'il n'existe pas
             if (!challengesData.users[userId]) {
                 challengesData.users[userId] = {
                     lastCheck: Date.now(),
-                    progress: challengesData.challenges.map(c => ({
-                        challengeId: c.id,
-                        completed: false,
-                        rewardClaimed: false
-                    }))
+                    progress: [
+                        // Les 3 défis aléatoires
+                        ...challengesData.challenges.map(c => ({
+                            challengeId: c.id,
+                            completed: false,
+                            rewardClaimed: false
+                        })),
+                        // Le défi de pendu fixe
+                        {
+                            challengeId: FIXED_HANGMAN_CHALLENGE.id,
+                            completed: false,
+                            rewardClaimed: false
+                        }
+                    ]
                 };
             }
 
             const userProgress = challengesData.users[userId];
+
+            // S'assurer que le défi de pendu existe dans la progression (pour les utilisateurs existants)
+            if (!userProgress.progress.find(p => p.challengeId === FIXED_HANGMAN_CHALLENGE.id)) {
+                userProgress.progress.push({
+                    challengeId: FIXED_HANGMAN_CHALLENGE.id,
+                    completed: false,
+                    rewardClaimed: false
+                });
+            }
             let totalXPEarned = 0;
             let newCompletions = 0;
 
+            // Créer un tableau avec tous les défis (3 aléatoires + 1 fixe pendu)
+            const allChallenges = [...challengesData.challenges, FIXED_HANGMAN_CHALLENGE];
+
             // Calculer la progression et distribuer les récompenses
-            for (const challenge of challengesData.challenges) {
+            for (const challenge of allChallenges) {
                 const progressEntry = userProgress.progress.find(p => p.challengeId === challenge.id);
                 if (!progressEntry) continue;
 
@@ -399,10 +590,92 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor(0x5865F2)
                 .setTitle("🎯 Défis Quotidiens")
-                .setDescription("Complète ces défis pour gagner de l'XP bonus !\n*Les défis se renouvellent chaque jour à minuit.*")
                 .setTimestamp();
 
-            // Ajouter les défis avec leur progression
+            // Message de description selon l'état des défis
+            let description = "**Complète ces défis pour gagner de l'XP bonus !**\n\n";
+
+            // Ajouter un message si des défis viennent d'être complétés
+            if (newCompletions > 0) {
+                description = `🎉 **Félicitations !** Tu as complété **${newCompletions}** défi${newCompletions > 1 ? 's' : ''} et gagné **${totalXPEarned} XP** !\n\n`;
+                embed.setColor(0x57F287); // Vert si complétion
+            }
+
+            // Vérifier si tous les défis sont complétés
+            const allCompleted = userProgress.progress.every(p => p.completed);
+            if (allCompleted) {
+                description = `🏆 **INCROYABLE !** Tu as complété tous les défis du jour !\n\nReviens demain pour de nouveaux défis ! 🎯\n\n`;
+                embed.setColor(0xF6AD55); // Or si tous complétés
+            }
+
+            embed.setDescription(description);
+
+            // === SECTION 1 : STATUT VOCAL ===
+            const dailyVoiceMinutes = getDailyVoiceTime(userId);
+            let currentVoiceTier = VOICE_XP_TIERS[0];
+            for (const tier of VOICE_XP_TIERS) {
+                if (dailyVoiceMinutes >= tier.minMinutes && dailyVoiceMinutes < tier.maxMinutes) {
+                    currentVoiceTier = tier;
+                    break;
+                }
+            }
+
+            const formatTime = (minutes: number): string => {
+                if (minutes === 0) return "0 min";
+                if (minutes < 60) return `${minutes} min`;
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+            };
+
+            const voiceXPPerMinute = Math.ceil(1 * currentVoiceTier.multiplier);
+
+            // Calculer le temps jusqu'à minuit
+            const now = new Date();
+            const midnight = new Date();
+            midnight.setHours(24, 0, 0, 0);
+            const msUntilMidnight = midnight.getTime() - now.getTime();
+            const hoursUntilReset = Math.floor(msUntilMidnight / (1000 * 60 * 60));
+            const minutesUntilReset = Math.floor((msUntilMidnight % (1000 * 60 * 60)) / (1000 * 60));
+
+            embed.addFields({
+                name: "━━━━━━━━━━━━━━━━━━━━━━",
+                value: `${currentVoiceTier.emoji} **Statut Vocal Quotidien**`,
+                inline: false
+            });
+
+            embed.addFields({
+                name: "📊 Progression",
+                value:
+                    `**Temps aujourd'hui :** ${formatTime(dailyVoiceMinutes)}\n` +
+                    `**XP actuel :** ${voiceXPPerMinute} XP/min (${currentVoiceTier.label})\n` +
+                    `**Reset dans :** ${hoursUntilReset}h ${minutesUntilReset}min`,
+                inline: true
+            });
+
+            embed.addFields({
+                name: "💡 Info",
+                value:
+                    `Les paliers XP vocal diminuent\n` +
+                    `au fil de la journée pour\n` +
+                    `encourager la diversité.`,
+                inline: true
+            });
+
+            // === SECTION 2 : DÉFIS QUOTIDIENS ===
+            embed.addFields({
+                name: "━━━━━━━━━━━━━━━━━━━━━━",
+                value: "📋 **Défis du Jour** *(Reset à minuit)*",
+                inline: false
+            });
+
+            // Compter les défis complétés
+            const randomChallengesCompleted = challengesData.challenges.filter(c => {
+                const entry = userProgress.progress.find(p => p.challengeId === c.id);
+                return entry && entry.completed;
+            }).length;
+
+            // Ajouter les 3 défis aléatoires
             for (const challenge of challengesData.challenges) {
                 const progressEntry = userProgress.progress.find(p => p.challengeId === challenge.id);
                 if (!progressEntry) continue;
@@ -410,44 +683,71 @@ module.exports = {
                 const progress = calculateProgress(userId, challenge);
                 const completed = progressEntry.completed;
 
-                // Barre de progression
                 const progressPercent = Math.min((progress / challenge.goal) * 100, 100);
                 const filledBars = Math.floor(progressPercent / 10);
                 const emptyBars = 10 - filledBars;
                 const progressBar = "▰".repeat(filledBars) + "▱".repeat(emptyBars);
 
                 const status = completed ? "✅" : progress > 0 ? "🔄" : "⬜";
-                const progressText = completed
-                    ? `${challenge.goal}/${challenge.goal}`
-                    : `${progress}/${challenge.goal}`;
+                const progressText = `${progress}/${challenge.goal}`;
 
                 embed.addFields({
                     name: `${status} ${challenge.emoji} ${challenge.name}`,
-                    value: `${challenge.description}\n${progressBar} ${progressText}\nRécompense : **${challenge.xpReward} XP** 💫`,
+                    value:
+                        `${challenge.description}\n` +
+                        `${progressBar} ${progressText}\n` +
+                        `💫 **${challenge.xpReward} XP**`,
+                    inline: true
+                });
+            }
+
+            // Ajouter un champ vide pour forcer une nouvelle ligne si nécessaire
+            if (challengesData.challenges.length % 3 !== 0) {
+                embed.addFields({
+                    name: "\u200B",
+                    value: "\u200B",
+                    inline: true
+                });
+            }
+
+            // === SECTION 3 : DÉFI PERMANENT ===
+            embed.addFields({
+                name: "━━━━━━━━━━━━━━━━━━━━━━",
+                value: "🎭 **Défi Permanent** *(Disponible tous les jours)*",
+                inline: false
+            });
+
+            const hangmanProgressEntry = userProgress.progress.find(p => p.challengeId === FIXED_HANGMAN_CHALLENGE.id);
+            if (hangmanProgressEntry) {
+                const hangmanProgress = calculateProgress(userId, FIXED_HANGMAN_CHALLENGE);
+                const hangmanCompleted = hangmanProgressEntry.completed;
+
+                const progressPercent = Math.min((hangmanProgress / FIXED_HANGMAN_CHALLENGE.goal) * 100, 100);
+                const filledBars = Math.floor(progressPercent / 10);
+                const emptyBars = 10 - filledBars;
+                const progressBar = "▰".repeat(filledBars) + "▱".repeat(emptyBars);
+
+                const status = hangmanCompleted ? "✅" : hangmanProgress > 0 ? "🔄" : "⬜";
+                const progressText = `${hangmanProgress}/${FIXED_HANGMAN_CHALLENGE.goal}`;
+
+                embed.addFields({
+                    name: `${status} ${FIXED_HANGMAN_CHALLENGE.emoji} ${FIXED_HANGMAN_CHALLENGE.name}`,
+                    value:
+                        `${FIXED_HANGMAN_CHALLENGE.description}\n` +
+                        `${progressBar} ${progressText}\n` +
+                        `💫 **${FIXED_HANGMAN_CHALLENGE.xpReward} XP**`,
                     inline: false
                 });
             }
 
-            // Ajouter un message si des défis viennent d'être complétés
-            if (newCompletions > 0) {
-                embed.setDescription(
-                    `🎉 **Félicitations !** Tu as complété **${newCompletions}** défi${newCompletions > 1 ? 's' : ''} et gagné **${totalXPEarned} XP** !\n\n` +
-                    `Complète les défis restants pour encore plus de récompenses !\n*Les défis se renouvellent chaque jour à minuit.*`
-                );
-                embed.setColor(0x57F287); // Vert si complétion
-            }
+            // Footer avec statistiques
+            const totalChallenges = challengesData.challenges.length + 1; // +1 pour le pendu
+            const totalCompleted = randomChallengesCompleted + (hangmanProgressEntry?.completed ? 1 : 0);
+            embed.setFooter({
+                text: `Progression : ${totalCompleted}/${totalChallenges} défis complétés • Utilise /challenges pour actualiser`
+            });
 
-            // Vérifier si tous les défis sont complétés
-            const allCompleted = userProgress.progress.every(p => p.completed);
-            if (allCompleted) {
-                embed.setDescription(
-                    `🏆 **INCROYABLE !** Tu as complété tous les défis du jour !\n\n` +
-                    `Reviens demain pour de nouveaux défis et encore plus de récompenses ! 🎯`
-                );
-                embed.setColor(0xF6AD55); // Or si tous complétés
-            }
-
-            await interaction.reply({embeds: [embed]});
+            await interaction.reply({embeds: [embed], ephemeral: true});
 
             // Logger la commande
             if (newCompletions > 0) {
@@ -469,5 +769,8 @@ module.exports = {
                 ephemeral: true
             });
         }
-    }
+    },
+
+    // Export de la fonction d'initialisation pour bot.ts
+    initializeDailyChallengesMessage: initializeDailyChallengesMessage
 };

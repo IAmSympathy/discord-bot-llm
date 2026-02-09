@@ -30,8 +30,8 @@ export const MINI_BOSSES: BossData[] = [
         hp: 150, // ~100 messages avec spam
         damagePerMessage: 1,
         duration: 5 * 60 * 1000,
-        finalBlowXP: 150,
-        failurePenalty: -50
+        finalBlowXP: 100, // Réduit de 150 à 100 (-33%)
+        failurePenalty: -35 // Réduit de -50 à -35 (-30%)
     },
     {
         id: "kenny",
@@ -41,8 +41,8 @@ export const MINI_BOSSES: BossData[] = [
         hp: 600, // ~200 messages
         damagePerMessage: 3,
         duration: 8 * 60 * 1000,
-        finalBlowXP: 200,
-        failurePenalty: -75
+        finalBlowXP: 140, // Réduit de 200 à 140 (-30%)
+        failurePenalty: -53 // Réduit de -75 à -53 (-29%)
     },
     {
         id: "major_biomech",
@@ -52,8 +52,8 @@ export const MINI_BOSSES: BossData[] = [
         hp: 900, // ~300 messages
         damagePerMessage: 3,
         duration: 10 * 60 * 1000,
-        finalBlowXP: 250,
-        failurePenalty: -100
+        finalBlowXP: 175, // Réduit de 250 à 175 (-30%)
+        failurePenalty: -70 // Réduit de -100 à -70 (-30%)
     },
     {
         id: "adult_arachnoid",
@@ -63,8 +63,8 @@ export const MINI_BOSSES: BossData[] = [
         hp: 1200, // ~400 messages
         damagePerMessage: 3,
         duration: 12 * 60 * 1000,
-        finalBlowXP: 300,
-        failurePenalty: -125
+        finalBlowXP: 210, // Réduit de 300 à 210 (-30%)
+        failurePenalty: -88 // Réduit de -125 à -88 (-30%)
     },
     {
         id: "khnum",
@@ -74,8 +74,8 @@ export const MINI_BOSSES: BossData[] = [
         hp: 1500, // ~500 messages
         damagePerMessage: 3,
         duration: 15 * 60 * 1000,
-        finalBlowXP: 350,
-        failurePenalty: -150
+        finalBlowXP: 245, // Réduit de 350 à 245 (-30%)
+        failurePenalty: -105 // Réduit de -150 à -105 (-30%)
     },
     {
         id: "witch_bride_of_achriman",
@@ -85,8 +85,8 @@ export const MINI_BOSSES: BossData[] = [
         hp: 1800, // ~600 messages
         damagePerMessage: 3,
         duration: 18 * 60 * 1000,
-        finalBlowXP: 400,
-        failurePenalty: -175
+        finalBlowXP: 280, // Réduit de 400 à 280 (-30%)
+        failurePenalty: -123 // Réduit de -175 à -123 (-30%)
     },
     {
         id: "technopolyp",
@@ -96,19 +96,19 @@ export const MINI_BOSSES: BossData[] = [
         hp: 2100, // ~700 messages
         damagePerMessage: 3,
         duration: 20 * 60 * 1000,
-        finalBlowXP: 450,
-        failurePenalty: -200
+        finalBlowXP: 315, // Réduit de 450 à 315 (-30%)
+        failurePenalty: -140 // Réduit de -200 à -140 (-30%)
     },
     {
         id: "beheaded_kamikaze",
         name: "Beheaded Kamikaze",
-        description: "⚠️ UN KAMIKAZE SANS TÊTE FONCE VERS LE SERVEUR !\n\nIl va exploser dans quelques secondes et faire perdre 500 XP à TOUS les membres !\n\n💥 Quelqu'un doit se sacrifier pour l'arrêter ! Le héros qui le tue perdra 100 XP mais sauvera tout le monde !",
+        description: "⚠️ UN KAMIKAZE SANS TÊTE FONCE VERS LE SERVEUR !\n\nIl va exploser dans quelques secondes et faire perdre 350 XP à TOUS les membres !\n\n💥 Quelqu'un doit se sacrifier pour l'arrêter ! Le héros qui le tue perdra 70 XP mais sauvera tout le monde !",
         imagePath: "bosses/beheaded_kamikaze.png",
         hp: 1,
         damagePerMessage: 1,
         duration: 2 * 60 * 1000,
-        finalBlowXP: -100, // Le héros perd de l'XP pour sauver les autres
-        failurePenalty: -500, // ÉNORME pénalité si personne ne se sacrifie
+        finalBlowXP: -70, // Réduit de -100 à -70 (-30%)
+        failurePenalty: -350, // Réduit de -500 à -350 (-30%)
         isSpecial: true
     }
 ];
@@ -126,9 +126,9 @@ export const BOSSES: BossData[] = [
         hp: 1800, // ~600 messages
         damagePerMessage: 3,
         duration: 25 * 60 * 1000,
-        finalBlowXP: 300, // Bonus au coup final
-        sharedXP: 800, // XP partagé entre tous
-        failurePenalty: -150
+        finalBlowXP: 210, // Réduit de 300 à 210 (-30%)
+        sharedXP: 560, // Réduit de 800 à 560 (-30%)
+        failurePenalty: -105 // Réduit de -150 à -105 (-30%)
     },
     {
         id: "serious_sam",
@@ -138,9 +138,9 @@ export const BOSSES: BossData[] = [
         hp: 3600, // ~1200 messages
         damagePerMessage: 3,
         duration: 40 * 60 * 1000,
-        finalBlowXP: 500, // Bonus au coup final
-        sharedXP: 1500, // XP partagé entre tous
-        failurePenalty: -250
+        finalBlowXP: 350, // Réduit de 500 à 350 (-30%)
+        sharedXP: 1050, // Réduit de 1500 à 1050 (-30%)
+        failurePenalty: -175 // Réduit de -250 à -175 (-30%)
     },
     {
         id: "mental",
@@ -150,9 +150,9 @@ export const BOSSES: BossData[] = [
         hp: 6000, // ~2000 messages
         damagePerMessage: 3,
         duration: 60 * 60 * 1000,
-        finalBlowXP: 1000, // GROS bonus au coup final
-        sharedXP: 2500, // XP partagé entre tous
-        failurePenalty: -500 // GROSSE pénalité
+        finalBlowXP: 700, // Réduit de 1000 à 700 (-30%)
+        sharedXP: 1750, // Réduit de 2500 à 1750 (-30%)
+        failurePenalty: -350 // Réduit de -500 à -350 (-30%)
     }
 ];
 

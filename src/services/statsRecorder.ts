@@ -1,7 +1,7 @@
 import {createLogger} from "../utils/logger";
 import {recordAIConversation, recordCommandUsed, recordImageGenerated, recordImageReimagined, recordImageUpscaled, recordMemeSearched, recordMentionReceived, recordMessageSent, recordPromptCreated, recordReactionAdded, recordReactionReceived, recordReplyReceived} from "./userStatsService";
 import {recordYearlyAIConversation, recordYearlyCommandUsed, recordYearlyImageGenerated, recordYearlyImageReimagined, recordYearlyImageUpscaled, recordYearlyMemeSearched, recordYearlyMentionReceived, recordYearlyMessageSent, recordYearlyPromptCreated, recordYearlyReactionAdded, recordYearlyReactionReceived, recordYearlyReplyReceived, recordYearlyVoiceTime} from "./yearlyStatsService";
-import {recordDailyAIConversation, recordDailyCommand, recordDailyCounterContribution, recordDailyGamePlayed, recordDailyImageGenerated, recordDailyMessage, recordDailyReaction, recordDailyVoiceTime} from "./dailyStatsService";
+import {recordDailyAIConversation, recordDailyCommand, recordDailyCounterContribution, recordDailyGamePlayed, recordDailyHangmanPlayed, recordDailyImageGenerated, recordDailyMessage, recordDailyReaction, recordDailyVoiceTime} from "./dailyStatsService";
 
 const logger = createLogger("StatsRecorder");
 
@@ -129,3 +129,11 @@ export function recordCounterContributionStats(userId: string, username: string)
 export function recordGamePlayedStats(userId: string, username: string, won: boolean): void {
     recordDailyGamePlayed(userId, username, won);
 }
+
+/**
+ * Enregistre une partie de pendu jouée (spécifiquement pour les défis quotidiens)
+ */
+export function recordHangmanPlayedStats(userId: string, username: string, won: boolean): void {
+    recordDailyHangmanPlayed(userId, username, won);
+}
+

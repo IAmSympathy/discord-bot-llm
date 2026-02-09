@@ -16,6 +16,8 @@ export interface DailyUserStats {
     tempsVocalMinutes: number;
     gamesPlayed: number;
     gamesWon: number;
+    hangmanPlayed: number;
+    hangmanWon: number;
     imagesGenerees: number;
     counterContributions: number;
     conversationsIA: number;
@@ -80,6 +82,8 @@ function initDailyUserStats(username: string): DailyUserStats {
         tempsVocalMinutes: 0,
         gamesPlayed: 0,
         gamesWon: 0,
+        hangmanPlayed: 0,
+        hangmanWon: 0,
         imagesGenerees: 0,
         counterContributions: 0,
         conversationsIA: 0,
@@ -238,6 +242,28 @@ export function recordDailyCommand(userId: string, username: string): void {
     }
 
     data[date][userId].commandesUtilisees++;
+    data[date][userId].username = username;
+    saveDailyStats(data);
+}
+
+/**
+ * Enregistre une partie de pendu jouée aujourd'hui
+ */
+export function recordDailyHangmanPlayed(userId: string, username: string, won: boolean): void {
+    const data = loadDailyStats();
+    const date = getCurrentDate();
+
+    if (!data[date]) {
+        data[date] = {};
+    }
+    if (!data[date][userId]) {
+        data[date][userId] = initDailyUserStats(username);
+    }
+
+    data[date][userId].hangmanPlayed++;
+    if (won) {
+        data[date][userId].hangmanWon++;
+    }
     data[date][userId].username = username;
     saveDailyStats(data);
 }

@@ -14,7 +14,64 @@ interface VoiceSession {
     isBot: boolean; // Si c'est un bot
 }
 
+// Map pour tracker le temps vocal quotidien de chaque utilisateur (reset à minuit)
+interface DailyVoiceTime {
+    totalMinutes: number;
+    lastReset: string; // Format: YYYY-MM-DD
+}
+
 const voiceSessions = new Map<string, VoiceSession>();
+const dailyVoiceTime = new Map<string, DailyVoiceTime>();
+
+/**
+ * Paliers de rendements décroissants pour l'XP vocal quotidien
+ * Encourage la présence sans récompenser le farming passif sur de longues périodes
+ */
+const VOICE_XP_DIMINISHING_RETURNS = [
+    {minMinutes: 0, maxMinutes: 60, multiplier: 1.0},   // 0-1h : 100% XP
+    {minMinutes: 60, maxMinutes: 120, multiplier: 0.75},  // 1-2h : 75% XP
+    {minMinutes: 120, maxMinutes: 180, multiplier: 0.5},   // 2-3h : 50% XP
+    {minMinutes: 180, maxMinutes: 240, multiplier: 0.25},  // 3-4h : 25% XP
+    {minMinutes: 240, maxMinutes: Infinity, multiplier: 0.1} // 4h+ : 10% XP
+];
+
+/**
+ * Obtient le multiplicateur XP basé sur le temps vocal quotidien
+ */
+function getVoiceXPMultiplier(userId: string): number {
+    const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    let dailyTime = dailyVoiceTime.get(userId);
+
+    // Reset si c'est un nouveau jour
+    if (!dailyTime || dailyTime.lastReset !== today) {
+        dailyTime = {totalMinutes: 0, lastReset: today};
+        dailyVoiceTime.set(userId, dailyTime);
+    }
+
+    // Trouver le palier approprié
+    for (const tier of VOICE_XP_DIMINISHING_RETURNS) {
+        if (dailyTime.totalMinutes >= tier.minMinutes && dailyTime.totalMinutes < tier.maxMinutes) {
+            return tier.multiplier;
+        }
+    }
+
+    return 0.1; // Par défaut, 10% (au-delà de 4h)
+}
+
+/**
+ * Incrémente le temps vocal quotidien d'un utilisateur
+ */
+function incrementDailyVoiceTime(userId: string, minutes: number): void {
+    const today = new Date().toISOString().split('T')[0];
+    let dailyTime = dailyVoiceTime.get(userId);
+
+    if (!dailyTime || dailyTime.lastReset !== today) {
+        dailyTime = {totalMinutes: 0, lastReset: today};
+    }
+
+    dailyTime.totalMinutes += minutes;
+    dailyVoiceTime.set(userId, dailyTime);
+}
 
 /**
  * Formate le temps en heures et minutes
@@ -68,15 +125,30 @@ function startVoiceSession(userId: string, channelId: string, username: string, 
                 const {trackImpostorVoiceTime} = require("./services/events/impostorMissionTracker");
                 await trackImpostorVoiceTime(client, userId, 1, !isAlone);
 
-                // Donner de l'XP pour cette minute
+                // Appliquer le système de rendements décroissants
+                const multiplier = getVoiceXPMultiplier(userId);
+                const baseXP = XP_REWARDS.minuteVocale;
+                const adjustedXP = Math.ceil(baseXP * multiplier); // Arrondir vers le haut pour éviter 0 XP
+
+                // Incrémenter le temps vocal quotidien
+                incrementDailyVoiceTime(userId, 1);
+
+                // Donner de l'XP ajusté pour cette minute
                 await addXP(
                     userId,
                     username,
-                    XP_REWARDS.minuteVocale,
+                    adjustedXP,
                     channel as any,
                     isBot // Pas de notification pour les bots
                 );
-                logger.info(`Gave ${XP_REWARDS.minuteVocale} XP to ${username} for 1 minute in voice (total: ${session.minutesTracked} min)`);
+
+                // Log avec info sur le multiplicateur
+                const dailyTime = dailyVoiceTime.get(userId);
+                const totalMinutes = dailyTime ? dailyTime.totalMinutes : 0;
+                logger.info(
+                    `Gave ${adjustedXP} XP (${Math.round(multiplier * 100)}% multiplier) to ${username} ` +
+                    `for 1 minute in voice (session: ${session.minutesTracked} min, daily: ${totalMinutes} min)`
+                );
             }
         } catch (error) {
             logger.error(`Error giving XP for voice time:`, error);
@@ -199,3 +271,20 @@ export function registerVoiceTracker(client: Client): void {
         voiceSessions.clear();
     });
 }
+
+/**
+ * Obtient le temps vocal quotidien d'un utilisateur (en minutes)
+ * Utilisé pour la commande /voicestatus
+ */
+export function getDailyVoiceTime(userId: string): number {
+    const today = new Date().toISOString().split('T')[0];
+    const dailyTime = dailyVoiceTime.get(userId);
+
+    if (!dailyTime || dailyTime.lastReset !== today) {
+        return 0; // Pas de temps vocal aujourd'hui ou reset nécessaire
+    }
+
+    return dailyTime.totalMinutes;
+}
+
+

@@ -7,7 +7,7 @@ import * as path from "path";
 
 const logger = createLogger("SlotsCmd");
 const COOLDOWN_FILE = path.join(process.cwd(), "data", "slots_cooldown.json");
-const COOLDOWN_DURATION = 5 * 60 * 1000; // 5 minutes de cooldown
+const COOLDOWN_DURATION = 10 * 60 * 1000; // 10 minutes de cooldown
 
 // Symboles de la machine à sous
 const SYMBOLS = ["🍒", "🍋", "🍊", "🍇", "💎", "⭐", "7️⃣"];
@@ -44,7 +44,7 @@ const PAYOUTS: { [key: string]: number } = {
     "🍒🍒": 2,
 
     // Aucune correspondance
-    "default": -5  // Perte de 5 XP
+    "default": -10  // Perte de 10 XP (augmenté de -5 pour équilibrage)
 };
 
 interface CooldownData {

@@ -17,9 +17,9 @@ const logger = createLogger("CounterChallenge");
 const EVENT_DURATION = 30 * 60 * 1000;
 
 /**
- * Récompense XP pour le gagnant
+ * Récompense XP pour le gagnant (réduit de 500 à 350 pour équilibrage)
  */
-const WINNER_XP_REWARD = 500;
+const WINNER_XP_REWARD = 350;
 
 /**
  * Objectif minimum à ajouter au compteur actuel

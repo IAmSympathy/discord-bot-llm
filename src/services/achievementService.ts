@@ -1304,11 +1304,26 @@ async function sendAchievementNotification(
         }
 
         // Déterminer le titre selon si c'est un succès secret ou non
-        const embedTitle = achievement.secret ? "🔓 Succès Secret !" : "✨ Succès !";
+        let embedTitle = achievement.secret ? "🔓 Succès Secret !" : "✨ Succès !";
+
+        // Déterminer la couleur selon l'XP
+        let embedColor: number;
+        if (achievement.xpReward <= 150) {
+            embedColor = 0xA05822; // Bronze (COMMON)
+        } else if (achievement.xpReward <= 500) {
+            embedColor = 0xC0C0C0; // Silver (RARE)
+            embedTitle += " Rare";
+        } else if (achievement.xpReward <= 1000) {
+            embedColor = 0xFFD700; // Gold (EPIC)
+            embedTitle += " Épique";
+        } else {
+            embedColor = 0xFFD700; // Violet (LEGENDARY)
+            embedTitle += " Légendaire";
+        }
 
         const embed = new EmbedBuilder()
-            .setColor(0xFFD700) // Gold
-            .setTitle(embedTitle)
+            .setColor(embedColor)
+            .setTitle(`${embedTitle} !`)
             .setDescription(
                 `## ${achievement.emoji} ${achievement.name}\n\n` +
                 `*${achievement.description}*\n\n` +
@@ -1337,8 +1352,18 @@ async function sendAchievementNotification(
         let notificationSent = false;
         let targetChannel: TextChannel | null = null;
 
-        // Si c'est un achievement de PROFIL ou SECRET, envoyer en DM
-        if (achievement.category === AchievementCategory.PROFIL || achievement.secret) {
+        // Décider si DM ou Public basé sur l'XP et la catégorie
+        // - Achievements PROFIL : toujours en DM
+        // - Achievements SECRET : toujours en DM
+        // - Achievements ≤ 150 XP : en DM
+        // - Achievements > 150 XP : en public
+        const sendInDM = (
+            achievement.category === AchievementCategory.PROFIL ||
+            achievement.secret ||
+            achievement.xpReward <= 150
+        );
+
+        if (sendInDM) {
             try {
                 const user = await client.users.fetch(userId);
                 await user.send(messageOptions);
@@ -1386,7 +1411,7 @@ async function sendAchievementNotification(
             const user = await client.users.fetch(userId);
 
             // Déterminer le type de notification
-            const notificationType = (achievement.category === AchievementCategory.PROFIL || achievement.secret) ? "DM" : "Channel";
+            const notificationType = sendInDM ? "DM" : "Public";
             const achievementType = achievement.secret ? "Secret" : achievement.category;
 
             await logCommand("🏆 Achievement Débloqué", undefined, [

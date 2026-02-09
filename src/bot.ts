@@ -157,6 +157,10 @@ client.once(Events.ClientReady, async () => {
 
     // Initialiser le service d'événements aléatoires
     initializeRandomEventsService(client);
+
+    // Initialiser le message persistant des défis quotidiens
+    const {initializeDailyChallengesMessage} = require("./commands/challenges/challenges");
+    await initializeDailyChallengesMessage(client);
 });
 
 // === ÉVÉNEMENTS SERVEUR DISCORD ===

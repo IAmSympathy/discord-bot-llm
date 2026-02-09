@@ -144,6 +144,12 @@ export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tic
     const username = userId === NETRICSA_GAME_ID ? NETRICSA_GAME_NAME : "Player";
     recordGamePlayedStats(userId, username, true);
 
+    // Enregistrer spécifiquement pour le pendu (pour les défis quotidiens)
+    if (game === 'hangman') {
+        const {recordHangmanPlayedStats} = require("../../services/statsRecorder");
+        recordHangmanPlayedStats(userId, username, true);
+    }
+
     // Ajouter XP (seulement pour les vrais joueurs, pas pour Netricsa)
     if (userId !== NETRICSA_GAME_ID) {
         // Déterminer le montant d'XP selon le jeu et le type d'adversaire
@@ -246,6 +252,12 @@ export async function recordLoss(userId: string, game: 'rockpaperscissors' | 'ti
     // Enregistrer dans les stats quotidiennes (pour tous, y compris Netricsa)
     const username = userId === NETRICSA_GAME_ID ? NETRICSA_GAME_NAME : "Player";
     recordGamePlayedStats(userId, username, false);
+
+    // Enregistrer spécifiquement pour le pendu (pour les défis quotidiens)
+    if (game === 'hangman') {
+        const {recordHangmanPlayedStats} = require("../../services/statsRecorder");
+        recordHangmanPlayedStats(userId, username, false);
+    }
 
     // Ajouter XP (seulement pour les vrais joueurs, pas pour Netricsa)
     if (userId !== NETRICSA_GAME_ID) {

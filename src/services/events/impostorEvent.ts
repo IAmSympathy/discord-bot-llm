@@ -552,8 +552,8 @@ export async function startImpostorEvent(client: Client, guild: Guild, testUserI
             missions[2].imposedData = imposedWords.join(',');
         }
 
-        // Durée : 2 heures
-        const duration = 2 * 60 * 60 * 1000;
+        // Durée : 6 heures
+        const duration = 6 * 60 * 60 * 1000;
         const endTime = Date.now() + duration;
 
         // Créer et enregistrer l'événement via l'event manager
@@ -639,7 +639,7 @@ export async function startImpostorEvent(client: Client, guild: Guild, testUserI
                 .setThumbnail("attachment://event_impostor_badge.png")
                 .setDescription(
                     `Tu as été secrètement choisi comme **IMPOSTEUR** ! 🎭\n\n` +
-                    `**Ta mission :** \nAccomplir les 3 tâches suivantes discrètement dans les 2 prochaines heures :\n\n` +
+                    `**Ta mission :** \nAccomplir les 3 tâches suivantes discrètement dans les 6 prochaines heures :\n\n` +
                     `1️⃣ **${missions[0].description}**\n` +
                     `2️⃣ **${missions[1].description}**\n` +
                     `3️⃣ **${missions[2].description}**\n\n` +
@@ -650,7 +650,7 @@ export async function startImpostorEvent(client: Client, guild: Guild, testUserI
                     `• Tu as jusqu'à <t:${Math.floor(endTime / 1000)}:t> pour ta mission\n\n` +
                     `**Récompense :** 500 XP 💫\n\n` +
                     `⏰ **Temps limite** : <t:${Math.floor(endTime / 1000)}:R>` +
-                    (isTest ? "\n\n⚠️ *Ceci est un événement de TEST. Les récompenses réelles ne seront pas distribuées.*" : "")
+                    (isTest ? "\n⚠️ *Ceci est un événement de TEST. Les récompenses réelles ne seront pas distribuées.*" : "")
                 )
                 .setFooter({text: "Tu peux désactiver les missions imposteur avec /event-preferences"})
                 .setTimestamp();
@@ -668,7 +668,7 @@ export async function startImpostorEvent(client: Client, guild: Guild, testUserI
 
             logger.info(`Impostor event started! Impostor: ${selectedUser.username}, Duration: 2 hours`);
 
-            // Programmer la fin automatique après 2 heures
+            // Programmer la fin automatique après 6 heures
             setTimeout(async () => {
                 await endImpostorEvent(client, eventId, guild);
             }, duration);
@@ -722,7 +722,7 @@ export async function endImpostorEvent(client: Client, eventId: string, guild: G
             logger.info(`Impostor ${impostorUsername} was discovered, no rewards`);
         } else if (completed) {
             // L'imposteur a réussi toutes ses missions !
-            const xpReward = 500;
+            const xpReward = 350; // Réduit de 500 à 350 pour équilibrage
 
             // Utiliser le canal de l'événement pour la notification XP
             const eventChannel = event.channelId ? guild.channels.cache.get(event.channelId) as TextChannel : undefined;
@@ -879,7 +879,7 @@ export async function handleImpostorGuess(
 
         // Donner XP au détective (sauf si test) avec le canal de l'événement
         if (!impostorEvent.data.isTest) {
-            await addXP(userId, username, 200, eventChannel, false);
+            await addXP(userId, username, 140, eventChannel, false); // Réduit de 200 à 140 pour équilibrage
             logger.info(`${username} gained 200 XP for discovering the impostor`);
         } else {
             logger.info("Test mode: Detective XP reward skipped");
@@ -959,7 +959,7 @@ export async function handleImpostorGuess(
 
         // Retirer 50 XP (sauf en mode test) avec le canal de l'événement
         if (!impostorEvent.data.isTest) {
-            await addXP(userId, username, -50, eventChannel, false);
+            await addXP(userId, username, -75, eventChannel, false); // Augmenté de -50 à -75 pour équilibrage
             logger.info(`${username} lost 50 XP for wrong impostor guess`);
         } else {
             logger.info("Test mode: XP penalty skipped");

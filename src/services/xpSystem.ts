@@ -16,21 +16,21 @@ const XP_FILE = path.join(DATA_DIR, "user_xp.json");
  */
 export const XP_REWARDS = {
     // Stats Discord
-    messageEnvoye: 7,               // Augmenté de 5 à 7 (+40%)
+    messageEnvoye: 5,               // Réduit de 7 à 5 (-29%)
     reactionAjoutee: 1,
     reactionRecue: 2,
-    commandeUtilisee: 5,            // XP pour commandes fun (ascii, choose, rollthedice, coinflip)
+    commandeUtilisee: 3,            // Réduit de 5 à 3 (-40%) - XP pour commandes fun (ascii, choose, rollthedice, coinflip)
     mentionRecue: 3,
     replyRecue: 4,
-    minuteVocale: 2,                // Augmenté de 1 à 2 (+100%)
+    minuteVocale: 1,                // Réduit de 2 à 1 (-50%)
 
     // Stats Netricsa
-    imageGeneree: 50,
-    imageReimaginee: 40,
-    imageUpscalee: 30,
-    conversationIA: 12,             // Augmenté de 10 à 12 (+20%)
-    memeRecherche: 15,
-    promptCree: 30,
+    imageGeneree: 35,               // Réduit de 50 à 35 (-30%)
+    imageReimaginee: 28,            // Réduit de 40 à 28 (-30%)
+    imageUpscalee: 21,              // Réduit de 30 à 21 (-30%)
+    conversationIA: 8,              // Réduit de 12 à 8 (-33%)
+    memeRecherche: 11,              // Réduit de 15 à 11 (-27%)
+    promptCree: 21,                 // Réduit de 30 à 21 (-30%)
 
     // Stats Création
     postCreation: 500,              // Réduit de 1000 à 500 (-50%)
@@ -38,54 +38,54 @@ export const XP_REWARDS = {
     // === JEUX - ROCHE PAPIER CISEAUX ===
     // Contre joueur (PvP)
     rpsVictoireVsJoueur: 15,
-    rpsDefaiteVsJoueur: 6,
-    rpsEgaliteVsJoueur: 8,
+    rpsDefaiteVsJoueur: 0,
+    rpsEgaliteVsJoueur: 0,
     // Contre Netricsa (PvE)
     rpsVictoireVsIA: 8,
-    rpsDefaiteVsIA: 3,
-    rpsEgaliteVsIA: 4,
+    rpsDefaiteVsIA: 0,
+    rpsEgaliteVsIA: 0,
 
     // === JEUX - TIC TAC TOE ===
     // Contre joueur (PvP)
     tttVictoireVsJoueur: 20,
-    tttDefaiteVsJoueur: 8,
+    tttDefaiteVsJoueur: 0,
     tttEgaliteVsJoueur: 10,
     // Contre Netricsa (PvE)
     tttVictoireVsIA: 10,
-    tttDefaiteVsIA: 4,
+    tttDefaiteVsIA: 0,
     tttEgaliteVsIA: 5,
 
     // === JEUX - CONNECT 4 ===
     // Contre joueur (PvP)
     c4VictoireVsJoueur: 25,
-    c4DefaiteVsJoueur: 10,
+    c4DefaiteVsJoueur: 0,
     c4EgaliteVsJoueur: 12,
     // Contre Netricsa (PvE)
     c4VictoireVsIA: 12,
-    c4DefaiteVsIA: 5,
+    c4DefaiteVsIA: 0,
     c4EgaliteVsIA: 6,
 
     // === JEUX - PENDU ===
     // Le pendu est toujours contre l'IA
     hangmanVictoire: 15,
-    hangmanDefaite: 5
+    hangmanDefaite: 0
 };
 
 /**
  * Calcule le niveau basé sur l'XP total
- * Formule : niveau = floor(sqrt(xp / 85))
- * Niveau 1 = 85 XP, Niveau 2 = 340 XP, Niveau 3 = 765 XP, etc.
- * Ajusté de /100 à /85 pour une progression -15% plus rapide
+ * Formule : niveau = floor(sqrt(xp / 75))
+ * Niveau 1 = 75 XP, Niveau 2 = 300 XP, Niveau 3 = 675 XP, etc.
+ * Ajusté de /85 à /75 pour cibler niveau 80 en ~2 ans avec 5-8h/jour en vocal
  */
 export function calculateLevel(totalXP: number): number {
-    return Math.floor(Math.sqrt(totalXP / 85));
+    return Math.floor(Math.sqrt(totalXP / 75));
 }
 
 /**
  * Calcule l'XP nécessaire pour un niveau donné
  */
 export function getXPForLevel(level: number): number {
-    return level * level * 85;
+    return level * level * 75;
 }
 
 /**
@@ -259,21 +259,10 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
         const isCounterChannel = COUNTER_CHANNEL_ID && channel.id === COUNTER_CHANNEL_ID;
 
         // Mettre à jour les rôles de niveau
-        let roleChangeInfo = "";
         const roleResult = await updateUserLevelRoles(guild, userId, newLevel);
-
-        if (roleResult.changed && roleResult.newRole) {
-            roleChangeInfo = `\n\n🎖️ **Tu es maintenant ${roleResult.newRole} !**`;
-        }
 
         // Vérifier le prochain rôle
         const nextRole = getNextLevelRole(newLevel);
-        let nextRoleInfo = "";
-        if (nextRole) {
-            nextRoleInfo = `\n\n⬆️ Plus que **${nextRole.levelsNeeded} niveau${nextRole.levelsNeeded > 1 ? 'x' : ''}** avant d'atteindre <@&${nextRole.roleId}> !`;
-        } else {
-            nextRoleInfo = `\n\n👑 **Tu as atteint le rang maximum !**`;
-        }
 
         // Récupérer la couleur du rôle de niveau de l'utilisateur
         let embedColor = 0xFFD700; // Gold par défaut
@@ -288,7 +277,7 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
         }
 
         // Récupérer l'image appropriée (toujours basée sur le rôle actuel)
-        let imageAttachment: AttachmentBuilder | null = null;
+        let imageAttachment: AttachmentBuilder | null;
         let embedTitle = "🎉 Niveau Gagné !";
 
         // Récupérer le rôle actuel pour l'image
@@ -386,25 +375,39 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
             messageOptions.files = [imageAttachment];
         }
 
-        // Dans le salon compteur, envoyer un message éphémère qui se supprime après 10 secondes
-        if (isCounterChannel) {
-            const msg = await channel.send(messageOptions);
+        // Décider où envoyer la notification :
+        // - Role up : toujours PUBLIC dans le channel
+        // - Level up normal : en DM
+        const isRoleUp = roleResult.changed && roleResult.newRole;
 
-            // Supprimer le message après 10 secondes
-            setTimeout(async () => {
-                try {
-                    await msg.delete();
-                } catch (error) {
-                    // Ignore si le message est déjà supprimé
-                }
-            }, 10000);
-
-            logger.info(`Level up message sent (ephemeral) for ${username} (Level ${newLevel}) in counter channel`);
+        if (isRoleUp) {
+            // ROLE UP : Envoyer publiquement dans le channel
+            if (isCounterChannel) {
+                // Dans le salon compteur, envoyer un message éphémère qui se supprime après 10 secondes
+                const msg = await channel.send(messageOptions);
+                setTimeout(async () => {
+                    try {
+                        await msg.delete();
+                    } catch (error) {
+                        // Ignore si le message est déjà supprimé
+                    }
+                }, 10000);
+                logger.info(`Role up message sent (ephemeral) for ${username} (Level ${newLevel}, Role: ${roleResult.newRole}) in counter channel`);
+            } else {
+                // Message public dans le channel
+                await channel.send(messageOptions);
+                logger.info(`Role up message sent publicly for ${username} (Level ${newLevel}, Role: ${roleResult.newRole}) in ${channel.name || 'channel'}`);
+            }
         } else {
-            // Message normal dans les autres salons
-            await channel.send(messageOptions);
-
-            logger.info(`Level up message sent for ${username} (Level ${newLevel}) in ${channel.name || 'channel'}`);
+            // LEVEL UP NORMAL : Envoyer en DM
+            try {
+                const user = await member.user.fetch();
+                await user.send(messageOptions);
+                logger.info(`Level up message sent via DM for ${username} (Level ${newLevel})`);
+            } catch (error) {
+                logger.warn(`Failed to send level up DM to ${username}, DMs probably closed. No notification sent.`, error);
+                // Ne pas envoyer de fallback dans le channel - simplement ne rien envoyer
+            }
         }
 
         // Log Discord pour le level up
@@ -542,9 +545,15 @@ async function sendLevelDownMessage(
             messageOptions.files = [imageAttachment];
         }
 
-        await channel.send(messageOptions);
-
-        logger.info(`Level down message sent for ${username} (${oldLevel} → ${newLevel}) in ${channel.name || 'channel'}`);
+        // Envoyer la descente de niveau en DM
+        try {
+            const user = await member.user.fetch();
+            await user.send(messageOptions);
+            logger.info(`Level down message sent via DM for ${username} (${oldLevel} → ${newLevel})`);
+        } catch (error) {
+            logger.warn(`Failed to send level down DM to ${username}, DMs probably closed. No notification sent.`, error);
+            // Ne pas envoyer de fallback dans le channel - simplement ne rien envoyer
+        }
     } catch (error) {
         logger.error(`Error sending level down message for ${username}:`, error);
     }
