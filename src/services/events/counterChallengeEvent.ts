@@ -1,10 +1,11 @@
-import {Client, EmbedBuilder, Guild, TextChannel} from "discord.js";
+import {AttachmentBuilder, Client, EmbedBuilder, Guild, TextChannel} from "discord.js";
 import {createLogger} from "../../utils/logger";
 import {addXP} from "../xpSystem";
 import {EventType} from "./eventTypes";
 import {loadEventsData, saveEventsData} from "./eventsDataManager";
 import {endEvent, sendGeneralAnnouncement, startEvent} from "./eventChannelManager";
 import {EnvConfig} from "../../utils/envConfig";
+import * as path from "path";
 
 const logger = createLogger("CounterChallenge");
 
@@ -36,13 +37,14 @@ const MAX_TARGET_ADDITION = 125;
  * Crée l'embed d'annonce pour le salon d'événement
  */
 function createEventAnnouncementEmbed(targetCount: number, currentCount: number, endTime: number, isTest: boolean): EmbedBuilder {
-    // Calculer la fourchette (±25 autour de la cible)
-    const rangeMin = Math.max(currentCount + 1, targetCount - 25);
-    const rangeMax = targetCount + 25;
+    // Calculer la fourchette (±5 autour de la cible)
+    const rangeMin = Math.max(currentCount + 1, targetCount - 5);
+    const rangeMax = targetCount + 5;
 
     return new EmbedBuilder()
         .setColor(0xF6AD55)
         .setTitle("🎯 DÉFI DU COMPTEUR !")
+        .setThumbnail("attachment://event_count_badge.png")
         .setDescription(
             `Un événement mystérieux vient d'apparaître !\n\n` +
             `**Objectif :** Atteindre un nombre **secret** dans le compteur !\n` +
@@ -51,7 +53,7 @@ function createEventAnnouncementEmbed(targetCount: number, currentCount: number,
             `**Récompense :** Le premier à atteindre le nombre secret gagne **${WINNER_XP_REWARD} XP** 💫 !\n\n` +
             `**État actuel :** Le compteur est à **${currentCount}**\n\n` +
             `🏃 Rendez-vous dans <#${EnvConfig.COUNTER_CHANNEL_ID}> et commencez à compter !\n\n` +
-            (isTest ? "\n\n⚠️ *Ceci est un événement de TEST. Les récompenses réelles ne seront pas distribuées.*" : "")
+            (isTest ? "\n⚠️ *Ceci est un événement de TEST. Les récompenses réelles ne seront pas distribuées.*" : "")
         )
         .setFooter({text: "Bonne chance ! 🍀"})
         .setTimestamp();
@@ -61,9 +63,9 @@ function createEventAnnouncementEmbed(targetCount: number, currentCount: number,
  * Crée l'embed d'annonce pour le salon général
  */
 function createGeneralAnnouncementEmbed(targetCount: number, currentCount: number, endTime: number, eventChannelId: string): EmbedBuilder {
-    // Calculer la fourchette (±10 autour de la cible)
-    const rangeMin = Math.max(currentCount + 1, targetCount - 10);
-    const rangeMax = targetCount + 10;
+    // Calculer la fourchette (±5 autour de la cible)
+    const rangeMin = Math.max(currentCount + 1, targetCount - 5);
+    const rangeMax = targetCount + 5;
 
     return new EmbedBuilder()
         .setColor(0xF6AD55)
@@ -141,9 +143,13 @@ export async function startCounterChallenge(client: Client, guild: Guild, isTest
         const {eventId, channel} = result;
         const endTime = Date.now() + EVENT_DURATION;
 
-        // Envoyer les règles dans le canal d'événement
+        // Créer l'attachment pour le badge
+        const badgePath = path.join(process.cwd(), "assets", "event_count_badge.png");
+        const badgeAttachment = new AttachmentBuilder(badgePath, {name: "event_count_badge.png"});
+
+        // Envoyer les règles dans le canal d'événement avec le badge
         const rulesEmbed = createEventAnnouncementEmbed(targetCount, currentCount, endTime, isTest);
-        await channel.send({embeds: [rulesEmbed]});
+        await channel.send({embeds: [rulesEmbed], files: [badgeAttachment]});
 
         // Envoyer une annonce dans le salon général (sauf si test)
         const generalEmbed = createGeneralAnnouncementEmbed(targetCount, currentCount, endTime, channel.id);

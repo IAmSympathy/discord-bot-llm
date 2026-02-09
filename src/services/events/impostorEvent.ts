@@ -1,10 +1,11 @@
-import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, Client, EmbedBuilder, Guild, TextChannel} from "discord.js";
+import {ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, ChannelType, Client, EmbedBuilder, Guild, TextChannel} from "discord.js";
 import {createLogger} from "../../utils/logger";
 import {addXP} from "../xpSystem";
 import {EventType} from "./eventTypes";
 import {loadEventsData, saveEventsData} from "./eventsDataManager";
 import {endEvent, sendGeneralAnnouncement, startEvent} from "./eventChannelManager";
 import {isLowPowerMode} from "../botStateService";
+import * as path from "path";
 
 const logger = createLogger("ImpostorEvent");
 
@@ -120,7 +121,7 @@ function createImpostorGeneralAnnouncementEmbed(endTime: number, huntChannelId: 
  * Retourne l'emoji de difficulté coloré pour une mission
  */
 function getDifficultyEmoji(difficulty: "easy" | "medium" | "hard"): string {
-    return DIFFICULTY_EMOJIS[difficulty];
+    return DIFFICULTY_NUMBER_EMOJIS[difficulty];
 }
 
 /**
@@ -137,12 +138,12 @@ function getDifficultyNumberEmoji(difficulty: "easy" | "medium" | "hard"): strin
 function formatImpostorMissions(missions: MissionState[]): string {
     return missions.map((mission, index) => {
         const emoji = getDifficultyEmoji(mission.difficulty);
-        const statusEmoji = mission.completed ? "✅" : "🔄";
+        const statusEmoji = mission.completed ? "✅" : "";
         const progressText = mission.completed
-            ? `(${mission.goal}/${mission.goal})`
-            : `(${mission.progress}/${mission.goal})`;
+            ? `**(${mission.goal}/${mission.goal})**`
+            : `**(${mission.progress}/${mission.goal})**`;
 
-        return `${emoji} **Mission ${index + 1}** ${statusEmoji}\n${mission.description} ${progressText}`;
+        return `${emoji} **Tâche ${index + 1}** ${statusEmoji}\n${mission.description} ${progressText}`;
     }).join("\n\n");
 }
 
@@ -155,7 +156,7 @@ function addMissionFieldsToEmbed(embed: EmbedBuilder, missions: MissionState[]):
         const difficultyEmoji = getDifficultyNumberEmoji(mission.difficulty);
         const altMarker = mission.isLowPowerAlternative ? ' 🔄' : '';
         embed.addFields({
-            name: `${difficultyEmoji} Mission ${index + 1}${altMarker} - ${statusEmoji}`,
+            name: `${difficultyEmoji} Tâche ${index + 1}${altMarker} - ${statusEmoji}`,
             value: mission.description,
             inline: false
         });
@@ -581,10 +582,15 @@ export async function startImpostorEvent(client: Client, guild: Guild, testUserI
 
         const {eventId, channel: huntChannel} = result;
 
-        // Envoyer l'embed de chasse dans le canal
+        // Créer l'attachment pour le badge
+        const badgePath = path.join(process.cwd(), "assets", "event_impostor_badge.png");
+        const badgeAttachment = new AttachmentBuilder(badgePath, {name: "event_impostor_badge.png"});
+
+        // Envoyer l'embed de chasse dans le canal avec le badge
         const huntEmbed = new EmbedBuilder()
             .setColor(0x64737d)
             .setTitle("🔍 CHASSE À L'IMPOSTEUR !")
+            .setThumbnail("attachment://event_impostor_badge.png")
             .setDescription(
                 `**Un imposteur se cache parmi vous...** 🕵️\n\n` +
                 `Quelqu'un a reçu une mission secrète et doit agir discrètement.\n` +
@@ -609,7 +615,7 @@ export async function startImpostorEvent(client: Client, guild: Guild, testUserI
                     .setStyle(ButtonStyle.Danger)
             );
 
-        await huntChannel.send({embeds: [huntEmbed], components: [guessButton]});
+        await huntChannel.send({embeds: [huntEmbed], components: [guessButton], files: [badgeAttachment]});
         logger.info("Impostor hunt channel created");
 
         // Envoyer une annonce dans le salon général (sauf si test)
@@ -620,9 +626,14 @@ export async function startImpostorEvent(client: Client, guild: Guild, testUserI
         try {
             const user = await client.users.fetch(selectedUser.userId);
 
+            // Créer un attachment séparé pour le DM
+            const dmBadgePath = path.join(process.cwd(), "assets", "event_impostor_badge.png");
+            const dmBadgeAttachment = new AttachmentBuilder(dmBadgePath, {name: "event_impostor_badge.png"});
+
             const impostorEmbed = new EmbedBuilder()
                 .setColor(0x64737d)
                 .setTitle(`🕵️ MISSION IMPOSTEUR !${isTest ? " (TEST)" : ""}`)
+                .setThumbnail("attachment://event_impostor_badge.png")
                 .setDescription(
                     `Tu as été secrètement choisi comme **IMPOSTEUR** ! 🎭\n\n` +
                     `**Ta mission :** \nAccomplir les 3 tâches suivantes discrètement dans les 2 prochaines heures :\n\n` +
@@ -641,7 +652,7 @@ export async function startImpostorEvent(client: Client, guild: Guild, testUserI
                 .setFooter({text: "Tu peux désactiver les missions imposteur avec /event-preferences"})
                 .setTimestamp();
 
-            await user.send({embeds: [impostorEmbed]});
+            await user.send({embeds: [impostorEmbed], files: [dmBadgeAttachment]});
             logger.info(`Impostor mission sent to ${selectedUser.username}${isTest ? ' [TEST MODE]' : ''}`);
 
             // Initialiser le tracking des guess
@@ -721,7 +732,7 @@ export async function endImpostorEvent(client: Client, eventId: string, guild: G
                 const huntChannel = guild.channels.cache.get(event.channelId) as TextChannel;
                 if (huntChannel) {
                     const victoryEmbed = new EmbedBuilder()
-                        .setColor(0x57F287)
+                        .setColor(0xED4245)
                         .setTitle("🕵️ L'IMPOSTEUR A RÉUSSI SA MISSION !")
                         .setDescription(
                             `**<@${impostorId}>** était l'imposteur et a accompli toutes ses tâches avec succès ! \n\n` +
@@ -751,6 +762,7 @@ export async function endImpostorEvent(client: Client, eventId: string, guild: G
                     `Mieux vaut être plus rapide la prochaine fois ! 🏃\n\n` +
                     `**Voici tes tâches et ta progression :**`
                 )
+                .setFooter({text: "Tu peux désactiver les missions imposteur avec /event-preferences"})
                 .setTimestamp();
 
             // Ajouter les missions avec progression avec la fonction utilitaire
@@ -763,7 +775,7 @@ export async function endImpostorEvent(client: Client, eventId: string, guild: G
                 const huntChannel = guild.channels.cache.get(event.channelId) as TextChannel;
                 if (huntChannel) {
                     const timeoutEmbed = new EmbedBuilder()
-                        .setColor(0xED4245)
+                        .setColor(0x64737d)
                         .setTitle("⏰ TEMPS ÉCOULÉ !")
                         .setDescription(
                             `Le temps est écoulé et l'imposteur n'a pas accompli toutes ses tâches !\n\n` +
@@ -884,7 +896,7 @@ export async function handleImpostorGuess(
                         `L'imposteur était **<@${impostorEvent.data.impostorId}>** !\n\n` +
                         `**Récompense du détective :** 200 XP 💫\n` +
                         `L'imposteur a échoué sa mission et ne gagne rien. 💔\n\n` +
-                        `**📋 Missions de l'imposteur :**\n\n${missionsText}`
+                        `**📋 Les tâches de l'imposteur étaient les suivantes :**\n\n${missionsText}`
                     )
                     .setTimestamp()
                     .setFooter({text: 'Le salon se fermera dans 5 minutes...'});
@@ -914,7 +926,7 @@ export async function handleImpostorGuess(
 
             const failEmbed = new EmbedBuilder()
                 .setColor(0xED4245)
-                .setTitle("😰 TU AS ÉTÉ DÉMASQUÉ !")
+                .setTitle("🕵️ TU AS ÉTÉ DÉMASQUÉ !")
                 .setDescription(
                     `**<@${userId}>** t'a démasqué ! 🔍\n\n` +
                     `Ta mission a échoué et tu ne gagnes aucune récompense.\n\n` +
