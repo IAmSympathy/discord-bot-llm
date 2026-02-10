@@ -112,6 +112,11 @@ async function calculateLogContribution(log: any, now: number): Promise<number> 
  * Calcule l'intensité totale basée sur les contributions de toutes les bûches
  */
 async function calculateTotalIntensity(fireData: any): Promise<number> {
+    // Si aucune bûche, l'intensité est forcément 0
+    if (fireData.logs.length === 0) {
+        return 0;
+    }
+
     const now = Date.now();
     let totalIntensity = 0;
 
@@ -181,6 +186,13 @@ function startDecay(): void {
 
         // 3. Recalculer l'intensité totale basée sur les contributions actuelles de toutes les bûches
         fireData.intensity = await calculateTotalIntensity(fireData);
+
+        // Vérification de sécurité : si aucune bûche, forcer l'intensité à 0
+        if (fireData.logs.length === 0 && fireData.intensity > 0) {
+            logger.warn(`Intensity reset to 0 (was ${fireData.intensity.toFixed(1)}%) - no logs remaining`);
+            fireData.intensity = 0;
+        }
+
         fireData.lastUpdate = now;
         saveFireData(fireData);
 
