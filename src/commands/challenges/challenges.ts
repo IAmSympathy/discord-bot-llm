@@ -532,17 +532,14 @@ module.exports = {
                     .map(p => p.challengeId)
                     .filter(id => id !== FIXED_HANGMAN_CHALLENGE.id); // Exclure le défi fixe de pendu
 
-                // Si les IDs ne correspondent pas, réinitialiser la progression pour les nouveaux défis
+                // Si les IDs ne correspondent pas, réinitialiser la progression pour TOUS les défis (nouveau jour)
                 const idsMatch = currentChallengeIds.length === userChallengeIds.length &&
                     currentChallengeIds.every(id => userChallengeIds.includes(id));
 
                 if (!idsMatch) {
-                    logger.info(`[DEBUG] Challenge IDs mismatch for user ${userId}, reinitializing progress`);
-                    // Garder seulement le défi de pendu s'il existe
-                    const hangmanProgress = challengesData.users[userId].progress.find(
-                        p => p.challengeId === FIXED_HANGMAN_CHALLENGE.id
-                    );
+                    logger.info(`[DEBUG] Challenge IDs mismatch for user ${userId}, reinitializing ALL progress for new day`);
 
+                    // Réinitialiser complètement tous les défis (y compris le pendu)
                     challengesData.users[userId].progress = [
                         // Les 3 nouveaux défis aléatoires
                         ...challengesData.challenges.map(c => ({
@@ -550,8 +547,8 @@ module.exports = {
                             completed: false,
                             rewardClaimed: false
                         })),
-                        // Le défi de pendu (garder la progression existante ou créer un nouveau)
-                        hangmanProgress || {
+                        // Le défi de pendu réinitialisé aussi
+                        {
                             challengeId: FIXED_HANGMAN_CHALLENGE.id,
                             completed: false,
                             rewardClaimed: false
