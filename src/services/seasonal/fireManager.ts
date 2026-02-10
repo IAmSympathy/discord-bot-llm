@@ -529,12 +529,8 @@ async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
     }
 
     // Statistiques compactes - afficher le nombre réel de bûches
-    description += `🪵 **Bûches actives : ${fireData.logs.length}**\n`;
+    description += `🪵 **Bûches : ${fireData.logs.length}**\n`;
 
-    if (fireData.stats.lastLog) {
-        const timestampSeconds = Math.floor(fireData.stats.lastLog.timestamp / 1000);
-        description += `Dernière bûche ajoutée : <@${fireData.stats.lastLog.userId}> <t:${timestampSeconds}:R>\n`;
-    }
 
     // Afficher le temps restant avant que la prochaine bûche brûle
     if (fireData.logs.length > 0) {
@@ -545,7 +541,12 @@ async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
 
         const burnTime = oldestLog.addedAt + FIRE_CONFIG.LOG_BURN_TIME;
         const burnTimestampSeconds = Math.floor(burnTime / 1000);
-        description += `⏱️ Prochaine bûche brûlée : <t:${burnTimestampSeconds}:R>\n`;
+        description += `Prochaine bûche brûlée : <t:${burnTimestampSeconds}:R>\n`;
+    }
+
+    if (fireData.stats.lastLog) {
+        const timestampSeconds = Math.floor(fireData.stats.lastLog.timestamp / 1000);
+        description += `Dernière bûche ajoutée : <@${fireData.stats.lastLog.userId}> <t:${timestampSeconds}:R>\n`;
     }
 
     description += `\n`;
