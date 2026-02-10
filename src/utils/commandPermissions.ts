@@ -14,6 +14,7 @@ const OWNER_COMMANDS = [
     'set-status',
     'test-event',
     'stop-event',
+    'reset-counter',
 ];
 
 /**
