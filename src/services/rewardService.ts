@@ -74,10 +74,10 @@ export function tryRandomSeasonalReward(
     const chances: Record<string, number> = {
         message: 0.01,           // 0.01% par message (1/5000) - peu utilisé
         voice: 0.01,              // 0.8% par tranche de temps vocal (1/125) - très utilisé
-        reaction: 0.05,          // 0.03% par réaction (1/3333) - peu utilisé
-        command: 0.10,             // 1% par commande (1/100) - utilisé régulièrement<
-        game_win: 0.20,             // 20% par victoire (1/5) - encourager les jeux
-        netricsa_command: 0.15     // 3% par commande Netricsa (/imagine, etc.) (1/33) - utilisé souvent
+        reaction: 0.01,          // 0.03% par réaction (1/3333) - peu utilisé
+        command: 0.03,             // 1% par commande (1/100) - utilisé régulièrement<
+        game_win: 0.05,             // 20% par victoire (1/5) - encourager les jeux
+        netricsa_command: 0.06     // 3% par commande Netricsa (/imagine, etc.) (1/33) - utilisé souvent
     };
 
     const random = Math.random();
