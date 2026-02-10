@@ -7,13 +7,13 @@ const logger = createLogger("RewardNotifier");
  * Envoie une notification à l'utilisateur quand il reçoit un objet saisonnier
  * @param interaction L'interaction pour envoyer la notification (éphémère) si disponible
  * @param channel Le canal pour envoyer la notification si pas d'interaction
- * @param username Le nom de l'utilisateur
+ * @param userId Le Id de l'utilisateur
  * @param itemType Le type d'item reçu
  */
 export async function notifySeasonalReward(
     interaction: ChatInputCommandInteraction | null,
     channel: TextChannel | null,
-    username: string,
+    userId: string,
     itemType: any
 ): Promise<void> {
     try {
@@ -21,8 +21,8 @@ export async function notifySeasonalReward(
         const itemInfo = ITEM_CATALOG[itemType];
 
         const messageContent = interaction
-            ? `✨ **Bonus !** Tu as trouvé ${itemInfo.emoji} **${itemInfo.name}** !\nVérifie ton inventaire (\`/profile\` → 🎒 Inventaire)`
-            : `✨ **Bonus !** ${username} a trouvé ${itemInfo.emoji} **${itemInfo.name}** !\nVérifie ton inventaire (\`/profile\` → 🎒 Inventaire)`;
+            ? `Tu as trouvé ${itemInfo.emoji} **${itemInfo.name}** !\nVérifie ton inventaire (\`/profile\` → 🎒 Inventaire)`
+            : `<@${userId}> a trouvé ${itemInfo.emoji} **${itemInfo.name}** !\nVérifie ton inventaire (\`/profile\` → 🎒 Inventaire)`;
 
         if (interaction) {
             // Si c'est une commande, envoyer un message éphémère
@@ -30,7 +30,7 @@ export async function notifySeasonalReward(
                 content: messageContent,
                 ephemeral: true
             });
-            logger.info(`Notified ${username} about receiving ${itemInfo.name} via interaction`);
+            logger.info(`Notified ${userId} about receiving ${itemInfo.name} via interaction`);
         } else if (channel) {
             // Sinon, envoyer dans le canal et supprimer après 10 secondes
             const sentMessage = await channel.send(messageContent) as Message;
@@ -39,7 +39,7 @@ export async function notifySeasonalReward(
                     logger.error("Error deleting reward notification:", err)
                 );
             }, 10000);
-            logger.info(`Notified ${username} about receiving ${itemInfo.name} via channel`);
+            logger.info(`Notified ${userId} about receiving ${itemInfo.name} via channel`);
         }
     } catch (error) {
         logger.error("Error sending reward notification:", error);
@@ -69,7 +69,7 @@ export async function tryRewardAndNotify(
         if (rewarded) {
             const itemType = getLastRewardedItem(userId);
             if (itemType) {
-                await notifySeasonalReward(interaction, channel, username, itemType);
+                await notifySeasonalReward(interaction, channel, userId, itemType);
             }
         }
     } catch (error) {

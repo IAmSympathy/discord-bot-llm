@@ -2,14 +2,50 @@ import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBui
 import {logCommand} from "../../utils/discordLogger";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {createLogger} from "../../utils/logger";
+import * as fs from "fs";
+import * as path from "path";
 
 const logger = createLogger("HarvestCmd");
 
-// Cooldown de 6 heures (en millisecondes)
+// Cooldown de 4 heures (en millisecondes)
 const HARVEST_COOLDOWN = 4 * 60 * 60 * 1000;
 
-// Stocker les cooldowns en mémoire (ou utiliser un fichier JSON si nécessaire)
-const cooldowns = new Map<string, number>();
+// Fichier de sauvegarde des cooldowns
+const COOLDOWN_FILE = path.join(process.cwd(), "data", "harvest_cooldowns.json");
+
+interface CooldownData {
+    [userId: string]: number;
+}
+
+/**
+ * Charge les cooldowns depuis le fichier JSON
+ */
+function loadCooldowns(): CooldownData {
+    try {
+        if (fs.existsSync(COOLDOWN_FILE)) {
+            const data = fs.readFileSync(COOLDOWN_FILE, "utf-8");
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        logger.error("Error loading harvest cooldowns:", error);
+    }
+    return {};
+}
+
+/**
+ * Sauvegarde les cooldowns dans le fichier JSON
+ */
+function saveCooldowns(cooldowns: CooldownData): void {
+    try {
+        const dataDir = path.dirname(COOLDOWN_FILE);
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, {recursive: true});
+        }
+        fs.writeFileSync(COOLDOWN_FILE, JSON.stringify(cooldowns, null, 2), "utf-8");
+    } catch (error) {
+        logger.error("Error saving harvest cooldowns:", error);
+    }
+}
 
 /**
  * Détermine quelle ressource donner selon la saison
@@ -81,11 +117,14 @@ module.exports = {
             const username = interaction.user.username;
             const now = Date.now();
 
+            // Charger les cooldowns
+            const cooldowns = loadCooldowns();
+
             // Déterminer la ressource saisonnière
             const resource = getSeasonalResource();
 
             // Vérifier le cooldown
-            const lastHarvest = cooldowns.get(userId);
+            const lastHarvest = cooldowns[userId];
             if (lastHarvest) {
                 const timeSinceLastHarvest = now - lastHarvest;
                 const cooldownRemaining = HARVEST_COOLDOWN - timeSinceLastHarvest;
@@ -128,8 +167,9 @@ module.exports = {
                 return;
             }
 
-            // Succès ! Enregistrer le cooldown
-            cooldowns.set(userId, now);
+            // Succès ! Enregistrer le cooldown et sauvegarder
+            cooldowns[userId] = now;
+            saveCooldowns(cooldowns);
 
             // Ajouter XP
             if (interaction.channel) {
