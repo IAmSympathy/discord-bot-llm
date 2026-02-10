@@ -463,46 +463,46 @@ export async function updateFireEmbed(client: Client): Promise<void> {
 }
 
 /**
- * Crée la représentation visuelle du feu de foyer avec des emojis selon le nombre de bûches
+ * Crée la représentation visuelle du feu de foyer avec des emojis selon l'intensité
  */
-function getFireVisual(logCount: number): string {
+function getFireVisual(intensity: number): string {
     // Caractère invisible pour l'espacement (U+2800 - Braille Pattern Blank)
     const blank = '⠀';
 
-    if (logCount >= 5) {
-        // 5 bûches - Feu intense
+    if (intensity >= 30) {
+        // Feu intense (Rugissant/Ardent)
         return `⠀⠀⠀⠀╔═════════════════╗
 ⠀⠀⠀⠀⠀⠀⠀⠀🔥🔥🔥🔥🔥🔥
 ⠀⠀⠀⠀⠀⠀⠀🔥🔥🔥🔥🔥🔥🔥
 ⠀⠀⠀⠀⠀⠀⠀⠀🔥🪵🪵🪵🪵🪵🔥
 ⠀⠀⠀⠀⠀⠀⠀⠀🟠🟠🟠🟠🟠🟠⠀
 ⠀⠀⠀⠀╚═════════════════╝`;
-    } else if (logCount === 4) {
-        // 4 bûches - Feu fort
+    } else if (intensity >= 20) {
+        // Feu fort (Vif)
         return `⠀⠀⠀⠀╔═════════════════╗
 ⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀🔥🔥🔥🔥
 ⠀⠀⠀⠀⠀⠀⠀⠀🔥🪵🪵🪵🪵🔥
 ⠀⠀⠀⠀⠀⠀⠀⠀🟠🟠🟠🟠🟠🟠⠀
 ⠀⠀⠀⠀╚═════════════════╝`;
-    } else if (logCount === 3) {
-        // 3 bûches - Feu moyen
+    } else if (intensity >= 10) {
+        // Feu moyen (Stable)
         return `⠀⠀⠀⠀╔═════════════════╗
 ⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀🔥🔥🔥🔥
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀🪵🪵🪵⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀🟠🟠🟠🟠🟠🟠⠀
 ⠀⠀⠀⠀╚═════════════════╝`;
-    } else if (logCount === 2) {
-        // 2 bûches - Feu faible
+    } else if (intensity >= 5) {
+        // Feu faible (Vacillant)
         return `⠀⠀⠀⠀╔═════════════════╗
 ⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀🔥🔥
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀🪵🪵⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀🟠🟠🟠🟠🟠🟠⠀
 ⠀⠀⠀⠀╚═════════════════╝`;
-    } else if (logCount === 1) {
-        // 1 bûche - Feu très faible
+    } else if (intensity > 0) {
+        // Feu très faible (Agonisant)
         return `⠀⠀⠀⠀╔═════════════════╗
 ⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀🔥
@@ -510,7 +510,7 @@ function getFireVisual(logCount: number): string {
 ⠀⠀⠀⠀⠀⠀⠀⠀🟠🟠🟠🟠🟠🟠⠀
 ⠀⠀⠀⠀╚═════════════════╝`;
     } else {
-        // Aucune bûche - Feu éteint
+        // Feu éteint
         return `⠀⠀⠀⠀╔═════════════════╗
 ⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀💨💨
@@ -529,7 +529,7 @@ async function getWeatherImpact(): Promise<{ text: string; icon: string }> {
     if (protectionInfo.active && protectionInfo.remainingTime > 0) {
         const minutes = Math.ceil(protectionInfo.remainingTime / 60000);
         return {
-            text: `🛡️ **Protection Active** (${minutes} min restantes)\n*Aucun effet météo*`,
+            text: `**Protection Active** (${minutes} min restantes)\n*La température n'a plus aucun effet sur le feu*`,
             icon: "🛡️"
         };
     }
@@ -627,9 +627,8 @@ async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
 
     description += `\n`;
 
-    // Visuel emoji du feu EN BAS (plafonné à 5 pour l'affichage)
-    const visualLogCount = Math.min(fireData.logs.length, 5);
-    const fireVisual = getFireVisual(visualLogCount);
+    // Visuel emoji du feu EN BAS (basé sur l'intensité)
+    const fireVisual = getFireVisual(fireData.intensity);
     description += fireVisual;
 
     const embed = new EmbedBuilder()
