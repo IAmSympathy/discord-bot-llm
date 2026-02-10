@@ -1,4 +1,4 @@
-import {ChannelType, Client, Message, TextChannel} from "discord.js";
+import {ChannelType, Client, DMChannel, Message, TextChannel} from "discord.js";
 import {processLLMRequest} from "./queue/queue";
 import {setBotPresence} from "./bot";
 import {generateMentionEmoji} from "./services/emojiService";
@@ -293,7 +293,10 @@ export function registerWatchedChannelResponder(client: Client) {
                 logger.info(`[DM] Message from ${message.author.username}: "${message.content.substring(0, 50)}..."`);
 
                 // Fetch le canal complet si c'est un partial
-                const dmChannel = message.channel.partial ? await message.channel.fetch() : message.channel;
+                let dmChannel = message.channel;
+                if (dmChannel.partial) {
+                    dmChannel = await dmChannel.fetch();
+                }
 
                 // Vérifier si en Standby Mode (prioritaire)
                 if (isStandbyMode()) {
@@ -335,7 +338,7 @@ export function registerWatchedChannelResponder(client: Client) {
                     prompt: dmPrompt,
                     userId: userId,
                     userName: userName,
-                    channel: dmChannel.partial ? await dmChannel.fetch() : dmChannel,
+                    channel: dmChannel as DMChannel,
                     client: client,
                     replyToMessage: message,
                     imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
