@@ -32,14 +32,23 @@ export async function notifySeasonalReward(
             });
             logger.info(`Notified ${userId} about receiving ${itemInfo.name} via interaction`);
         } else if (channel) {
-            // Sinon, envoyer dans le canal et supprimer après 10 secondes
+            // Sinon, envoyer dans le canal
             const sentMessage = await channel.send(messageContent) as Message;
-            setTimeout(() => {
-                sentMessage.delete().catch((err: any) =>
-                    logger.error("Error deleting reward notification:", err)
-                );
-            }, 60000);
-            logger.info(`Notified ${userId} about receiving ${itemInfo.name} via channel`);
+
+            // Supprimer après 10 secondes SEULEMENT si c'est le salon compteur
+            const {EnvConfig} = require("../utils/envConfig");
+            const COUNTER_CHANNEL_ID = EnvConfig.COUNTER_CHANNEL_ID;
+
+            if (COUNTER_CHANNEL_ID && channel.id === COUNTER_CHANNEL_ID) {
+                setTimeout(() => {
+                    sentMessage.delete().catch((err: any) =>
+                        logger.error("Error deleting reward notification:", err)
+                    );
+                }, 10000);
+                logger.info(`Notified ${userId} about receiving ${itemInfo.name} via channel (will be deleted in 10s - counter channel)`);
+            } else {
+                logger.info(`Notified ${userId} about receiving ${itemInfo.name} via channel`);
+            }
         }
     } catch (error) {
         logger.error("Error sending reward notification:", error);

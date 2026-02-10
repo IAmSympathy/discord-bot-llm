@@ -115,7 +115,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         description: "Passer 15 minutes en vocal",
         emoji: "🎤",
         goal: 15,
-        xpReward: 56              // 75 → 56 (-25%)
+        xpReward: 55              // 75 → 56 (-25%)
     },
     {
         id: "vocal_30",
@@ -124,7 +124,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         description: "Passer 30 minutes en vocal",
         emoji: "🎧",
         goal: 30,
-        xpReward: 113             // 150 → 113 (-25%)
+        xpReward: 110             // 150 → 113 (-25%)
     },
     {
         id: "vocal_60",
@@ -133,7 +133,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         description: "Passer 1 heure en vocal",
         emoji: "🎙️",
         goal: 60,
-        xpReward: 188             // 250 → 188 (-25%)
+        xpReward: 190             // 250 → 188 (-25%)
     },
     // Défis Jeux (réduit de 25%)
     {
@@ -143,7 +143,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         description: "Jouer 3 parties de jeux (`/games`)",
         emoji: "🎮",
         goal: 3,
-        xpReward: 56              // 75 → 56 (-25%)
+        xpReward: 55              // 75 → 56 (-25%)
     },
     {
         id: "games_5",
@@ -152,7 +152,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         description: "Jouer 5 parties de jeux (`/games`)",
         emoji: "🎯",
         goal: 5,
-        xpReward: 94              // 125 → 94 (-25%)
+        xpReward: 95              // 125 → 94 (-25%)
     },
     {
         id: "games_win_2",
@@ -161,7 +161,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         description: "Gagner 2 parties de jeux (`/games`)",
         emoji: "🏆",
         goal: 2,
-        xpReward: 113             // 150 → 113 (-25%)
+        xpReward: 110             // 150 → 113 (-25%)
     },
     // Défis Images (réduit de 25%)
     {
@@ -171,7 +171,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         description: "Générer 1 image avec Netricsa (`/imagine`)",
         emoji: "🎨",
         goal: 1,
-        xpReward: 56              // 75 → 56 (-25%)
+        xpReward: 55              // 75 → 56 (-25%)
     },
     {
         id: "images_3",
@@ -180,7 +180,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         description: "Générer 3 images avec Netricsa (`/imagine`)",
         emoji: "🖼️",
         goal: 3,
-        xpReward: 113             // 150 → 113 (-25%)
+        xpReward: 110             // 150 → 113 (-25%)
     },
     // Défis Réimagination (réduit de 25%)
     {
@@ -190,7 +190,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         description: "Réimaginer 1 image (`/reimagine`)",
         emoji: "🔄",
         goal: 1,
-        xpReward: 56              // 75 → 56 (-25%)
+        xpReward: 55              // 75 → 56 (-25%)
     },
     {
         id: "reimagine_2",
@@ -199,7 +199,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         description: "Réimaginer 2 images (`/reimagine`)",
         emoji: "✨",
         goal: 2,
-        xpReward: 94              // 125 → 94 (-25%)
+        xpReward: 95              // 125 → 94 (-25%)
     },
     // Défis Compteur (réduit de 25%)
     {
@@ -209,7 +209,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         description: "Contribuer 3 fois au compteur",
         emoji: "🔢",
         goal: 3,
-        xpReward: 38              // 50 → 38 (-25%)
+        xpReward: 40              // 50 → 38 (-25%)
     },
     {
         id: "counter_5",
@@ -218,7 +218,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         description: "Contribuer 5 fois au compteur",
         emoji: "💯",
         goal: 5,
-        xpReward: 56              // 75 → 56 (-25%)
+        xpReward: 55              // 75 → 56 (-25%)
     },
     // Défis IA (réduit de 25%)
     {
@@ -247,7 +247,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         description: "Utiliser 2 commandes fun",
         emoji: "🎪",
         goal: 2,
-        xpReward: 38              // 50 → 38 (-25%)
+        xpReward: 40              // 50 → 38 (-25%)
     },
     {
         id: "fun_cmd_3",
@@ -279,7 +279,7 @@ const FIXED_HANGMAN_CHALLENGE: ChallengeDefinition = {
     description: "Jouer 1 partie de bonhomme pendu",
     emoji: "🎭",
     goal: 1,
-    xpReward: 38              // 50 → 38 (-25%)
+    xpReward: 40              // 50 → 38 (-25%)
 };
 
 /**
@@ -330,7 +330,9 @@ function createChallengesEmbed(challenges: ChallengeDefinition[]): EmbedBuilder 
         .setDescription(
             "**Complète ces défis pour gagner de l'XP bonus !**\n\n" +
             "*Les défis se renouvellent chaque jour à minuit.*\n" +
-            "*Utilise `/challenges` pour voir ta progression personnelle et réclamer tes récompenses.*"
+            "*Utilise `/challenges` pour voir ta progression personnelle et réclamer tes récompenses.*\n" +
+            "━━━━━━━━━━━━━━━━━━━━━━\n" +
+            "**Défis du Jour**",
         )
         .setTimestamp()
         .setFooter({text: "N'oublie pas de faire /daily pour réclamer ta récompense quotidienne ! 🎁"});
@@ -346,7 +348,7 @@ function createChallengesEmbed(challenges: ChallengeDefinition[]): EmbedBuilder 
 
     // Ajouter une section séparée pour le défi permanent
     embed.addFields({
-        name: `━━━━━━━━━━━━━━━━━━━━━━\n ${FIXED_HANGMAN_CHALLENGE.emoji} ${FIXED_HANGMAN_CHALLENGE.name}`,
+        name: `━━━━━━━━━━━━━━━━━━━━━━\n**Disponible tous les jours**\n ${FIXED_HANGMAN_CHALLENGE.emoji} ${FIXED_HANGMAN_CHALLENGE.name}`,
         value:
             `${FIXED_HANGMAN_CHALLENGE.description}\n` +
             `**Récompense :** 💫 ${FIXED_HANGMAN_CHALLENGE.xpReward} XP\n\n`,
@@ -678,6 +680,64 @@ module.exports = {
 
             embed.setDescription(description);
 
+            // === SECTION 4 : STATUT VOCAL (EN BAS) ===
+            const dailyVoiceMinutes = getDailyVoiceTime(userId);
+            let currentVoiceTier = VOICE_XP_TIERS[0];
+            for (const tier of VOICE_XP_TIERS) {
+                if (dailyVoiceMinutes >= tier.minMinutes && dailyVoiceMinutes < tier.maxMinutes) {
+                    currentVoiceTier = tier;
+                    break;
+                }
+            }
+
+            const formatTime = (minutes: number): string => {
+                if (minutes === 0) return "0 min";
+                if (minutes < 60) return `${minutes} min`;
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
+            };
+
+            // Calculer l'XP vocal accumulé aujourd'hui
+            let totalVoiceXP = 0;
+            for (const tier of VOICE_XP_TIERS) {
+                if (dailyVoiceMinutes <= tier.minMinutes) break;
+
+                const minutesInTier = Math.min(dailyVoiceMinutes, tier.maxMinutes) - tier.minMinutes;
+                if (minutesInTier > 0) {
+                    totalVoiceXP += Math.ceil(minutesInTier * tier.multiplier);
+                }
+            }
+
+            // Barre de progression pour le temps (sur 4h = 240 min max pour visualisation)
+            const maxDisplayMinutes = 240;
+            const timeProgressPercent = Math.min((dailyVoiceMinutes / maxDisplayMinutes) * 100, 100);
+            const timeFilledBars = Math.floor(timeProgressPercent / 5);
+            const timeEmptyBars = 20 - timeFilledBars;
+            const timeProgressBar = "▰".repeat(timeFilledBars) + "▱".repeat(timeEmptyBars);
+
+            // Barre de progression pour l'XP (on estime un max à ~300 XP pour la visualisation)
+            const maxDisplayXP = 300;
+            const xpProgressPercent = Math.min((totalVoiceXP / maxDisplayXP) * 100, 100);
+            const xpFilledBars = Math.floor(xpProgressPercent / 5);
+            const xpEmptyBars = 20 - xpFilledBars;
+            const xpProgressBar = "▰".repeat(xpFilledBars) + "▱".repeat(xpEmptyBars);
+
+            const voiceXPPerMinute = Math.ceil(1 * currentVoiceTier.multiplier);
+
+
+            // Déterminer le statut de l'XP vocal (✅ si 4h atteintes)
+            const voiceCompleted = dailyVoiceMinutes >= 240; // 4h = temps max optimal
+            const voiceStatusIcon = voiceCompleted ? "✅" : dailyVoiceMinutes > 0 ? "🔄" : "⬜";
+
+            embed.addFields({
+                name: `━━━━━━━━━━━━━━━━━━━━━━\n${voiceStatusIcon} 🎤 XP Vocal Accumulé`,
+                value:
+                    `${xpProgressBar}\n` +
+                    `${voiceXPPerMinute} XP/min (${currentVoiceTier.label}) • 💫 **${totalVoiceXP} XP** gagné\n`,
+                inline: false
+            });
+
             // === SECTION 1 : DÉFIS QUOTIDIENS ===
             embed.addFields({
                 name: "━━━━━━━━━━━━━━━━━━━━━━",
@@ -768,69 +828,7 @@ module.exports = {
             embed.addFields({
                 name: "━━━━━━━━━━━━━━━━━━━━━━",
                 value: `${bonusClaimedIcon} **💎 Bonus de Complétion**\n` +
-                    `Complète les 4 défis pour 💫 **+50 XP** bonus !\n`,
-                inline: false
-            });
-
-            // === SECTION 4 : STATUT VOCAL (EN BAS) ===
-            const dailyVoiceMinutes = getDailyVoiceTime(userId);
-            let currentVoiceTier = VOICE_XP_TIERS[0];
-            for (const tier of VOICE_XP_TIERS) {
-                if (dailyVoiceMinutes >= tier.minMinutes && dailyVoiceMinutes < tier.maxMinutes) {
-                    currentVoiceTier = tier;
-                    break;
-                }
-            }
-
-            const formatTime = (minutes: number): string => {
-                if (minutes === 0) return "0 min";
-                if (minutes < 60) return `${minutes} min`;
-                const hours = Math.floor(minutes / 60);
-                const mins = minutes % 60;
-                return mins > 0 ? `${hours}h ${mins}min` : `${hours}h`;
-            };
-
-            // Calculer l'XP vocal accumulé aujourd'hui
-            let totalVoiceXP = 0;
-            for (const tier of VOICE_XP_TIERS) {
-                if (dailyVoiceMinutes <= tier.minMinutes) break;
-
-                const minutesInTier = Math.min(dailyVoiceMinutes, tier.maxMinutes) - tier.minMinutes;
-                if (minutesInTier > 0) {
-                    totalVoiceXP += Math.ceil(minutesInTier * tier.multiplier);
-                }
-            }
-
-            // Barre de progression pour le temps (sur 4h = 240 min max pour visualisation)
-            const maxDisplayMinutes = 240;
-            const timeProgressPercent = Math.min((dailyVoiceMinutes / maxDisplayMinutes) * 100, 100);
-            const timeFilledBars = Math.floor(timeProgressPercent / 5);
-            const timeEmptyBars = 20 - timeFilledBars;
-            const timeProgressBar = "▰".repeat(timeFilledBars) + "▱".repeat(timeEmptyBars);
-
-            // Barre de progression pour l'XP (on estime un max à ~300 XP pour la visualisation)
-            const maxDisplayXP = 300;
-            const xpProgressPercent = Math.min((totalVoiceXP / maxDisplayXP) * 100, 100);
-            const xpFilledBars = Math.floor(xpProgressPercent / 5);
-            const xpEmptyBars = 20 - xpFilledBars;
-            const xpProgressBar = "▰".repeat(xpFilledBars) + "▱".repeat(xpEmptyBars);
-
-            const voiceXPPerMinute = Math.ceil(1 * currentVoiceTier.multiplier);
-
-            // Calculer le temps jusqu'à minuit
-            const now = new Date();
-            const midnight = new Date();
-            midnight.setHours(24, 0, 0, 0);
-            const msUntilMidnight = midnight.getTime() - now.getTime();
-            const hoursUntilReset = Math.floor(msUntilMidnight / (1000 * 60 * 60));
-            const minutesUntilReset = Math.floor((msUntilMidnight % (1000 * 60 * 60)) / (1000 * 60));
-
-
-            embed.addFields({
-                name: "━━━━━━━━━━━━━━━━━━━━━━\n🎤 XP Vocal Accumulé",
-                value:
-                    `${xpProgressBar}\n` +
-                    `💫  **${totalVoiceXP} XP** gagné • ${voiceXPPerMinute} XP/min (${currentVoiceTier.label}) • ⏰ Reset dans ${hoursUntilReset}h ${minutesUntilReset}min`,
+                    `Complète les 4 défis pour 💫 **+50 XP** bonus !\\nn`,
                 inline: false
             });
 
