@@ -1324,7 +1324,7 @@ async function sendAchievementNotification(
         }
 
         // Déterminer le titre selon si c'est un succès secret ou non
-        let embedTitle = achievement.secret ? "🔓 Succès Secret !" : "✨ Succès !";
+        let embedTitle = achievement.secret ? "🔓 Succès Secret !" : "✨ Succès";
 
         // Déterminer la couleur selon l'XP
         let embedColor: number;
