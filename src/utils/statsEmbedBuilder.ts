@@ -612,7 +612,7 @@ export function createInventoryEmbed(targetUser: User): EmbedBuilder {
         };
 
         // Grouper les items par saison (exclure les bûches déjà affichées)
-        for (const [itemType, quantity] of Object.entries(inventory.items)) {
+        for (const [itemType, quantity] of Object.entries(inventory.items) as Array<[string, number]>) {
             // Skip les bûches car déjà affichées
             if (itemType === InventoryItemType.FIREWOOD_LOG) continue;
 
@@ -642,7 +642,7 @@ export function createInventoryEmbed(targetUser: User): EmbedBuilder {
             }
         }
 
-        const totalItems = Object.values(inventory.items).reduce((a: number, b: number) => a + b, 0);
+        const totalItems = (Object.values(inventory.items) as number[]).reduce((a, b) => a + b, 0);
         description += `📦 **Total d'objets :** ${totalItems}`;
     }
 
