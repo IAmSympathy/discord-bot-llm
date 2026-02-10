@@ -17,13 +17,13 @@ export function createSeasonalStatsEmbed(userId: string, username: string, displ
     const emoji = FIRE_EMOJIS[state];
     const stateName = FIRE_NAMES[state];
     const color = FIRE_COLORS[state];
-    let description = `#### 🪵 Mes Contributions\n`;
+    let description = `**Mes Contributions**\n\n`;
 
     if (hasAddedLog) {
         const cooldownRemaining = FIRE_CONFIG.USER_COOLDOWN - (Date.now() - userLastLog);
         const timestampSeconds = Math.floor(userLastLog / 1000);
 
-        description += `Dernière bûche : <t:${timestampSeconds}:R>\n`;
+        description += `🪵 Dernière bûche : <t:${timestampSeconds}:R>\n`;
 
         if (cooldownRemaining > 0) {
             const cooldownEndTimestamp = Math.floor((userLastLog + FIRE_CONFIG.USER_COOLDOWN) / 1000);

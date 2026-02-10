@@ -158,7 +158,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         id: "games_3",
         type: ChallengeType.GAMES,
         name: "Joueur",
-        description: "Jouer 3 parties de jeux",
+        description: "Jouer 3 parties de jeux (`/games`)",
         emoji: "🎮",
         goal: 3,
         xpReward: 75
@@ -167,7 +167,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         id: "games_5",
         type: ChallengeType.GAMES,
         name: "Gamer",
-        description: "Jouer 5 parties de jeux",
+        description: "Jouer 5 parties de jeux (`/games`)",
         emoji: "🎯",
         goal: 5,
         xpReward: 125
@@ -176,7 +176,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         id: "games_win_2",
         type: ChallengeType.GAMES,
         name: "Victorieux",
-        description: "Gagner 2 parties de jeux",
+        description: "Gagner 2 parties de jeux (`/games`)",
         emoji: "🏆",
         goal: 2,
         xpReward: 150
@@ -186,7 +186,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         id: "images_1",
         type: ChallengeType.IMAGES,
         name: "Artiste du Jour",
-        description: "Générer 1 image avec Netricsa",
+        description: "Générer 1 image avec Netricsa (`/imagine`)",
         emoji: "🎨",
         goal: 1,
         xpReward: 75
@@ -195,7 +195,7 @@ const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
         id: "images_3",
         type: ChallengeType.IMAGES,
         name: "Créateur Actif",
-        description: "Générer 3 images avec Netricsa",
+        description: "Générer 3 images avec Netricsa (`/imagine`)",
         emoji: "🖼️",
         goal: 3,
         xpReward: 150
@@ -320,10 +320,9 @@ function createChallengesEmbed(challenges: ChallengeDefinition[]): EmbedBuilder 
         .setDescription(
             "**Complète ces défis pour gagner de l'XP bonus !**\n\n" +
             "*Les défis se renouvellent chaque jour à minuit.*\n" +
-            "*Utilise `/challenges` pour voir ta progression personnelle.*"
+            "*Utilise `/challenges` pour voir ta progression personnelle et réclamer tes récompenses.*"
         )
         .setTimestamp()
-        .setFooter({text: "Mise à jour automatique à minuit"});
 
     // Ajouter les 3 défis aléatoires
     challenges.forEach((challenge, index) => {

@@ -166,6 +166,10 @@ client.once(Events.ClientReady, async () => {
     const {initializeFireSystem} = require("./services/seasonal/fireManager");
     await initializeFireSystem(client);
 
+    // Initialiser la vérification de fin de saison du feu de foyer
+    const {initializeSeasonEndCheck} = require("./services/seasonal/fireSeasonManager");
+    initializeSeasonEndCheck(client);
+
     // Initialiser le message persistant des défis quotidiens
     const {initializeDailyChallengesMessage} = require("./commands/challenges/challenges");
     await initializeDailyChallengesMessage(client);

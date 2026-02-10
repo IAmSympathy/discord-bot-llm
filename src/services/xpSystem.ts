@@ -150,6 +150,26 @@ export function getUserXP(userId: string): UserXP | null {
 }
 
 /**
+ * Enregistre l'XP gagné dans toutes les périodes temporelles
+ * (quotidien, hebdomadaire, mensuel, annuel)
+ */
+function recordXPForAllPeriods(userId: string, username: string, xpAmount: number, voiceMinutes: number = 0): void {
+    // Enregistrer pour le jour en cours
+    const {recordDailyXP} = require("./dailyWeeklyXPService");
+    recordDailyXP(userId, username, xpAmount, voiceMinutes);
+
+    // Enregistrer pour la semaine en cours
+    const {recordWeeklyXP} = require("./dailyWeeklyXPService");
+    recordWeeklyXP(userId, username, xpAmount, voiceMinutes);
+
+    // Enregistrer pour le mois en cours
+    recordMonthlyXP(userId, username, xpAmount);
+
+    // Enregistrer pour l'année en cours
+    recordYearlyXP(userId, username, xpAmount);
+}
+
+/**
  * Ajoute de l'XP à un utilisateur
  * Si c'est un bot, l'XP est ajoutée sans notification
  * Si c'est un humain et qu'un canal est fourni, envoie une notification de level up
@@ -160,6 +180,7 @@ export function getUserXP(userId: string): UserXP | null {
  * @param channel - (Optionnel) Canal pour envoyer la notification de level up
  * @param isBot - (Optionnel) Si true, pas de notification même si un canal est fourni
  * @param skipMultiplier - (Optionnel) Si true, n'applique PAS le multiplicateur saisonnier (pour achievements/mystery box)
+ * @param voiceMinutes - (Optionnel) Nombre de minutes vocales à enregistrer (pour le tracking vocal)
  */
 export async function addXP(
     userId: string,
@@ -167,7 +188,8 @@ export async function addXP(
     amount: number,
     channel?: TextChannel | VoiceChannel,
     isBot: boolean = false,
-    skipMultiplier: boolean = false
+    skipMultiplier: boolean = false,
+    voiceMinutes: number = 0
 ): Promise<{ levelUp: boolean; newLevel: number; totalXP: number }> {
     const xpData = loadXP();
 
@@ -215,11 +237,8 @@ export async function addXP(
 
     saveXP(xpData);
 
-    // Enregistrer l'XP gagné/perdu pour l'année en cours
-    recordYearlyXP(userId, username, amount);
-
-    // Enregistrer l'XP gagné/perdu pour le mois en cours
-    recordMonthlyXP(userId, username, amount);
+    // Enregistrer l'XP pour toutes les périodes (jour, semaine, mois, année)
+    recordXPForAllPeriods(userId, username, amount, voiceMinutes);
 
     if (levelUp) {
         logger.info(`${username} level up! ${oldLevel} → ${newLevel} (${xpData[userId].totalXP} XP)`);

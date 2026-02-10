@@ -2,15 +2,17 @@ import {createLogger} from "../utils/logger";
 import {recordAIConversation, recordCommandUsed, recordImageGenerated, recordImageReimagined, recordImageUpscaled, recordMemeSearched, recordMentionReceived, recordMessageSent, recordPromptCreated, recordReactionAdded, recordReactionReceived, recordReplyReceived} from "./userStatsService";
 import {recordYearlyAIConversation, recordYearlyCommandUsed, recordYearlyImageGenerated, recordYearlyImageReimagined, recordYearlyImageUpscaled, recordYearlyMemeSearched, recordYearlyMentionReceived, recordYearlyMessageSent, recordYearlyPromptCreated, recordYearlyReactionAdded, recordYearlyReactionReceived, recordYearlyReplyReceived, recordYearlyVoiceTime} from "./yearlyStatsService";
 import {recordDailyAIConversation, recordDailyCommand, recordDailyCounterContribution, recordDailyGamePlayed, recordDailyHangmanPlayed, recordDailyImageGenerated, recordDailyMessage, recordDailyReaction, recordDailyVoiceTime} from "./dailyStatsService";
+import {recordWeeklyImageGenerated, recordWeeklyMessage, recordWeeklyReaction, recordWeeklyVoiceTime} from "./weeklyStatsService";
 
 const logger = createLogger("StatsRecorder");
 
 /**
- * Enregistre un message envoyé dans toutes les stats (total, yearly, daily)
+ * Enregistre un message envoyé dans toutes les stats (total, yearly, weekly, daily)
  */
 export function recordMessageStats(userId: string, username: string): void {
     recordMessageSent(userId, username);
     recordYearlyMessageSent(userId, username);
+    recordWeeklyMessage(userId, username);
     recordDailyMessage(userId, username);
 }
 
@@ -20,6 +22,7 @@ export function recordMessageStats(userId: string, username: string): void {
 export function recordReactionAddedStats(userId: string, username: string): void {
     recordReactionAdded(userId, username);
     recordYearlyReactionAdded(userId, username);
+    recordWeeklyReaction(userId, username);
     recordDailyReaction(userId, username);
 }
 
@@ -55,6 +58,7 @@ export function recordAIConversationStats(userId: string, username: string): voi
 export function recordImageGeneratedStats(userId: string, username: string): void {
     recordImageGenerated(userId, username);
     recordYearlyImageGenerated(userId, username);
+    recordWeeklyImageGenerated(userId, username);
     recordDailyImageGenerated(userId, username);
 }
 
@@ -113,6 +117,7 @@ export function recordVoiceTimeStats(userId: string, username: string, minutes: 
     const {recordVoiceTime} = require("./userStatsService");
     recordVoiceTime(userId, username, minutes);
     recordYearlyVoiceTime(userId, username, minutes);
+    recordWeeklyVoiceTime(userId, username, minutes);
     recordDailyVoiceTime(userId, username, minutes);
 }
 
@@ -124,9 +129,11 @@ export function recordCounterContributionStats(userId: string, username: string)
 }
 
 /**
- * Enregistre une partie jouée (uniquement daily, car les jeux ont leur propre système)
+ * Enregistre une partie jouée (daily + weekly)
  */
 export function recordGamePlayedStats(userId: string, username: string, won: boolean): void {
+    const {recordWeeklyGamePlayed: weeklyGame} = require("./weeklyStatsService");
+    weeklyGame(userId, username, won);
     recordDailyGamePlayed(userId, username, won);
 }
 

@@ -22,7 +22,8 @@ module.exports = {
                     {name: "📦 Colis Mystère", value: "mystery_box_test"},
                     {name: "🕵️ Imposteur", value: "impostor_test"},
                     {name: "🧩 Énigme", value: "riddle"},
-                    {name: "🔢 Suite Logique", value: "sequence"}
+                    {name: "🔢 Suite Logique", value: "sequence"},
+                    {name: "🔥 Stats Fin de Saison Feu", value: "fire_season_end"}
                 )
         ),
 
@@ -92,6 +93,16 @@ module.exports = {
                 case "sequence":
                     await startSequence(interaction.client, interaction.guild, true);
                     await interaction.editReply({content: "✅ Suite logique démarrée en mode TEST (aucun XP ne sera distribué) !"});
+                    break;
+
+                case "fire_season_end":
+                    try {
+                        const {sendSeasonStatistics} = require("../../services/seasonal/fireSeasonManager");
+                        await sendSeasonStatistics(interaction.client);
+                        await interaction.editReply({content: "✅ Statistiques de fin de saison du feu de foyer envoyées dans les annonces !"});
+                    } catch (error: any) {
+                        await interaction.editReply({content: `❌ Erreur : ${error.message}`});
+                    }
                     break;
 
                 default:

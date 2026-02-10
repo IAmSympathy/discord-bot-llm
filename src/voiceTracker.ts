@@ -2,6 +2,8 @@ import {Client, Events, VoiceState} from "discord.js";
 import {createLogger} from "./utils/logger";
 import {addXP, XP_REWARDS} from "./services/xpSystem";
 import {recordVoiceTimeStats} from "./services/statsRecorder";
+import * as fs from "fs";
+import * as path from "path";
 
 const logger = createLogger("VoiceTracker");
 
@@ -22,6 +24,55 @@ interface DailyVoiceTime {
 
 const voiceSessions = new Map<string, VoiceSession>();
 const dailyVoiceTime = new Map<string, DailyVoiceTime>();
+
+// Chemin du fichier de sauvegarde
+const DAILY_VOICE_FILE = path.join(__dirname, "../data/daily_voice_time.json");
+
+/**
+ * Charge les données de temps vocal quotidien depuis le fichier
+ */
+function loadDailyVoiceTime(): void {
+    try {
+        if (fs.existsSync(DAILY_VOICE_FILE)) {
+            const data = JSON.parse(fs.readFileSync(DAILY_VOICE_FILE, "utf-8"));
+            const today = new Date().toISOString().split('T')[0];
+
+            // Charger seulement les données du jour actuel
+            for (const [userId, voiceTime] of Object.entries(data)) {
+                const vt = voiceTime as DailyVoiceTime;
+                if (vt.lastReset === today) {
+                    dailyVoiceTime.set(userId, vt);
+                }
+            }
+
+            logger.info(`Loaded daily voice time data for ${dailyVoiceTime.size} users`);
+        }
+    } catch (error) {
+        logger.error("Error loading daily voice time data:", error);
+    }
+}
+
+/**
+ * Sauvegarde les données de temps vocal quotidien dans le fichier
+ */
+function saveDailyVoiceTime(): void {
+    try {
+        const dataDir = path.dirname(DAILY_VOICE_FILE);
+        if (!fs.existsSync(dataDir)) {
+            fs.mkdirSync(dataDir, {recursive: true});
+        }
+
+        const data: Record<string, DailyVoiceTime> = {};
+        for (const [userId, voiceTime] of dailyVoiceTime.entries()) {
+            data[userId] = voiceTime;
+        }
+
+        fs.writeFileSync(DAILY_VOICE_FILE, JSON.stringify(data, null, 2), "utf-8");
+        logger.debug(`Saved daily voice time data for ${dailyVoiceTime.size} users`);
+    } catch (error) {
+        logger.error("Error saving daily voice time data:", error);
+    }
+}
 
 /**
  * Paliers de rendements décroissants pour l'XP vocal quotidien
@@ -71,6 +122,9 @@ function incrementDailyVoiceTime(userId: string, minutes: number): void {
 
     dailyTime.totalMinutes += minutes;
     dailyVoiceTime.set(userId, dailyTime);
+
+    // Sauvegarder après chaque mise à jour
+    saveDailyVoiceTime();
 }
 
 /**
@@ -139,7 +193,9 @@ function startVoiceSession(userId: string, channelId: string, username: string, 
                     username,
                     adjustedXP,
                     channel as any,
-                    isBot // Pas de notification pour les bots
+                    isBot, // Pas de notification pour les bots
+                    false, // Ne pas skip le multiplicateur
+                    1 // 1 minute vocale
                 );
 
                 // Log avec info sur le multiplicateur
@@ -197,6 +253,9 @@ async function endVoiceSession(userId: string, username: string, voiceState: Voi
  */
 export function registerVoiceTracker(client: Client): void {
     logger.info("Voice tracker initialized with real-time XP system");
+
+    // Charger les données de temps vocal quotidien
+    loadDailyVoiceTime();
 
     // Initialiser les sessions pour les utilisateurs déjà en vocal au démarrage
     client.once(Events.ClientReady, () => {
