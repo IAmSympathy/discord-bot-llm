@@ -389,23 +389,51 @@ export function getTopCounterContributors(limit: number = 10): Array<{ userId: s
 
 /**
  * Force reset du compteur (commande admin)
+ * Supprime tous les messages et réinitialise complètement le compteur avec le message d'intro
  */
 export async function forceResetCounter(channel: TextChannel): Promise<void> {
     const state = loadCounterState();
     const oldNumber = state.currentNumber;
 
+    logger.info(`Counter force reset from ${oldNumber} to 0`);
+
+    // Réinitialiser l'état AVANT de supprimer les messages
     state.currentNumber = 0;
     state.lastUserId = null;
     saveCounterState(state);
 
-    logger.info(`Counter force reset from ${oldNumber} to 0`);
+    // Supprimer tous les messages du salon (par batch de 100 max)
+    try {
+        let deletedCount = 0;
+        let hasMore = true;
 
-    await channel.send({
-        content: `🔄 **Compteur réinitialisé par un administrateur !**\n` +
-            `Le compteur était à **${oldNumber}**.\n` +
-            `Record : **${state.highestReached}**\n` +
-            `Recommencez à **1** !`
-    });
+        while (hasMore) {
+            const messages = await channel.messages.fetch({limit: 100});
+
+            if (messages.size === 0) {
+                hasMore = false;
+                break;
+            }
+
+            // Supprimer les messages par batch
+            const deleted = await channel.bulkDelete(messages, true); // true = skip les messages > 14 jours
+            deletedCount += deleted.size;
+
+            // Si on a supprimé moins que le fetch, c'est qu'il n'y en a plus
+            if (deleted.size < messages.size) {
+                hasMore = false;
+            }
+        }
+
+        logger.info(`Deleted ${deletedCount} messages from counter channel`);
+    } catch (error) {
+        logger.error("Error deleting messages:", error);
+    }
+
+    // Réinitialiser complètement le compteur avec le message d'intro
+    await initializeCounter(channel);
+
+    logger.info("Counter fully reset with intro message");
 }
 
 /**
