@@ -323,6 +323,7 @@ function createChallengesEmbed(challenges: ChallengeDefinition[]): EmbedBuilder 
             "*Utilise `/challenges` pour voir ta progression personnelle et réclamer tes récompenses.*"
         )
         .setTimestamp()
+        .setFooter({text: "N'oublie pas de faire /daily pour réclamer ta récompense quotidienne ! 🎁"});
 
     // Ajouter les 3 défis aléatoires
     challenges.forEach((challenge, index) => {
