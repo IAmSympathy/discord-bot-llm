@@ -47,7 +47,7 @@ export const MEMORY_IMPORTANCE_THRESHOLD = 2; // Minimum score to keep old turns
 export const MEMORY_FILE_PATH = EnvConfig.MEMORY_FILE_PATH;
 
 // Ollama Configuration
-export const OLLAMA_API_URL = "http://localhost:11434";
+export const OLLAMA_API_URL = process.env.OLLAMA_API_URL || "http://localhost:11434";
 export const OLLAMA_TEXT_MODEL = EnvConfig.OLLAMA_TEXT_MODEL;
 export const OLLAMA_VISION_MODEL = EnvConfig.OLLAMA_VISION_MODEL;
 

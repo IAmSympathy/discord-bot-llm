@@ -229,6 +229,28 @@ export async function setLowPowerStatus(client: Client): Promise<void> {
 }
 
 /**
+ * Met Netricsa en mode "Absent" avec un statut Standby (Mode veille)
+ * Ce statut est permanent et vide la pile des autres statuts
+ * Utilisé quand les services locaux (Ollama/Python API) sont inaccessibles
+ */
+export async function setStandbyStatus(client: Client): Promise<void> {
+    if (!client.user) return;
+
+    // Vider la pile des statuts temporaires
+    await clearAllStatuses(client);
+
+    await client.user.setPresence({
+        status: "idle",
+        activities: [{
+            name: "🌙 Mode veille - Services inaccessibles",
+            type: ActivityType.Playing
+        }]
+    });
+
+    logger.info("🌙 Status set to IDLE - Standby Mode (stack cleared)");
+}
+
+/**
  * Remet Netricsa en mode normal (online)
  * Vide la pile et restaure le statut par défaut
  */

@@ -135,10 +135,14 @@ export async function generateImage(options: GenerationOptions): Promise<{ path:
                 logger.error(`Error name: ${error.name}`);
                 logger.error(`Error stack: ${error.stack}`);
 
-                // Erreur de parsing JSON ou fetch
-                if (error.message.includes("fetch failed") || error.name === "AbortError") {
-                    throw new Error("Connexion à l'API perdue ou timeout. L'API Python est-elle toujours active ?");
+                // Erreur de connexion à l'API
+                if (error.message.includes("fetch failed") ||
+                    error.name === "AbortError" ||
+                    error.message.includes("ECONNREFUSED") ||
+                    error.message.includes("ETIMEDOUT")) {
+                    throw new Error(`CONNECTION_ERROR: ${error.message}`);
                 }
+                // Erreur de parsing JSON
                 if (error.message.includes("JSON") || error.message.includes("parse")) {
                     throw new Error("Erreur de parsing de la réponse. L'image est peut-être trop grande.");
                 }

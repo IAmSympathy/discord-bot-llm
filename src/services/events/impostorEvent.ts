@@ -422,6 +422,150 @@ export async function handleLowPowerModeExit(client: Client): Promise<void> {
 }
 
 /**
+ * Remplace les missions impossibles par des alternatives quand Netricsa passe en Standby Mode
+ * Identique à handleLowPowerModeTransition mais pour le mode Standby
+ */
+export async function handleStandbyModeTransition(client: Client): Promise<void> {
+    try {
+        const eventsData = loadEventsData();
+
+        // Trouver tous les événements imposteur actifs
+        const activeImpostorEvents = eventsData.activeEvents.filter(
+            e => e.type === EventType.IMPOSTOR && !e.data.completed
+        );
+
+        if (activeImpostorEvents.length === 0) return;
+
+        for (const event of activeImpostorEvents) {
+            let missionsChanged = false;
+            const impostorId = event.data.impostorId;
+
+            // Vérifier chaque mission
+            for (let i = 0; i < event.data.missions.length; i++) {
+                const mission = event.data.missions[i];
+
+                // Si la mission est déjà complétée, ne pas la changer
+                if (mission.completed) continue;
+
+                // Si la mission est déjà une alternative Low Power, skip
+                if (mission.isLowPowerAlternative) continue;
+
+                // Si la mission nécessite Netricsa
+                if (isNetricsaDependentMission(mission.type)) {
+                    // Générer une mission alternative
+                    const alternativeMission = await generateLowPowerAlternative(mission.difficulty);
+
+                    // Sauvegarder la mission originale
+                    alternativeMission.originalMission = {...mission};
+
+                    // Remplacer temporairement la mission
+                    event.data.missions[i] = alternativeMission;
+                    missionsChanged = true;
+
+                    logger.info(`[ImpostorEvent] Mission ${mission.type} temporarily replaced with ${alternativeMission.type} for user ${impostorId} (Standby Mode)`);
+                }
+            }
+
+            // Si des missions ont été changées, notifier l'imposteur
+            if (missionsChanged) {
+                try {
+                    const user = await client.users.fetch(impostorId);
+
+                    const embed = new EmbedBuilder()
+                        .setColor(0x64737d)
+                        .setTitle('🕵️ TÂCHES TEMPORAIREMENT MODIFIÉES ⚠️')
+                        .setDescription(
+                            `Je suis passée en **Mode Veille** ! 🌙\n\n` +
+                            `Certaines tâches me nécessitant ont été **temporairement remplacées** par des alternatives.\n\n` +
+                            `✨ **Bonne nouvelle :** Si je sors du Mode Veille, tes tâches originales seront **restaurées** avec ta progression !\n\n` +
+                            `**Tâches actuelles :**`
+                        )
+                        .setTimestamp();
+
+                    // Ajouter les missions avec la fonction utilitaire
+                    addMissionFieldsToEmbed(embed, event.data.missions);
+
+                    await user.send({embeds: [embed]});
+                } catch (error) {
+                    logger.warn(`Could not notify user ${impostorId} about mission changes:`, error);
+                }
+            }
+        }
+
+        // Sauvegarder les changements
+        saveEventsData(eventsData);
+
+    } catch (error) {
+        logger.error('[ImpostorEvent] Error handling Standby Mode transition:', error);
+    }
+}
+
+/**
+ * Restaure les missions originales quand Netricsa sort du Standby Mode
+ */
+export async function handleStandbyModeExit(client: Client): Promise<void> {
+    try {
+        const eventsData = loadEventsData();
+
+        // Trouver tous les événements imposteur actifs
+        const activeImpostorEvents = eventsData.activeEvents.filter(
+            e => e.type === EventType.IMPOSTOR && !e.data.completed
+        );
+
+        if (activeImpostorEvents.length === 0) return;
+
+        for (const event of activeImpostorEvents) {
+            let missionsRestored = false;
+            const impostorId = event.data.impostorId;
+
+            // Vérifier chaque mission
+            for (let i = 0; i < event.data.missions.length; i++) {
+                const mission = event.data.missions[i];
+
+                // Si c'est une alternative Low Power avec une mission originale sauvegardée
+                if (mission.isLowPowerAlternative && mission.originalMission) {
+                    // Restaurer la mission originale
+                    event.data.missions[i] = mission.originalMission;
+                    missionsRestored = true;
+
+                    logger.info(`[ImpostorEvent] Mission restored from ${mission.type} to ${mission.originalMission.type} for user ${impostorId} (Standby Mode exit)`);
+                }
+            }
+
+            // Si des missions ont été restaurées, notifier l'imposteur
+            if (missionsRestored) {
+                try {
+                    const user = await client.users.fetch(impostorId);
+
+                    const embed = new EmbedBuilder()
+                        .setColor(0x64737d)
+                        .setTitle('🕵️ TÂCHES RESTAURÉES ✅ ')
+                        .setDescription(
+                            `Je suis de retour en ligne ! ⚡\n\n` +
+                            `Tes tâches originales ont été **restaurées** !\n\n` +
+                            `**Tâches actuelles :**`
+                        )
+                        .setTimestamp();
+
+                    // Ajouter les missions avec la fonction utilitaire
+                    addMissionFieldsToEmbed(embed, event.data.missions);
+
+                    await user.send({embeds: [embed]});
+                } catch (error) {
+                    logger.warn(`Could not notify user ${impostorId} about mission restoration:`, error);
+                }
+            }
+        }
+
+        // Sauvegarder les changements
+        saveEventsData(eventsData);
+
+    } catch (error) {
+        logger.error('[ImpostorEvent] Error handling Standby Mode exit:', error);
+    }
+}
+
+/**
  * ÉVÉNEMENT : IMPOSTEUR
  * Un utilisateur doit accomplir 3 missions secrètes sans se faire remarquer
  */

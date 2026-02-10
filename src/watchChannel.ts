@@ -7,6 +7,7 @@ import {updateUserActivityFromPresence} from "./services/activityService";
 import {logBotReaction} from "./utils/discordLogger";
 import {BotStatus, clearStatus, setStatus} from "./services/statusService";
 import {isLowPowerMode} from "./services/botStateService";
+import {isStandbyMode} from "./services/standbyModeService";
 import {appendDMTurn, getDMRecentTurns} from "./services/dmMemoryService";
 import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
@@ -294,6 +295,13 @@ export function registerWatchedChannelResponder(client: Client) {
                 // Fetch le canal complet si c'est un partial
                 const dmChannel = message.channel.partial ? await message.channel.fetch() : message.channel;
 
+                // Vérifier si en Standby Mode (prioritaire)
+                if (isStandbyMode()) {
+                    await message.reply(`🌙 Désolée, je suis en **mode veille** car je ne peux pas me connecter à l'ordinateur de mon créateur.\n\nJe vérifie régulièrement sa disponibilité et reviendrai automatiquement en mode normal dès qu'il sera accessibles.`);
+                    logger.info(`[DM] Standby Mode - sent message to ${message.author.username}`);
+                    return;
+                }
+
                 // Vérifier si en Low Power Mode
                 if (isLowPowerMode()) {
                     await message.reply(`🔋 Désolée, je suis en mode Low Power pour économiser les ressources. Je ne peux pas effectuer d'analyse LLM pour le moment.\n\n💡 Utilisez \`/lowpower\` pour me réactiver en mode normal.`);
@@ -354,6 +362,19 @@ export function registerWatchedChannelResponder(client: Client) {
                 return; // Sortir après traitement DM
             }
             // ===== FIN GESTION DES DMs =====
+
+            // Vérifier si le bot est en Standby Mode (prioritaire)
+            if (isStandbyMode()) {
+                // En mode Standby, répondre seulement si mentionné ou dans le canal surveillé
+                const isMentioned = message.mentions.has(client.user!.id) && !message.mentions.everyone;
+                const isInWatchedChannel = isWatchedChannel(message, watchedChannelId);
+
+                if (isMentioned || isInWatchedChannel) {
+                    await message.reply(`🌙 Je suis en **mode veille** car je ne peux pas me connecter à l'ordinateur de mon créateur.\n\nJe vérifie régulièrement sa disponibilité (toutes les 2 minutes) et reviendrai automatiquement en mode normal dès qu'il sera accessibles.`);
+                    logger.info(`Standby Mode - sent notification to ${message.author.username}`);
+                }
+                return; // Ne pas traiter les messages en mode Standby
+            }
 
             // Vérifier si le bot est en Low Power Mode
             if (isLowPowerMode()) {

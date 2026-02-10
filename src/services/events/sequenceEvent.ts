@@ -25,7 +25,7 @@ function createSequenceAnnouncementEmbed(sequence: Sequence, endTime: number, is
 
     return new EmbedBuilder()
         .setColor(0x3498DB) // Bleu
-        .setTitle("🔢 SUITE LOGIQUE DU JOUR !")
+        .setTitle("🔢 SUITE LOGIQUE !")
         .setDescription(
             `Une suite logique est apparue ! Trouve le prochain élément pour gagner de l'XP !\n\n` +
             `**${sequence.sequence}**\n\n`
@@ -148,7 +148,7 @@ export async function startSequenceEvent(client: Client, guild: Guild, isTest: b
                 hintShown: false
             },
             false,
-            `🔢 La suite logique du jour est apparue ! Tout le monde peut participer et gagner de l'XP. Plus vous répondez vite, plus vous gagnez !`
+            `🔢 Une suite logique est apparue ! Tout le monde peut participer et gagner de l'XP. Plus vous répondez vite, plus vous gagnez !`
         );
 
         if (!result) {

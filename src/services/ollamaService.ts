@@ -2,6 +2,9 @@ import {OLLAMA_API_URL, OLLAMA_TEXT_MODEL} from "../utils/constants";
 import {EnvConfig} from "../utils/envConfig";
 import {Tool} from "./profileTools";
 import fs from "fs";
+import {createLogger} from "../utils/logger";
+
+const logger = createLogger("OllamaService");
 
 export interface LLMMessage {
     role: "system" | "user" | "assistant";
@@ -41,17 +44,23 @@ export class OllamaService {
             body.tools = tools;
         }
 
-        const response = await fetch(`${OLLAMA_API_URL}/api/chat`, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(body),
-        });
+        try {
+            const response = await fetch(`${OLLAMA_API_URL}/api/chat`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(body),
+            });
 
-        if (!response.ok) {
-            throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+            if (!response.ok) {
+                throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+            }
+
+            return response;
+        } catch (error) {
+            // Erreur de connexion (ECONNREFUSED, ETIMEDOUT, etc.)
+            logger.error(`Failed to connect to Ollama at ${OLLAMA_API_URL}: ${error instanceof Error ? error.message : error}`);
+            throw new Error(`CONNECTION_ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-
-        return response;
     }
 
     /**

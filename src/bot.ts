@@ -118,6 +118,11 @@ client.once(Events.ClientReady, async () => {
     // qui détecte automatiquement si l'owner joue dès le démarrage
     logger.info("Bot started with Auto Low Power Mode enabled by default");
 
+    // Initialiser le service Standby Mode (vérification de connectivité)
+    const {initializeStandbyMode} = require("./services/standbyModeService");
+    await initializeStandbyMode(client);
+    logger.info("Standby Mode service initialized");
+
     // Initialiser les rôles de niveau pour tous les utilisateurs
     try {
         const allXP = getAllXP();

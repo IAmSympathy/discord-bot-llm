@@ -38,6 +38,16 @@ Follow along: https://youtu.be/aNzc8BsPIkQ
 - [Système de profils utilisateurs](USER_PROFILES_SYSTEM.md)
 - [Guide d'utilisation rapide](QUICK_START_PROFILES.md)
 - [Extraction automatique complète](AUTOMATIC_EXTRACTION_COMPLETE.md)
+- [**Mode Standby (Veille)**](STANDBY_MODE_README.md) - Détection automatique des services inaccessibles
+
+### 🚀 Déploiement
+
+- [**Guide de déploiement Oracle Cloud (Architecture Hybride)**](ORACLE_CLOUD_DEPLOYMENT_GUIDE.md) - Guide complet étape par étape
+- [**Résumé Architecture Hybride**](HYBRID_ARCHITECTURE_README.md) - Vue d'ensemble rapide
+- [**Démarrage rapide**](QUICKSTART_HYBRID.md) - Guide condensé pour déployer rapidement
+- Scripts utiles :
+    - `start-local-services.ps1` - Démarre Ollama et l'API Python sur Windows
+    - `test-connection.sh` - Teste la connexion depuis Oracle Cloud
 
 ## Comment ça fonctionne
 

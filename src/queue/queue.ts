@@ -640,6 +640,16 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         } catch (error) {
             logger.error("Error processing LLM request:", error);
 
+            // Vérifier si c'est une erreur de connexion aux services locaux
+            const isConnectionError = error instanceof Error && error.message.includes('CONNECTION_ERROR');
+
+            if (isConnectionError) {
+                logger.error("🌙 Connection error detected - activating Standby Mode");
+                // Importer et activer le mode Standby
+                const {handleConnectionError} = require('../services/standbyModeService');
+                await handleConnectionError(client);
+            }
+
             // Nettoyer le timeout de chargement
             if (loadingTimeout) clearTimeout(loadingTimeout);
 
@@ -666,10 +676,15 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                 {name: "Erreur", value: error instanceof Error ? error.message : String(error)}
             ]);
 
+            // Message d'erreur adapté selon le type d'erreur
+            const errorMessage = isConnectionError
+                ? "🌙 Je ne peux pas me connecter à l'ordinateur de mon créateur. Je passe en **mode veille** et vérifierai régulièrement quand il sera de nouveau disponibles."
+                : "An error occurred while processing your message.";
+
             if (replyToMessage) {
-                await replyToMessage.reply("An error occurred while processing your message.");
+                await replyToMessage.reply(errorMessage);
             } else {
-                await channel.send("An error occurred while processing your message.");
+                await channel.send(errorMessage);
             }
         }
     });
