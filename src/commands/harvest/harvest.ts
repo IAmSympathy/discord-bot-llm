@@ -6,7 +6,7 @@ import {createLogger} from "../../utils/logger";
 const logger = createLogger("HarvestCmd");
 
 // Cooldown de 6 heures (en millisecondes)
-const HARVEST_COOLDOWN = 6 * 60 * 60 * 1000;
+const HARVEST_COOLDOWN = 4 * 60 * 60 * 1000;
 
 // Stocker les cooldowns en mémoire (ou utiliser un fichier JSON si nécessaire)
 const cooldowns = new Map<string, number>();
@@ -73,7 +73,7 @@ function getSeasonalResource(): {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("harvest")
-        .setDescription("⛏️ Récolte une ressource de saison (cooldown: 6h)"),
+        .setDescription("⛏️ Récolte une ressource de saison (cooldown: 4h)"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
@@ -100,7 +100,7 @@ module.exports = {
                             `Tu as déjà récolté une ressource récemment !\n\n` +
                             `Prochaine récolte disponible <t:${nextHarvestTime}:R>`
                         )
-                        .setFooter({text: "Tu peux récolter une ressource toutes les 6 heures"})
+                        .setFooter({text: "Tu peux récolter une ressource toutes les 4 heures"})
                         .setTimestamp();
 
                     await interaction.reply({embeds: [cooldownEmbed], flags: MessageFlags.Ephemeral});
