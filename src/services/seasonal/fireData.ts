@@ -23,10 +23,11 @@ export interface FireData {
     weatherProtection: {
         active: boolean;
         endsAt: number | null; // Timestamp de fin de protection
-        activatedBy: {
+        contributors: Array<{
             userId: string;
             username: string;
-        } | null;
+            duration: number; // Durée ajoutée en ms
+        }>; // Liste de tous ceux qui ont contribué à la protection actuelle
     };
     stats: {
         logsToday: number; // Nombre de bûches ajoutées aujourd'hui

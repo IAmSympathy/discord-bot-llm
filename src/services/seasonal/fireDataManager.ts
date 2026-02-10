@@ -33,7 +33,7 @@ export function loadFireData(): FireData {
                 weatherProtection: {
                     active: false,
                     endsAt: null,
-                    activatedBy: null
+                    contributors: []
                 },
                 stats: {
                     logsToday: 0,
@@ -58,8 +58,27 @@ export function loadFireData(): FireData {
             data.weatherProtection = {
                 active: false,
                 endsAt: null,
-                activatedBy: null
+                contributors: []
             };
+            saveFireData(data);
+        }
+
+        // Migration: convertir l'ancien format activatedBy en contributors
+        if (data.weatherProtection && (data.weatherProtection as any).activatedBy !== undefined) {
+            const oldActivatedBy = (data.weatherProtection as any).activatedBy;
+            data.weatherProtection.contributors = oldActivatedBy ? [{
+                userId: oldActivatedBy.userId,
+                username: oldActivatedBy.username,
+                duration: 0 // Durée inconnue pour les anciennes protections
+            }] : [];
+            delete (data.weatherProtection as any).activatedBy;
+            saveFireData(data);
+            logger.info("Migrated weatherProtection from activatedBy to contributors format");
+        }
+
+        // Migration: s'assurer que contributors existe
+        if (data.weatherProtection && !data.weatherProtection.contributors) {
+            data.weatherProtection.contributors = [];
             saveFireData(data);
         }
 
@@ -98,7 +117,7 @@ export function loadFireData(): FireData {
             weatherProtection: {
                 active: false,
                 endsAt: null,
-                activatedBy: null
+                contributors: []
             },
             stats: {
                 logsToday: 0,
@@ -230,6 +249,7 @@ export function activateWeatherProtection(
     const now = Date.now();
 
     let newEndsAt: number;
+    let contributors = fireData.weatherProtection.contributors || [];
 
     // Si une protection est déjà active, ajouter le temps
     if (fireData.weatherProtection.active && fireData.weatherProtection.endsAt && fireData.weatherProtection.endsAt > now) {
@@ -238,18 +258,23 @@ export function activateWeatherProtection(
         const totalMinutes = Math.ceil((newEndsAt - now) / 60000);
         logger.info(`Weather protection extended by ${username} for ${duration / 60000} minutes (total: ${totalMinutes} minutes)`);
     } else {
-        // Nouvelle protection
+        // Nouvelle protection, réinitialiser les contributeurs
         newEndsAt = now + duration;
+        contributors = [];
         logger.info(`Weather protection activated by ${username} for ${duration / 60000} minutes`);
     }
+
+    // Ajouter le contributeur à la liste
+    contributors.push({
+        userId,
+        username,
+        duration
+    });
 
     fireData.weatherProtection = {
         active: true,
         endsAt: newEndsAt,
-        activatedBy: {
-            userId,
-            username
-        }
+        contributors
     };
 
     saveFireData(fireData);
@@ -273,7 +298,7 @@ export function isWeatherProtectionActive(): boolean {
         fireData.weatherProtection = {
             active: false,
             endsAt: null,
-            activatedBy: null
+            contributors: []
         };
         saveFireData(fireData);
         logger.info("Weather protection expired");
@@ -289,7 +314,7 @@ export function isWeatherProtectionActive(): boolean {
 export function getWeatherProtectionInfo(): {
     active: boolean;
     endsAt: number | null;
-    activatedBy: { userId: string; username: string } | null;
+    contributors: Array<{ userId: string; username: string; duration: number }>;
     remainingTime: number;
 } {
     const fireData = loadFireData();
@@ -299,7 +324,7 @@ export function getWeatherProtectionInfo(): {
         return {
             active: false,
             endsAt: null,
-            activatedBy: null,
+            contributors: [],
             remainingTime: 0
         };
     }
@@ -311,14 +336,14 @@ export function getWeatherProtectionInfo(): {
         fireData.weatherProtection = {
             active: false,
             endsAt: null,
-            activatedBy: null
+            contributors: []
         };
         saveFireData(fireData);
 
         return {
             active: false,
             endsAt: null,
-            activatedBy: null,
+            contributors: [],
             remainingTime: 0
         };
     }
@@ -326,7 +351,7 @@ export function getWeatherProtectionInfo(): {
     return {
         active: true,
         endsAt: fireData.weatherProtection.endsAt,
-        activatedBy: fireData.weatherProtection.activatedBy,
+        contributors: fireData.weatherProtection.contributors || [],
         remainingTime
     };
 }

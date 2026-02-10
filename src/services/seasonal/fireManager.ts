@@ -551,11 +551,20 @@ async function getWeatherImpact(): Promise<{ text: string; icon: string }> {
     const protectionInfo = getWeatherProtectionInfo();
     if (protectionInfo.active && protectionInfo.remainingTime > 0) {
         const minutes = Math.ceil(protectionInfo.remainingTime / 60000);
-        let text = `**Protection Active** (${minutes} min)\n**Combustion ×0.5** - Bûches durent 2× plus longtemps`;
+        let text = `**Protection Active** (${minutes} min)\nLes bûches durent 2× plus longtemps`;
 
-        // Ajouter qui a activé la protection si l'info est disponible
-        if (protectionInfo.activatedBy) {
-            text += `\n👤 Par : <@${protectionInfo.activatedBy.userId}>`;
+        // Ajouter les contributeurs si disponibles
+        if (protectionInfo.contributors && protectionInfo.contributors.length > 0) {
+            if (protectionInfo.contributors.length === 1) {
+                // Un seul contributeur
+                text += `\n👤 Par : <@${protectionInfo.contributors[0].userId}>`;
+            } else {
+                // Plusieurs contributeurs
+                const mentions = protectionInfo.contributors
+                    .map(c => `<@${c.userId}>`)
+                    .join(', ');
+                text += `\n👥 Par : ${mentions}`;
+            }
         }
 
         return {
