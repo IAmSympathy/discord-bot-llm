@@ -783,16 +783,21 @@ client.on(Events.InteractionCreate, async (interaction) => {
             const {checkDiscordAchievements} = require("./services/discordAchievementChecker");
             await checkDiscordAchievements(interaction.user.id, interaction.user.username, interaction.client, interaction.channelId);
 
-            // Ajouter XP avec notification pour l'utilisation de commande
-            const {addXP, XP_REWARDS} = require("./services/xpSystem");
-            if (interaction.channel) {
-                await addXP(
-                    interaction.user.id,
-                    interaction.user.username,
-                    XP_REWARDS.commandeUtilisee,
-                    interaction.channel,
-                    false // Les utilisateurs de commandes ne sont jamais des bots
-                );
+            // Commandes de consultation qui ne donnent pas d'XP (pour éviter le spam)
+            const noXpCommands = ['challenges', 'stats', 'profile', 'leaderboard', 'daily', 'lowpower', 'blacklist', 'reset', 'reset-counter', 'reset-dm', 'remove-birthday', 'remove-note', 'set-birthday', 'add-note', 'set-status', 'stop-event', 'test-event', 'auto-lowpower'];
+
+            // Ajouter XP avec notification pour l'utilisation de commande (sauf commandes de consultation)
+            if (!noXpCommands.includes(interaction.commandName)) {
+                const {addXP, XP_REWARDS} = require("./services/xpSystem");
+                if (interaction.channel) {
+                    await addXP(
+                        interaction.user.id,
+                        interaction.user.username,
+                        XP_REWARDS.commandeUtilisee,
+                        interaction.channel,
+                        false // Les utilisateurs de commandes ne sont jamais des bots
+                    );
+                }
             }
 
             await command.execute(interaction);

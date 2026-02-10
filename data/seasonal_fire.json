@@ -6,8 +6,13 @@
   "voiceChannelId": "1470616208037646368",
   "stats": {
     "logsToday": 0,
-    "lastLog": {
-    },
+    "lastLog": {},
     "totalLogs": 0
+  },
+  "logs": [],
+  "weatherProtection": {
+    "active": false,
+    "endsAt": null,
+    "activatedBy": null
   }
 }

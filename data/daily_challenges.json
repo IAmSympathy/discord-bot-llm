@@ -1,32 +1,32 @@
 {
-  "currentDate": "2026-02-09",
+  "currentDate": "2026-02-10",
   "challenges": [
     {
-      "id": "react_25",
-      "type": "reactions",
-      "name": "Super Réactif",
-      "description": "Ajouter 25 réactions",
-      "emoji": "⭐",
-      "goal": 25,
-      "xpReward": 100
+      "id": "counter_5",
+      "type": "counter",
+      "name": "Maître du Compteur",
+      "description": "Contribuer 5 fois au compteur",
+      "emoji": "💯",
+      "goal": 5,
+      "xpReward": 75
     },
     {
-      "id": "msg_20",
+      "id": "counter_3",
+      "type": "counter",
+      "name": "Compteur Pro",
+      "description": "Contribuer 3 fois au compteur",
+      "emoji": "🔢",
+      "goal": 3,
+      "xpReward": 50
+    },
+    {
+      "id": "msg_8",
       "type": "messages",
       "name": "Grand Parleur",
-      "description": "Envoyer 20 messages",
+      "description": "Envoyer 8 messages",
       "emoji": "📢",
-      "goal": 20,
-      "xpReward": 150
-    },
-    {
-      "id": "games_win_2",
-      "type": "games",
-      "name": "Victorieux",
-      "description": "Gagner 2 parties de jeux (`/games`)",
-      "emoji": "🏆",
-      "goal": 2,
-      "xpReward": 150
+      "goal": 8,
+      "xpReward": 80
     }
   ],
   "users": {
