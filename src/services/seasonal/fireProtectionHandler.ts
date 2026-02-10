@@ -32,7 +32,7 @@ export async function handleUseProtectionButton(interaction: ButtonInteraction):
                     `Tu n'as aucun objet de protection dans ton inventaire !\n\n` +
                     `🎁 **Comment en obtenir ?**\n` +
                     `• Tape des commandes\n` +
-                    `• Utilise les fonctionnalités de Netricsa` +
+                    `• Utilise les fonctionnalités de Netricsa\n` +
                     `• Gagne des parties de jeux\n` +
                     `• Débloque des achievements\n`
                 )
