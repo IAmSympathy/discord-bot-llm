@@ -20,6 +20,12 @@ let currentGameName: string | null = null;
 export async function checkOwnerActivity(client: Client): Promise<void> {
     if (!OWNER_ID) return;
 
+    // Ne pas changer le statut si le bot est en Standby Mode (priorité absolue)
+    const {isStandbyMode} = require('./standbyModeService');
+    if (isStandbyMode()) {
+        return;
+    }
+
     try {
         const guild = client.guilds.cache.first();
         if (!guild) return;
@@ -112,6 +118,14 @@ export function initializeActivityMonitor(client: Client): void {
     (async () => {
         try {
             logger.info("🔍 Initial activity check (determining startup status)...");
+
+            // Vérifier si le bot est en Standby Mode (prioritaire)
+            const {isStandbyMode} = require('./standbyModeService');
+            if (isStandbyMode()) {
+                logger.info("🌙 Bot is in Standby Mode, skipping activity monitor status change");
+                return;
+            }
+
             await checkOwnerActivity(client);
 
             // Si aucun jeu n'est détecté, s'assurer que le bot est en mode normal
@@ -121,8 +135,12 @@ export function initializeActivityMonitor(client: Client): void {
             }
         } catch (error) {
             logger.error("Error in initial activity check:", error);
-            // En cas d'erreur, mettre en mode normal par défaut
-            await setNormalStatus(client);
+
+            // Vérifier le Standby Mode avant d'appliquer le statut normal par défaut
+            const {isStandbyMode} = require('./standbyModeService');
+            if (!isStandbyMode()) {
+                await setNormalStatus(client);
+            }
         }
     })();
 

@@ -311,24 +311,6 @@ export function registerVoiceTracker(client: Client): void {
             logger.error("Error handling voice state update:", error);
         }
     });
-
-    // Sauvegarder les sessions en cours quand le bot s'arrête
-    process.on('SIGINT', () => {
-        logger.info("Saving ongoing voice sessions before shutdown...");
-        voiceSessions.forEach((session, userId) => {
-            // Arrêter l'interval
-            if (session.xpInterval) {
-                clearInterval(session.xpInterval);
-            }
-
-            const duration = Date.now() - session.startTime;
-            const minutes = Math.floor(duration / 60000);
-            if (minutes >= 1) {
-                recordVoiceTimeStats(userId, "User", minutes);
-            }
-        });
-        voiceSessions.clear();
-    });
 }
 
 /**
