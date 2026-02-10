@@ -272,6 +272,10 @@ module.exports = {
             const {tryRewardAndNotify} = require("../../services/rewardNotifier");
             await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
 
+            // Tracker les achievements de ship
+            const {trackShipAchievements} = require("../../services/achievementService");
+            await trackShipAchievements(interaction.user.id, interaction.user.username, compatibility, interaction.client, interaction.channelId);
+
         } catch (error) {
             console.error("Error executing ship command:", error);
             await interaction.reply({

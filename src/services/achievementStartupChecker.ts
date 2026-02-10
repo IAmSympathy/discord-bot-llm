@@ -338,9 +338,9 @@ async function checkAndUnlockNetricsaAchievements(
 
         // === MEMES ===
         const memeChecks = [
-            {id: "netricsa_meme_10", threshold: 10, name: "Chercheur de Memes"},
-            {id: "netricsa_meme_50", threshold: 50, name: "Collectionneur de Memes"},
-            {id: "netricsa_meme_200", threshold: 200, name: "Roi des Memes"}
+            {id: "fun_meme_10", threshold: 10, name: "Chercheur de Memes"},
+            {id: "fun_meme_50", threshold: 50, name: "Collectionneur de Memes"},
+            {id: "fun_meme_200", threshold: 200, name: "Roi des Memes"}
         ];
 
         for (const check of memeChecks) {

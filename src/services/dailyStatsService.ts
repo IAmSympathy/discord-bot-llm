@@ -19,9 +19,11 @@ export interface DailyUserStats {
     hangmanPlayed: number;
     hangmanWon: number;
     imagesGenerees: number;
+    imagesReimaginee: number;
     counterContributions: number;
     conversationsIA: number;
     commandesUtilisees: number;
+    funCommandesUtilisees: number;
 }
 
 /**
@@ -36,7 +38,7 @@ interface DailyStatsData {
 /**
  * Charge les stats quotidiennes
  */
-function loadDailyStats(): DailyStatsData {
+export function loadDailyStats(): DailyStatsData {
     try {
         if (fs.existsSync(DAILY_STATS_FILE)) {
             const data = fs.readFileSync(DAILY_STATS_FILE, "utf-8");
@@ -85,10 +87,20 @@ function initDailyUserStats(username: string): DailyUserStats {
         hangmanPlayed: 0,
         hangmanWon: 0,
         imagesGenerees: 0,
+        imagesReimaginee: 0,
         counterContributions: 0,
         conversationsIA: 0,
-        commandesUtilisees: 0
+        commandesUtilisees: 0,
+        funCommandesUtilisees: 0
     };
+}
+
+/**
+ * Récupère les stats quotidiennes d'un jour spécifique
+ */
+export function getDailyStatsForDate(date: string): { [userId: string]: DailyUserStats } {
+    const data = loadDailyStats();
+    return data[date] || {};
 }
 
 /**

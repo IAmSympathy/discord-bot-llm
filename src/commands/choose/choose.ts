@@ -88,6 +88,10 @@ module.exports = {
             const {tryRewardAndNotify} = require("../../services/rewardNotifier");
             await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
 
+            // Tracker les achievements de choose
+            const {trackChooseAchievements} = require("../../services/achievementService");
+            await trackChooseAchievements(interaction.user.id, interaction.user.username, interaction.client, interaction.channelId);
+
         } catch (error) {
             console.error("Error in choose command:", error);
             await interaction.reply({

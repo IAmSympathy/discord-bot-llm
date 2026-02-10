@@ -215,6 +215,9 @@ module.exports = {
             const {tryRewardAndNotify} = require("../../services/rewardNotifier");
             await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
 
+            // Tracker les achievements de slots
+            const {trackSlotsAchievements} = require("../../services/achievementService");
+            await trackSlotsAchievements(userId, username, finalSymbols, interaction.client, interaction.channelId);
 
             const resultEmbed = new EmbedBuilder()
                 .setColor(0x30363c)

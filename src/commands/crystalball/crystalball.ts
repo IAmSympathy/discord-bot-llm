@@ -95,6 +95,10 @@ module.exports = {
             const {tryRewardAndNotify} = require("../../services/rewardNotifier");
             await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
 
+            // Tracker les achievements de crystalball
+            const {trackCrystalballAchievements} = require("../../services/achievementService");
+            await trackCrystalballAchievements(interaction.user.id, interaction.user.username, interaction.client, interaction.channelId);
+
         } catch (error) {
             console.error("Error in crystalball command:", error);
             await interaction.reply({

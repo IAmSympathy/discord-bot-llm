@@ -56,10 +56,10 @@ export const FIRE_CONFIG = {
     DECAY_INTERVAL: 30 * 60 * 1000, // 30 minutes
 
     // Bûches
-    LOG_BONUS: 8, // +10% par bûche
-    LOG_BURN_TIME: 3 * 60 * 60 * 1000, // Durée de vie d'une bûche : 3 heures
-    MAX_LOGS: 5, // Maximum de bûches dans le feu
-    USER_COOLDOWN: 6 * 60 * 60 * 1000, // 4 heures
+    LOG_BONUS: 10, // +10% par bûche
+    LOG_BURN_TIME: 4 * 60 * 60 * 1000, // Durée de vie d'une bûche : 4 heures
+    MAX_LOGS: 10, // Maximum de bûches dans le feu
+    USER_COOLDOWN: 4 * 60 * 60 * 1000, // 4 heures (harmonisé avec /harvest)
 
     // Limites
     MIN_INTENSITY: 0,
@@ -69,7 +69,7 @@ export const FIRE_CONFIG = {
     UPDATE_INTERVAL: 5 * 60 * 1000, // 5 minutes
 
     // Protection météo
-    PROTECTION_BURN_MULTIPLIER: 0.5, // Avec protection, les bûches brûlent 2x plus lentement (durent 6h au lieu de 3h)
+    PROTECTION_BURN_MULTIPLIER: 0.5, // Avec protection, les bûches brûlent 2x plus lentement (durent 8h au lieu de 4h)
 
     // Multiplicateurs XP
     MULTIPLIERS: {

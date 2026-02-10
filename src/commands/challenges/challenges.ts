@@ -27,14 +27,14 @@ const VOICE_XP_TIERS = [
  */
 enum ChallengeType {
     MESSAGES = "messages",
-    REACTIONS = "reactions",
     VOCAL = "vocal",
     GAMES = "games",
     HANGMAN = "hangman",
     IMAGES = "images",
+    REIMAGINE = "reimagine",
     COUNTER = "counter",
     AI_CHAT = "ai_chat",
-    COMMANDS = "commands"
+    FUN_COMMANDS = "fun_commands"
 }
 
 /**
@@ -70,6 +70,7 @@ interface DailyChallengesData {
         [userId: string]: {
             lastCheck: number;
             progress: UserChallengeProgress[];
+            completionBonusClaimed?: boolean; // Si le bonus de complétion a été réclamé aujourd'hui
         };
     };
 }
@@ -78,184 +79,193 @@ interface DailyChallengesData {
  * Liste de tous les défis possibles
  */
 const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
-    // Défis Messages - Réduits pour éviter le spam
+    // Défis Messages (réduit de 25%)
     {
         id: "msg_3",
         type: ChallengeType.MESSAGES,
-        name: "Bavard",
+        name: "Première Discussion",
         description: "Envoyer 3 messages",
         emoji: "💬",
         goal: 3,
-        xpReward: 40
+        xpReward: 30              // 40 → 30 (-25%)
     },
     {
         id: "msg_5",
         type: ChallengeType.MESSAGES,
-        name: "Causeur",
+        name: "Bavardage",
         description: "Envoyer 5 messages",
         emoji: "💬",
         goal: 5,
-        xpReward: 60
+        xpReward: 45              // 60 → 45 (-25%)
     },
     {
         id: "msg_8",
         type: ChallengeType.MESSAGES,
-        name: "Grand Parleur",
+        name: "Grand Bavard",
         description: "Envoyer 8 messages",
         emoji: "📢",
         goal: 8,
-        xpReward: 80
+        xpReward: 60              // 80 → 60 (-25%)
     },
-    // Défis Réactions - Réduits drastiquement
-    {
-        id: "react_3",
-        type: ChallengeType.REACTIONS,
-        name: "Réactif",
-        description: "Ajouter 3 réactions",
-        emoji: "👍",
-        goal: 3,
-        xpReward: 30
-    },
-    {
-        id: "react_5",
-        type: ChallengeType.REACTIONS,
-        name: "Super Réactif",
-        description: "Ajouter 5 réactions",
-        emoji: "⭐",
-        goal: 5,
-        xpReward: 50
-    },
-    // Défis Vocal
+    // Défis Vocal (réduit de 25%)
     {
         id: "vocal_15",
         type: ChallengeType.VOCAL,
-        name: "Causette Vocale",
+        name: "Causette Rapide",
         description: "Passer 15 minutes en vocal",
         emoji: "🎤",
         goal: 15,
-        xpReward: 75
+        xpReward: 56              // 75 → 56 (-25%)
     },
     {
         id: "vocal_30",
         type: ChallengeType.VOCAL,
-        name: "Bavardage Vocal",
+        name: "Discussion Vocale",
         description: "Passer 30 minutes en vocal",
         emoji: "🎧",
         goal: 30,
-        xpReward: 150
+        xpReward: 113             // 150 → 113 (-25%)
     },
     {
         id: "vocal_60",
         type: ChallengeType.VOCAL,
-        name: "Marathon Vocal",
+        name: "Session Complète",
         description: "Passer 1 heure en vocal",
         emoji: "🎙️",
         goal: 60,
-        xpReward: 250
+        xpReward: 188             // 250 → 188 (-25%)
     },
-    // Défis Jeux
+    // Défis Jeux (réduit de 25%)
     {
         id: "games_3",
         type: ChallengeType.GAMES,
-        name: "Joueur",
+        name: "Partie de Jeux",
         description: "Jouer 3 parties de jeux (`/games`)",
         emoji: "🎮",
         goal: 3,
-        xpReward: 75
+        xpReward: 56              // 75 → 56 (-25%)
     },
     {
         id: "games_5",
         type: ChallengeType.GAMES,
-        name: "Gamer",
+        name: "Session de Jeux",
         description: "Jouer 5 parties de jeux (`/games`)",
         emoji: "🎯",
         goal: 5,
-        xpReward: 125
+        xpReward: 94              // 125 → 94 (-25%)
     },
     {
         id: "games_win_2",
         type: ChallengeType.GAMES,
-        name: "Victorieux",
+        name: "Double Victoire",
         description: "Gagner 2 parties de jeux (`/games`)",
         emoji: "🏆",
         goal: 2,
-        xpReward: 150
+        xpReward: 113             // 150 → 113 (-25%)
     },
-    // Défis Images
+    // Défis Images (réduit de 25%)
     {
         id: "images_1",
         type: ChallengeType.IMAGES,
-        name: "Artiste du Jour",
+        name: "Première Création",
         description: "Générer 1 image avec Netricsa (`/imagine`)",
         emoji: "🎨",
         goal: 1,
-        xpReward: 75
+        xpReward: 56              // 75 → 56 (-25%)
     },
     {
         id: "images_3",
         type: ChallengeType.IMAGES,
-        name: "Créateur Actif",
+        name: "Artiste du Jour",
         description: "Générer 3 images avec Netricsa (`/imagine`)",
         emoji: "🖼️",
         goal: 3,
-        xpReward: 150
+        xpReward: 113             // 150 → 113 (-25%)
     },
-    // Défis Compteur - Réduits pour éviter le spam
+    // Défis Réimagination (réduit de 25%)
+    {
+        id: "reimagine_1",
+        type: ChallengeType.REIMAGINE,
+        name: "Transformation",
+        description: "Réimaginer 1 image (`/reimagine`)",
+        emoji: "🔄",
+        goal: 1,
+        xpReward: 56              // 75 → 56 (-25%)
+    },
+    {
+        id: "reimagine_2",
+        type: ChallengeType.REIMAGINE,
+        name: "Double Transformation",
+        description: "Réimaginer 2 images (`/reimagine`)",
+        emoji: "✨",
+        goal: 2,
+        xpReward: 94              // 125 → 94 (-25%)
+    },
+    // Défis Compteur (réduit de 25%)
     {
         id: "counter_3",
         type: ChallengeType.COUNTER,
-        name: "Compteur Pro",
+        name: "Participation au Compteur",
         description: "Contribuer 3 fois au compteur",
         emoji: "🔢",
         goal: 3,
-        xpReward: 50
+        xpReward: 38              // 50 → 38 (-25%)
     },
     {
         id: "counter_5",
         type: ChallengeType.COUNTER,
-        name: "Maître du Compteur",
+        name: "Compteur Actif",
         description: "Contribuer 5 fois au compteur",
         emoji: "💯",
         goal: 5,
-        xpReward: 75
+        xpReward: 56              // 75 → 56 (-25%)
     },
-    // Défis IA
+    // Défis IA (réduit de 25%)
     {
         id: "ai_2",
         type: ChallengeType.AI_CHAT,
-        name: "Causeur avec Netricsa",
+        name: "Discussion avec Netricsa",
         description: "Avoir 2 conversations avec Netricsa",
         emoji: "🤖",
         goal: 2,
-        xpReward: 60
+        xpReward: 45              // 60 → 45 (-25%)
     },
     {
-        id: "ai_3",
+        id: "ai_5",
         type: ChallengeType.AI_CHAT,
-        name: "Ami de Netricsa",
-        description: "Avoir 3 conversations avec Netricsa",
+        name: "Longue Discussion IA",
+        description: "Avoir 5 conversations avec Netricsa",
         emoji: "💭",
-        goal: 3,
-        xpReward: 90
-    },
-    // Défis Commandes - Ajustés
-    {
-        id: "cmd_3",
-        type: ChallengeType.COMMANDS,
-        name: "Commandant",
-        description: "Utiliser 3 commandes",
-        emoji: "⚡",
-        goal: 3,
-        xpReward: 40
-    },
-    {
-        id: "cmd_5",
-        type: ChallengeType.COMMANDS,
-        name: "Maître des Commandes",
-        description: "Utiliser 5 commandes",
-        emoji: "⚡",
         goal: 5,
-        xpReward: 60
+        xpReward: 90              // 120 → 90 (-25%)
+    },
+    // Défis Commandes Fun (réduit de 25%)
+    {
+        id: "fun_cmd_2",
+        type: ChallengeType.FUN_COMMANDS,
+        name: "Amusement",
+        description: "Utiliser 2 commandes fun",
+        emoji: "🎪",
+        goal: 2,
+        xpReward: 38              // 50 → 38 (-25%)
+    },
+    {
+        id: "fun_cmd_3",
+        type: ChallengeType.FUN_COMMANDS,
+        name: "Session Fun",
+        description: "Utiliser 3 commandes fun différentes",
+        emoji: "🎉",
+        goal: 3,
+        xpReward: 60              // 80 → 60 (-25%)
+    },
+    {
+        id: "fun_cmd_5",
+        type: ChallengeType.FUN_COMMANDS,
+        name: "Explorateur Fun",
+        description: "Utiliser 5 commandes fun différentes",
+        emoji: "🎊",
+        goal: 5,
+        xpReward: 90              // 120 → 90 (-25%)
     }
 ];
 
@@ -269,7 +279,7 @@ const FIXED_HANGMAN_CHALLENGE: ChallengeDefinition = {
     description: "Jouer 1 partie de bonhomme pendu",
     emoji: "🎭",
     goal: 1,
-    xpReward: 50
+    xpReward: 38              // 50 → 38 (-25%)
 };
 
 /**
@@ -343,6 +353,14 @@ function createChallengesEmbed(challenges: ChallengeDefinition[]): EmbedBuilder 
         inline: false
     });
 
+    // Ajouter la section du bonus de complétion
+    embed.addFields({
+        name: "━━━━━━━━━━━━━━━━━━━━━━\n💎 Bonus de Complétion",
+        value:
+            `Complète les **4 défis** pour obtenir un bonus de 💫 **+50 XP** !\n`,
+        inline: false
+    });
+
     // Calculer le temps jusqu'à minuit pour le reset vocal
     const now = new Date();
     const midnight = new Date();
@@ -412,9 +430,6 @@ function calculateProgress(userId: string, challenge: ChallengeDefinition): numb
         case ChallengeType.MESSAGES:
             currentProgress = dailyStats.messagesEnvoyes;
             break;
-        case ChallengeType.REACTIONS:
-            currentProgress = dailyStats.reactionsAjoutees;
-            break;
         case ChallengeType.VOCAL:
             currentProgress = dailyStats.tempsVocalMinutes;
             break;
@@ -435,14 +450,17 @@ function calculateProgress(userId: string, challenge: ChallengeDefinition): numb
         case ChallengeType.IMAGES:
             currentProgress = dailyStats.imagesGenerees;
             break;
+        case ChallengeType.REIMAGINE:
+            currentProgress = dailyStats.imagesReimaginee || 0;
+            break;
         case ChallengeType.COUNTER:
             currentProgress = dailyStats.counterContributions;
             break;
         case ChallengeType.AI_CHAT:
             currentProgress = dailyStats.conversationsIA;
             break;
-        case ChallengeType.COMMANDS:
-            currentProgress = dailyStats.commandesUtilisees;
+        case ChallengeType.FUN_COMMANDS:
+            currentProgress = dailyStats.funCommandesUtilisees || 0;
             break;
     }
 
@@ -603,6 +621,24 @@ module.exports = {
             userProgress.lastCheck = Date.now();
             saveChallengesData(challengesData);
 
+            // Vérifier si tous les défis sont complétés pour le bonus de complétion
+            const allCompleted = userProgress.progress.every(p => p.completed);
+            const COMPLETION_BONUS = 50; // Bonus XP pour avoir complété tous les challenges
+            let completionBonusGiven = false;
+
+            // Si tous complétés ET qu'on vient de compléter le dernier, donner le bonus
+            if (allCompleted && newCompletions > 0) {
+                // Vérifier qu'on n'a pas déjà donné le bonus aujourd'hui
+                // (on utilise un flag dans les données utilisateur)
+                if (!challengesData.users[userId].completionBonusClaimed) {
+                    totalXPEarned += COMPLETION_BONUS;
+                    completionBonusGiven = true;
+                    challengesData.users[userId].completionBonusClaimed = true;
+                    saveChallengesData(challengesData);
+                    logger.info(`User ${interaction.user.username} earned completion bonus: ${COMPLETION_BONUS} XP`);
+                }
+            }
+
             // Donner l'XP si des défis ont été complétés
             if (totalXPEarned > 0 && interaction.channel &&
                 (interaction.channel instanceof TextChannel || interaction.channel instanceof VoiceChannel)) {
@@ -626,14 +662,17 @@ module.exports = {
 
             // Ajouter un message si des défis viennent d'être complétés
             if (newCompletions > 0) {
-                description = `🎉 **Félicitations !** Tu as complété **${newCompletions}** défi${newCompletions > 1 ? 's' : ''} et gagné **${totalXPEarned} XP** !\n\n`;
+                let bonusText = "";
+                if (completionBonusGiven) {
+                    bonusText = ` **(incluant +${COMPLETION_BONUS} XP de bonus de complétion !)**`;
+                }
+                description = `🎉 **Félicitations !** Tu as complété **${newCompletions}** défi${newCompletions > 1 ? 's' : ''} et gagné **${totalXPEarned} XP**${bonusText} !\n\n`;
                 embed.setColor(0x57F287); // Vert si complétion
             }
 
             // Vérifier si tous les défis sont complétés
-            const allCompleted = userProgress.progress.every(p => p.completed);
             if (allCompleted) {
-                description = `🏆 **INCROYABLE !** Tu as complété tous les défis du jour !\n\nReviens demain pour de nouveaux défis ! 🎯\n\n`;
+                description = `🏆 **INCROYABLE !** Tu as complété tous les défis du jour !\n\n💎 **Bonus de complétion obtenu !**\n\nReviens demain pour de nouveaux défis ! 🎯\n\n`;
                 embed.setColor(0xF6AD55); // Or si tous complétés
             }
 
@@ -698,9 +737,11 @@ module.exports = {
             });
 
             const hangmanProgressEntry = userProgress.progress.find(p => p.challengeId === FIXED_HANGMAN_CHALLENGE.id);
+            let hangmanCompleted = false;
+
             if (hangmanProgressEntry) {
                 const hangmanProgress = calculateProgress(userId, FIXED_HANGMAN_CHALLENGE);
-                const hangmanCompleted = hangmanProgressEntry.completed;
+                hangmanCompleted = hangmanProgressEntry.completed;
 
                 const progressPercent = Math.min((hangmanProgress / FIXED_HANGMAN_CHALLENGE.goal) * 100, 100);
                 const filledBars = Math.floor(progressPercent / 10);
@@ -718,6 +759,18 @@ module.exports = {
                     inline: false
                 });
             }
+
+            // Calculer le nombre total de défis complétés
+            const totalCompleted = randomChallengesCompleted + (hangmanCompleted ? 1 : 0);
+
+            // === SECTION 3.5 : BONUS DE COMPLÉTION ===
+            const bonusClaimedIcon = challengesData.users[userId].completionBonusClaimed ? "✅" : allCompleted ? "⬜" : "⬜";
+            embed.addFields({
+                name: "━━━━━━━━━━━━━━━━━━━━━━",
+                value: `${bonusClaimedIcon} **💎 Bonus de Complétion**\n` +
+                    `Complète les 4 défis pour 💫 **+50 XP** bonus !\n`,
+                inline: false
+            });
 
             // === SECTION 4 : STATUT VOCAL (EN BAS) ===
             const dailyVoiceMinutes = getDailyVoiceTime(userId);
@@ -784,7 +837,6 @@ module.exports = {
 
             // Footer avec statistiques
             const totalChallenges = challengesData.challenges.length + 1; // +1 pour le pendu
-            const totalCompleted = randomChallengesCompleted + (hangmanProgressEntry?.completed ? 1 : 0);
             embed.setFooter({
                 text: `Progression : ${totalCompleted}/${totalChallenges} défis complétés • Utilise /challenges pour actualiser`
             });

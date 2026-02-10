@@ -313,8 +313,8 @@ async function createLeaderboardEmbed(
             if (mode === "daily") {
                 // Messages quotidiens - utiliser daily_stats.json
                 const today = getCurrentDate();
-                const allStats = require("../../services/dailyStatsService").loadDailyStats?.() || {};
-                const dailyData = allStats[today] || {};
+                const {getDailyStatsForDate} = require("../../services/dailyStatsService");
+                const dailyData = getDailyStatsForDate(today);
                 sortedStats = Object.entries(dailyData)
                     .map(([userId, data]: [string, any]) => ({
                         userId,
@@ -448,8 +448,8 @@ async function createLeaderboardEmbed(
             if (mode === "daily") {
                 // Images quotidiennes - utiliser daily_stats.json
                 const today = getCurrentDate();
-                const allStats = require("../../services/dailyStatsService").loadDailyStats?.() || {};
-                const dailyData = allStats[today] || {};
+                const {getDailyStatsForDate} = require("../../services/dailyStatsService");
+                const dailyData = getDailyStatsForDate(today);
                 sortedStats = Object.entries(dailyData)
                     .map(([userId, data]: [string, any]) => ({
                         userId,
@@ -515,8 +515,8 @@ async function createLeaderboardEmbed(
             if (mode === "daily") {
                 // Jeux quotidiens - utiliser daily_stats.json
                 const today = getCurrentDate();
-                const allStats = require("../../services/dailyStatsService").loadDailyStats?.() || {};
-                const dailyData = allStats[today] || {};
+                const {getDailyStatsForDate} = require("../../services/dailyStatsService");
+                const dailyData = getDailyStatsForDate(today);
                 sortedStats = Object.entries(dailyData)
                     .map(([userId, data]: [string, any]) => ({
                         userId,

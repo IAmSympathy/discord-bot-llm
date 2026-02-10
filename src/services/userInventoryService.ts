@@ -87,26 +87,26 @@ export const ITEM_CATALOG: Record<InventoryItemType, ItemInfo> = {
     // === ITEMS D'HIVER ===
     [InventoryItemType.WINTER_SMALL]: {
         name: "Chauffe-Mains Magique",
-        description: "Des petites poches chauffantes qui gardent le feu au chaud pendant 30 minutes",
+        description: "Des petites poches chauffantes qui ralentissent la combustion des bûches pendant 1 heure",
         emoji: "🧤",
         season: Season.WINTER,
-        duration: 30 * 60 * 1000,
+        duration: 60 * 60 * 1000,
         rarity: "common"
     },
     [InventoryItemType.WINTER_MEDIUM]: {
         name: "Couverture Thermique",
-        description: "Une grande couverture en laine enchantée qui isole le feu du froid pendant 1 heure",
+        description: "Une grande couverture en laine enchantée qui ralentit la combustion pendant 1h30",
         emoji: "🧣",
         season: Season.WINTER,
-        duration: 60 * 60 * 1000,
+        duration: 90 * 60 * 1000,
         rarity: "uncommon"
     },
     [InventoryItemType.WINTER_LARGE]: {
         name: "Pierre Chauffante Runique",
-        description: "Une pierre ancienne gravée de runes qui rayonne une chaleur intense pendant 2 heures",
+        description: "Une pierre ancienne gravée de runes qui ralentit fortement la combustion pendant 3 heures",
         emoji: "🔥",
         season: Season.WINTER,
-        duration: 2 * 60 * 60 * 1000,
+        duration: 3 * 60 * 60 * 1000,
         rarity: "rare"
     },
 
@@ -116,7 +116,7 @@ export const ITEM_CATALOG: Record<InventoryItemType, ItemInfo> = {
         description: "À définir pour la saison du printemps",
         emoji: "🌸",
         season: Season.SPRING,
-        duration: 30 * 60 * 1000,
+        duration: 60 * 60 * 1000,
         rarity: "common"
     },
     [InventoryItemType.SPRING_MEDIUM]: {
@@ -124,7 +124,7 @@ export const ITEM_CATALOG: Record<InventoryItemType, ItemInfo> = {
         description: "À définir pour la saison du printemps",
         emoji: "🌷",
         season: Season.SPRING,
-        duration: 60 * 60 * 1000,
+        duration: 90 * 60 * 1000,
         rarity: "uncommon"
     },
     [InventoryItemType.SPRING_LARGE]: {
@@ -132,7 +132,7 @@ export const ITEM_CATALOG: Record<InventoryItemType, ItemInfo> = {
         description: "À définir pour la saison du printemps",
         emoji: "🌺",
         season: Season.SPRING,
-        duration: 2 * 60 * 60 * 1000,
+        duration: 3 * 60 * 60 * 1000,
         rarity: "rare"
     },
 
@@ -142,7 +142,7 @@ export const ITEM_CATALOG: Record<InventoryItemType, ItemInfo> = {
         description: "À définir pour la saison de l'été",
         emoji: "☀️",
         season: Season.SUMMER,
-        duration: 30 * 60 * 1000,
+        duration: 60 * 60 * 1000,
         rarity: "common"
     },
     [InventoryItemType.SUMMER_MEDIUM]: {
@@ -150,7 +150,7 @@ export const ITEM_CATALOG: Record<InventoryItemType, ItemInfo> = {
         description: "À définir pour la saison de l'été",
         emoji: "🌊",
         season: Season.SUMMER,
-        duration: 60 * 60 * 1000,
+        duration: 90 * 60 * 1000,
         rarity: "uncommon"
     },
     [InventoryItemType.SUMMER_LARGE]: {
@@ -158,7 +158,7 @@ export const ITEM_CATALOG: Record<InventoryItemType, ItemInfo> = {
         description: "À définir pour la saison de l'été",
         emoji: "🏖️",
         season: Season.SUMMER,
-        duration: 2 * 60 * 60 * 1000,
+        duration: 3 * 60 * 60 * 1000,
         rarity: "rare"
     },
 
@@ -168,7 +168,7 @@ export const ITEM_CATALOG: Record<InventoryItemType, ItemInfo> = {
         description: "À définir pour la saison de l'automne",
         emoji: "🍂",
         season: Season.FALL,
-        duration: 30 * 60 * 1000,
+        duration: 60 * 60 * 1000,
         rarity: "common"
     },
     [InventoryItemType.FALL_MEDIUM]: {
@@ -176,7 +176,7 @@ export const ITEM_CATALOG: Record<InventoryItemType, ItemInfo> = {
         description: "À définir pour la saison de l'automne",
         emoji: "🍁",
         season: Season.FALL,
-        duration: 60 * 60 * 1000,
+        duration: 90 * 60 * 1000,
         rarity: "uncommon"
     },
     [InventoryItemType.FALL_LARGE]: {
@@ -184,7 +184,7 @@ export const ITEM_CATALOG: Record<InventoryItemType, ItemInfo> = {
         description: "À définir pour la saison de l'automne",
         emoji: "🎃",
         season: Season.FALL,
-        duration: 2 * 60 * 60 * 1000,
+        duration: 3 * 60 * 60 * 1000,
         rarity: "rare"
     },
 

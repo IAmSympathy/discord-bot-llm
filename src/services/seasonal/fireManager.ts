@@ -104,9 +104,8 @@ async function calculateLogContribution(log: any, now: number): Promise<number> 
         return 0;
     }
 
-    // La contribution décroît linéairement de initialContribution à 0
-    const timeRatio = 1 - (effectiveAge / FIRE_CONFIG.LOG_BURN_TIME);
-    return (log.initialContribution || FIRE_CONFIG.LOG_BONUS) * timeRatio;
+    // Contribution fixe jusqu'à ce que la bûche brûle complètement (pas de décroissance)
+    return log.initialContribution || FIRE_CONFIG.LOG_BONUS;
 }
 
 /**
@@ -407,7 +406,7 @@ export async function updateFireEmbed(client: Client): Promise<void> {
             textChannel = await guild.channels.create({
                 name: `${emoji}feu-de-foyer`,
                 type: ChannelType.GuildText,
-                topic: "Maintenez le feu allumé pour conserver le multiplicateur d'XP ! Ajoutez une bûche toutes les 4 heures.",
+                topic: "Maintenez le feu allumé pour conserver le multiplicateur d'XP ! Utilisez /harvest toutes les 4h pour obtenir des bûches.",
                 parent: CATEGORY_ID,
                 permissionOverwrites: [
                     {
@@ -656,7 +655,7 @@ async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
     } else if (currentBurnRate > 1.0) {
         description += `Les bûches brûlent **${currentBurnRate.toFixed(1)}× plus vite**\n`;
     } else {
-        description += `Vitesse normale (3h par bûche)\n`;
+        description += `Vitesse normale (4h par bûche)\n`;
     }
     description += `\n`;
 

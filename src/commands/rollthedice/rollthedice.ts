@@ -130,6 +130,10 @@ module.exports = {
             const {tryRewardAndNotify} = require("../../services/rewardNotifier");
             await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
 
+            // Tracker les achievements de dice
+            const {trackDiceAchievements} = require("../../services/achievementService");
+            await trackDiceAchievements(interaction.user.id, interaction.user.username, diceType, results[0], interaction.client, interaction.channelId);
+
         } catch (error) {
             console.error("Error in rollthedice command:", error);
             await interaction.reply({

@@ -4,6 +4,7 @@ import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {DATA_DIR} from "../../utils/constants";
 import {createLogger} from "../../utils/logger";
 import {recordGamePlayedStats} from "../../services/statsRecorder";
+import {tryRandomSeasonalReward} from "../../services/rewardService";
 
 const STATS_FILE = path.join(DATA_DIR, "game_stats.json");
 const logger = createLogger("GameStats");
@@ -148,11 +149,7 @@ export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tic
     if (userId !== NETRICSA_GAME_ID) {
         try {
             const {rewardSeasonalItem} = require("../../services/rewardService");
-
-            // 15% de chance d'obtenir un objet saisonnier en gagnant un jeu (augmenté pour encourager)
-            if (Math.random() < 0.15) {
-                rewardSeasonalItem(userId, username, "game_win");
-            }
+            tryRandomSeasonalReward(userId, username, "game_win");
         } catch (error) {
             console.error("Error rewarding seasonal item for game win:", error);
         }

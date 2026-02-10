@@ -83,6 +83,10 @@ module.exports = {
             const {tryRewardAndNotify} = require("../../services/rewardNotifier");
             await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
 
+            // Tracker les achievements de cucumber
+            const {trackCucumberAchievements} = require("../../services/achievementService");
+            await trackCucumberAchievements(interaction.user.id, interaction.user.username, size, interaction.client, interaction.channelId);
+
             logger.info(`${interaction.user.username} measured their cucumber: ${size} cm (${inches}")`);
 
         } catch (error) {

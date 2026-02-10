@@ -38,7 +38,7 @@ export async function notifySeasonalReward(
                 sentMessage.delete().catch((err: any) =>
                     logger.error("Error deleting reward notification:", err)
                 );
-            }, 10000);
+            }, 60000);
             logger.info(`Notified ${userId} about receiving ${itemInfo.name} via channel`);
         }
     } catch (error) {

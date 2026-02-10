@@ -113,6 +113,10 @@ module.exports = {
             const {tryRewardAndNotify} = require("../../services/rewardNotifier");
             await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
 
+            // Tracker les achievements de meme
+            const {trackMemeAchievements} = require("../../services/achievementService");
+            await trackMemeAchievements(interaction.user.id, interaction.user.username, interaction.client, interaction.channelId);
+
             // Logger la commande
             await logCommand("🎭 Meme posté", undefined, [
                 {name: "👤 Demandé par", value: interaction.user.username, inline: true},

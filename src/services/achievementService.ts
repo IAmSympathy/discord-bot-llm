@@ -14,7 +14,8 @@ export enum AchievementCategory {
     PROFIL = "profil",
     NETRICSA = "netricsa",
     DISCORD = "discord",
-    JEUX = "jeux"
+    JEUX = "jeux",
+    FUN = "fun"
 }
 
 /**
@@ -647,6 +648,15 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
 
     // === ACHIEVEMENTS NETRICSA - GÉNÉRATION D'IMAGES ===
     {
+        id: "netricsa_gen_first",
+        category: AchievementCategory.NETRICSA,
+        name: "Première Création",
+        description: "Imaginer sa première image avec Netricsa",
+        emoji: "🖼️",
+        secret: false,
+        xpReward: 50
+    },
+    {
         id: "netricsa_gen_10",
         category: AchievementCategory.NETRICSA,
         name: "Créateur Amateur",
@@ -684,6 +694,15 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     },
     // === ACHIEVEMENTS NETRICSA - RÉIMAGINATION ===
     {
+        id: "netricsa_reimagine_first",
+        category: AchievementCategory.NETRICSA,
+        name: "Première Transformation",
+        description: "Réimaginer sa première image",
+        emoji: "🔄",
+        secret: false,
+        xpReward: 50
+    },
+    {
         id: "netricsa_reimagine_10",
         category: AchievementCategory.NETRICSA,
         name: "Réimaginateur Amateur",
@@ -711,6 +730,15 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         xpReward: 500
     },
     // === ACHIEVEMENTS NETRICSA - UPSCALING ===
+    {
+        id: "netricsa_upscale_first",
+        category: AchievementCategory.NETRICSA,
+        name: "Première Amélioration",
+        description: "Upscaler sa première image",
+        emoji: "🔍",
+        secret: false,
+        xpReward: 50
+    },
     {
         id: "netricsa_upscale_10",
         category: AchievementCategory.NETRICSA,
@@ -777,6 +805,15 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     },
     // === ACHIEVEMENTS NETRICSA - PROMPTS ===
     {
+        id: "netricsa_prompt_first",
+        category: AchievementCategory.NETRICSA,
+        name: "Premier Prompt",
+        description: "Créer son premier prompt personnalisé",
+        emoji: "✍️",
+        secret: false,
+        xpReward: 50
+    },
+    {
         id: "netricsa_prompt_5",
         category: AchievementCategory.NETRICSA,
         name: "Prompt Amateur",
@@ -803,10 +840,19 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         secret: false,
         xpReward: 500
     },
-    // === ACHIEVEMENTS NETRICSA - MEMES ===
+    // === ACHIEVEMENTS FUN - MEMES ===
     {
-        id: "netricsa_meme_10",
-        category: AchievementCategory.NETRICSA,
+        id: "fun_meme_first",
+        category: AchievementCategory.FUN,
+        name: "Premier Meme",
+        description: "Rechercher son premier meme avec /findmeme",
+        emoji: "😂",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "fun_meme_10",
+        category: AchievementCategory.FUN,
         name: "Chercheur de Memes",
         description: "Rechercher 10 memes avec /findmeme",
         emoji: "🤣",
@@ -814,8 +860,8 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         xpReward: 100
     },
     {
-        id: "netricsa_meme_50",
-        category: AchievementCategory.NETRICSA,
+        id: "fun_meme_50",
+        category: AchievementCategory.FUN,
         name: "Collectionneur de Memes",
         description: "Rechercher 50 memes avec /findmeme",
         emoji: "🎪",
@@ -823,11 +869,299 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         xpReward: 200
     },
     {
-        id: "netricsa_meme_200",
-        category: AchievementCategory.NETRICSA,
+        id: "fun_meme_200",
+        category: AchievementCategory.FUN,
         name: "Roi des Memes",
         description: "Rechercher 200 memes avec /findmeme",
         emoji: "🎭",
+        secret: false,
+        xpReward: 500
+    },
+    // === ACHIEVEMENTS FUN - SLOTS ===
+    {
+        id: "fun_slots_first",
+        category: AchievementCategory.FUN,
+        name: "Premier Jackpot",
+        description: "Jouer aux slots pour la première fois",
+        emoji: "🎰",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "fun_slots_25",
+        category: AchievementCategory.FUN,
+        name: "Joueur de Casino",
+        description: "Jouer 25 fois aux slots",
+        emoji: "🎲",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "fun_slots_100",
+        category: AchievementCategory.FUN,
+        name: "Accro aux Slots",
+        description: "Jouer 100 fois aux slots",
+        emoji: "💰",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "fun_slots_777",
+        category: AchievementCategory.FUN,
+        name: "Chance Légendaire",
+        description: "Obtenir 7️⃣7️⃣7️⃣ aux slots",
+        emoji: "💎",
+        secret: true,
+        xpReward: 500
+    },
+    // === ACHIEVEMENTS FUN - SHIP ===
+    {
+        id: "fun_ship_first",
+        category: AchievementCategory.FUN,
+        name: "Cupidon Amateur",
+        description: "Tester la compatibilité pour la première fois",
+        emoji: "💘",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "fun_ship_25",
+        category: AchievementCategory.FUN,
+        name: "Entremetteur",
+        description: "Faire 25 tests de compatibilité",
+        emoji: "💕",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "fun_ship_100",
+        category: AchievementCategory.FUN,
+        name: "Maître de l'Amour",
+        description: "Faire 100 tests de compatibilité",
+        emoji: "💖",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "fun_ship_perfect",
+        category: AchievementCategory.FUN,
+        name: "Match Parfait",
+        description: "Obtenir 100% de compatibilité",
+        emoji: "💗",
+        secret: true,
+        xpReward: 300
+    },
+    {
+        id: "fun_ship_disaster",
+        category: AchievementCategory.FUN,
+        name: "Incompatibilité Totale",
+        description: "Obtenir 0% de compatibilité",
+        emoji: "💔",
+        secret: true,
+        xpReward: 300
+    },
+    // === ACHIEVEMENTS FUN - DICE ===
+    {
+        id: "fun_dice_first",
+        category: AchievementCategory.FUN,
+        name: "Lanceur de Dés",
+        description: "Lancer un dé pour la première fois",
+        emoji: "🎲",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "fun_dice_50",
+        category: AchievementCategory.FUN,
+        name: "Maître du Hasard",
+        description: "Lancer 50 dés",
+        emoji: "🎯",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "fun_dice_d20_20",
+        category: AchievementCategory.FUN,
+        name: "Critique Naturel",
+        description: "Obtenir 20 sur un D20",
+        emoji: "⭐",
+        secret: true,
+        xpReward: 200
+    },
+    {
+        id: "fun_dice_d100_100",
+        category: AchievementCategory.FUN,
+        name: "Perfection Absolue",
+        description: "Obtenir 100 sur un D100",
+        emoji: "💯",
+        secret: true,
+        xpReward: 500
+    },
+    // === ACHIEVEMENTS FUN - COINFLIP ===
+    {
+        id: "fun_coinflip_first",
+        category: AchievementCategory.FUN,
+        name: "Lanceur de Pièce",
+        description: "Lancer une pièce pour la première fois",
+        emoji: "🪙",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "fun_coinflip_25",
+        category: AchievementCategory.FUN,
+        name: "Face ou Pile Pro",
+        description: "Lancer 25 pièces",
+        emoji: "💿",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "fun_coinflip_edge",
+        category: AchievementCategory.FUN,
+        name: "Sur la Tranche !",
+        description: "Faire tomber la pièce sur la tranche (0.1% de chance)",
+        emoji: "⚡",
+        secret: true,
+        xpReward: 1000
+    },
+    // === ACHIEVEMENTS FUN - CRYSTALBALL ===
+    {
+        id: "fun_crystalball_first",
+        category: AchievementCategory.FUN,
+        name: "Voyant Débutant",
+        description: "Consulter la boule de cristal pour la première fois",
+        emoji: "🔮",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "fun_crystalball_50",
+        category: AchievementCategory.FUN,
+        name: "Médium Confirmé",
+        description: "Poser 50 questions à la boule de cristal",
+        emoji: "🌟",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "fun_crystalball_200",
+        category: AchievementCategory.FUN,
+        name: "Oracle",
+        description: "Poser 200 questions à la boule de cristal",
+        emoji: "✨",
+        secret: false,
+        xpReward: 300
+    },
+    // === ACHIEVEMENTS FUN - CHOOSE ===
+    {
+        id: "fun_choose_first",
+        category: AchievementCategory.FUN,
+        name: "Premier Choix",
+        description: "Utiliser /choose pour la première fois",
+        emoji: "🎯",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "fun_choose_50",
+        category: AchievementCategory.FUN,
+        name: "Indécis Chronique",
+        description: "Utiliser /choose 50 fois",
+        emoji: "🤔",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "fun_choose_200",
+        category: AchievementCategory.FUN,
+        name: "Délégateur de Décisions",
+        description: "Utiliser /choose 200 fois",
+        emoji: "🎲",
+        secret: false,
+        xpReward: 200
+    },
+    // === ACHIEVEMENTS FUN - ASCII ===
+    {
+        id: "fun_ascii_first",
+        category: AchievementCategory.FUN,
+        name: "Artiste ASCII",
+        description: "Créer sa première œuvre ASCII",
+        emoji: "🔤",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "fun_ascii_25",
+        category: AchievementCategory.FUN,
+        name: "Typographe",
+        description: "Créer 25 œuvres ASCII",
+        emoji: "✍️",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "fun_ascii_100",
+        category: AchievementCategory.FUN,
+        name: "Maître ASCII",
+        description: "Créer 100 œuvres ASCII",
+        emoji: "🎨",
+        secret: false,
+        xpReward: 200
+    },
+    // === ACHIEVEMENTS FUN - CUCUMBER ===
+    {
+        id: "fun_cucumber_first",
+        category: AchievementCategory.FUN,
+        name: "Première Mesure",
+        description: "Mesurer son concombre pour la première fois",
+        emoji: "🥒",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "fun_cucumber_25",
+        category: AchievementCategory.FUN,
+        name: "Scientifique",
+        description: "Mesurer son concombre 25 fois... pour la science",
+        emoji: "🔬",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "fun_cucumber_legendary",
+        category: AchievementCategory.FUN,
+        name: "Concombre Légendaire",
+        description: "Obtenir 25cm",
+        emoji: "🤯",
+        secret: true,
+        xpReward: 300
+    },
+    {
+        id: "fun_cucumber_tiny",
+        category: AchievementCategory.FUN,
+        name: "Micro Concombre",
+        description: "Obtenir 1cm (le minimum)",
+        emoji: "🔬",
+        secret: true,
+        xpReward: 300
+    },
+    // === ACHIEVEMENTS FUN - POLYVALENT ===
+    {
+        id: "fun_try_all",
+        category: AchievementCategory.FUN,
+        name: "Touche-à-Tout Fun",
+        description: "Essayer toutes les commandes fun au moins une fois",
+        emoji: "🎪",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "fun_addict",
+        category: AchievementCategory.FUN,
+        name: "Accro au Fun",
+        description: "Utiliser 500 commandes fun au total",
+        emoji: "🎉",
         secret: false,
         xpReward: 500
     },
@@ -1533,4 +1867,428 @@ export function getCompletionPercentage(userId: string): number {
 
     if (totalCount === 0) return 0;
     return Math.round((unlockedCount / totalCount) * 100);
+}
+
+// ============================================================================
+// TRACKING DES ACHIEVEMENTS FUN
+// ============================================================================
+
+/**
+ * Stockage en mémoire des compteurs de commandes fun
+ */
+interface FunCommandStats {
+    [userId: string]: {
+        username: string;
+        slots: number;
+        ship: number;
+        dice: number;
+        coinflip: number;
+        crystalball: number;
+        choose: number;
+        ascii: number;
+        cucumber: number;
+        meme: number;
+        total: number;
+        lastUpdate: number;
+    };
+}
+
+const FUN_STATS_FILE = path.join(DATA_DIR, "fun_command_stats.json");
+
+function loadFunStats(): FunCommandStats {
+    try {
+        if (fs.existsSync(FUN_STATS_FILE)) {
+            const data = fs.readFileSync(FUN_STATS_FILE, "utf-8");
+            return JSON.parse(data);
+        }
+    } catch (error) {
+        logger.error("Error loading fun stats:", error);
+    }
+    return {};
+}
+
+function saveFunStats(stats: FunCommandStats): void {
+    try {
+        fs.writeFileSync(FUN_STATS_FILE, JSON.stringify(stats, null, 2), "utf-8");
+    } catch (error) {
+        logger.error("Error saving fun stats:", error);
+    }
+}
+
+function initUserFunStats(userId: string, username: string, stats: FunCommandStats): void {
+    if (!stats[userId]) {
+        stats[userId] = {
+            username,
+            slots: 0,
+            ship: 0,
+            dice: 0,
+            coinflip: 0,
+            crystalball: 0,
+            choose: 0,
+            ascii: 0,
+            cucumber: 0,
+            meme: 0,
+            total: 0,
+            lastUpdate: Date.now()
+        };
+    }
+}
+
+/**
+ * Vérifie si toutes les commandes fun ont été essayées au moins une fois
+ */
+function checkAllFunCommandsUsed(stats: FunCommandStats[string]): boolean {
+    return stats.slots > 0 &&
+        stats.ship > 0 &&
+        stats.dice > 0 &&
+        stats.coinflip > 0 &&
+        stats.crystalball > 0 &&
+        stats.choose > 0 &&
+        stats.ascii > 0 &&
+        stats.cucumber > 0 &&
+        stats.meme > 0;
+}
+
+/**
+ * Track l'utilisation de /slots
+ */
+export async function trackSlotsAchievements(
+    userId: string,
+    username: string,
+    symbols: string[],
+    client?: Client,
+    channelId?: string
+): Promise<void> {
+    const stats = loadFunStats();
+    initUserFunStats(userId, username, stats);
+
+    stats[userId].slots++;
+    stats[userId].total++;
+    stats[userId].username = username;
+    stats[userId].lastUpdate = Date.now();
+    saveFunStats(stats);
+
+    // Achievements basés sur le nombre
+    if (stats[userId].slots === 1) {
+        await unlockAchievement(userId, username, "fun_slots_first", client, channelId);
+    } else if (stats[userId].slots === 25) {
+        await unlockAchievement(userId, username, "fun_slots_25", client, channelId);
+    } else if (stats[userId].slots === 100) {
+        await unlockAchievement(userId, username, "fun_slots_100", client, channelId);
+    }
+
+    // Achievement 777
+    if (symbols.join("") === "7️⃣7️⃣7️⃣") {
+        await unlockAchievement(userId, username, "fun_slots_777", client, channelId);
+    }
+
+    // Vérifier achievements globaux
+    await checkGlobalFunAchievements(userId, username, stats, client, channelId);
+}
+
+/**
+ * Track l'utilisation de /ship
+ */
+export async function trackShipAchievements(
+    userId: string,
+    username: string,
+    compatibility: number,
+    client?: Client,
+    channelId?: string
+): Promise<void> {
+    const stats = loadFunStats();
+    initUserFunStats(userId, username, stats);
+
+    stats[userId].ship++;
+    stats[userId].total++;
+    stats[userId].username = username;
+    stats[userId].lastUpdate = Date.now();
+    saveFunStats(stats);
+
+    // Achievements basés sur le nombre
+    if (stats[userId].ship === 1) {
+        await unlockAchievement(userId, username, "fun_ship_first", client, channelId);
+    } else if (stats[userId].ship === 25) {
+        await unlockAchievement(userId, username, "fun_ship_25", client, channelId);
+    } else if (stats[userId].ship === 100) {
+        await unlockAchievement(userId, username, "fun_ship_100", client, channelId);
+    }
+
+    // Achievement 100%
+    if (compatibility === 100) {
+        await unlockAchievement(userId, username, "fun_ship_perfect", client, channelId);
+    }
+
+    // Achievement 0%
+    if (compatibility === 0) {
+        await unlockAchievement(userId, username, "fun_ship_disaster", client, channelId);
+    }
+
+    // Vérifier achievements globaux
+    await checkGlobalFunAchievements(userId, username, stats, client, channelId);
+}
+
+/**
+ * Track l'utilisation de /rollthedice
+ */
+export async function trackDiceAchievements(
+    userId: string,
+    username: string,
+    diceType: string,
+    result: number,
+    client?: Client,
+    channelId?: string
+): Promise<void> {
+    const stats = loadFunStats();
+    initUserFunStats(userId, username, stats);
+
+    stats[userId].dice++;
+    stats[userId].total++;
+    stats[userId].username = username;
+    stats[userId].lastUpdate = Date.now();
+    saveFunStats(stats);
+
+    // Achievements basés sur le nombre
+    if (stats[userId].dice === 1) {
+        await unlockAchievement(userId, username, "fun_dice_first", client, channelId);
+    } else if (stats[userId].dice === 50) {
+        await unlockAchievement(userId, username, "fun_dice_50", client, channelId);
+    }
+
+    // Achievement D20 naturel 20
+    if (diceType === "d20" && result === 20) {
+        await unlockAchievement(userId, username, "fun_dice_d20_20", client, channelId);
+    }
+
+    // Achievement D100 naturel 100
+    if (diceType === "d100" && result === 100) {
+        await unlockAchievement(userId, username, "fun_dice_d100_100", client, channelId);
+    }
+
+    // Vérifier achievements globaux
+    await checkGlobalFunAchievements(userId, username, stats, client, channelId);
+}
+
+/**
+ * Track l'utilisation de /coinflip
+ */
+export async function trackCoinflipAchievements(
+    userId: string,
+    username: string,
+    result: string,
+    client?: Client,
+    channelId?: string
+): Promise<void> {
+    const stats = loadFunStats();
+    initUserFunStats(userId, username, stats);
+
+    stats[userId].coinflip++;
+    stats[userId].total++;
+    stats[userId].username = username;
+    stats[userId].lastUpdate = Date.now();
+    saveFunStats(stats);
+
+    // Achievements basés sur le nombre
+    if (stats[userId].coinflip === 1) {
+        await unlockAchievement(userId, username, "fun_coinflip_first", client, channelId);
+    } else if (stats[userId].coinflip === 25) {
+        await unlockAchievement(userId, username, "fun_coinflip_25", client, channelId);
+    }
+
+    // Achievement tranche
+    if (result === "tranche") {
+        await unlockAchievement(userId, username, "fun_coinflip_edge", client, channelId);
+    }
+
+    // Vérifier achievements globaux
+    await checkGlobalFunAchievements(userId, username, stats, client, channelId);
+}
+
+/**
+ * Track l'utilisation de /crystalball
+ */
+export async function trackCrystalballAchievements(
+    userId: string,
+    username: string,
+    client?: Client,
+    channelId?: string
+): Promise<void> {
+    const stats = loadFunStats();
+    initUserFunStats(userId, username, stats);
+
+    stats[userId].crystalball++;
+    stats[userId].total++;
+    stats[userId].username = username;
+    stats[userId].lastUpdate = Date.now();
+    saveFunStats(stats);
+
+    // Achievements basés sur le nombre
+    if (stats[userId].crystalball === 1) {
+        await unlockAchievement(userId, username, "fun_crystalball_first", client, channelId);
+    } else if (stats[userId].crystalball === 50) {
+        await unlockAchievement(userId, username, "fun_crystalball_50", client, channelId);
+    } else if (stats[userId].crystalball === 200) {
+        await unlockAchievement(userId, username, "fun_crystalball_200", client, channelId);
+    }
+
+    // Vérifier achievements globaux
+    await checkGlobalFunAchievements(userId, username, stats, client, channelId);
+}
+
+/**
+ * Track l'utilisation de /choose
+ */
+export async function trackChooseAchievements(
+    userId: string,
+    username: string,
+    client?: Client,
+    channelId?: string
+): Promise<void> {
+    const stats = loadFunStats();
+    initUserFunStats(userId, username, stats);
+
+    stats[userId].choose++;
+    stats[userId].total++;
+    stats[userId].username = username;
+    stats[userId].lastUpdate = Date.now();
+    saveFunStats(stats);
+
+    // Achievements basés sur le nombre
+    if (stats[userId].choose === 1) {
+        await unlockAchievement(userId, username, "fun_choose_first", client, channelId);
+    } else if (stats[userId].choose === 50) {
+        await unlockAchievement(userId, username, "fun_choose_50", client, channelId);
+    } else if (stats[userId].choose === 200) {
+        await unlockAchievement(userId, username, "fun_choose_200", client, channelId);
+    }
+
+    // Vérifier achievements globaux
+    await checkGlobalFunAchievements(userId, username, stats, client, channelId);
+}
+
+/**
+ * Track l'utilisation de /ascii
+ */
+export async function trackAsciiAchievements(
+    userId: string,
+    username: string,
+    client?: Client,
+    channelId?: string
+): Promise<void> {
+    const stats = loadFunStats();
+    initUserFunStats(userId, username, stats);
+
+    stats[userId].ascii++;
+    stats[userId].total++;
+    stats[userId].username = username;
+    stats[userId].lastUpdate = Date.now();
+    saveFunStats(stats);
+
+    // Achievements basés sur le nombre
+    if (stats[userId].ascii === 1) {
+        await unlockAchievement(userId, username, "fun_ascii_first", client, channelId);
+    } else if (stats[userId].ascii === 25) {
+        await unlockAchievement(userId, username, "fun_ascii_25", client, channelId);
+    } else if (stats[userId].ascii === 100) {
+        await unlockAchievement(userId, username, "fun_ascii_100", client, channelId);
+    }
+
+    // Vérifier achievements globaux
+    await checkGlobalFunAchievements(userId, username, stats, client, channelId);
+}
+
+/**
+ * Track l'utilisation de /cucumber
+ */
+export async function trackCucumberAchievements(
+    userId: string,
+    username: string,
+    size: number,
+    client?: Client,
+    channelId?: string
+): Promise<void> {
+    const stats = loadFunStats();
+    initUserFunStats(userId, username, stats);
+
+    stats[userId].cucumber++;
+    stats[userId].total++;
+    stats[userId].username = username;
+    stats[userId].lastUpdate = Date.now();
+    saveFunStats(stats);
+
+    // Achievements basés sur le nombre
+    if (stats[userId].cucumber === 1) {
+        await unlockAchievement(userId, username, "fun_cucumber_first", client, channelId);
+    } else if (stats[userId].cucumber === 25) {
+        await unlockAchievement(userId, username, "fun_cucumber_25", client, channelId);
+    }
+
+    // Achievement 25cm
+    if (size === 25) {
+        await unlockAchievement(userId, username, "fun_cucumber_legendary", client, channelId);
+    }
+
+    // Achievement 1cm (le minimum)
+    if (size === 1) {
+        await unlockAchievement(userId, username, "fun_cucumber_tiny", client, channelId);
+    }
+
+    // Vérifier achievements globaux
+    await checkGlobalFunAchievements(userId, username, stats, client, channelId);
+}
+
+/**
+ * Track l'utilisation de /findmeme
+ */
+export async function trackMemeAchievements(
+    userId: string,
+    username: string,
+    client?: Client,
+    channelId?: string
+): Promise<void> {
+    const stats = loadFunStats();
+    initUserFunStats(userId, username, stats);
+
+    stats[userId].meme++;
+    stats[userId].total++;
+    stats[userId].username = username;
+    stats[userId].lastUpdate = Date.now();
+    saveFunStats(stats);
+
+    // Achievements basés sur le nombre
+    if (stats[userId].meme === 1) {
+        await unlockAchievement(userId, username, "fun_meme_first", client, channelId);
+    } else if (stats[userId].meme === 10) {
+        await unlockAchievement(userId, username, "fun_meme_10", client, channelId);
+    } else if (stats[userId].meme === 50) {
+        await unlockAchievement(userId, username, "fun_meme_50", client, channelId);
+    } else if (stats[userId].meme === 200) {
+        await unlockAchievement(userId, username, "fun_meme_200", client, channelId);
+    }
+
+    // Vérifier achievements globaux
+    await checkGlobalFunAchievements(userId, username, stats, client, channelId);
+}
+
+/**
+ * Vérifie les achievements globaux de la catégorie FUN
+ */
+async function checkGlobalFunAchievements(
+    userId: string,
+    username: string,
+    stats: FunCommandStats,
+    client?: Client,
+    channelId?: string
+): Promise<void> {
+    const userStats = stats[userId];
+
+    // Achievement "Touche-à-Tout Fun"
+    if (checkAllFunCommandsUsed(userStats)) {
+        await unlockAchievement(userId, username, "fun_try_all", client, channelId);
+    }
+
+    // Achievement "Accro au Fun"
+    if (userStats.total >= 500) {
+        await unlockAchievement(userId, username, "fun_addict", client, channelId);
+    }
 }

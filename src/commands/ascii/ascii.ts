@@ -124,6 +124,10 @@ module.exports = {
                     // Chance d'obtenir un objet saisonnier (3% - commande Netricsa)
                     const {tryRewardAndNotify} = require("../../services/rewardNotifier");
                     await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
+
+                    // Tracker les achievements de ascii
+                    const {trackAsciiAchievements} = require("../../services/achievementService");
+                    await trackAsciiAchievements(interaction.user.id, interaction.user.username, interaction.client, interaction.channelId);
                 }
             );
 

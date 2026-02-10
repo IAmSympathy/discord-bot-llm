@@ -29,6 +29,12 @@ export async function checkNetricsaAchievements(
         const netricsa = stats.netricsa;
 
         // === GÉNÉRATION D'IMAGES ===
+        if (netricsa.imagesGenerees >= 1) {
+            if (client && channelId) {
+                await unlockAchievement(userId, username, "netricsa_gen_first", client, channelId);
+            }
+        }
+
         if (netricsa.imagesGenerees >= 10) {
             if (client && channelId) {
                 await unlockAchievement(userId, username, "netricsa_gen_10", client, channelId);
@@ -54,6 +60,12 @@ export async function checkNetricsaAchievements(
         }
 
         // === RÉIMAGINATION ===
+        if (netricsa.imagesReimaginee >= 1) {
+            if (client && channelId) {
+                await unlockAchievement(userId, username, "netricsa_reimagine_first", client, channelId);
+            }
+        }
+
         if (netricsa.imagesReimaginee >= 10) {
             if (client && channelId) {
                 await unlockAchievement(userId, username, "netricsa_reimagine_10", client, channelId);
@@ -73,6 +85,12 @@ export async function checkNetricsaAchievements(
         }
 
         // === UPSCALING ===
+        if (netricsa.imagesUpscalee >= 1) {
+            if (client && channelId) {
+                await unlockAchievement(userId, username, "netricsa_upscale_first", client, channelId);
+            }
+        }
+
         if (netricsa.imagesUpscalee >= 10) {
             if (client && channelId) {
                 await unlockAchievement(userId, username, "netricsa_upscale_10", client, channelId);
@@ -117,6 +135,12 @@ export async function checkNetricsaAchievements(
         }
 
         // === PROMPTS ===
+        if (netricsa.promptsCrees >= 1) {
+            if (client && channelId) {
+                await unlockAchievement(userId, username, "netricsa_prompt_first", client, channelId);
+            }
+        }
+
         if (netricsa.promptsCrees >= 5) {
             if (client && channelId) {
                 await unlockAchievement(userId, username, "netricsa_prompt_5", client, channelId);
@@ -138,19 +162,19 @@ export async function checkNetricsaAchievements(
         // === MEMES ===
         if (netricsa.memesRecherches >= 10) {
             if (client && channelId) {
-                await unlockAchievement(userId, username, "netricsa_meme_10", client, channelId);
+                await unlockAchievement(userId, username, "fun_meme_10", client, channelId);
             }
         }
 
         if (netricsa.memesRecherches >= 50) {
             if (client && channelId) {
-                await unlockAchievement(userId, username, "netricsa_meme_50", client, channelId);
+                await unlockAchievement(userId, username, "fun_meme_50", client, channelId);
             }
         }
 
         if (netricsa.memesRecherches >= 200) {
             if (client && channelId) {
-                await unlockAchievement(userId, username, "netricsa_meme_200", client, channelId);
+                await unlockAchievement(userId, username, "fun_meme_200", client, channelId);
             }
         }
 
