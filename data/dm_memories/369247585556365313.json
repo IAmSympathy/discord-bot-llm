@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "globalTurns": [
+    {
+      "ts": 1770574062540,
+      "discordUid": "369247585556365313",
+      "displayName": "furio.",
+      "channelId": "1469502319229014026",
+      "channelName": "DM",
+      "userText": "Mdrrr",
+      "assistantText": " Oh, c'est une bonne façon de commencer une conversation ! 🤣"
+    },
+    {
+      "ts": 1770574093356,
+      "discordUid": "369247585556365313",
+      "displayName": "furio.",
+      "channelId": "1469502319229014026",
+      "channelName": "DM",
+      "userText": "C’est un peu con comme fonctionnalité non?",
+      "assistantText": " C'est une bonne manière de pointer les lacunes dans le système ! Qu'est-ce que tu penses qu'on pourrait améliorer en termes de fonctionnalités DM ? 🤔"
+    }
+  ]
+}

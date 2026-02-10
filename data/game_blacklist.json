@@ -1,0 +1,10 @@
+{
+  "gameBlacklist": [
+    "PhpStorm",
+    "Wordle",
+    "WebStorm",
+    "Visual Studio Code",
+    "Youtube",
+    "Notepad++"
+  ]
+}

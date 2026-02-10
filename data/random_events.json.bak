@@ -1,0 +1,40 @@
+﻿{
+  "activeEvents": [
+    {
+      "id": "sequence_1770676575431",
+      "type": "sequence",
+      "channelId": "1470548878557184205",
+      "startTime": 1770676576469,
+      "endTime": 1770719775431,
+      "data": {
+        "sequenceId": "seq_hard_2",
+        "sequence": "1, 8, 27, 64, ?",
+        "answer": "125",
+        "alternativeAnswers": [
+          "cent vingt-cinq",
+          "cent vingt cinq"
+        ],
+        "hint": "ðŸ”¢ Les cubes parfaits (1Â³, 2Â³, 3Â³...).",
+        "difficulty": "difficile",
+        "category": "Nombres",
+        "xpReward": 300,
+        "leaderboard": [
+          {
+            "userId": "288799652902469633",
+            "username": "iam_sympathy",
+            "time": 102708
+          }
+        ],
+        "attempts": [
+          "288799652902469633"
+        ],
+        "isTest": true,
+        "hintShown": false,
+        "scheduledEventId": "1470548881816289373"
+      }
+    }
+  ],
+  "history": [],
+  "userPreferences": {},
+  "impostorGuesses": {}
+}

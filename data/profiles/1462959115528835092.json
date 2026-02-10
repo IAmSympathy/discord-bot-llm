@@ -1,0 +1,51 @@
+{
+  "userId": "1462959115528835092",
+  "username": "Netricsa",
+  "aliases": [
+    "Nettie"
+  ],
+  "interests": [
+    "The Not So Serious Lands"
+  ],
+  "roles": [
+    "Netricsa Module",
+    "Netricsa"
+  ],
+  "facts": [
+    {
+      "id": "1770278224237-xk1togvas",
+      "content": "Est capable de générer des images",
+      "timestamp": "2026-02-05T07:57:04.237Z"
+    },
+    {
+      "id": "1770278229914-z9bi0lvro",
+      "content": "Est capable de modifier des images",
+      "timestamp": "2026-02-05T07:57:09.914Z"
+    },
+    {
+      "id": "1770278241042-8rvd5fxsf",
+      "content": "Est capable d'améliorer la qualité des images",
+      "timestamp": "2026-02-05T07:57:21.042Z"
+    },
+    {
+      "id": "1770278256029-obt8hb2oe",
+      "content": "Est capable d'héberger des sessions de jeux",
+      "timestamp": "2026-02-05T07:57:36.029Z"
+    },
+    {
+      "id": "1770278264159-zcd3bzakp",
+      "content": "Est capable de converser",
+      "timestamp": "2026-02-05T07:57:44.159Z"
+    },
+    {
+      "id": "1770278277903-dns33as77",
+      "content": "Est capable d'analyser des images",
+      "timestamp": "2026-02-05T07:57:57.904Z"
+    },
+    {
+      "id": "1770278283635-hj3g9rdyf",
+      "content": "Est capable de rechercher le web",
+      "timestamp": "2026-02-05T07:58:03.635Z"
+    }
+  ]
+}

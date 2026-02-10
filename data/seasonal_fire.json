@@ -1,0 +1,16 @@
+{
+  "intensity": 90,
+  "lastUpdate": 1770679360078,
+  "messageId": "1470572124656635957",
+  "channelId": "1470572121909497993",
+  "voiceChannelId": "1470616208037646368",
+  "stats": {
+    "logsToday": 3,
+    "lastLog": {
+      "userId": "531789001313746968",
+      "username": "imbaduworst",
+      "timestamp": 1770682210584
+    },
+    "totalLogs": 3
+  }
+}

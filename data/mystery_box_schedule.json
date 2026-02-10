@@ -1,0 +1,17 @@
+{
+  "lastWeekProcessed": "2026-W07",
+  "weeklyBoxes": {
+    "2026-W07": {
+      "box1": {
+        "executed": false,
+        "scheduledDay": 5,
+        "scheduledHour": 16
+      },
+      "box2": {
+        "executed": true,
+        "scheduledDay": 4,
+        "scheduledHour": 21
+      }
+    }
+  }
+}

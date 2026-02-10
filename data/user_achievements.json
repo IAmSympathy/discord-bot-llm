@@ -1,0 +1,5399 @@
+{
+  "1142841613555597424": {
+    "username": "quoi.__90267",
+    "achievements": [
+      {
+        "achievementId": "profile_birthday_set",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_nickname",
+        "unlockedAt": 1770427048199,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_facts_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_interests_5",
+        "unlockedAt": null,
+        "notified": false
+      }
+    ],
+    "lastUpdate": 1770427048199
+  },
+  "1462959115528835092": {
+    "username": "Netricsa",
+    "achievements": [
+      {
+        "achievementId": "profile_birthday_set",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_nickname",
+        "unlockedAt": 1770427049652,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_facts_3",
+        "unlockedAt": 1770427049767,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_interests_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_10_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_50_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_100_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_500_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_1000_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_polyvalent",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_win",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_triple",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_rock",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_paper",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_scissors",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_draw_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_easy",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_beat_netricsa_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_all_today",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_night_owl",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_marathon",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_bad_day",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_10_loss",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_all_features",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_creator",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_master",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_total_artist",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_10h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_50h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_100h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_500h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1000h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_fav",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_social",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_active",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_legend",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_night_owl",
+        "unlockedAt": 1770451336791,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_early_bird",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_birthday",
+        "unlockedAt": null,
+        "notified": false
+      }
+    ],
+    "lastUpdate": 1770451336791
+  },
+  "288799652902469633": {
+    "username": "iam_sympathy",
+    "achievements": [
+      {
+        "achievementId": "profile_birthday_set",
+        "unlockedAt": 1770427049923,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_nickname",
+        "unlockedAt": 1770427050737,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_facts_3",
+        "unlockedAt": 1770427052265,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_interests_5",
+        "unlockedAt": 1770427052820,
+        "notified": true
+      },
+      {
+        "achievementId": "counter_10_counts",
+        "unlockedAt": 1770428750874,
+        "notified": true
+      },
+      {
+        "achievementId": "counter_50_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_100_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_500_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_1000_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_10",
+        "unlockedAt": 1770583975870,
+        "notified": true
+      },
+      {
+        "achievementId": "netricsa_reimagine_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_5",
+        "unlockedAt": 1770583976559,
+        "notified": true
+      },
+      {
+        "achievementId": "netricsa_conv_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_all_features",
+        "unlockedAt": 1770584040170,
+        "notified": true
+      },
+      {
+        "achievementId": "netricsa_creator",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_master",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_total_artist",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_10",
+        "unlockedAt": 1770433398974,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_msg_100",
+        "unlockedAt": 1770589723800,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_msg_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_50",
+        "unlockedAt": 1770668113196,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_react_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_10",
+        "unlockedAt": 1770433400365,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_cmd_50",
+        "unlockedAt": 1770433401159,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_cmd_200",
+        "unlockedAt": 1770507095157,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_cmd_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1h",
+        "unlockedAt": 1770433401915,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_voice_10h",
+        "unlockedAt": 1770446438821,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_voice_50h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_100h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_500h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1000h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_fav",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_social",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_active",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_legend",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_night_owl",
+        "unlockedAt": 1770453014487,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_early_bird",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_birthday",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first",
+        "unlockedAt": 1770450499428,
+        "notified": true
+      },
+      {
+        "achievementId": "game_played_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_polyvalent",
+        "unlockedAt": 1770592223348,
+        "notified": true
+      },
+      {
+        "achievementId": "game_first_win",
+        "unlockedAt": 1770592147338,
+        "notified": true
+      },
+      {
+        "achievementId": "game_win_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_triple",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_rock",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_paper",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_scissors",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_draw_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_easy",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_beat_netricsa_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_all_today",
+        "unlockedAt": 1770592223957,
+        "notified": true
+      },
+      {
+        "achievementId": "game_night_owl",
+        "unlockedAt": 1770450500315,
+        "notified": true
+      },
+      {
+        "achievementId": "game_marathon",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_bad_day",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_10_loss",
+        "unlockedAt": null,
+        "notified": false
+      }
+    ],
+    "lastUpdate": 1770668113196
+  },
+  "351419795033423883": {
+    "username": "Player",
+    "achievements": [
+      {
+        "achievementId": "profile_birthday_set",
+        "unlockedAt": 1770449562043,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_nickname",
+        "unlockedAt": 1770427054039,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_facts_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_interests_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_10_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_50_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_100_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_500_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_1000_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_5",
+        "unlockedAt": 1770589409910,
+        "notified": true
+      },
+      {
+        "achievementId": "netricsa_conv_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_all_features",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_creator",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_master",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_total_artist",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_10",
+        "unlockedAt": 1770585750193,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_msg_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_10",
+        "unlockedAt": 1770454310309,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_cmd_50",
+        "unlockedAt": 1770617760338,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_cmd_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1h",
+        "unlockedAt": 1770434464122,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_10h",
+        "unlockedAt": 1770451568567,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_voice_50h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_100h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_500h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1000h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_fav",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_social",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_active",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_legend",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_night_owl",
+        "unlockedAt": 1770451315637,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_early_bird",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_birthday",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first",
+        "unlockedAt": 1770581527437,
+        "notified": true
+      },
+      {
+        "achievementId": "game_played_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_polyvalent",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_win",
+        "unlockedAt": 1770581529419,
+        "notified": true
+      },
+      {
+        "achievementId": "game_win_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_10",
+        "unlockedAt": 1770581586669,
+        "notified": true
+      },
+      {
+        "achievementId": "game_loss_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_10",
+        "unlockedAt": 1770665623414,
+        "notified": true
+      },
+      {
+        "achievementId": "rps_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_triple",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_rock",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_paper",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_scissors",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_draw_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_easy",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_beat_netricsa_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_all_today",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_night_owl",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_marathon",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_bad_day",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_10_loss",
+        "unlockedAt": null,
+        "notified": false
+      }
+    ],
+    "lastUpdate": 1770665623414
+  },
+  "369247585556365313": {
+    "username": "furio.",
+    "achievements": [
+      {
+        "achievementId": "profile_birthday_set",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_nickname",
+        "unlockedAt": 1770427054885,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_facts_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_interests_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_10_counts",
+        "unlockedAt": 1770429564831,
+        "notified": true
+      },
+      {
+        "achievementId": "counter_50_counts",
+        "unlockedAt": 1770429564834,
+        "notified": true
+      },
+      {
+        "achievementId": "counter_100_counts",
+        "unlockedAt": 1770429564836,
+        "notified": true
+      },
+      {
+        "achievementId": "counter_500_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_1000_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_all_features",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_creator",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_master",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_total_artist",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_10",
+        "unlockedAt": 1770434464130,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_msg_100",
+        "unlockedAt": 1770434466596,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_msg_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1h",
+        "unlockedAt": 1770434468011,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_voice_10h",
+        "unlockedAt": 1770576225944,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_voice_50h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_100h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_500h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1000h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_fav",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_social",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_active",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_legend",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_night_owl",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_early_bird",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_birthday",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_polyvalent",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_win",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_triple",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_rock",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_paper",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_scissors",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_draw_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_easy",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_beat_netricsa_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_all_today",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_night_owl",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_marathon",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_bad_day",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_10_loss",
+        "unlockedAt": null,
+        "notified": false
+      }
+    ],
+    "lastUpdate": 1770576225944
+  },
+  "394498137202491412": {
+    "username": "_bigpanda",
+    "achievements": [
+      {
+        "achievementId": "profile_birthday_set",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_nickname",
+        "unlockedAt": 1770427056174,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_facts_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_interests_5",
+        "unlockedAt": null,
+        "notified": false
+      }
+    ],
+    "lastUpdate": 1770427056174
+  },
+  "401510331416838144": {
+    "username": "nikeurdezebi",
+    "achievements": [
+      {
+        "achievementId": "profile_birthday_set",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_nickname",
+        "unlockedAt": 1770427057700,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_facts_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_interests_5",
+        "unlockedAt": null,
+        "notified": false
+      }
+    ],
+    "lastUpdate": 1770427057700
+  },
+  "442399295962873877": {
+    "username": "krome5276",
+    "achievements": [
+      {
+        "achievementId": "profile_birthday_set",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_nickname",
+        "unlockedAt": 1770427059858,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_facts_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_interests_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_10_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_50_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_100_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_500_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_1000_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_polyvalent",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_win",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_triple",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_rock",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_paper",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_scissors",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_draw_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_easy",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_beat_netricsa_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_all_today",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_night_owl",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_marathon",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_bad_day",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_10_loss",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_all_features",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_creator",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_master",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_total_artist",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1h",
+        "unlockedAt": 1770441415370,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_voice_10h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_50h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_100h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_500h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1000h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_fav",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_social",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_active",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_legend",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_night_owl",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_early_bird",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_birthday",
+        "unlockedAt": null,
+        "notified": false
+      }
+    ],
+    "lastUpdate": 1770441415370
+  },
+  "531789001313746968": {
+    "username": "imbaduworst",
+    "achievements": [
+      {
+        "achievementId": "profile_birthday_set",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_nickname",
+        "unlockedAt": 1770427062243,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_facts_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_interests_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_10_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_50_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_100_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_500_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_1000_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_all_features",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_creator",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_master",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_total_artist",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_10",
+        "unlockedAt": 1770434524136,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_msg_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_10",
+        "unlockedAt": 1770582196612,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_cmd_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1h",
+        "unlockedAt": 1770434525296,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_voice_10h",
+        "unlockedAt": 1770583788520,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_voice_50h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_100h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_500h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1000h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_fav",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_social",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_active",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_legend",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_night_owl",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_early_bird",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_birthday",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first",
+        "unlockedAt": 1770581527430,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_polyvalent",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_win",
+        "unlockedAt": 1770581561109,
+        "notified": true
+      },
+      {
+        "achievementId": "game_win_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_triple",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_rock",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_paper",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_scissors",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_draw_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_easy",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_beat_netricsa_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_all_today",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_night_owl",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_marathon",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_bad_day",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_10_loss",
+        "unlockedAt": null,
+        "notified": false
+      }
+    ],
+    "lastUpdate": 1770583788520
+  },
+  "542486982459129877": {
+    "username": "astolfo_uwu_69",
+    "achievements": [
+      {
+        "achievementId": "profile_birthday_set",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_nickname",
+        "unlockedAt": 1770427063834,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_facts_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_interests_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_10_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_50_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_100_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_500_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_1000_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_polyvalent",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_win",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_triple",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_rock",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_paper",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_scissors",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_draw_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_easy",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_beat_netricsa_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_all_today",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_night_owl",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_marathon",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_bad_day",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_10_loss",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_all_features",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_creator",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_master",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_total_artist",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1h",
+        "unlockedAt": 1770442195470,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_voice_10h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_50h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_100h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_500h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1000h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_fav",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_social",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_active",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_legend",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_night_owl",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_early_bird",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_birthday",
+        "unlockedAt": null,
+        "notified": false
+      }
+    ],
+    "lastUpdate": 1770442195470
+  },
+  "814998532833673246": {
+    "username": "Player",
+    "achievements": [
+      {
+        "achievementId": "profile_birthday_set",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_nickname",
+        "unlockedAt": 1770427065783,
+        "notified": true
+      },
+      {
+        "achievementId": "profile_facts_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_interests_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_10_counts",
+        "unlockedAt": 1770429564937,
+        "notified": true
+      },
+      {
+        "achievementId": "counter_50_counts",
+        "unlockedAt": 1770429564939,
+        "notified": true
+      },
+      {
+        "achievementId": "counter_100_counts",
+        "unlockedAt": 1770429564941,
+        "notified": true
+      },
+      {
+        "achievementId": "counter_500_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_1000_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first",
+        "unlockedAt": 1770672314035,
+        "notified": true
+      },
+      {
+        "achievementId": "game_played_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_polyvalent",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_win",
+        "unlockedAt": 1770672315519,
+        "notified": true
+      },
+      {
+        "achievementId": "game_win_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_triple",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_rock",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_paper",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_scissors",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_draw_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_easy",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_beat_netricsa_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_all_today",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_night_owl",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_marathon",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_bad_day",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_10_loss",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_5",
+        "unlockedAt": 1770480156062,
+        "notified": true
+      },
+      {
+        "achievementId": "netricsa_conv_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_all_features",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_creator",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_master",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_total_artist",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_10",
+        "unlockedAt": 1770480088066,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_msg_100",
+        "unlockedAt": 1770480088919,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_msg_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1h",
+        "unlockedAt": 1770498333569,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_voice_10h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_50h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_100h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_500h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1000h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_fav",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_social",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_active",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_legend",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_night_owl",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_early_bird",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_birthday",
+        "unlockedAt": null,
+        "notified": false
+      }
+    ],
+    "lastUpdate": 1770672315519
+  },
+  "513423712582762502": {
+    "username": "TTS Bot",
+    "achievements": [
+      {
+        "achievementId": "profile_birthday_set",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_nickname",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_facts_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "profile_interests_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_10_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_50_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_100_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_500_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "counter_1000_counts",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_played_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_polyvalent",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_win",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_win_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_3",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_streak_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_loss_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_triple",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_rock",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_paper",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_only_scissors",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "rps_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "ttt_draw_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_25",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pvp_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "c4_pve_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_win_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_perfect_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "hangman_streak_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_easy",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_beat_netricsa_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_all_today",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_night_owl",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_marathon",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_bad_day",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "game_first_10_loss",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_gen_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_reimagine_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_upscale_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_conv_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_5",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_20",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_prompt_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_meme_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_all_features",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_creator",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_master",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "netricsa_total_artist",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_msg_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_react_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_10",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_50",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_200",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_cmd_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_10h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_50h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_100h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_500h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_voice_1000h",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_100",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_500",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_1000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_5000",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_emoji_fav",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_social",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_active",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_legend",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_night_owl",
+        "unlockedAt": 1770453011795,
+        "notified": true
+      },
+      {
+        "achievementId": "discord_early_bird",
+        "unlockedAt": null,
+        "notified": false
+      },
+      {
+        "achievementId": "discord_birthday",
+        "unlockedAt": null,
+        "notified": false
+      }
+    ],
+    "lastUpdate": 1770453011795
+  }
+}

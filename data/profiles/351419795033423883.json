@@ -1,0 +1,29 @@
+{
+  "userId": "351419795033423883",
+  "username": "mr.cr4zy",
+  "aliases": [
+    "Jérémy",
+    "Jay",
+    "Mr Fou",
+    "Mr Crazy",
+    "mrcrazy"
+  ],
+  "interests": [
+    "Arts",
+    "Musique",
+    "Alcool",
+    "Borderlands"
+  ],
+  "roles": [
+    "Ugh-Zan",
+    "Netricsa Notification",
+    "Hatchling"
+  ],
+  "facts": [],
+  "birthday": {
+    "day": 25,
+    "month": 3,
+    "year": 2005,
+    "notify": true
+  }
+}

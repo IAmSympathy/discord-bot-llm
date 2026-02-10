@@ -1,0 +1,46 @@
+{
+  "userId": "288799652902469633",
+  "username": "iam_sympathy",
+  "aliases": [
+    "Samy",
+    "Mari0no1",
+    "Mariono"
+  ],
+  "interests": [
+    "Développement de jeux vidéo",
+    "Unreal Engine",
+    "Plants vs Zombies",
+    "Serious Sam",
+    "Shadow Warrior",
+    "Banjo-Kazooie"
+  ],
+  "facts": [
+    {
+      "id": "1769590524977-fw75ttvi6",
+      "content": "Est le créateur de Netricsa",
+      "timestamp": "2026-01-28T08:55:24.977Z"
+    },
+    {
+      "id": "1769590548411-neex14ea3",
+      "content": "Est le propriétaire du serveur Discord",
+      "timestamp": "2026-01-28T08:55:48.411Z"
+    },
+    {
+      "id": "1769592200878-wl3fhf5d4",
+      "content": "Est en stage informatique",
+      "timestamp": "2026-01-28T09:23:20.878Z"
+    }
+  ],
+  "roles": [
+    "Lover",
+    "Tah-Um",
+    "Netricsa Notification",
+    "Juvenile"
+  ],
+  "birthday": {
+    "day": 27,
+    "month": 12,
+    "year": 2004,
+    "notify": true
+  }
+}
