@@ -108,9 +108,13 @@ module.exports = {
                 }
             }
 
+            const doubleChance = 0.15; // 15%
+            const quantity = Math.random() < doubleChance ? 2 : 1;
+
+
             // Donner la ressource
             const {addItemToInventory} = require("../../services/userInventoryService");
-            const success = addItemToInventory(userId, username, resource.itemType, 1);
+            const success = addItemToInventory(userId, username, resource.itemType, quantity);
 
             if (!success) {
                 // Erreur lors de l'ajout
@@ -142,7 +146,7 @@ module.exports = {
                 .setColor(0x5D6A74)
                 .setTitle("⛏️ Ressource récoltée !")
                 .setDescription(
-                    `${resource.itemEmoji} Tu as récolté une **${resource.itemName}** !\n\n` +
+                    `${resource.itemEmoji} Tu as récolté **${quantity} ${resource.itemName}${quantity > 1 ? "s" : ""}** !\n\n` +
                     `📦 Elle a été ajoutée à ton inventaire.\n` +
                     `🔥 ${resource.itemType === require("../../services/userInventoryService").InventoryItemType.FIREWOOD_LOG ?
                         "Va l'utiliser au feu de foyer pour augmenter son intensité !" :
