@@ -44,7 +44,22 @@ function startDecay(): void {
 
     decayInterval = setInterval(async () => {
         const fireData = loadFireData();
-        const timeSinceUpdate = Date.now() - fireData.lastUpdate;
+        const now = Date.now();
+
+        // 1. Retirer les bûches qui ont brûlé (plus de 3 heures)
+        const initialLogCount = fireData.logs.length;
+        fireData.logs = fireData.logs.filter(log => {
+            const logAge = now - log.addedAt;
+            return logAge < FIRE_CONFIG.LOG_BURN_TIME;
+        });
+
+        const burnedLogs = initialLogCount - fireData.logs.length;
+        if (burnedLogs > 0) {
+            logger.info(`${burnedLogs} log(s) burned completely. Remaining: ${fireData.logs.length}/${FIRE_CONFIG.MAX_LOGS}`);
+        }
+
+        // 2. Appliquer la décroissance normale d'intensité
+        const timeSinceUpdate = now - fireData.lastUpdate;
         const periodsElapsed = Math.floor(timeSinceUpdate / FIRE_CONFIG.DECAY_INTERVAL);
 
         if (periodsElapsed > 0) {
@@ -80,18 +95,22 @@ function startDecay(): void {
                 FIRE_CONFIG.MIN_INTENSITY,
                 fireData.intensity - (decayRate * periodsElapsed)
             );
-            fireData.lastUpdate = Date.now();
+            fireData.lastUpdate = now;
             saveFireData(fireData);
 
             const oldState = getFireState(oldIntensity);
             const newState = getFireState(fireData.intensity);
 
-            logger.info(`Fire decayed: ${oldIntensity}% → ${fireData.intensity}% (rate: ${decayRate.toFixed(2)}%)`);
+            logger.info(`Fire decayed: ${oldIntensity}% → ${fireData.intensity}% (rate: ${decayRate.toFixed(2)}%, logs: ${fireData.logs.length})`);
 
             // Log si changement d'état
             if (oldState !== newState) {
                 logger.info(`Fire state changed: ${oldState} → ${newState}`);
             }
+        } else if (burnedLogs > 0) {
+            // Sauvegarder même si pas de décroissance d'intensité (bûches brûlées)
+            fireData.lastUpdate = now;
+            saveFireData(fireData);
         }
     }, FIRE_CONFIG.DECAY_INTERVAL);
 
@@ -148,19 +167,21 @@ function startDailyReset(): void {
 export function addLog(userId: string, username: string): { success: boolean; newIntensity?: number; message: string } {
     const fireData = loadFireData();
 
-    // Vérifier si le feu est déjà au maximum
-    if (fireData.intensity >= FIRE_CONFIG.MAX_INTENSITY) {
-        return {
-            success: false,
-            message: "Le feu est déjà à son intensité maximale ! 🔥"
-        };
-    }
+    // Plus de limite sur le nombre de bûches - on peut en ajouter infiniment!
+    // Le visuel sera plafonné à 5 bûches mais le compteur continuera
 
     const oldIntensity = fireData.intensity;
     fireData.intensity = Math.min(
         FIRE_CONFIG.MAX_INTENSITY,
         fireData.intensity + FIRE_CONFIG.LOG_BONUS
     );
+
+    // Ajouter la bûche au tableau
+    fireData.logs.push({
+        addedAt: Date.now(),
+        userId,
+        username
+    });
 
     fireData.stats.logsToday++;
     fireData.stats.totalLogs++;
@@ -175,10 +196,10 @@ export function addLog(userId: string, username: string): { success: boolean; ne
     const oldState = getFireState(oldIntensity);
     const newState = getFireState(fireData.intensity);
 
-    logger.info(`${username} added a log: ${oldIntensity}% → ${fireData.intensity}%`);
+    logger.info(`${username} added a log (${fireData.logs.length} total): ${oldIntensity}% → ${fireData.intensity}%`);
 
     // Message selon le changement d'état
-    let message = `🪵 Tu as ajouté une bûche au feu ! (${oldIntensity}% → ${fireData.intensity}%)`;
+    let message = `🪵 Tu as ajouté une bûche au feu ! (${oldIntensity}% → ${fireData.intensity}%)\nBûches actives : ${fireData.logs.length}`;
 
     if (oldState !== newState) {
         message += `\n\n🔥 Le feu est maintenant **${FIRE_NAMES[newState]}** !`;
@@ -381,50 +402,58 @@ export async function updateFireEmbed(client: Client): Promise<void> {
 }
 
 /**
- * Crée la représentation visuelle du feu de foyer avec des emojis selon son intensité
+ * Crée la représentation visuelle du feu de foyer avec des emojis selon le nombre de bûches
  */
-function getFireVisual(intensity: number): string {
+function getFireVisual(logCount: number): string {
     // Caractère invisible pour l'espacement (U+2800 - Braille Pattern Blank)
     const blank = '⠀';
 
-    if (intensity >= 81) {
-        // Feu intense - Flammes hautes dans le foyer
+    if (logCount >= 5) {
+        // 5 bûches - Feu intense
         return `⠀⠀⠀⠀╔═════════════════╗
 ⠀⠀⠀⠀⠀⠀⠀⠀🔥🔥🔥🔥🔥🔥
 ⠀⠀⠀⠀⠀⠀⠀🔥🔥🔥🔥🔥🔥🔥
-⠀⠀⠀⠀⠀⠀⠀⠀🔥🪵🪵🪵🪵🔥
+⠀⠀⠀⠀⠀⠀⠀⠀🔥🪵🪵🪵🪵🪵🔥
 ⠀⠀⠀⠀⠀⠀⠀⠀🟠🟠🟠🟠🟠🟠⠀
 ⠀⠀⠀⠀╚═════════════════╝`;
-    } else if (intensity >= 61) {
-        // Feu fort - Flammes vives dans le foyer
+    } else if (logCount === 4) {
+        // 4 bûches - Feu fort
         return `⠀⠀⠀⠀╔═════════════════╗
 ⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀🔥🔥🔥🔥🔥
 ⠀⠀⠀⠀⠀⠀⠀⠀🔥🪵🪵🪵🪵🔥
 ⠀⠀⠀⠀⠀⠀⠀⠀🟠🟠🟠🟠🟠🟠⠀
 ⠀⠀⠀⠀╚═════════════════╝`;
-    } else if (intensity >= 41) {
-        // Feu moyen - Flammes modérées dans le foyer
+    } else if (logCount === 3) {
+        // 3 bûches - Feu moyen
         return `⠀⠀⠀⠀╔═════════════════╗
 ⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀🔥🔥🔥🔥🔥
-⠀⠀⠀⠀⠀⠀⠀⠀⠀🪵🪵🪵🪵⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀🔥🔥🔥🔥
+⠀⠀⠀⠀⠀⠀⠀⠀⠀🪵🪵🪵⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀🟠🟠🟠🟠🟠🟠⠀
 ⠀⠀⠀⠀╚═════════════════╝`;
-    } else if (intensity >= 21) {
-        // Feu faible - Petites flammes dans le foyer
+    } else if (logCount === 2) {
+        // 2 bûches - Feu faible
         return `⠀⠀⠀⠀╔═════════════════╗
 ⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀🔥🔥🔥
-⠀⠀⠀⠀⠀⠀⠀⠀⠀🪵🪵🪵🪵⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀🔥🔥
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀🪵🪵⠀
+⠀⠀⠀⠀⠀⠀⠀⠀🟠🟠🟠🟠🟠🟠⠀
+⠀⠀⠀⠀╚═════════════════╝`;
+    } else if (logCount === 1) {
+        // 1 bûche - Feu très faible
+        return `⠀⠀⠀⠀╔═════════════════╗
+⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀🔥
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀🪵⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀🟠🟠🟠🟠🟠🟠⠀
 ⠀⠀⠀⠀╚═════════════════╝`;
     } else {
-        // Feu éteint - Juste des braises fumantes
+        // Aucune bûche - Feu éteint
         return `⠀⠀⠀⠀╔═════════════════╗
 ⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀💨💨💨
-⠀⠀⠀⠀⠀⠀⠀⠀⠀🪵🪵🪵🪵⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀💨💨
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⚫⚫⚫⚫⚫⚫⠀
 ⠀⠀⠀⠀╚═════════════════╝`;
     }
@@ -499,16 +528,31 @@ async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
         description += `${weatherImpact.icon} ${weatherImpact.text}\n\n`;
     }
 
-    // Statistiques compactes
-    description += `🪵 **Bûches : ${fireData.stats.logsToday}**\n`;
+    // Statistiques compactes - afficher le nombre réel de bûches
+    description += `🪵 **Bûches actives : ${fireData.logs.length}**\n`;
 
     if (fireData.stats.lastLog) {
         const timestampSeconds = Math.floor(fireData.stats.lastLog.timestamp / 1000);
-        description += `Dernière bûche : <@${fireData.stats.lastLog.userId}> <t:${timestampSeconds}:R>\n\n`;
+        description += `Dernière bûche ajoutée : <@${fireData.stats.lastLog.userId}> <t:${timestampSeconds}:R>\n`;
     }
 
-    // Visuel emoji du feu EN BAS
-    const fireVisual = getFireVisual(fireData.intensity);
+    // Afficher le temps restant avant que la prochaine bûche brûle
+    if (fireData.logs.length > 0) {
+        // Trouver la bûche la plus ancienne (celle qui va brûler en premier)
+        const oldestLog = fireData.logs.reduce((oldest: typeof fireData.logs[0], log: typeof fireData.logs[0]) =>
+            log.addedAt < oldest.addedAt ? log : oldest
+        );
+
+        const burnTime = oldestLog.addedAt + FIRE_CONFIG.LOG_BURN_TIME;
+        const burnTimestampSeconds = Math.floor(burnTime / 1000);
+        description += `⏱️ Prochaine bûche brûlée : <t:${burnTimestampSeconds}:R>\n`;
+    }
+
+    description += `\n`;
+
+    // Visuel emoji du feu EN BAS (plafonné à 5 pour l'affichage)
+    const visualLogCount = Math.min(fireData.logs.length, 5);
+    const fireVisual = getFireVisual(visualLogCount);
     description += fireVisual;
 
     const embed = new EmbedBuilder()

@@ -257,6 +257,17 @@ module.exports = {
                 return;
             }
 
+            // Vérifier le mode standby
+            const {isStandbyMode} = require('../../services/standbyModeService');
+            if (isStandbyMode()) {
+                const errorEmbed = createErrorEmbed(
+                    "🌙 Mode Veille",
+                    "Je suis en mode veille car je ne peux pas me connecter à l'ordinateur de mon créateur. La génération de prompts n'est pas disponible pour le moment."
+                );
+                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+                return;
+            }
+
             const description = interaction.options.getString("description", true);
             const type = interaction.options.getString("type", true) as "text2img" | "img2img";
             const isImg2Img = type === "img2img";

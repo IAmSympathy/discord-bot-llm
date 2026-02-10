@@ -2,6 +2,7 @@ import {createLogger} from "../../utils/logger";
 import {LLMMessage, OllamaService} from "../ollamaService";
 import {Sequence} from "./sequenceData";
 import {isLowPowerMode} from "../botStateService";
+import {isStandbyMode} from "../standbyModeService";
 
 const logger = createLogger("SequenceLLMGenerator");
 
@@ -164,9 +165,20 @@ Crée maintenant une suite ORIGINALE et LOGIQUE de niveau ${difficulty} :`;
  * Génère une suite logique en utilisant le LLM, avec fallback sur la base de données
  */
 export async function generateOrFallbackSequence(difficulty?: 'facile' | 'moyen' | 'difficile'): Promise<Sequence> {
-    // Vérifier si le bot est en mode low power
+    // Vérifier si le bot est en mode low power ou standby
     if (isLowPowerMode()) {
         logger.info("Bot is in low power mode, using fallback database sequence");
+        const {getRandomSequence, getRandomSequenceByDifficulty} = require("./sequenceData");
+
+        if (difficulty) {
+            return getRandomSequenceByDifficulty(difficulty);
+        } else {
+            return getRandomSequence();
+        }
+    }
+
+    if (isStandbyMode()) {
+        logger.info("Bot is in standby mode, using fallback database sequence");
         const {getRandomSequence, getRandomSequenceByDifficulty} = require("./sequenceData");
 
         if (difficulty) {

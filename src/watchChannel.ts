@@ -373,8 +373,23 @@ export function registerWatchedChannelResponder(client: Client) {
                 const isInWatchedChannel = isWatchedChannel(message, watchedChannelId);
 
                 if (isMentioned || isInWatchedChannel) {
-                    await message.reply(`🌙 Je suis en **mode veille** car je ne peux pas me connecter à l'ordinateur de mon créateur.\n\nJe vérifie régulièrement sa disponibilité (toutes les 2 minutes) et reviendrai automatiquement en mode normal dès qu'il sera accessibles.`);
+                    const reply = await message.reply(`🌙 Je suis en **mode veille** car je ne peux pas me connecter à l'ordinateur de mon créateur.\n\nJe vérifie régulièrement sa disponibilité (toutes les 2 minutes) et reviendrai automatiquement en mode normal dès qu'il sera accessibles.`);
                     logger.info(`Standby Mode - sent notification to ${message.author.username}`);
+
+                    // Si c'est dans le watched channel, supprimer les messages après 10 secondes
+                    if (isInWatchedChannel) {
+                        setTimeout(async () => {
+                            try {
+                                await message.delete().catch(() => {
+                                });
+                                await reply.delete().catch(() => {
+                                });
+                                logger.debug(`Deleted Standby Mode messages in watched channel after 10s`);
+                            } catch (error) {
+                                logger.debug(`Could not delete Standby Mode messages: ${error}`);
+                            }
+                        }, 10000);
+                    }
                 }
                 return; // Ne pas traiter les messages en mode Standby
             }
@@ -388,8 +403,23 @@ export function registerWatchedChannelResponder(client: Client) {
                 if (isMentioned || isInWatchedChannel) {
                     const lowPowerMessage = `Désolée, j'ai été mise en mode économie d'énergie par Tah-Um.\nJe ne peux pas générer de réponses ou analyser d'images pour le moment.`;
 
-                    await message.reply(lowPowerMessage);
+                    const reply = await message.reply(lowPowerMessage);
                     logger.info(`Low Power Mode - sent message to ${message.author.username}`);
+
+                    // Si c'est dans le watched channel, supprimer les messages après 10 secondes
+                    if (isInWatchedChannel) {
+                        setTimeout(async () => {
+                            try {
+                                await message.delete().catch(() => {
+                                });
+                                await reply.delete().catch(() => {
+                                });
+                                logger.debug(`Deleted Low Power Mode messages in watched channel after 10s`);
+                            } catch (error) {
+                                logger.debug(`Could not delete Low Power Mode messages: ${error}`);
+                            }
+                        }, 10000);
+                    }
                     return;
                 }
 

@@ -111,6 +111,17 @@ module.exports = {
                 return;
             }
 
+            // Vérifier le mode standby
+            const {isStandbyMode} = require('../../services/standbyModeService');
+            if (isStandbyMode()) {
+                const errorEmbed = createErrorEmbed(
+                    "🌙 Mode Veille",
+                    "Je suis en mode veille car je ne peux pas me connecter à l'ordinateur de mon créateur. L'upscaling d'images n'est pas disponible pour le moment."
+                );
+                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+                return;
+            }
+
             const attachment = interaction.options.getAttachment("image", true);
             const model = (interaction.options.getString("type") as "general" | "anime") || "general";
             const scale = interaction.options.getInteger("multiplier", true);

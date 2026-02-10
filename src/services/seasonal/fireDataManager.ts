@@ -29,6 +29,7 @@ export function loadFireData(): FireData {
                 messageId: null,
                 channelId: null,
                 voiceChannelId: null,
+                logs: [], // Aucune bûche au départ
                 stats: {
                     logsToday: 0,
                     lastLog: null,
@@ -40,6 +41,13 @@ export function loadFireData(): FireData {
         }
 
         const data = JSON.parse(fs.readFileSync(FIRE_DATA_FILE, "utf-8"));
+
+        // Migration: ajouter le champ logs s'il n'existe pas
+        if (!data.logs) {
+            data.logs = [];
+            saveFireData(data);
+        }
+
         return data;
     } catch (error) {
         logger.error("Error loading fire data:", error);
@@ -50,6 +58,7 @@ export function loadFireData(): FireData {
             messageId: null,
             channelId: null,
             voiceChannelId: null,
+            logs: [],
             stats: {
                 logsToday: 0,
                 lastLog: null,

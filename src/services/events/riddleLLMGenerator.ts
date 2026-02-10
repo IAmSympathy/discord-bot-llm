@@ -2,6 +2,7 @@ import {createLogger} from "../../utils/logger";
 import {LLMMessage, OllamaService} from "../ollamaService";
 import {Riddle} from "./riddleData";
 import {isLowPowerMode} from "../botStateService";
+import {isStandbyMode} from "../standbyModeService";
 
 const logger = createLogger("RiddleLLMGenerator");
 
@@ -162,9 +163,20 @@ Crée maintenant une énigme ORIGINALE et LOGIQUE de niveau ${difficulty} :`;
  * Génère une énigme en utilisant le LLM, avec fallback sur la base de données
  */
 export async function generateOrFallbackRiddle(difficulty?: 'facile' | 'moyen' | 'difficile'): Promise<Riddle> {
-    // Vérifier si le bot est en mode low power
+    // Vérifier si le bot est en mode low power ou standby
     if (isLowPowerMode()) {
         logger.info("Bot is in low power mode, using fallback database riddle");
+        const {getRandomRiddle, getRandomRiddleByDifficulty} = require("./riddleData");
+
+        if (difficulty) {
+            return getRandomRiddleByDifficulty(difficulty);
+        } else {
+            return getRandomRiddle();
+        }
+    }
+
+    if (isStandbyMode()) {
+        logger.info("Bot is in standby mode, using fallback database riddle");
         const {getRandomRiddle, getRandomRiddleByDifficulty} = require("./riddleData");
 
         if (difficulty) {

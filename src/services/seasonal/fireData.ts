@@ -1,4 +1,13 @@
 /**
+ * Interface pour une bûche individuelle
+ */
+export interface Log {
+    addedAt: number; // Timestamp d'ajout
+    userId: string;
+    username: string;
+}
+
+/**
  * Interface pour les données du Feu de Foyer
  */
 export interface FireData {
@@ -7,6 +16,7 @@ export interface FireData {
     messageId: string | null; // ID du message embed permanent
     channelId: string | null; // ID du salon textuel
     voiceChannelId: string | null; // ID du salon vocal
+    logs: Log[]; // Bûches actives dans le feu (max 5)
     stats: {
         logsToday: number; // Nombre de bûches ajoutées aujourd'hui
         lastLog: {
@@ -33,8 +43,10 @@ export const FIRE_CONFIG = {
     DECAY_RATE: 1.5, // -1% toutes les 30 minutes
     DECAY_INTERVAL: 30 * 60 * 1000, // 30 minutes
 
-    // Ajout de bûches
+    // Bûches
     LOG_BONUS: 8, // +10% par bûche
+    LOG_BURN_TIME: 3 * 60 * 60 * 1000, // Durée de vie d'une bûche : 3 heures
+    MAX_LOGS: 5, // Maximum de bûches dans le feu
     USER_COOLDOWN: 6 * 60 * 60 * 1000, // 4 heures
 
     // Limites
