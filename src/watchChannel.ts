@@ -335,7 +335,7 @@ export function registerWatchedChannelResponder(client: Client) {
                     prompt: dmPrompt,
                     userId: userId,
                     userName: userName,
-                    channel: dmChannel,
+                    channel: dmChannel.partial ? await dmChannel.fetch() : dmChannel,
                     client: client,
                     replyToMessage: message,
                     imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
