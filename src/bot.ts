@@ -313,7 +313,7 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
                         limit: 1
                     });
                     const timeoutLog = auditLogs.entries.first();
-                    const moderator = timeoutLog?.executor?.username;
+                    const moderator = timeoutLog?.executor?.username ?? undefined;
                     const reason = timeoutLog?.reason;
 
                     await logServerMemberTimeout(
@@ -336,7 +336,7 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
                         limit: 1
                     });
                     const timeoutLog = auditLogs.entries.first();
-                    const moderator = timeoutLog?.executor?.username;
+                    const moderator = timeoutLog?.executor?.username ?? undefined;
 
                     await logServerMemberTimeoutRemove(
                         newMember.user.username,
@@ -392,7 +392,7 @@ client.on(Events.ChannelCreate, async (channel) => {
                     const timeDiff = Date.now() - createLog.createdTimestamp;
                     // Vérifier que le log est récent (moins de 5 secondes)
                     if (timeDiff < 5000) {
-                        createdBy = createLog.executor?.username;
+                        createdBy = createLog.executor?.username ?? undefined;
                     }
                 }
             } catch (error) {
@@ -438,7 +438,7 @@ client.on(Events.ChannelDelete, async (channel) => {
                     const timeDiff = Date.now() - deleteLog.createdTimestamp;
                     // Vérifier que le log est récent (moins de 5 secondes)
                     if (timeDiff < 5000) {
-                        deletedBy = deleteLog.executor?.username;
+                        deletedBy = deleteLog.executor?.username ?? undefined;
                     }
                 }
             } catch (error) {
@@ -487,7 +487,7 @@ client.on(Events.MessageDelete, async (message) => {
                         const timeDiff = Date.now() - deleteLog.createdTimestamp;
                         // Vérifier que le log est récent (moins de 5 secondes)
                         if (timeDiff < 5000) {
-                            deletedBy = deleteLog.executor?.username;
+                            deletedBy = deleteLog.executor?.username ?? undefined;
                         }
                     }
                 } catch (error) {
