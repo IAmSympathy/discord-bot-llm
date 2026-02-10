@@ -5,6 +5,7 @@ export interface Log {
     addedAt: number; // Timestamp d'ajout
     userId: string;
     username: string;
+    initialContribution: number; // Contribution initiale en % (normalement 8%)
 }
 
 /**

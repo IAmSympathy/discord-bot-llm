@@ -35,6 +35,96 @@ export async function initializeFireSystem(client: Client): Promise<void> {
 }
 
 /**
+ * Formate une durée en millisecondes en texte lisible
+ */
+function formatTimeRemaining(ms: number): string {
+    if (ms <= 0) return "Bientôt";
+
+    const totalMinutes = Math.floor(ms / (60 * 1000));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    if (hours > 0) {
+        if (minutes > 0) {
+            return `${hours}h ${minutes}min`;
+        }
+        return `${hours}h`;
+    }
+
+    return `${minutes}min`;
+}
+
+/**
+ * Obtient le multiplicateur de vitesse de brûlage selon la température
+ * Plus le multiplicateur est élevé, plus les bûches se consument vite
+ * C'est un feu de FOYER (intérieur), donc seule la température extérieure compte
+ */
+async function getWeatherBurnMultiplier(): Promise<number> {
+    try {
+        const {getSherbrookeWeather} = require("../weatherService");
+        const weather = await getSherbrookeWeather();
+
+        if (weather) {
+            const temp = weather.temperature;
+
+            // Ajuster la vitesse de brûlage selon la température extérieure
+            if (temp < -25) {
+                return 1.3; // Froid extrême : brûle plus vite (2h18 au lieu de 3h) - grand besoin de chaleur
+            } else if (temp < -15) {
+                return 1.15; // Froid intense : brûle un peu plus vite (2h36 au lieu de 3h)
+            } else if (temp > 0) {
+                return 0.8; // Temps doux : brûle plus lentement (3h45 au lieu de 3h) - moins de besoin
+            }
+        }
+    } catch (error) {
+        logger.debug("Could not fetch weather for burn calculation, using default rate");
+    }
+
+    return 1.0; // Vitesse normale (entre -15°C et 0°C)
+}
+
+/**
+ * Calcule la contribution actuelle d'une bûche en fonction de son âge et de la météo
+ */
+async function calculateLogContribution(log: any, now: number): Promise<number> {
+    const logAge = now - log.addedAt;
+
+    // Si la bûche a plus de 3 heures (temps de base), elle ne contribue plus
+    if (logAge >= FIRE_CONFIG.LOG_BURN_TIME) {
+        return 0;
+    }
+
+    // Obtenir le multiplicateur météo
+    const weatherMultiplier = await getWeatherBurnMultiplier();
+
+    // Calculer l'âge effectif de la bûche (affecté par la météo)
+    const effectiveAge = logAge * weatherMultiplier;
+
+    // Si l'âge effectif dépasse le temps de brûlage, la bûche est consumée
+    if (effectiveAge >= FIRE_CONFIG.LOG_BURN_TIME) {
+        return 0;
+    }
+
+    // La contribution décroît linéairement de initialContribution à 0
+    const timeRatio = 1 - (effectiveAge / FIRE_CONFIG.LOG_BURN_TIME);
+    return (log.initialContribution || FIRE_CONFIG.LOG_BONUS) * timeRatio;
+}
+
+/**
+ * Calcule l'intensité totale basée sur les contributions de toutes les bûches
+ */
+async function calculateTotalIntensity(fireData: any): Promise<number> {
+    const now = Date.now();
+    let totalIntensity = 0;
+
+    for (const log of fireData.logs) {
+        totalIntensity += await calculateLogContribution(log, now);
+    }
+
+    return Math.min(FIRE_CONFIG.MAX_INTENSITY, Math.max(FIRE_CONFIG.MIN_INTENSITY, totalIntensity));
+}
+
+/**
  * Démarre la décroissance automatique du feu
  */
 function startDecay(): void {
@@ -46,75 +136,43 @@ function startDecay(): void {
         const fireData = loadFireData();
         const now = Date.now();
 
-        // 1. Retirer les bûches qui ont brûlé (plus de 3 heures)
+        const oldIntensity = fireData.intensity;
+
+        // Obtenir le multiplicateur météo pour déterminer quelles bûches sont consumées
+        const weatherMultiplier = await getWeatherBurnMultiplier();
+
+        // 1. Retirer les bûches qui ont complètement brûlé (en tenant compte de la météo)
         const initialLogCount = fireData.logs.length;
         fireData.logs = fireData.logs.filter(log => {
             const logAge = now - log.addedAt;
-            return logAge < FIRE_CONFIG.LOG_BURN_TIME;
+            const effectiveAge = logAge * weatherMultiplier;
+            return effectiveAge < FIRE_CONFIG.LOG_BURN_TIME;
         });
 
         const burnedLogs = initialLogCount - fireData.logs.length;
         if (burnedLogs > 0) {
-            logger.info(`${burnedLogs} log(s) burned completely. Remaining: ${fireData.logs.length}/${FIRE_CONFIG.MAX_LOGS}`);
+            logger.info(`${burnedLogs} log(s) burned completely (weather multiplier: ${weatherMultiplier.toFixed(2)}x). Remaining: ${fireData.logs.length}`);
         }
 
-        // 2. Appliquer la décroissance normale d'intensité
-        const timeSinceUpdate = now - fireData.lastUpdate;
-        const periodsElapsed = Math.floor(timeSinceUpdate / FIRE_CONFIG.DECAY_INTERVAL);
+        // 2. Recalculer l'intensité totale basée sur les contributions actuelles de toutes les bûches
+        fireData.intensity = await calculateTotalIntensity(fireData);
+        fireData.lastUpdate = now;
+        saveFireData(fireData);
 
-        if (periodsElapsed > 0) {
-            const oldIntensity = fireData.intensity;
+        const oldState = getFireState(oldIntensity);
+        const newState = getFireState(fireData.intensity);
 
-            // Calculer le taux de décroissance basé sur la météo
-            let decayRate = FIRE_CONFIG.DECAY_RATE;
+        if (oldIntensity !== fireData.intensity) {
+            logger.info(`Fire intensity updated: ${oldIntensity.toFixed(1)}% → ${fireData.intensity.toFixed(1)}% (${fireData.logs.length} active logs, weather: ${weatherMultiplier.toFixed(2)}x)`);
+        }
 
-            try {
-                const {getSherbrookeWeather} = require("../weatherService");
-                const weather = await getSherbrookeWeather();
-
-                if (weather) {
-                    const condition = weather.condition.toLowerCase();
-
-                    // Ajuster le taux de décroissance selon la météo
-                    if (condition.includes("pluie") || condition.includes("orage")) {
-                        decayRate *= 2.0; // Pluie : décroissance 2x plus rapide (-3%/30min)
-                        logger.info(`Weather effect: Rain/Storm - decay rate doubled`);
-                    } else if (condition.includes("neige")) {
-                        decayRate *= 1.5; // Neige : décroissance 1.5x plus rapide (-2.25%/30min)
-                        logger.info(`Weather effect: Snow - decay rate increased by 50%`);
-                    } else if (weather.temperature < -25) {
-                        decayRate *= 0.8; // Froid extrême : les gens ajoutent plus de bûches, décroissance réduite
-                        logger.info(`Weather effect: Extreme cold - decay rate reduced`);
-                    }
-                }
-            } catch (error) {
-                logger.debug("Could not fetch weather for decay calculation, using default rate");
-            }
-
-            fireData.intensity = Math.max(
-                FIRE_CONFIG.MIN_INTENSITY,
-                fireData.intensity - (decayRate * periodsElapsed)
-            );
-            fireData.lastUpdate = now;
-            saveFireData(fireData);
-
-            const oldState = getFireState(oldIntensity);
-            const newState = getFireState(fireData.intensity);
-
-            logger.info(`Fire decayed: ${oldIntensity}% → ${fireData.intensity}% (rate: ${decayRate.toFixed(2)}%, logs: ${fireData.logs.length})`);
-
-            // Log si changement d'état
-            if (oldState !== newState) {
-                logger.info(`Fire state changed: ${oldState} → ${newState}`);
-            }
-        } else if (burnedLogs > 0) {
-            // Sauvegarder même si pas de décroissance d'intensité (bûches brûlées)
-            fireData.lastUpdate = now;
-            saveFireData(fireData);
+        // Log si changement d'état
+        if (oldState !== newState) {
+            logger.info(`Fire state changed: ${oldState} → ${newState}`);
         }
     }, FIRE_CONFIG.DECAY_INTERVAL);
 
-    logger.info("Fire decay started");
+    logger.info("Fire decay started (individual log contribution system with weather effects)");
 }
 
 /**
@@ -164,24 +222,21 @@ function startDailyReset(): void {
 /**
  * Ajoute une bûche au feu
  */
-export function addLog(userId: string, username: string): { success: boolean; newIntensity?: number; message: string } {
+export async function addLog(userId: string, username: string): Promise<{ success: boolean; newIntensity?: number; message: string }> {
     const fireData = loadFireData();
 
-    // Plus de limite sur le nombre de bûches - on peut en ajouter infiniment!
-    // Le visuel sera plafonné à 5 bûches mais le compteur continuera
-
     const oldIntensity = fireData.intensity;
-    fireData.intensity = Math.min(
-        FIRE_CONFIG.MAX_INTENSITY,
-        fireData.intensity + FIRE_CONFIG.LOG_BONUS
-    );
 
-    // Ajouter la bûche au tableau
+    // Ajouter la bûche au tableau avec sa contribution initiale
     fireData.logs.push({
         addedAt: Date.now(),
         userId,
-        username
+        username,
+        initialContribution: FIRE_CONFIG.LOG_BONUS // 8%
     });
+
+    // Recalculer l'intensité totale basée sur toutes les bûches actives
+    fireData.intensity = await calculateTotalIntensity(fireData);
 
     fireData.stats.logsToday++;
     fireData.stats.totalLogs++;
@@ -196,10 +251,10 @@ export function addLog(userId: string, username: string): { success: boolean; ne
     const oldState = getFireState(oldIntensity);
     const newState = getFireState(fireData.intensity);
 
-    logger.info(`${username} added a log (${fireData.logs.length} total): ${oldIntensity}% → ${fireData.intensity}%`);
+    logger.info(`${username} added a log (${fireData.logs.length} total): ${oldIntensity.toFixed(1)}% → ${fireData.intensity.toFixed(1)}%`);
 
     // Message selon le changement d'état
-    let message = `🪵 Tu as ajouté une bûche au feu ! (${oldIntensity}% → ${fireData.intensity}%)\nBûches actives : ${fireData.logs.length}`;
+    let message = `🪵 Tu as ajouté une bûche au feu ! (${oldIntensity.toFixed(1)}% → ${fireData.intensity.toFixed(1)}%)\nBûches actives : ${fireData.logs.length}`;
 
     if (oldState !== newState) {
         message += `\n\n🔥 Le feu est maintenant **${FIRE_NAMES[newState]}** !`;
@@ -474,21 +529,15 @@ async function getWeatherImpact(): Promise<{ text: string; icon: string }> {
         const temp = weather.temperature;
         const condition = weather.condition.toLowerCase();
 
-        // Impact selon la météo (adapté au climat québécois)
-        if (condition.includes("pluie") || condition.includes("orage")) {
-            return {text: `${weather.emoji} La pluie menace le feu ! **(-3%/30min)**`, icon: "⚠️"};
-        } else if (condition.includes("neige")) {
-            return {text: `${weather.emoji} La neige tombe **(-2.25%/30min)**`, icon: "❄️"};
-        } else if (temp < -25) {
-            return {text: `${weather.emoji} Froid intense (${temp}°C) ! **(-1.2%/30min)**`, icon: "🥶"};
-        } else if (temp < -15) {
-            return {text: `${weather.emoji} Grand froid (${temp}°C)`, icon: "🔥"};
-        } else if (temp < 0) {
-            return {text: `${weather.emoji} Temps hivernal (${temp}°C)`, icon: "❄️"};
-        } else if (temp > 20) {
-            return {text: `${weather.emoji} Belle température (${temp}°C)`, icon: "☀️"};
+        // Impact selon la température (feu de foyer intérieur)
+        if (temp < -20) {
+            return {text: `${weather.emoji} Froid extrême (${temp}°C) ! **Consommation ×1.3**`, icon: "🥶"};
+        } else if (temp < -8) {
+            return {text: `${weather.emoji} Froid (${temp}°C) **Consommation ×1.15**`, icon: "🔥"};
+        } else if (temp > 0) {
+            return {text: `${weather.emoji} Temps doux (${temp}°C) **Consommation ×0.8**`, icon: "☀️"};
         } else {
-            return {text: `${weather.emoji} Temps doux (${temp}°C)`, icon: "✅"};
+            return {text: `${weather.emoji} Temps hivernal (${temp}°C)`, icon: "❄️"};
         }
     } catch (error) {
         return {text: "Conditions inconnues", icon: "🌡️"};
@@ -516,7 +565,7 @@ async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
 
     // Description role-play
     let description = `╔═══════════════════════════════╗\n`;
-    description += `⠀  **${stateName.toUpperCase()}** - ${fireData.intensity}%  \n`;
+    description += `⠀  **${stateName.toUpperCase()}** - ${fireData.intensity.toFixed(1)}%  \n`;
     description += `⠀  ${progressBar}  \n`;
     description += `╚═══════════════════════════════╝\n\n`;
 
@@ -531,22 +580,33 @@ async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
     // Statistiques compactes - afficher le nombre réel de bûches
     description += `🪵 **Bûches : ${fireData.logs.length}**\n`;
 
-
-    // Afficher le temps restant avant que la prochaine bûche brûle
+    // Afficher le temps restant avant que la prochaine bûche brûle (avec effet météo)
     if (fireData.logs.length > 0) {
         // Trouver la bûche la plus ancienne (celle qui va brûler en premier)
         const oldestLog = fireData.logs.reduce((oldest: typeof fireData.logs[0], log: typeof fireData.logs[0]) =>
             log.addedAt < oldest.addedAt ? log : oldest
         );
 
-        const burnTime = oldestLog.addedAt + FIRE_CONFIG.LOG_BURN_TIME;
-        const burnTimestampSeconds = Math.floor(burnTime / 1000);
-        description += `Prochaine bûche brûlée : <t:${burnTimestampSeconds}:R>\n`;
+        const now = Date.now();
+        const logAge = now - oldestLog.addedAt;
+        const weatherMultiplier = await getWeatherBurnMultiplier();
+        const effectiveAge = logAge * weatherMultiplier;
+
+        // Calculer le temps réel restant avant que la bûche brûle complètement
+        // Le temps de brûlage restant dépend de la météo actuelle
+        const timeRemainingEffective = FIRE_CONFIG.LOG_BURN_TIME - effectiveAge;
+        const actualTimeRemaining = timeRemainingEffective / weatherMultiplier;
+
+        if (actualTimeRemaining > 0) {
+            description += `⏱️ Prochaine bûche brûlée dans : **${formatTimeRemaining(actualTimeRemaining)}**\n`;
+        } else {
+            description += `⏱️ Prochaine bûche brûlée : **Bientôt**\n`;
+        }
     }
 
     if (fireData.stats.lastLog) {
         const timestampSeconds = Math.floor(fireData.stats.lastLog.timestamp / 1000);
-        description += `Dernière bûche ajoutée : <@${fireData.stats.lastLog.userId}> <t:${timestampSeconds}:R>\n`;
+        description += `👤 Dernière bûche : <@${fireData.stats.lastLog.userId}> <t:${timestampSeconds}:R>\n`;
     }
 
     description += `\n`;

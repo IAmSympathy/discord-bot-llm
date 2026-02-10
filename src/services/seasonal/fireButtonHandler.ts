@@ -36,7 +36,7 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
         }
 
         // Ajouter la bûche
-        const result = addLog(userId, username);
+        const result = await addLog(userId, username);
 
         if (!result.success) {
             const errorEmbed = new EmbedBuilder()
