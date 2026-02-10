@@ -6,6 +6,8 @@ export interface Log {
     userId: string;
     username: string;
     initialContribution: number; // Contribution initiale en % (normalement 8%)
+    effectiveAge: number; // Âge effectif accumulé en millisecondes (augmente selon les conditions)
+    lastUpdate: number; // Dernier timestamp de mise à jour de l'effectiveAge
 }
 
 /**
@@ -64,6 +66,9 @@ export const FIRE_CONFIG = {
 
     // Mise à jour de l'interface
     UPDATE_INTERVAL: 5 * 60 * 1000, // 5 minutes
+
+    // Protection météo
+    PROTECTION_BURN_MULTIPLIER: 0.5, // Avec protection, les bûches brûlent 2x plus lentement (durent 6h au lieu de 3h)
 
     // Multiplicateurs XP
     MULTIPLIERS: {

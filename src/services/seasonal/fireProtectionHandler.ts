@@ -36,7 +36,7 @@ export async function handleUseProtectionButton(interaction: ButtonInteraction):
                     `• Gagne des parties de jeux\n` +
                     `• Débloque des achievements\n`
                 )
-                .setFooter({text: "Les objets de protection te permettent de bloquer les effets météo"})
+                .setFooter({text: "Les protections ralentissent la combustion des bûches"})
                 .setTimestamp();
 
             await interaction.reply({embeds: [noItemsEmbed], ephemeral: true});
@@ -173,7 +173,8 @@ async function showConfirmation(
             `Tu es sur le point d'utiliser :\n\n` +
             `${itemInfo.emoji} **${itemInfo.name}**\n` +
             `${timeInfo}\n\n` +
-            `Cette protection empêchera la température d'affecter le feu.`
+            `⚡ **Effet :** Combustion ralentie (×0.5)\n` +
+            `🪵 Les bûches dureront 2× plus longtemps`
         )
         .setFooter({text: "Es-tu sûr de vouloir utiliser cet objet ?"})
         .setTimestamp();
@@ -225,13 +226,14 @@ async function showConfirmation(
 
             const successEmbed = new EmbedBuilder()
                 .setColor(0x2ECC71)
-                .setTitle("Protection activée !")
+                .setTitle("✅ Protection activée !")
                 .setDescription(
-                    `${itemInfo.emoji} **${itemInfo.name}** utilisé avec succès !\n` +
-                    `Le feu est maintenant protégé des effets météo pendant **${durationMinutes} minutes** !\n\n` +
-                    `⏱️ La protection se terminera <t:${Math.floor((Date.now() + duration) / 1000)}:R>`
+                    `${itemInfo.emoji} **${itemInfo.name}** utilisé avec succès !\n\n` +
+                    `🛡️ **Effet actif pendant ${durationMinutes} minutes**\n` +
+                    `⚡ Combustion ralentie (×0.5)\n` +
+                    `🪵 Les bûches durent maintenant 2× plus longtemps\n\n` +
+                    `⏱️ Se termine <t:${Math.floor((Date.now() + duration) / 1000)}:R>`
                 )
-                .setFooter({text: "Le feu ne sera pas affecté par la température extérieure"})
                 .setTimestamp();
 
             await interaction.editReply({embeds: [successEmbed], components: []});

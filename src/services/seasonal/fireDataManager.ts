@@ -63,6 +63,27 @@ export function loadFireData(): FireData {
             saveFireData(data);
         }
 
+        // Migration: ajouter effectiveAge et lastUpdate aux bûches existantes
+        if (data.logs && data.logs.length > 0) {
+            let needsSave = false;
+            const now = Date.now();
+
+            for (const log of data.logs) {
+                if (log.effectiveAge === undefined || log.lastUpdate === undefined) {
+                    // Pour les anciennes bûches, calculer un effectiveAge basé sur leur âge réel
+                    const logAge = now - log.addedAt;
+                    log.effectiveAge = Math.min(logAge, FIRE_CONFIG.LOG_BURN_TIME); // Plafonner au temps max
+                    log.lastUpdate = now;
+                    needsSave = true;
+                }
+            }
+
+            if (needsSave) {
+                logger.info(`Migrated ${data.logs.length} log(s) to new effectiveAge system`);
+                saveFireData(data);
+            }
+        }
+
         return data;
     } catch (error) {
         logger.error("Error loading fire data:", error);

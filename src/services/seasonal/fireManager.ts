@@ -55,14 +55,15 @@ function formatTimeRemaining(ms: number): string {
 }
 
 /**
- * Obtient le multiplicateur de vitesse de brûlage selon la température
+ * Obtient le multiplicateur de vitesse de brûlage selon la température et la protection active
  * Plus le multiplicateur est élevé, plus les bûches se consument vite
  * C'est un feu de FOYER (intérieur), donc seule la température extérieure compte
  */
 async function getWeatherBurnMultiplier(): Promise<number> {
     // Vérifier si la protection météo est active
     if (isWeatherProtectionActive()) {
-        return 1.0; // Pas d'effet météo si protégé
+        // Avec protection, les bûches brûlent 2x plus lentement
+        return FIRE_CONFIG.PROTECTION_BURN_MULTIPLIER;
     }
 
     try {
@@ -89,23 +90,14 @@ async function getWeatherBurnMultiplier(): Promise<number> {
 }
 
 /**
- * Calcule la contribution actuelle d'une bûche en fonction de son âge et de la météo
+ * Calcule la contribution actuelle d'une bûche en fonction de son âge effectif accumulé
+ * L'âge effectif est mis à jour progressivement selon les conditions (météo, protection)
  */
 async function calculateLogContribution(log: any, now: number): Promise<number> {
-    const logAge = now - log.addedAt;
+    // Utiliser l'âge effectif accumulé (ou 0 si pas encore défini - migration)
+    const effectiveAge = log.effectiveAge || 0;
 
-    // Si la bûche a plus de 3 heures (temps de base), elle ne contribue plus
-    if (logAge >= FIRE_CONFIG.LOG_BURN_TIME) {
-        return 0;
-    }
-
-    // Obtenir le multiplicateur météo
-    const weatherMultiplier = await getWeatherBurnMultiplier();
-
-    // Calculer l'âge effectif de la bûche (affecté par la météo)
-    const effectiveAge = logAge * weatherMultiplier;
-
-    // Si l'âge effectif dépasse le temps de brûlage, la bûche est consumée
+    // Si l'âge effectif dépasse le temps de brûlage standard, la bûche est consumée
     if (effectiveAge >= FIRE_CONFIG.LOG_BURN_TIME) {
         return 0;
     }
@@ -130,6 +122,32 @@ async function calculateTotalIntensity(fireData: any): Promise<number> {
 }
 
 /**
+ * Met à jour l'âge effectif accumulé de toutes les bûches selon les conditions actuelles
+ * Cette fonction doit être appelée régulièrement pour accumuler l'âge correctement
+ */
+async function updateLogsEffectiveAge(fireData: any, now: number): Promise<void> {
+    const weatherMultiplier = await getWeatherBurnMultiplier();
+
+    for (const log of fireData.logs) {
+        // Migration : initialiser effectiveAge et lastUpdate si nécessaire
+        if (log.effectiveAge === undefined) {
+            log.effectiveAge = 0;
+            log.lastUpdate = log.addedAt;
+        }
+
+        // Calculer le temps écoulé depuis la dernière mise à jour
+        const timeSinceLastUpdate = now - log.lastUpdate;
+
+        // Accumuler l'âge effectif selon le multiplicateur actuel
+        // Plus le multiplicateur est élevé, plus l'âge augmente vite (brûle plus vite)
+        log.effectiveAge += timeSinceLastUpdate * weatherMultiplier;
+
+        // Mettre à jour le timestamp
+        log.lastUpdate = now;
+    }
+}
+
+/**
  * Démarre la décroissance automatique du feu
  */
 function startDecay(): void {
@@ -143,15 +161,16 @@ function startDecay(): void {
 
         const oldIntensity = fireData.intensity;
 
-        // Obtenir le multiplicateur météo pour déterminer quelles bûches sont consumées
+        // Obtenir le multiplicateur météo pour le logging
         const weatherMultiplier = await getWeatherBurnMultiplier();
 
-        // 1. Retirer les bûches qui ont complètement brûlé (en tenant compte de la météo)
+        // 1. Mettre à jour l'âge effectif accumulé de toutes les bûches selon les conditions actuelles
+        await updateLogsEffectiveAge(fireData, now);
+
+        // 2. Retirer les bûches dont l'âge effectif a dépassé le temps de brûlage
         const initialLogCount = fireData.logs.length;
         fireData.logs = fireData.logs.filter(log => {
-            const logAge = now - log.addedAt;
-            const effectiveAge = logAge * weatherMultiplier;
-            return effectiveAge < FIRE_CONFIG.LOG_BURN_TIME;
+            return log.effectiveAge < FIRE_CONFIG.LOG_BURN_TIME;
         });
 
         const burnedLogs = initialLogCount - fireData.logs.length;
@@ -159,7 +178,7 @@ function startDecay(): void {
             logger.info(`${burnedLogs} log(s) burned completely (weather multiplier: ${weatherMultiplier.toFixed(2)}x). Remaining: ${fireData.logs.length}`);
         }
 
-        // 2. Recalculer l'intensité totale basée sur les contributions actuelles de toutes les bûches
+        // 3. Recalculer l'intensité totale basée sur les contributions actuelles de toutes les bûches
         fireData.intensity = await calculateTotalIntensity(fireData);
         fireData.lastUpdate = now;
         saveFireData(fireData);
@@ -232,12 +251,16 @@ export async function addLog(userId: string, username: string): Promise<{ succes
 
     const oldIntensity = fireData.intensity;
 
+    const now = Date.now();
+
     // Ajouter la bûche au tableau avec sa contribution initiale
     fireData.logs.push({
-        addedAt: Date.now(),
+        addedAt: now,
         userId,
         username,
-        initialContribution: FIRE_CONFIG.LOG_BONUS // 8%
+        initialContribution: FIRE_CONFIG.LOG_BONUS, // 8%
+        effectiveAge: 0, // Commence à 0
+        lastUpdate: now // Timestamp de création
     });
 
     // Recalculer l'intensité totale basée sur toutes les bûches actives
@@ -528,8 +551,15 @@ async function getWeatherImpact(): Promise<{ text: string; icon: string }> {
     const protectionInfo = getWeatherProtectionInfo();
     if (protectionInfo.active && protectionInfo.remainingTime > 0) {
         const minutes = Math.ceil(protectionInfo.remainingTime / 60000);
+        let text = `**Protection Active** (${minutes} min)\n**Combustion ×0.5** - Bûches durent 2× plus longtemps`;
+
+        // Ajouter qui a activé la protection si l'info est disponible
+        if (protectionInfo.activatedBy) {
+            text += `\n👤 Par : <@${protectionInfo.activatedBy.userId}>`;
+        }
+
         return {
-            text: `**Protection Active** (${minutes} min restantes)\n*La température n'a plus aucun effet sur le feu*`,
+            text,
             icon: "🛡️"
         };
     }
@@ -596,22 +626,23 @@ async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
     // Statistiques compactes - afficher le nombre réel de bûches
     description += `🪵 **Bûches : ${fireData.logs.length}**\n`;
 
-    // Afficher le temps restant avant que la prochaine bûche brûle (avec effet météo)
+    // Afficher le temps restant avant que la prochaine bûche brûle
     if (fireData.logs.length > 0) {
-        // Trouver la bûche la plus ancienne (celle qui va brûler en premier)
+        // Trouver la bûche avec l'effectiveAge le plus élevé (celle qui va brûler en premier)
         const oldestLog = fireData.logs.reduce((oldest: typeof fireData.logs[0], log: typeof fireData.logs[0]) =>
-            log.addedAt < oldest.addedAt ? log : oldest
+            (log.effectiveAge || 0) > (oldest.effectiveAge || 0) ? log : oldest
         );
 
         const now = Date.now();
-        const logAge = now - oldestLog.addedAt;
         const weatherMultiplier = await getWeatherBurnMultiplier();
-        const effectiveAge = logAge * weatherMultiplier;
 
-        // Calculer le temps réel restant avant que la bûche brûle complètement
-        // Le temps de brûlage restant dépend de la météo actuelle
-        const timeRemainingEffective = FIRE_CONFIG.LOG_BURN_TIME - effectiveAge;
-        const actualTimeRemaining = timeRemainingEffective / weatherMultiplier;
+        // Calculer combien de temps effectif il reste avant que la bûche brûle complètement
+        const effectiveTimeRemaining = FIRE_CONFIG.LOG_BURN_TIME - (oldestLog.effectiveAge || 0);
+
+        // Convertir en temps réel selon le multiplicateur actuel
+        // Si multiplier = 0.5 (protection), le temps réel sera 2x plus long
+        // Si multiplier = 1.3 (froid), le temps réel sera plus court
+        const actualTimeRemaining = effectiveTimeRemaining / weatherMultiplier;
 
         if (actualTimeRemaining > 0) {
             description += `⏱️ Prochaine bûche brûlée dans : **${formatTimeRemaining(actualTimeRemaining)}**\n`;
