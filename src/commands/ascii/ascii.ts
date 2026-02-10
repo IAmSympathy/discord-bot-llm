@@ -2,6 +2,7 @@ import {ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, TextChan
 import {logCommand} from "../../utils/discordLogger";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import figlet from "figlet";
+import {tryRewardAndNotify} from "../../services/rewardNotifier";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -120,13 +121,9 @@ module.exports = {
                             false
                         );
                     }
-                    // Chance d'obtenir un objet saisonnier (1%)
-                    try {
-                        const {tryRandomSeasonalReward} = require("../../services/rewardService");
-                        tryRandomSeasonalReward(interaction.user.id, interaction.user.username, "command");
-                    } catch (error) {
-                        console.error("Error awarding seasonal reward:", error);
-                    }
+                    // Chance d'obtenir un objet saisonnier (3% - commande Netricsa)
+                    const {tryRewardAndNotify} = require("../../services/rewardNotifier");
+                    await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
                 }
             );
 

@@ -4,7 +4,7 @@ import {addXP} from "../../services/xpSystem";
 import {logCommand} from "../../utils/discordLogger";
 import * as fs from "fs";
 import * as path from "path";
-import {tryRandomSeasonalReward} from "../../services/rewardService";
+import {tryRewardAndNotify} from "../../services/rewardNotifier";
 
 const logger = createLogger("SlotsCmd");
 const COOLDOWN_FILE = path.join(process.cwd(), "data", "slots_cooldown.json");
@@ -211,13 +211,9 @@ module.exports = {
                 );
             }
 
-            // Chance d'obtenir un objet saisonnier (1%)
-            try {
-                const {tryRandomSeasonalReward} = require("../../services/rewardService");
-                tryRandomSeasonalReward(interaction.user.id, interaction.user.username, "command");
-            } catch (error) {
-                console.error("Error awarding seasonal reward:", error);
-            }
+            // Chance d'obtenir un objet saisonnier (3% - commande Netricsa)
+            const {tryRewardAndNotify} = require("../../services/rewardNotifier");
+            await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
 
 
             const resultEmbed = new EmbedBuilder()

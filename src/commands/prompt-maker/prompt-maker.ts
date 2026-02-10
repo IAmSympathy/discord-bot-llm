@@ -7,6 +7,7 @@ import {isLowPowerMode} from "../../services/botStateService";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {recordPromptCreatedStats} from "../../services/statsRecorder";
 import {logBotCommand} from "../../utils/discordLogger";
+import {tryRewardAndNotify} from "../../services/rewardNotifier";
 
 const logger = createLogger("PromptMakerCmd");
 
@@ -387,23 +388,8 @@ module.exports = {
             }
 
             // Chance d'obtenir un objet saisonnier (3% - commande Netricsa)
-            try {
-                const {tryRandomSeasonalReward} = require("../../services/rewardService");
-                const gotReward = tryRandomSeasonalReward(
-                    interaction.user.id,
-                    interaction.user.username,
-                    "netricsa_command"
-                );
-
-                if (gotReward) {
-                    await interaction.followUp({
-                        content: "✨ **Bonus !** Tu as trouvé un objet saisonnier ! Vérifie ton inventaire (`/profile` → 🎒 Inventaire)",
-                        ephemeral: true
-                    });
-                }
-            } catch (error) {
-                console.error("Error awarding seasonal reward:", error);
-            }
+            const {tryRewardAndNotify} = require("../../services/rewardNotifier");
+            await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "netricsa_command");
 
             // Clear status
             await clearStatus(client, statusId);

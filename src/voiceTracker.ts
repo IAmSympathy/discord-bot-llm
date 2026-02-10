@@ -198,6 +198,10 @@ function startVoiceSession(userId: string, channelId: string, username: string, 
                     1 // 1 minute vocale
                 );
 
+                // Chance d'obtenir un objet saisonnier (0.8% par minute vocale)
+                const {tryRewardAndNotify} = require("./services/rewardNotifier");
+                await tryRewardAndNotify(null, channel as any, userId, username, "voice");
+
                 // Log avec info sur le multiplicateur
                 const dailyTime = dailyVoiceTime.get(userId);
                 const totalMinutes = dailyTime ? dailyTime.totalMinutes : 0;

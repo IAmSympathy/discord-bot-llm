@@ -208,6 +208,10 @@ export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tic
 
         addXP(userId, "Player", xpAmount, channel);
 
+        // Chance d'obtenir un objet saisonnier (0.8% par minute vocale)
+        const {tryRewardAndNotify} = require("./services/rewardNotifier");
+        await tryRewardAndNotify(null, channel as any, userId, username, "voice");
+
         // Tracker la victoire pour achievements avancés
         const {trackWin, trackGamePlayed} = require("../../services/gameTracker");
         trackWin(userId, game, isVsAI);

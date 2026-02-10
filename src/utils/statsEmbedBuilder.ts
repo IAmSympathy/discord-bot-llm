@@ -625,15 +625,11 @@ export function createInventoryEmbed(targetUser: User): EmbedBuilder {
         for (const season of seasons) {
             const items = itemsBySeason[season];
             if (items.length > 0) {
-                const seasonLabel = seasonNames[season];
-                const isCurrentSeason = season === currentSeason;
-                description += `**${seasonLabel}**${isCurrentSeason ? ' ✨ (Saison actuelle)' : ''}\n`;
-
                 for (const {itemType, quantity} of items) {
                     const itemInfo = ITEM_CATALOG[itemType];
                     const rarityEmoji = itemInfo.rarity === "rare" ? "⭐" : itemInfo.rarity === "uncommon" ? "💎" : "🔹";
                     description += `${rarityEmoji} ${itemInfo.emoji} **${itemInfo.name}** × ${quantity}\n`;
-                    description += `   ↳ ${itemInfo.description}\n`;
+                    description += `⠀⠀⠀↳ ${itemInfo.description}\n`;
                 }
                 description += "\n";
             }

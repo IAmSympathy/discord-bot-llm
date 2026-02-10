@@ -2,7 +2,7 @@ import {ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, TextChan
 import {createLogger} from "../../utils/logger";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {logCommand} from "../../utils/discordLogger";
-import {tryRandomSeasonalReward} from "../../services/rewardService";
+import {tryRewardAndNotify} from "../../services/rewardNotifier";
 
 const logger = createLogger("CucumberCmd");
 
@@ -79,13 +79,9 @@ module.exports = {
                 );
             }
 
-            // Chance d'obtenir un objet saisonnier (1%)
-            try {
-                const {tryRandomSeasonalReward} = require("../../services/rewardService");
-                tryRandomSeasonalReward(interaction.user.id, interaction.user.username, "command");
-            } catch (error) {
-                console.error("Error awarding seasonal reward:", error);
-            }
+            // Chance d'obtenir un objet saisonnier (3% - commande Netricsa)
+            const {tryRewardAndNotify} = require("../../services/rewardNotifier");
+            await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
 
             logger.info(`${interaction.user.username} measured their cucumber: ${size} cm (${inches}")`);
 

@@ -7,6 +7,7 @@ import {NETRICSA_USER_ID, NETRICSA_USERNAME} from "../../services/userStatsServi
 import {recordMemeSearchedStats} from "../../services/statsRecorder";
 import * as fs from "fs";
 import * as path from "path";
+import {tryRewardAndNotify} from "../../services/rewardNotifier";
 
 const MEME_CHANNEL_ID = EnvConfig.MEME_CHANNEL_ID;
 const MEME_HISTORY_FILE = path.join(process.cwd(), "data", "posted_memes.json");
@@ -109,23 +110,8 @@ module.exports = {
             }
 
             // Chance d'obtenir un objet saisonnier (3% - commande Netricsa)
-            try {
-                const {tryRandomSeasonalReward} = require("../../services/rewardService");
-                const gotReward = tryRandomSeasonalReward(
-                    interaction.user.id,
-                    interaction.user.username,
-                    "netricsa_command"
-                );
-
-                if (gotReward) {
-                    await interaction.followUp({
-                        content: "✨ **Bonus !** Tu as trouvé un objet saisonnier ! Vérifie ton inventaire (`/profile` → 🎒 Inventaire)",
-                        ephemeral: true
-                    });
-                }
-            } catch (error) {
-                console.error("Error awarding seasonal reward:", error);
-            }
+            const {tryRewardAndNotify} = require("../../services/rewardNotifier");
+            await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
 
             // Logger la commande
             await logCommand("🎭 Meme posté", undefined, [

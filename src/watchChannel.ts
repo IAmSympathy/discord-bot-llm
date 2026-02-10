@@ -15,6 +15,7 @@ import {NETRICSA_USER_ID, NETRICSA_USERNAME, recordEmojisUsed} from "./services/
 import {recordAIConversationStats, recordMentionReceivedStats, recordMessageStats, recordReactionAddedStats, recordReplyReceivedStats} from "./services/statsRecorder";
 import {addXP, XP_REWARDS} from "./services/xpSystem";
 import {handleCounterMessage} from "./services/counterService";
+import {tryRewardAndNotify} from "./services/rewardNotifier";
 
 const logger = createLogger("WatchChannel");
 
@@ -187,6 +188,10 @@ export function registerWatchedChannelResponder(client: Client) {
                         false
                     );
                 }
+
+                // Chance d'obtenir un objet saisonnier (0.8% par minute vocale)
+                const {tryRewardAndNotify} = require("./services/rewardNotifier");
+                await tryRewardAndNotify(null, message.channel as any, message.author.id, message.author.username, "message");
 
                 // Ne pas continuer le traitement normal pour les messages du compteur
                 // Pas de mémoire, pas de réponse aux mentions, rien

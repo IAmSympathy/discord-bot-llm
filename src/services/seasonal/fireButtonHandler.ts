@@ -25,12 +25,8 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
                 .setDescription(
                     `Tu n'as pas de bûche dans ton inventaire !\n\n` +
                     `🎁 **Comment obtenir une bûche ?**\n` +
-                    `• Utilise la commande \`/harvest\` (cooldown: 6h)\n` +
-                    `• Utilise \`/daily\` pour ta récompense quotidienne\n` +
-                    `• Participe aux activités du serveur\n\n` +
-                    `💡 Récolte des bûches avec \`/harvest\` et garde-les pour le feu !`
+                    `• Utilise la commande \`/harvest\` (cooldown: 6h)`
                 )
-                .setFooter({text: "Utilise /harvest pour récolter une bûche !"})
                 .setTimestamp();
 
             await interaction.editReply({embeds: [noBucheEmbed]});

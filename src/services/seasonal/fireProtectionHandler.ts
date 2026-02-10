@@ -43,19 +43,8 @@ export async function handleUseProtectionButton(interaction: ButtonInteraction):
             return;
         }
 
-        // Créer un menu de sélection si l'utilisateur a plusieurs types d'objets
-        if (protectionItems.length === 1) {
-            // Un seul type d'objet : demander confirmation directement
-            const item = protectionItems[0];
-
-            // Defer l'interaction avant de montrer la confirmation
-            await interaction.deferReply({ephemeral: true});
-
-            await showConfirmation(interaction, userId, username, item.type, stackingInfo);
-        } else {
-            // Plusieurs types : afficher un menu de sélection
-            await showSelectionMenu(interaction, userId, protectionItems, stackingInfo);
-        }
+        // Afficher un menu de sélection
+        await showSelectionMenu(interaction, userId, protectionItems, stackingInfo)
 
     } catch (error) {
         logger.error("Error handling use protection button:", error);
@@ -241,10 +230,10 @@ async function showConfirmation(
 
             const successEmbed = new EmbedBuilder()
                 .setColor(0x2ECC71)
-                .setTitle("✅ Protection activée !")
+                .setTitle("Protection activée !")
                 .setDescription(
-                    `${itemInfo.emoji} **${itemInfo.name}** utilisé avec succès !\n\n` +
-                    `🛡️ Le feu est maintenant protégé des effets météo pendant **${durationMinutes} minutes** !\n\n` +
+                    `${itemInfo.emoji} **${itemInfo.name}** utilisé avec succès !\n` +
+                    `Le feu est maintenant protégé des effets météo pendant **${durationMinutes} minutes** !\n\n` +
                     `⏱️ La protection se terminera <t:${Math.floor((Date.now() + duration) / 1000)}:R>`
                 )
                 .setFooter({text: "Le feu ne sera pas affecté par la température extérieure"})

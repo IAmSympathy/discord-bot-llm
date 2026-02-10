@@ -1,4 +1,4 @@
-require("dotenv").config();
+import {tryRewardAndNotify} from "./services/rewardNotifier";
 import path from "path";
 import fs from "fs";
 import {ActivityType, ChannelType, Client, Collection, EmbedBuilder, Events, GatewayIntentBits, MessageFlags, Partials, PresenceStatusData} from "discord.js";
@@ -25,6 +25,8 @@ import {canExecuteCommand, getCommandRestrictionMessage} from "./utils/commandPe
 import {getAllXP} from "./services/xpSystem";
 import {initializeLevelRolesForGuild} from "./services/levelRoleService";
 import {initializeRandomEventsService} from "./services/randomEventsService";
+
+require("dotenv").config();
 
 const logger = createLogger("Bot");
 
@@ -697,6 +699,11 @@ client.on(Events.MessageReactionAdd, async (reaction, user) => {
             if (reaction.message.channel) {
                 await addXP(user.id, user.username, XP_REWARDS.reactionAjoutee, reaction.message.channel, user.bot);
             }
+
+            // Chance d'obtenir un objet saisonnier (0.8% par minute vocale)
+            const {tryRewardAndNotify} = require("./services/rewardNotifier");
+            await tryRewardAndNotify(null, reaction.message.channel as any, reaction?.message?.author?.id, reaction?.message?.author?.username, "message");
+
         }
 
         // Enregistrer la réaction reçue pour l'auteur du message

@@ -3,6 +3,16 @@ import {addItemToInventory, getCurrentSeasonItems, getRandomSeasonalItem, Invent
 
 const logger = createLogger("RewardService");
 
+// Garder en mémoire le dernier item reçu par utilisateur (pour les notifications)
+const lastRewardedItems: Map<string, InventoryItemType> = new Map();
+
+/**
+ * Récupère le dernier item reçu par un utilisateur
+ */
+export function getLastRewardedItem(userId: string): InventoryItemType | undefined {
+    return lastRewardedItems.get(userId);
+}
+
 /**
  * Récompense un utilisateur avec un objet saisonnier
  */
@@ -47,6 +57,7 @@ export function rewardSeasonalItem(
     }
 
     addItemToInventory(userId, username, rewardType, 1);
+    lastRewardedItems.set(userId, rewardType);
     logger.info(`Rewarded ${username} with ${rewardType} for ${reason}`);
 }
 
@@ -61,11 +72,12 @@ export function tryRandomSeasonalReward(
 ): boolean {
     // Chances de récompense ajustées selon l'usage réel
     const chances: Record<string, number> = {
-        message: 0.0002,           // 0.02% par message (1/5000) - peu utilisé
-        voice: 0.008,              // 0.8% par tranche de temps vocal (1/125) - très utilisé
-        reaction: 0.0003,          // 0.03% par réaction (1/3333) - peu utilisé
-        command: 0.01,             // 1% par commande (1/100) - utilisé régulièrement
-        netricsa_command: 0.03     // 3% par commande Netricsa (/imagine, etc.) (1/33) - utilisé souvent
+        message: 0.05,           // 0.02% par message (1/5000) - peu utilisé
+        voice: 0.01,              // 0.8% par tranche de temps vocal (1/125) - très utilisé
+        reaction: 0.05,          // 0.03% par réaction (1/3333) - peu utilisé
+        command: 0.10,             // 1% par commande (1/100) - utilisé régulièrement<
+        game_win: 0.20,             // 20% par victoire (1/5) - encourager les jeux
+        netricsa_command: 0.15     // 3% par commande Netricsa (/imagine, etc.) (1/33) - utilisé souvent
     };
 
     const random = Math.random();
@@ -73,6 +85,7 @@ export function tryRandomSeasonalReward(
     if (random < chances[activity]) {
         const rewardItem = getRandomSeasonalItem();
         addItemToInventory(userId, username, rewardItem, 1);
+        lastRewardedItems.set(userId, rewardItem);
         logger.info(`Random seasonal reward: ${username} received ${rewardItem} from ${activity}`);
         return true;
     }
