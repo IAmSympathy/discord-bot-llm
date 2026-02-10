@@ -227,7 +227,7 @@ client.on(Events.GuildBanAdd, async (ban) => {
         });
 
         const banLog = auditLogs.entries.first();
-        const moderator = banLog?.executor?.username;
+        const moderator = banLog?.executor?.username ?? undefined;
         const reason = ban.reason || "Aucune raison spécifiée";
 
         await logServerBan(
@@ -257,7 +257,7 @@ client.on(Events.GuildBanRemove, async (ban) => {
         });
 
         const unbanLog = auditLogs.entries.first();
-        const moderator = unbanLog?.executor?.username;
+        const moderator = unbanLog?.executor?.username ?? undefined;
 
         await logServerUnban(
             ban.user.username,
@@ -591,7 +591,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                 Date.now() - muteLog.createdTimestamp < 2000 &&
                 muteLog.executor?.id !== member.id) { // Pas un self-action
 
-                const moderator = muteLog.executor?.username;
+                const moderator = muteLog.executor?.username ?? undefined;
 
                 await logServerVoiceMute(
                     member.user.username,
@@ -626,7 +626,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                 Date.now() - deafLog.createdTimestamp < 2000 &&
                 deafLog.executor?.id !== member.id) { // Pas un self-action
 
-                const moderator = deafLog.executor?.username;
+                const moderator = deafLog.executor?.username ?? undefined;
 
                 await logServerVoiceDeaf(
                     member.user.username,

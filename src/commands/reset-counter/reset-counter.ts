@@ -16,7 +16,9 @@ module.exports = {
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
-            await logCommand(interaction);
+            await logCommand("🔄 Compteur réinitialisé", undefined, [
+                {name: "Administrateur", value: interaction.user.username, inline: true}
+            ]);
 
             // Vérifier qu'on est bien dans un serveur
             if (!interaction.guild) {
@@ -66,6 +68,7 @@ module.exports = {
         }
     },
 };
+
 
 
 
