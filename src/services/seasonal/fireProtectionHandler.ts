@@ -2,6 +2,8 @@ import {ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Compone
 import {createLogger} from "../../utils/logger";
 import {getFireProtectionItems, InventoryItemType, ITEM_CATALOG, removeItemFromInventory} from "../userInventoryService";
 import {activateWeatherProtection, getWeatherProtectionInfo} from "./fireDataManager";
+import {updateFireEmbed} from "./fireManager";
+import {FIRE_CONFIG} from "./fireData";
 
 const logger = createLogger("FireProtectionHandler");
 
@@ -224,14 +226,21 @@ async function showConfirmation(
             // Activer la protection
             activateWeatherProtection(userId, username, duration);
 
+            // Mettre à jour l'embed du feu immédiatement pour refléter la protection active
+            if (btnInteraction.client) {
+                await updateFireEmbed(btnInteraction.client).catch(err =>
+                    logger.error("Failed to update fire embed after protection activation:", err)
+                );
+            }
+
             const successEmbed = new EmbedBuilder()
                 .setColor(0x2ECC71)
                 .setTitle("✅ Protection activée !")
                 .setDescription(
                     `${itemInfo.emoji} **${itemInfo.name}** utilisé avec succès !\n\n` +
                     `🛡️ **Effet actif pendant ${durationMinutes} minutes**\n` +
-                    `⚡ Combustion ralentie (×0.5)\n` +
-                    `🪵 Les bûches durent maintenant 2× plus longtemps\n\n` +
+                    `⚡ Combustion ralentie (×${FIRE_CONFIG.PROTECTION_BURN_MULTIPLIER})\n` +
+                    `🪵 Les bûches durent maintenant ${(1 / FIRE_CONFIG.PROTECTION_BURN_MULTIPLIER).toFixed(1)}× plus longtemps\n\n` +
                     `⏱️ Se termine <t:${Math.floor((Date.now() + duration) / 1000)}:R>`
                 )
                 .setTimestamp();

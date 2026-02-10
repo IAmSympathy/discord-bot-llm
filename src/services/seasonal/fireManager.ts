@@ -506,7 +506,7 @@ function getFireVisual(intensity: number): string {
         // Feu fort (Vif)
         return `⠀⠀⠀⠀╔═════════════════╗
 ⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀🔥🔥🔥🔥
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀🔥🔥🔥🔥
 ⠀⠀⠀⠀⠀⠀⠀⠀🔥🪵🪵🪵🪵🔥
 ⠀⠀⠀⠀⠀⠀⠀⠀🟠🟠🟠🟠🟠🟠⠀
 ⠀⠀⠀⠀╚═════════════════╝`;
@@ -648,15 +648,15 @@ async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
     }
     // Taux de brûlage actuel (ligne dédiée claire)
     const currentBurnRate = await getWeatherBurnMultiplier();
-    description += `🔥 **Taux de brûlage : ×${currentBurnRate.toFixed(2)}**\n`;
+    description += `🔥 `;
 
     // Explication du taux
     if (currentBurnRate < 1.0) {
-        description += `⠀⠀⠀↳ Les bûches durent **${(1 / currentBurnRate).toFixed(1)}× plus longtemps**\n`;
+        description += `Les bûches durent **${(1 / currentBurnRate).toFixed(1)}× plus longtemps**\n`;
     } else if (currentBurnRate > 1.0) {
-        description += `⠀⠀⠀↳ Les bûches brûlent **${currentBurnRate.toFixed(1)}× plus vite**\n`;
+        description += `Les bûches brûlent **${currentBurnRate.toFixed(1)}× plus vite**\n`;
     } else {
-        description += `⠀⠀⠀↳ Vitesse normale (3h par bûche)\n`;
+        description += `Vitesse normale (3h par bûche)\n`;
     }
     description += `\n`;
 
