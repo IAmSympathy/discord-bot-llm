@@ -56,9 +56,7 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
             .setColor(0x2ECC71)
             .setTitle("✅ Bûche ajoutée !")
             .setDescription(
-                result.message +
-                "\n\n🪵 Ta bûche a été consommée et ajoutée au feu !" +
-                "\n💡 Tu peux obtenir une nouvelle bûche en participant aux activités."
+                result.message
             )
             .setFooter({text: "Merci de contribuer au feu de foyer !"})
             .setTimestamp();

@@ -259,7 +259,7 @@ export async function addLog(userId: string, username: string): Promise<{ succes
     logger.info(`${username} added a log (${fireData.logs.length} total): ${oldIntensity.toFixed(1)}% → ${fireData.intensity.toFixed(1)}%`);
 
     // Message selon le changement d'état
-    let message = `🪵 Tu as ajouté une bûche au feu ! (${oldIntensity.toFixed(1)}% → ${fireData.intensity.toFixed(1)}%)\nBûches actives : ${fireData.logs.length}`;
+    let message = `🪵 Tu as ajouté une bûche au feu ! (${oldIntensity.toFixed(1)}% → ${fireData.intensity.toFixed(1)}%)`;
 
     if (oldState !== newState) {
         message += `\n\n🔥 Le feu est maintenant **${FIRE_NAMES[newState]}** !`;
