@@ -5,8 +5,8 @@ import {EnvConfig} from "../utils/envConfig";
 
 const logger = createLogger("WeatherChannelManager");
 
-// Liste des emojis météo possibles
-const WEATHER_EMOJIS = ['☀️', '🌤️', '⛅', '☁️', '🌧️', '🌦️', '⛈️', '🌨️', '❄️', '🌫️', '💨', '🌪️', '🌡️'];
+// Liste des emojis météo possibles (incluant toutes les phases de lune)
+const WEATHER_EMOJIS = ['☀️', '🌤️', '⛅', '☁️', '🌧️', '🌦️', '⛈️', '🌨️', '❄️', '🌫️', '💨', '🌪️', '🌡️', '🌩️', '🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
 const UPDATE_INTERVAL = 10 * 60 * 1000; // 10 minutes
 
 let weatherChannelId: string | null = null;

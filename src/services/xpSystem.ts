@@ -3,10 +3,10 @@ import * as path from "path";
 import {createLogger} from "../utils/logger";
 import {AttachmentBuilder, EmbedBuilder, TextChannel, VoiceChannel} from "discord.js";
 import {getNextLevelRole, updateUserLevelRoles} from "./levelRoleService";
+import {getRoleUpImage} from "./levelUpImageService";
 import {DATA_DIR, LEVEL_ROLES} from "../utils/constants";
 import {recordYearlyXP} from "./yearlyXPService";
 import {recordMonthlyXP} from "./monthlyXPService";
-import {getRoleUpImage} from "./levelUpImageService";
 
 const logger = createLogger("XPSystem");
 const XP_FILE = path.join(DATA_DIR, "user_xp.json");
@@ -159,13 +159,15 @@ export function getUserXP(userId: string): UserXP | null {
  * @param amount - Quantité d'XP à ajouter
  * @param channel - (Optionnel) Canal pour envoyer la notification de level up
  * @param isBot - (Optionnel) Si true, pas de notification même si un canal est fourni
+ * @param skipMultiplier - (Optionnel) Si true, n'applique PAS le multiplicateur saisonnier (pour achievements/mystery box)
  */
 export async function addXP(
     userId: string,
     username: string,
     amount: number,
     channel?: TextChannel | VoiceChannel,
-    isBot: boolean = false
+    isBot: boolean = false,
+    skipMultiplier: boolean = false
 ): Promise<{ levelUp: boolean; newLevel: number; totalXP: number }> {
     const xpData = loadXP();
 
@@ -182,7 +184,21 @@ export async function addXP(
     const oldLevel = xpData[userId].level;
     const oldTotalXP = xpData[userId].totalXP;
 
-    xpData[userId].totalXP += amount;
+    let finalAmount = amount;
+
+    // Appliquer le multiplicateur saisonnier SAUF si skipMultiplier est true
+    if (!skipMultiplier) {
+        try {
+            const {getCurrentFireMultiplier} = require("./seasonal/fireManager");
+            const fireMultiplier = getCurrentFireMultiplier();
+            finalAmount = Math.round(amount * fireMultiplier);
+        } catch (error) {
+            // Si le système de feu n'est pas initialisé, utiliser 1.0 (pas de multiplicateur)
+            logger.debug("Fire system not initialized, using default multiplier 1.0");
+        }
+    }
+
+    xpData[userId].totalXP += finalAmount;
 
     // Empêcher l'XP de devenir négatif
     if (xpData[userId].totalXP < 0) {
@@ -220,6 +236,14 @@ export async function addXP(
             await sendLevelDownMessage(channel, userId, username, oldLevel, newLevel, Math.abs(amount));
         }
     }
+
+    // Log l'ajout d'XP
+    if (amount > 0) {
+        logger.debug(`Added ${finalAmount} XP (base: ${amount}) to ${username} (${userId}). Total: ${xpData[userId].totalXP}. Level: ${newLevel}`);
+    } else if (amount < 0) {
+        logger.debug(`Removed ${Math.abs(amount)} XP from ${username} (${userId}). Total: ${xpData[userId].totalXP}. Level: ${newLevel}`);
+    }
+
 
     return {
         levelUp,

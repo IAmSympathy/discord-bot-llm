@@ -1,7 +1,6 @@
-import {AttachmentBuilder, Client, EmbedBuilder, Guild, TextChannel} from "discord.js";
+import {AttachmentBuilder, Client, EmbedBuilder, Guild} from "discord.js";
 import {createLogger} from "../../utils/logger";
 import * as path from "path";
-import {addXP} from "../xpSystem";
 import {EventType} from "./eventTypes";
 import {loadEventsData, saveEventsData} from "./eventsDataManager";
 
@@ -87,15 +86,10 @@ export async function startMysteryBox(client: Client, guild: Guild, testUserId?:
             logger.info(`Mystery box sent to ${selectedUser.username} (${isTroll ? '🖕' : xpAmount + ' XP'})${isTest ? ' [TEST MODE]' : ''}`);
 
             // Donner l'XP (sauf si c'est un test ou un troll)
+            // Utiliser skipMultiplier=true pour les mystery box (récompense fixe)
             if (!isTest && !isTroll) {
-                // Trouver un canal pour donner l'XP (utiliser le salon général)
-                const generalChannelId = require("../../utils/envConfig").EnvConfig.WELCOME_CHANNEL_ID;
-                if (generalChannelId) {
-                    const generalChannel = guild.channels.cache.get(generalChannelId) as TextChannel;
-                    if (generalChannel) {
-                        await addXP(selectedUser.userId, selectedUser.username, xpAmount, generalChannel, false);
-                    }
-                }
+                const {addXP} = require("../xpSystem");
+                await addXP(selectedUser.userId, selectedUser.username, xpAmount, undefined, false, true);
 
                 // Ajouter à l'historique
                 eventsData.history.push({

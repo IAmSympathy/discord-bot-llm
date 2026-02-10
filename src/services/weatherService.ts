@@ -9,83 +9,130 @@ interface WeatherData {
 }
 
 /**
+ * Détermine si c'est le jour ou la nuit à Sherbrooke
+ * Utilise l'heure locale de Sherbrooke (UTC-5 ou UTC-4 selon l'heure d'été)
+ */
+function isDaytime(): boolean {
+    // Obtenir l'heure actuelle en UTC
+    const now = new Date();
+
+    // Sherbrooke est à UTC-5 (hiver) ou UTC-4 (été)
+    // Pour simplifier, on utilise UTC-5 (heure standard de l'Est)
+    const sherbrookeOffset = -5;
+    const utcHours = now.getUTCHours();
+    const sherbrookeHours = (utcHours + sherbrookeOffset + 24) % 24;
+
+    // Jour entre 6h et 20h (6 AM à 8 PM)
+    return sherbrookeHours >= 6 && sherbrookeHours < 18;
+}
+
+/**
+ * Calcule la phase de la lune actuelle et retourne l'emoji approprié
+ * Basé sur le cycle lunaire de 29.53 jours
+ */
+function getMoonPhaseEmoji(): string {
+    const now = new Date();
+
+    // Nouvelle lune connue : 2000-01-06 18:14 UTC
+    const knownNewMoon = new Date('2000-01-06T18:14:00Z');
+    const daysSinceKnownNewMoon = (now.getTime() - knownNewMoon.getTime()) / (1000 * 60 * 60 * 24);
+
+    // Cycle lunaire de 29.53 jours
+    const lunarCycle = 29.53;
+    const phase = (daysSinceKnownNewMoon % lunarCycle) / lunarCycle;
+
+    // Déterminer la phase
+    if (phase < 0.0625) return '🌑'; // Nouvelle lune
+    if (phase < 0.1875) return '🌒'; // Premier croissant
+    if (phase < 0.3125) return '🌓'; // Premier quartier
+    if (phase < 0.4375) return '🌔'; // Lune gibbeuse croissante
+    if (phase < 0.5625) return '🌕'; // Pleine lune
+    if (phase < 0.6875) return '🌖'; // Lune gibbeuse décroissante
+    if (phase < 0.8125) return '🌗'; // Dernier quartier
+    if (phase < 0.9375) return '🌘'; // Dernier croissant
+    return '🌑'; // Nouvelle lune
+}
+
+/**
  * Trouve l'emoji approprié pour une condition météo (la description est déjà en français grâce à lang=fr)
  */
 function getWeatherEmoji(condition: string): string {
     const conditionLower = condition.toLowerCase();
+    const isDay = isDaytime();
+    const moonEmoji = getMoonPhaseEmoji(); // Obtenir la phase de lune actuelle
 
     // Chercher l'emoji qui correspond (ordre important : vérifier "peu nuageux" avant "nuageux")
     if (conditionLower.includes('peu nuageux') || conditionLower.includes('few')) {
-        return '🌤️';
+        return isDay ? '🌤️' : moonEmoji;
     }
 
     // Map simplifiée : chercher des mots-clés et retourner l'emoji approprié
-    const emojiMap: Record<string, string> = {
+    const emojiMap: Record<string, { day: string; night: string }> = {
         // Ciel dégagé
-        'dégagé': '☀️',
-        'clear': '☀️',
-        'ensoleillé': '☀️',
+        'dégagé': {day: '☀️', night: moonEmoji},
+        'clear': {day: '☀️', night: moonEmoji},
+        'ensoleillé': {day: '☀️', night: moonEmoji},
 
         // Nuages épars / partiellement
-        'épars': '⛅',
-        'scattered': '⛅',
-        'partiellement': '⛅',
+        'épars': {day: '⛅', night: moonEmoji},
+        'scattered': {day: '⛅', night: moonEmoji},
+        'partiellement': {day: '⛅', night: moonEmoji},
 
-        // Couvert / très nuageux
-        'couvert': '☁️',
-        'overcast': '☁️',
-        'broken': '☁️',
+        // Couvert / très nuageux (pas de changement jour/nuit)
+        'couvert': {day: '☁️', night: '☁️'},
+        'overcast': {day: '☁️', night: '☁️'},
+        'broken': {day: '☁️', night: '☁️'},
 
         // Nuageux (par défaut pour clouds)
-        'nuageux': '☁️',
-        'nuages': '☁️',
-        'clouds': '☁️',
+        'nuageux': {day: '☁️', night: '☁️'},
+        'nuages': {day: '☁️', night: '☁️'},
+        'clouds': {day: '☁️', night: '☁️'},
 
-        // Pluie
-        'pluie': '🌧️',
-        'rain': '🌧️',
+        // Pluie (pas de changement)
+        'pluie': {day: '🌧️', night: '🌧️'},
+        'rain': {day: '🌧️', night: '🌧️'},
 
         // Bruine / averses légères
-        'bruine': '🌦️',
-        'drizzle': '🌦️',
-        'averse': '🌦️',
-        'shower': '🌦️',
+        'bruine': {day: '🌦️', night: '🌧️'},
+        'drizzle': {day: '🌦️', night: '🌧️'},
+        'averse': {day: '🌦️', night: '🌧️'},
+        'shower': {day: '🌦️', night: '🌧️'},
 
-        // Neige
-        'neige': '❄️',
-        'snow': '❄️',
+        // Neige (pas de changement)
+        'neige': {day: '❄️', night: '❄️'},
+        'snow': {day: '❄️', night: '❄️'},
 
-        // Grésil / neige légère
-        'grésil': '🌨️',
-        'sleet': '🌨️',
+        // Grésil / neige légère (pas de changement)
+        'grésil': {day: '🌨️', night: '🌨️'},
+        'sleet': {day: '🌨️', night: '🌨️'},
 
-        // Orage
-        'orage': '⛈️',
-        'thunder': '⛈️',
-        'tempête': '⛈️',
-        'storm': '⛈️',
+        // Orage (pas de changement)
+        'orage': {day: '⛈️', night: '⛈️'},
+        'thunder': {day: '⛈️', night: '⛈️'},
+        'tempête': {day: '⛈️', night: '⛈️'},
+        'storm': {day: '⛈️', night: '⛈️'},
 
-        // Brouillard
-        'brouillard': '🌫️',
-        'fog': '🌫️',
-        'brume': '🌫️',
-        'mist': '🌫️',
-        'fumée': '🌫️',
-        'smoke': '🌫️',
+        // Brouillard (pas de changement)
+        'brouillard': {day: '🌫️', night: '🌫️'},
+        'fog': {day: '🌫️', night: '🌫️'},
+        'brume': {day: '🌫️', night: '🌫️'},
+        'mist': {day: '🌫️', night: '🌫️'},
+        'fumée': {day: '🌫️', night: '🌫️'},
+        'smoke': {day: '🌫️', night: '🌫️'},
 
-        // Vent
-        'vent': '💨',
-        'wind': '💨',
-        'rafales': '💨',
+        // Vent (pas de changement)
+        'vent': {day: '💨', night: '💨'},
+        'wind': {day: '💨', night: '💨'},
+        'rafales': {day: '💨', night: '💨'},
 
-        // Autres
-        'tornade': '🌪️',
-        'tornado': '🌪️',
+        // Autres (pas de changement)
+        'tornade': {day: '🌪️', night: '🌪️'},
+        'tornado': {day: '🌪️', night: '🌪️'},
     };
 
-    for (const [key, emoji] of Object.entries(emojiMap)) {
+    for (const [key, emojis] of Object.entries(emojiMap)) {
         if (conditionLower.includes(key)) {
-            return emoji;
+            return isDay ? emojis.day : emojis.night;
         }
     }
 
@@ -98,11 +145,11 @@ function getWeatherEmoji(condition: string): string {
  */
 function getMockWeatherData(): WeatherData {
     const conditions = [
-        {condition: "Nuageux", emoji: "☁️", tempRange: [-5, 15]},
-        {condition: "Ensoleillé", emoji: "☀️", tempRange: [5, 25]},
-        {condition: "Pluie légère", emoji: "🌦️", tempRange: [0, 18]},
-        {condition: "Neige", emoji: "❄️", tempRange: [-15, -2]},
-        {condition: "Partiellement nuageux", emoji: "⛅", tempRange: [-2, 20]},
+        {condition: "Nuageux", tempRange: [-5, 15]},
+        {condition: "Ensoleillé", tempRange: [5, 25]},
+        {condition: "Pluie légère", tempRange: [0, 18]},
+        {condition: "Neige", tempRange: [-15, -2]},
+        {condition: "Partiellement nuageux", tempRange: [-2, 20]},
     ];
 
     const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
@@ -112,7 +159,7 @@ function getMockWeatherData(): WeatherData {
     return {
         temperature,
         condition: randomCondition.condition,
-        emoji: randomCondition.emoji
+        emoji: getWeatherEmoji(randomCondition.condition)
     };
 }
 

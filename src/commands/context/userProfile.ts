@@ -194,7 +194,7 @@ module.exports = {
             }
 
             // État de navigation
-            type ViewType = "profile" | "stats" | "achievements";
+            type ViewType = "profile" | "stats" | "achievements" | "seasonal";
             let currentView: ViewType = "profile";
             let currentStatsCategory: StatsCategory = "discord";
             let currentAchievementCategory: AchievementCategory = AchievementCategory.PROFIL;
@@ -331,6 +331,18 @@ module.exports = {
                     } else if (customId === "stats_serveur") {
                         currentStatsCategory = "serveur";
                         const embed = createServerStatsEmbed(i.guild);
+                        const navButtons = createStatsNavigationButtons(currentStatsCategory);
+                        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`back_to_profile_${targetUser.id}`)
+                                .setLabel("◀️ Retour au profil")
+                                .setStyle(ButtonStyle.Danger)
+                        );
+                        await i.update({embeds: [embed], components: [navButtons, backButton]});
+                    } else if (customId === "stats_seasonal") {
+                        currentStatsCategory = "seasonal";
+                        const {createSeasonalStatsEmbed} = require("../../utils/seasonalStatsEmbed");
+                        const embed = createSeasonalStatsEmbed(targetUser.id, targetUser.displayName, targetUser.displayAvatarURL({size: 128}));
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()

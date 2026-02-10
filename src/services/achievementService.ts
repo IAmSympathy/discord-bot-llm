@@ -1427,10 +1427,12 @@ async function sendAchievementNotification(
             if (member) {
                 if (targetChannel) {
                     // La notification de level up sera envoyée dans targetChannel (DM ou channel)
-                    await addXP(userId, member.user.username, achievement.xpReward, targetChannel, member.user.bot);
+                    // Utiliser skipMultiplier=true pour les achievements
+                    await addXP(userId, member.user.username, achievement.xpReward, targetChannel, member.user.bot, true);
                 } else {
                     // Pas de targetChannel (startup check sans DM) - attribuer XP sans notification de level up
-                    await addXP(userId, member.user.username, achievement.xpReward, undefined, member.user.bot);
+                    // Utiliser skipMultiplier=true pour les achievements
+                    await addXP(userId, member.user.username, achievement.xpReward, undefined, member.user.bot, true);
                 }
             }
         } else {

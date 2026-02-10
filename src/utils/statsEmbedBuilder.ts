@@ -1,4 +1,4 @@
-import {EmbedBuilder, User} from "discord.js";
+import {ButtonStyle, EmbedBuilder, User} from "discord.js";
 import {getMostUsedEmoji, getServerStats, getUserStats} from "../services/userStatsService";
 import {getUserXP} from "../services/xpSystem";
 import {getPlayerStats} from "../games/common/globalStats";
@@ -267,7 +267,7 @@ export function createServerStatsEmbed(guild?: any): EmbedBuilder {
 /**
  * Type pour les catégories de stats
  */
-export type StatsCategory = "discord" | "netricsa" | "jeux" | "serveur";
+export type StatsCategory = "discord" | "netricsa" | "jeux" | "serveur" | "seasonal";
 
 /**
  * Crée l'embed pour une catégorie de stats donnée
@@ -502,6 +502,12 @@ export function createStatsNavigationButtons(currentCategory?: StatsCategory): i
             .setEmoji("🎮")
             .setStyle(currentCategory === "jeux" ? ButtonStyle.Success : ButtonStyle.Primary)
             .setDisabled(currentCategory === "jeux"),
+        new ButtonBuilder()
+            .setCustomId("stats_seasonal")
+            .setLabel("Saisonnier")
+            .setEmoji("❄️")
+            .setStyle(currentCategory === "seasonal" ? ButtonStyle.Success : ButtonStyle.Secondary)
+            .setDisabled(currentCategory === "seasonal"),
         new ButtonBuilder()
             .setCustomId("stats_serveur")
             .setLabel("Serveur")

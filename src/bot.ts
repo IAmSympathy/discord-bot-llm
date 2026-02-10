@@ -162,6 +162,10 @@ client.once(Events.ClientReady, async () => {
     // Initialiser le service d'événements aléatoires
     initializeRandomEventsService(client);
 
+    // Initialiser le système de feu de foyer (événement saisonnier d'hiver)
+    const {initializeFireSystem} = require("./services/seasonal/fireManager");
+    await initializeFireSystem(client);
+
     // Initialiser le message persistant des défis quotidiens
     const {initializeDailyChallengesMessage} = require("./commands/challenges/challenges");
     await initializeDailyChallengesMessage(client);
@@ -717,6 +721,16 @@ if (client.user) {
 }
 
 client.on(Events.InteractionCreate, async (interaction) => {
+    // Gérer les boutons
+    if (interaction.isButton()) {
+        // Bouton du feu de foyer
+        if (interaction.customId === "fire_add_log") {
+            const {handleAddLogButton} = require("./services/seasonal/fireButtonHandler");
+            await handleAddLogButton(interaction);
+            return;
+        }
+    }
+
     // Gérer les commandes slash (ChatInputCommand)
     if (interaction.isChatInputCommand()) {
         const command = interaction.client.commands.get(interaction.commandName);
