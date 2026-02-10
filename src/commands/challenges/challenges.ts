@@ -489,6 +489,8 @@ module.exports = {
 
             let challengesData = loadChallengesData();
 
+            logger.info(`[DEBUG] Loading challenges - Date: ${today}, Challenges count: ${challengesData.challenges?.length || 0}`);
+
             // Si nouveau jour, générer de nouveaux défis
             if (challengesData.currentDate !== today) {
                 logger.info(`New day detected, generating new challenges for ${today}`);
@@ -523,9 +525,45 @@ module.exports = {
                         }
                     ]
                 };
+            } else {
+                // Vérifier si l'utilisateur a les bons IDs de défis (au cas où les défis ont changé)
+                const currentChallengeIds = challengesData.challenges.map(c => c.id);
+                const userChallengeIds = challengesData.users[userId].progress
+                    .map(p => p.challengeId)
+                    .filter(id => id !== FIXED_HANGMAN_CHALLENGE.id); // Exclure le défi fixe de pendu
+
+                // Si les IDs ne correspondent pas, réinitialiser la progression pour les nouveaux défis
+                const idsMatch = currentChallengeIds.length === userChallengeIds.length &&
+                    currentChallengeIds.every(id => userChallengeIds.includes(id));
+
+                if (!idsMatch) {
+                    logger.info(`[DEBUG] Challenge IDs mismatch for user ${userId}, reinitializing progress`);
+                    // Garder seulement le défi de pendu s'il existe
+                    const hangmanProgress = challengesData.users[userId].progress.find(
+                        p => p.challengeId === FIXED_HANGMAN_CHALLENGE.id
+                    );
+
+                    challengesData.users[userId].progress = [
+                        // Les 3 nouveaux défis aléatoires
+                        ...challengesData.challenges.map(c => ({
+                            challengeId: c.id,
+                            completed: false,
+                            rewardClaimed: false
+                        })),
+                        // Le défi de pendu (garder la progression existante ou créer un nouveau)
+                        hangmanProgress || {
+                            challengeId: FIXED_HANGMAN_CHALLENGE.id,
+                            completed: false,
+                            rewardClaimed: false
+                        }
+                    ];
+                    saveChallengesData(challengesData);
+                }
             }
 
             const userProgress = challengesData.users[userId];
+
+            logger.info(`[DEBUG] User ${userId} progress initialized. Challenges in data: ${challengesData.challenges.length}, Progress entries: ${userProgress.progress.length}`);
 
             // S'assurer que le défi de pendu existe dans la progression (pour les utilisateurs existants)
             if (!userProgress.progress.find(p => p.challengeId === FIXED_HANGMAN_CHALLENGE.id)) {
@@ -617,9 +655,13 @@ module.exports = {
             }).length;
 
             // Ajouter les 3 défis aléatoires
+            logger.info(`[DEBUG] Displaying ${challengesData.challenges.length} challenges`);
             for (const challenge of challengesData.challenges) {
                 const progressEntry = userProgress.progress.find(p => p.challengeId === challenge.id);
-                if (!progressEntry) continue;
+                if (!progressEntry) {
+                    logger.warn(`[DEBUG] No progress entry found for challenge ${challenge.id}`);
+                    continue;
+                }
 
                 const progress = calculateProgress(userId, challenge);
                 const completed = progressEntry.completed;
