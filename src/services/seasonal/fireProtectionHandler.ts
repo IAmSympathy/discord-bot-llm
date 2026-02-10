@@ -87,15 +87,10 @@ async function showSelectionMenu(
 
     const embed = new EmbedBuilder()
         .setColor(0x3498DB)
-        .setTitle("🛡️ Sélectionne un Objet Saisonnier")
+        .setTitle("🛡️ Sélectionne une protection climatique")
         .setDescription(
-            `${stackingInfo}Choisis l'objet que tu veux utiliser pour protéger le feu de la météo :\n\n` +
-            items.map(item =>
-                `${item.info.emoji} **${item.info.name}** - ${item.info.description}\n` +
-                `Quantité : ${item.quantity}`
-            ).join('\n\n')
+            `\n${stackingInfo}`
         )
-        .setFooter({text: "La protection empêchera les effets météo sur le feu"})
         .setTimestamp();
 
     await interaction.reply({embeds: [embed], components: [row], ephemeral: true});
@@ -178,7 +173,7 @@ async function showConfirmation(
             `Tu es sur le point d'utiliser :\n\n` +
             `${itemInfo.emoji} **${itemInfo.name}**\n` +
             `${timeInfo}\n\n` +
-            `Cette protection empêchera les effets météo d'affecter le feu.`
+            `Cette protection empêchera la température d'affecter le feu.`
         )
         .setFooter({text: "Es-tu sûr de vouloir utiliser cet objet ?"})
         .setTimestamp();
