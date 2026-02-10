@@ -218,6 +218,26 @@ module.exports = {
                 );
             }
 
+            // Chance d'obtenir un objet saisonnier (1%)
+            try {
+                const {tryRandomSeasonalReward} = require("../../services/rewardService");
+                const gotReward = tryRandomSeasonalReward(
+                    interaction.user.id,
+                    interaction.user.username,
+                    "netricsa_command"
+                );
+
+                if (gotReward) {
+                    // Notification discrète en réponse éphémère
+                    await interaction.followUp({
+                        content: "✨ **Bonus !** Tu as trouvé un objet saisonnier dans ta création ! Vérifie ton inventaire (`/profile` → 🎒 Inventaire)",
+                        ephemeral: true
+                    });
+                }
+            } catch (error) {
+                // Ne pas bloquer si la récompense échoue
+                console.error("Error awarding seasonal reward:", error);
+            }
             logger.info("✅ Image generation completed successfully");
 
             // Réinitialiser le statut spécifique de cette génération

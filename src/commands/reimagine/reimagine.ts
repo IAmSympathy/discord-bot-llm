@@ -319,6 +319,25 @@ module.exports = {
                 );
             }
 
+            // Chance d'obtenir un objet saisonnier (1%)
+            try {
+                const {tryRandomSeasonalReward} = require("../../services/rewardService");
+                const gotReward = tryRandomSeasonalReward(
+                    interaction.user.id,
+                    interaction.user.username,
+                    "netricsa_command"
+                );
+
+                if (gotReward) {
+                    await interaction.followUp({
+                        content: "✨ **Bonus !** Tu as trouvé un objet saisonnier dans ta réimagination ! Vérifie ton inventaire (`/profile` → 🎒 Inventaire)",
+                        ephemeral: true
+                    });
+                }
+            } catch (error) {
+                console.error("Error awarding seasonal reward:", error);
+            }
+
             logger.info("✅ Image reimagined successfully");
 
             // Nettoyer le fichier temporaire (avec retry pour éviter les erreurs EBUSY)

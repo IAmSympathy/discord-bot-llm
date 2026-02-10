@@ -1256,6 +1256,26 @@ export async function unlockAchievement(
 
     logger.info(`Achievement ${achievementId} unlocked for ${username}`);
 
+    // Récompenser l'utilisateur avec un objet de protection
+    try {
+        const {rewardFireProtection} = require("./rewardService");
+        const {getCurrentSeasonItems} = require("./userInventoryService");
+
+        // Choisir la récompense selon la rareté de l'achievement
+        const achievement = ALL_ACHIEVEMENTS.find(a => a.id === achievementId);
+        if (achievement) {
+            const seasonItems = getCurrentSeasonItems();
+            // Achievements secrets ou difficiles donnent de meilleures récompenses
+            if (achievement.secret) {
+                rewardFireProtection(userId, username, "achievement", seasonItems.large);
+            } else {
+                rewardFireProtection(userId, username, "achievement", seasonItems.medium);
+            }
+        }
+    } catch (error) {
+        logger.error("Error rewarding fire protection for achievement:", error);
+    }
+
     // Envoyer une notification si un client et un channel sont fournis
     if (client && channelId && !userAchievement.notified) {
         await sendAchievementNotification(client, channelId, userId, achievementId);

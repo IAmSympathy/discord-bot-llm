@@ -125,6 +125,14 @@ module.exports = {
                 );
             }
 
+            // Chance d'obtenir un objet saisonnier (1%)
+            try {
+                const {tryRandomSeasonalReward} = require("../../services/rewardService");
+                tryRandomSeasonalReward(interaction.user.id, interaction.user.username, "command");
+            } catch (error) {
+                console.error("Error awarding seasonal reward:", error);
+            }
+
         } catch (error) {
             console.error("Error in rollthedice command:", error);
             await interaction.reply({

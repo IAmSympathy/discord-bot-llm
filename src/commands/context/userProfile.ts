@@ -216,6 +216,12 @@ module.exports = {
             if (!targetUser.bot) {
                 profileButtonsArray.push(
                     new ButtonBuilder()
+                        .setCustomId(`view_inventory_${targetUser.id}`)
+                        .setLabel("🎒 Inventaire")
+                        .setStyle(ButtonStyle.Primary)
+                );
+                profileButtonsArray.push(
+                    new ButtonBuilder()
                         .setCustomId(`view_achievements_${targetUser.id}`)
                         .setLabel("🏆 Succès")
                         .setStyle(ButtonStyle.Primary)

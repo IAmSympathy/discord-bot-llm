@@ -2,6 +2,7 @@ import {ButtonInteraction, EmbedBuilder} from "discord.js";
 import {createLogger} from "../../utils/logger";
 import {canAddLog, recordLogAdd} from "./fireDataManager";
 import {addLog, updateFireChannel, updateFireEmbed} from "./fireManager";
+import {handleUseProtectionButton} from "./fireProtectionHandler";
 
 const logger = createLogger("FireButtonHandler");
 
@@ -15,6 +16,28 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
         const userId = interaction.user.id;
         const username = interaction.user.username;
 
+        // Vérifier si l'utilisateur a une bûche dans son inventaire
+        const {hasItem, InventoryItemType, removeItemFromInventory} = require("../userInventoryService");
+
+        if (!hasItem(userId, InventoryItemType.FIREWOOD_LOG, 1)) {
+            const noBucheEmbed = new EmbedBuilder()
+                .setColor(0xE74C3C)
+                .setTitle("🪵 Pas de bûche !")
+                .setDescription(
+                    `Tu n'as pas de bûche dans ton inventaire !\n\n` +
+                    `🎁 **Comment obtenir une bûche ?**\n` +
+                    `• Utilise la commande \`/harvest\` (cooldown: 6h)\n` +
+                    `• Utilise \`/daily\` pour ta récompense quotidienne\n` +
+                    `• Participe aux activités du serveur (chances aléatoires)\n\n` +
+                    `💡 Récolte des bûches avec \`/harvest\` et garde-les pour le feu !`
+                )
+                .setFooter({text: "Utilise /harvest pour récolter une bûche !"})
+                .setTimestamp();
+
+            await interaction.editReply({embeds: [noBucheEmbed]});
+            return;
+        }
+
         // Vérifier le cooldown
         const cooldownCheck = canAddLog(userId);
 
@@ -26,7 +49,8 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
                 .setTitle("⏰ Cooldown actif")
                 .setDescription(
                     `Tu as déjà ajouté une bûche récemment !\n\n` +
-                    `Prochaine bûche disponible <t:${cooldownEndSeconds}:R>`
+                    `Prochaine bûche disponible <t:${cooldownEndSeconds}:R>\n\n` +
+                    `💡 Tu as toujours ta bûche 🪵 dans ton inventaire !`
                 )
                 .setFooter({text: "Tu peux ajouter une bûche toutes les 6 heures"})
                 .setTimestamp();
@@ -35,19 +59,22 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
             return;
         }
 
-        // Ajouter la bûche
+        // Ajouter la bûche au feu
         const result = await addLog(userId, username);
 
         if (!result.success) {
             const errorEmbed = new EmbedBuilder()
                 .setColor(0xF39C12)
                 .setTitle("🔥 Feu au maximum")
-                .setDescription(result.message)
+                .setDescription(result.message + "\n\n💡 Tu as toujours ta bûche 🪵 dans ton inventaire !")
                 .setTimestamp();
 
             await interaction.editReply({embeds: [errorEmbed]});
             return;
         }
+
+        // Consommer la bûche de l'inventaire
+        removeItemFromInventory(userId, InventoryItemType.FIREWOOD_LOG, 1);
 
         // Enregistrer le cooldown
         recordLogAdd(userId);
@@ -56,7 +83,11 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
         const successEmbed = new EmbedBuilder()
             .setColor(0x2ECC71)
             .setTitle("✅ Bûche ajoutée !")
-            .setDescription(result.message)
+            .setDescription(
+                result.message +
+                "\n\n🪵 Ta bûche a été consommée et ajoutée au feu !" +
+                "\n💡 Tu peux obtenir une nouvelle bûche en participant aux activités."
+            )
             .setFooter({text: "Merci de contribuer au feu de foyer !"})
             .setTimestamp();
 
@@ -89,3 +120,5 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
     }
 }
 
+// Exporter aussi le handler de protection
+export {handleUseProtectionButton};

@@ -738,6 +738,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
             await handleAddLogButton(interaction);
             return;
         }
+
+        // Bouton d'utilisation du stuff à feu
+        if (interaction.customId === "fire_use_protection") {
+            const {handleUseProtectionButton} = require("./services/seasonal/fireButtonHandler");
+            await handleUseProtectionButton(interaction);
+            return;
+        }
     }
 
     // Gérer les commandes slash (ChatInputCommand)

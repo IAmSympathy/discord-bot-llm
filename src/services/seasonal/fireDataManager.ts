@@ -30,6 +30,11 @@ export function loadFireData(): FireData {
                 channelId: null,
                 voiceChannelId: null,
                 logs: [], // Aucune bûche au départ
+                weatherProtection: {
+                    active: false,
+                    endsAt: null,
+                    activatedBy: null
+                },
                 stats: {
                     logsToday: 0,
                     lastLog: null,
@@ -48,6 +53,16 @@ export function loadFireData(): FireData {
             saveFireData(data);
         }
 
+        // Migration: ajouter le champ weatherProtection s'il n'existe pas
+        if (!data.weatherProtection) {
+            data.weatherProtection = {
+                active: false,
+                endsAt: null,
+                activatedBy: null
+            };
+            saveFireData(data);
+        }
+
         return data;
     } catch (error) {
         logger.error("Error loading fire data:", error);
@@ -59,6 +74,11 @@ export function loadFireData(): FireData {
             channelId: null,
             voiceChannelId: null,
             logs: [],
+            weatherProtection: {
+                active: false,
+                endsAt: null,
+                activatedBy: null
+            },
             stats: {
                 logsToday: 0,
                 lastLog: null,
@@ -177,3 +197,115 @@ export function cleanExpiredCooldowns(): void {
     }
 }
 
+/**
+ * Active la protection météo (ou ajoute du temps si déjà active)
+ */
+export function activateWeatherProtection(
+    userId: string,
+    username: string,
+    duration: number
+): void {
+    const fireData = loadFireData();
+    const now = Date.now();
+
+    let newEndsAt: number;
+
+    // Si une protection est déjà active, ajouter le temps
+    if (fireData.weatherProtection.active && fireData.weatherProtection.endsAt && fireData.weatherProtection.endsAt > now) {
+        // Stacker : ajouter le temps à la protection existante
+        newEndsAt = fireData.weatherProtection.endsAt + duration;
+        const totalMinutes = Math.ceil((newEndsAt - now) / 60000);
+        logger.info(`Weather protection extended by ${username} for ${duration / 60000} minutes (total: ${totalMinutes} minutes)`);
+    } else {
+        // Nouvelle protection
+        newEndsAt = now + duration;
+        logger.info(`Weather protection activated by ${username} for ${duration / 60000} minutes`);
+    }
+
+    fireData.weatherProtection = {
+        active: true,
+        endsAt: newEndsAt,
+        activatedBy: {
+            userId,
+            username
+        }
+    };
+
+    saveFireData(fireData);
+}
+
+/**
+ * Vérifie si la protection météo est active
+ */
+export function isWeatherProtectionActive(): boolean {
+    const fireData = loadFireData();
+
+    if (!fireData.weatherProtection.active) {
+        return false;
+    }
+
+    const now = Date.now();
+
+    // Vérifier si la protection a expiré
+    if (fireData.weatherProtection.endsAt && now >= fireData.weatherProtection.endsAt) {
+        // Désactiver la protection expirée
+        fireData.weatherProtection = {
+            active: false,
+            endsAt: null,
+            activatedBy: null
+        };
+        saveFireData(fireData);
+        logger.info("Weather protection expired");
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Récupère les informations de la protection météo active
+ */
+export function getWeatherProtectionInfo(): {
+    active: boolean;
+    endsAt: number | null;
+    activatedBy: { userId: string; username: string } | null;
+    remainingTime: number;
+} {
+    const fireData = loadFireData();
+    const now = Date.now();
+
+    if (!fireData.weatherProtection.active || !fireData.weatherProtection.endsAt) {
+        return {
+            active: false,
+            endsAt: null,
+            activatedBy: null,
+            remainingTime: 0
+        };
+    }
+
+    const remainingTime = Math.max(0, fireData.weatherProtection.endsAt - now);
+
+    // Si le temps est écoulé, désactiver
+    if (remainingTime === 0) {
+        fireData.weatherProtection = {
+            active: false,
+            endsAt: null,
+            activatedBy: null
+        };
+        saveFireData(fireData);
+
+        return {
+            active: false,
+            endsAt: null,
+            activatedBy: null,
+            remainingTime: 0
+        };
+    }
+
+    return {
+        active: true,
+        endsAt: fireData.weatherProtection.endsAt,
+        activatedBy: fireData.weatherProtection.activatedBy,
+        remainingTime
+    };
+}

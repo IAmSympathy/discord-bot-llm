@@ -557,3 +557,100 @@ export function createGameSelectMenu(): import("discord.js").ActionRowBuilder<im
             )
     );
 }
+
+/**
+ * Crée l'embed pour l'inventaire de l'utilisateur
+ */
+export function createInventoryEmbed(targetUser: User): EmbedBuilder {
+    const {getUserInventory, ITEM_CATALOG, getCurrentSeason, Season} = require("../services/userInventoryService");
+    const inventory = getUserInventory(targetUser.id, targetUser.username);
+    const currentSeason = getCurrentSeason();
+
+    let description = getLevelText(targetUser.id);
+    description += "\n";
+
+    const itemCount = Object.keys(inventory.items).length;
+
+    if (itemCount === 0) {
+        description += "🎒 **Inventaire vide**\n\n";
+        description += "Tu n'as aucun objet pour le moment.\n\n";
+        description += "**Comment obtenir des objets ?**\n";
+        description += "• 🏆 Débloque des achievements\n";
+        description += "• 🎮 Gagne des parties de jeux (20% de chance)\n";
+        description += "• 🎨 Utilise `/imagine`, `/upscale`, `/reimagine` (3% de chance)\n";
+        description += "• 🔮 Utilise `/crystalball` (3% de chance)\n";
+        description += "• 🎤 Passe du temps en vocal (0.8% par tranche)\n";
+        description += "• ⚡ Utilise des commandes (1% de chance)\n";
+    } else {
+        description += "🎒 **Inventaire**\n\n";
+
+        // Afficher les bûches en premier (catégorie spéciale)
+        const {InventoryItemType} = require("../services/userInventoryService");
+        const firewoodCount = inventory.items[InventoryItemType.FIREWOOD_LOG] || 0;
+
+        if (firewoodCount > 0) {
+            const firewoodInfo = ITEM_CATALOG[InventoryItemType.FIREWOOD_LOG];
+            description += "**🪵 Bûches pour le Feu**\n";
+            description += `${firewoodInfo.emoji} **${firewoodInfo.name}** × ${firewoodCount}\n`;
+            description += `   ↳ ${firewoodInfo.description}\n`;
+            description += `   ↳ Utilise-la au feu de foyer pour augmenter l'intensité !\n\n`;
+        }
+
+        // Afficher les items par saison
+        const seasonNames: Record<string, string> = {
+            [Season.WINTER]: "❄️ Hiver",
+            [Season.SPRING]: "🌸 Printemps",
+            [Season.SUMMER]: "☀️ Été",
+            [Season.FALL]: "🍂 Automne"
+        };
+
+        const itemsBySeason: Record<string, Array<{ itemType: string, quantity: number }>> = {
+            [Season.WINTER]: [],
+            [Season.SPRING]: [],
+            [Season.SUMMER]: [],
+            [Season.FALL]: []
+        };
+
+        // Grouper les items par saison (exclure les bûches déjà affichées)
+        for (const [itemType, quantity] of Object.entries(inventory.items)) {
+            // Skip les bûches car déjà affichées
+            if (itemType === InventoryItemType.FIREWOOD_LOG) continue;
+
+            const itemInfo = ITEM_CATALOG[itemType];
+            if (itemInfo && quantity > 0) {
+                itemsBySeason[itemInfo.season].push({itemType, quantity});
+            }
+        }
+
+        // Afficher la saison actuelle en premier
+        const seasons = [currentSeason, ...Object.values(Season).filter(s => s !== currentSeason)];
+
+        for (const season of seasons) {
+            const items = itemsBySeason[season];
+            if (items.length > 0) {
+                const seasonLabel = seasonNames[season];
+                const isCurrentSeason = season === currentSeason;
+                description += `**${seasonLabel}**${isCurrentSeason ? ' ✨ (Saison actuelle)' : ''}\n`;
+
+                for (const {itemType, quantity} of items) {
+                    const itemInfo = ITEM_CATALOG[itemType];
+                    const rarityEmoji = itemInfo.rarity === "rare" ? "⭐" : itemInfo.rarity === "uncommon" ? "💎" : "🔹";
+                    description += `${rarityEmoji} ${itemInfo.emoji} **${itemInfo.name}** × ${quantity}\n`;
+                    description += `   ↳ ${itemInfo.description}\n`;
+                }
+                description += "\n";
+            }
+        }
+
+        const totalItems = Object.values(inventory.items).reduce((a: number, b: number) => a + b, 0);
+        description += `📦 **Total d'objets :** ${totalItems}`;
+    }
+
+    return new EmbedBuilder()
+        .setColor(0xF39C12)
+        .setTitle(`🎒 Inventaire de ${targetUser.displayName}`)
+        .setDescription(description)
+        .setThumbnail(targetUser.displayAvatarURL({size: 128}))
+        .setFooter({text: "Les objets saisonniers te permettent de protéger le feu de foyer des effets météo"})
+        .setTimestamp();
+}

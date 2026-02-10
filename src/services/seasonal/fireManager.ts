@@ -1,6 +1,6 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, Client, EmbedBuilder, TextChannel, VoiceChannel} from "discord.js";
 import {createLogger} from "../../utils/logger";
-import {cleanExpiredCooldowns, loadFireData, resetDailyStats, saveFireData} from "./fireDataManager";
+import {cleanExpiredCooldowns, getWeatherProtectionInfo, isWeatherProtectionActive, loadFireData, resetDailyStats, saveFireData} from "./fireDataManager";
 import {FIRE_COLORS, FIRE_CONFIG, FIRE_EMOJIS, FIRE_NAMES, getFireMultiplier, getFireState} from "./fireData";
 
 const logger = createLogger("FireManager");
@@ -60,6 +60,11 @@ function formatTimeRemaining(ms: number): string {
  * C'est un feu de FOYER (intérieur), donc seule la température extérieure compte
  */
 async function getWeatherBurnMultiplier(): Promise<number> {
+    // Vérifier si la protection météo est active
+    if (isWeatherProtectionActive()) {
+        return 1.0; // Pas d'effet météo si protégé
+    }
+
     try {
         const {getSherbrookeWeather} = require("../weatherService");
         const weather = await getSherbrookeWeather();
@@ -427,8 +432,9 @@ export async function updateFireEmbed(client: Client): Promise<void> {
         }
 
         const embed = await createFireEmbed(fireData);
-        const button = createAddLogButton();
-        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+        const addLogButton = createAddLogButton();
+        const useProtectionButton = createUseProtectionButton();
+        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(addLogButton, useProtectionButton);
 
         // Mettre à jour ou créer le message
         if (fireData.messageId) {
@@ -518,6 +524,16 @@ function getFireVisual(logCount: number): string {
  * Récupère les données météo et calcule son impact
  */
 async function getWeatherImpact(): Promise<{ text: string; icon: string }> {
+    // Vérifier d'abord si la protection est active
+    const protectionInfo = getWeatherProtectionInfo();
+    if (protectionInfo.active && protectionInfo.remainingTime > 0) {
+        const minutes = Math.ceil(protectionInfo.remainingTime / 60000);
+        return {
+            text: `🛡️ **Protection Active** (${minutes} min restantes)\n*Aucun effet météo*`,
+            icon: "🛡️"
+        };
+    }
+
     try {
         const {getSherbrookeWeather} = require("../weatherService");
         const weather = await getSherbrookeWeather();
@@ -531,11 +547,11 @@ async function getWeatherImpact(): Promise<{ text: string; icon: string }> {
 
         // Impact selon la température (feu de foyer intérieur)
         if (temp < -20) {
-            return {text: `${weather.emoji} Froid extrême (${temp}°C) ! **Consommation ×1.3**`, icon: "🥶"};
-        } else if (temp < -8) {
-            return {text: `${weather.emoji} Froid (${temp}°C) **Consommation ×1.15**`, icon: "🔥"};
+            return {text: `${weather.emoji} Froid extrême (${temp}°C) ! \n**Consommation ×1.3**`, icon: "🥶"};
+        } else if (temp < -13) {
+            return {text: `${weather.emoji} Froid (${temp}°C) \n**Consommation ×1.15**`, icon: "🔥"};
         } else if (temp > 0) {
-            return {text: `${weather.emoji} Temps doux (${temp}°C) **Consommation ×0.8**`, icon: "☀️"};
+            return {text: `${weather.emoji} Temps doux (${temp}°C) \n**Consommation ×0.8**`, icon: "☀️"};
         } else {
             return {text: `${weather.emoji} Temps hivernal (${temp}°C)`, icon: "❄️"};
         }
@@ -637,6 +653,16 @@ function createAddLogButton(): ButtonBuilder {
 }
 
 /**
+ * Crée le bouton pour utiliser un stuff à feu
+ */
+function createUseProtectionButton(): ButtonBuilder {
+    return new ButtonBuilder()
+        .setCustomId("fire_use_protection")
+        .setLabel("❄️ Protection Climatique")
+        .setStyle(ButtonStyle.Success);
+}
+
+/**
  * Arrête le système de feu
  */
 export function stopFireSystem(): void {
@@ -666,5 +692,5 @@ export function getCurrentFireMultiplier(): number {
     return getFireMultiplier(fireData.intensity);
 }
 
-
-
+// Exporter les fonctions de protection météo
+export {isWeatherProtectionActive, getWeatherProtectionInfo} from "./fireDataManager";

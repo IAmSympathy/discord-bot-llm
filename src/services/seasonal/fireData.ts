@@ -18,6 +18,14 @@ export interface FireData {
     channelId: string | null; // ID du salon textuel
     voiceChannelId: string | null; // ID du salon vocal
     logs: Log[]; // Bûches actives dans le feu (max 5)
+    weatherProtection: {
+        active: boolean;
+        endsAt: number | null; // Timestamp de fin de protection
+        activatedBy: {
+            userId: string;
+            username: string;
+        } | null;
+    };
     stats: {
         logsToday: number; // Nombre de bûches ajoutées aujourd'hui
         lastLog: {
@@ -59,17 +67,17 @@ export const FIRE_CONFIG = {
 
     // Multiplicateurs XP
     MULTIPLIERS: {
-        EXTINGUISHED: 0.33, // 0-20%
-        LOW: 0.66,          // 21-40%
-        MEDIUM: 1.0,        // 41-60%
-        HIGH: 1.15,         // 61-80%
-        INTENSE: 1.33       // 81-100%
+        EXTINGUISHED: 0.5,  // 0-5% - Vraiment éteint
+        LOW: 0.75,          // 6-30% - Faible
+        MEDIUM: 1.0,        // 31-60% - Moyen (neutre)
+        HIGH: 1.25,         // 61-85% - Fort
+        INTENSE: 1.5        // 86-100% - Intense
     },
 
     // Seuils pour les notifications
     ALERT_THRESHOLDS: {
         LOW: 30,      // Alerte à 30%
-        CRITICAL: 15  // Alerte critique à 15%
+        CRITICAL: 10  // Alerte critique à 10%
     }
 };
 
@@ -77,22 +85,22 @@ export const FIRE_CONFIG = {
  * États du feu
  */
 export enum FireState {
-    EXTINGUISHED = "EXTINGUISHED", // 0-20%
-    LOW = "LOW",                   // 21-40%
-    MEDIUM = "MEDIUM",             // 41-60%
-    HIGH = "HIGH",                 // 61-80%
-    INTENSE = "INTENSE"            // 81-100%
+    EXTINGUISHED = "EXTINGUISHED", // 0-5% - Presque éteint
+    LOW = "LOW",                   // 6-30% - Faible
+    MEDIUM = "MEDIUM",             // 31-60% - Moyen
+    HIGH = "HIGH",                 // 61-85% - Fort
+    INTENSE = "INTENSE"            // 86-100% - Intense
 }
 
 /**
  * Emojis selon l'état du feu
  */
 export const FIRE_EMOJIS = {
-    [FireState.EXTINGUISHED]: "🪵",
-    [FireState.LOW]: "💨",
-    [FireState.MEDIUM]: "💥",
-    [FireState.HIGH]: "♨️",
-    [FireState.INTENSE]: "🔥"
+    [FireState.EXTINGUISHED]: "💀",  // Mort/éteint
+    [FireState.LOW]: "💨",            // Faible fumée
+    [FireState.MEDIUM]: "🔥",         // Feu normal
+    [FireState.HIGH]: "♨️",           // Chaud/vapeur
+    [FireState.INTENSE]: "🌋"         // Très intense
 };
 
 /**
@@ -100,10 +108,10 @@ export const FIRE_EMOJIS = {
  */
 export const FIRE_NAMES = {
     [FireState.EXTINGUISHED]: "Éteint",
-    [FireState.LOW]: "Faible",
-    [FireState.MEDIUM]: "Moyen",
-    [FireState.HIGH]: "Fort",
-    [FireState.INTENSE]: "Intense"
+    [FireState.LOW]: "Braises",
+    [FireState.MEDIUM]: "Stable",
+    [FireState.HIGH]: "Vigoureux",
+    [FireState.INTENSE]: "Ardent"
 };
 
 /**
@@ -121,11 +129,11 @@ export const FIRE_COLORS = {
  * Détermine l'état du feu selon l'intensité
  */
 export function getFireState(intensity: number): FireState {
-    if (intensity <= 20) return FireState.EXTINGUISHED;
-    if (intensity <= 40) return FireState.LOW;
-    if (intensity <= 60) return FireState.MEDIUM;
-    if (intensity <= 80) return FireState.HIGH;
-    return FireState.INTENSE;
+    if (intensity <= 5) return FireState.EXTINGUISHED;   // 0-5%: Vraiment éteint
+    if (intensity <= 30) return FireState.LOW;            // 6-30%: Braises
+    if (intensity <= 60) return FireState.MEDIUM;         // 31-60%: Stable
+    if (intensity <= 85) return FireState.HIGH;           // 61-85%: Vigoureux
+    return FireState.INTENSE;                             // 86-100%: Ardent
 }
 
 /**

@@ -120,6 +120,13 @@ module.exports = {
                             false
                         );
                     }
+                    // Chance d'obtenir un objet saisonnier (1%)
+                    try {
+                        const {tryRandomSeasonalReward} = require("../../services/rewardService");
+                        tryRandomSeasonalReward(interaction.user.id, interaction.user.username, "command");
+                    } catch (error) {
+                        console.error("Error awarding seasonal reward:", error);
+                    }
                 }
             );
 

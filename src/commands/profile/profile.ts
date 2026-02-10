@@ -220,6 +220,12 @@ module.exports = {
             if (!targetUser.bot) {
                 profileButtonsArray.push(
                     new ButtonBuilder()
+                        .setCustomId(`view_inventory_${targetUser.id}`)
+                        .setLabel("🎒 Inventaire")
+                        .setStyle(ButtonStyle.Primary)
+                );
+                profileButtonsArray.push(
+                    new ButtonBuilder()
                         .setCustomId(`view_achievements_${targetUser.id}`)
                         .setLabel("🏆 Succès")
                         .setStyle(ButtonStyle.Primary)
@@ -288,6 +294,17 @@ module.exports = {
                             : [...navButtons, backButton];
 
                         await i.update({embeds: [embed], components});
+                    } else if (customId.startsWith("view_inventory_")) {
+                        currentView = "stats"; // Réutiliser le type stats
+                        const {createInventoryEmbed} = require("../../utils/statsEmbedBuilder");
+                        const embed = createInventoryEmbed(targetUser);
+                        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`back_to_profile_${targetUser.id}`)
+                                .setLabel("◀️ Retour au profil")
+                                .setStyle(ButtonStyle.Danger)
+                        );
+                        await i.update({embeds: [embed], components: [backButton]});
                     } else if (customId.startsWith("back_to_profile_")) {
                         currentView = "profile";
                         const embed = createProfileEmbed(targetUser);
