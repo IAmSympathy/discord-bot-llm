@@ -627,8 +627,7 @@ export function createInventoryEmbed(targetUser: User): EmbedBuilder {
             if (items.length > 0) {
                 for (const {itemType, quantity} of items) {
                     const itemInfo = ITEM_CATALOG[itemType];
-                    const rarityEmoji = itemInfo.rarity === "rare" ? "⭐" : itemInfo.rarity === "uncommon" ? "💎" : "🔹";
-                    description += `${rarityEmoji} ${itemInfo.emoji} **${itemInfo.name}** × ${quantity}\n`;
+                    description += `${itemInfo.emoji} **${itemInfo.name}** × ${quantity}\n`;
                     description += `⠀⠀⠀↳ ${itemInfo.description}\n`;
                 }
                 description += "\n";
