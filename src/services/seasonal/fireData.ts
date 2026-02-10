@@ -67,11 +67,11 @@ export const FIRE_CONFIG = {
 
     // Multiplicateurs XP
     MULTIPLIERS: {
-        EXTINGUISHED: 0.5,  // 0-5% - Vraiment éteint
-        LOW: 0.75,          // 6-30% - Faible
-        MEDIUM: 1.0,        // 31-60% - Moyen (neutre)
-        HIGH: 1.25,         // 61-85% - Fort
-        INTENSE: 1.5        // 86-100% - Intense
+        EXTINGUISHED: 0.33,  // 0-5% - Vraiment éteint
+        LOW: 0.5,          // 6-30% - Faible
+        MEDIUM: 0.8,       // 31-60% - Moyen (neutre)
+        HIGH: 1.0,         // 61-85% - Fort
+        INTENSE: 1.33      // 86-100% - Intense
     },
 
     // Seuils pour les notifications
@@ -96,11 +96,11 @@ export enum FireState {
  * Emojis selon l'état du feu
  */
 export const FIRE_EMOJIS = {
-    [FireState.EXTINGUISHED]: "💀",  // Mort/éteint
+    [FireState.EXTINGUISHED]: "🪵",  // Mort/éteint
     [FireState.LOW]: "💨",            // Faible fumée
-    [FireState.MEDIUM]: "🔥",         // Feu normal
-    [FireState.HIGH]: "♨️",           // Chaud/vapeur
-    [FireState.INTENSE]: "🌋"         // Très intense
+    [FireState.MEDIUM]: "♨️",         // Feu normal
+    [FireState.HIGH]: "💥",           // Chaud/vapeur
+    [FireState.INTENSE]: "🔥"         // Très intense
 };
 
 /**

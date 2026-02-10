@@ -147,12 +147,15 @@ export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tic
     // Récompenser avec un stuff à feu (seulement pour les joueurs réels)
     if (userId !== NETRICSA_GAME_ID) {
         try {
-            const {rewardSeasonalItem} = require("../../services/rewardService");
+            const {rewardSeasonalItem, tryRandomFirewoodReward} = require("../../services/rewardService");
 
-            // 5% de chance d'obtenir un objet saisonnier en gagnant un jeu (baissé car on peut spam)
-            if (Math.random() < 0.05) {
+            // 15% de chance d'obtenir un objet saisonnier en gagnant un jeu (augmenté pour encourager)
+            if (Math.random() < 0.15) {
                 rewardSeasonalItem(userId, username, "game_win");
             }
+
+            // 30% de chance d'obtenir une bûche (très généreux pour encourager les jeux)
+            tryRandomFirewoodReward(userId, username, "game_win");
         } catch (error) {
             console.error("Error rewarding seasonal item for game win:", error);
         }

@@ -95,7 +95,7 @@ module.exports = {
 
                     const cooldownEmbed = new EmbedBuilder()
                         .setColor(0xE74C3C)
-                        .setTitle("⏰ Cooldown actif")
+                        .setTitle("⏰ Ressources épuisés !")
                         .setDescription(
                             `Tu as déjà récolté une ressource récemment !\n\n` +
                             `Prochaine récolte disponible <t:${nextHarvestTime}:R>`
@@ -139,8 +139,8 @@ module.exports = {
             }
 
             const successEmbed = new EmbedBuilder()
-                .setColor(0x2ECC71)
-                .setTitle("✅ Ressource récoltée !")
+                .setColor(0x5D6A74)
+                .setTitle("⛏️ Ressource récoltée !")
                 .setDescription(
                     `${resource.itemEmoji} Tu as récolté une **${resource.itemName}** !\n\n` +
                     `📦 Elle a été ajoutée à ton inventaire.\n` +
@@ -152,7 +152,7 @@ module.exports = {
                 .setFooter({text: "Vérifie ton inventaire avec /profile → 🎒 Inventaire"})
                 .setTimestamp();
 
-            await interaction.reply({embeds: [successEmbed]});
+            await interaction.reply({embeds: [successEmbed], flags: MessageFlags.Ephemeral});
 
             // Logger la commande
             await logCommand(

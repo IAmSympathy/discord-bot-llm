@@ -154,6 +154,35 @@ module.exports = {
                 );
             }
 
+            // Donner un objet de protection saisonnier (garanti à 100%)
+            let rewardMessage = "";
+            try {
+                const {rewardSeasonalItem} = require("../../services/rewardService");
+                const {getCurrentSeasonItems, ITEM_CATALOG} = require("../../services/userInventoryService");
+
+                // Déterminer la récompense selon le streak
+                const seasonItems = getCurrentSeasonItems();
+                let rewardItem;
+
+                if (newStreak >= 30) {
+                    // Streak de 30+ jours = item Large (rare)
+                    rewardItem = seasonItems.large;
+                } else if (newStreak >= 7) {
+                    // Streak de 7-29 jours = item Medium (uncommon)
+                    rewardItem = seasonItems.medium;
+                } else {
+                    // Streak de 1-6 jours = item Small (common)
+                    rewardItem = seasonItems.small;
+                }
+
+                rewardSeasonalItem(interaction.user.id, interaction.user.username, "daily_streak", rewardItem);
+
+                const itemInfo = ITEM_CATALOG[rewardItem];
+                rewardMessage = `\n${itemInfo.emoji} **+1 ${itemInfo.name}** !`;
+            } catch (error) {
+                logger.error("Error giving seasonal reward:", error);
+            }
+
             // Messages spéciaux pour les milestones
             let milestoneMessage = "";
             if (newStreak === 7) milestoneMessage = "\n\n🎉 **7 jours de suite !** Continue comme ça !";
@@ -168,6 +197,7 @@ module.exports = {
                 .setDescription(
                     `Tu as récupéré ta récompense quotidienne !\n\n` +
                     `💫 **+${totalXP} XP** gagné ! ${bonusXP > 0 ? `(${baseXP} + ${bonusXP} bonus)` : ''}` +
+                    `${rewardMessage}\n` +
                     `🔥 Série : **${newStreak} jour${newStreak > 1 ? 's' : ''}**${milestoneMessage}`
                 )
                 .setFooter({text: `Total réclamé : ${userData.totalClaims + 1} fois`})

@@ -27,14 +27,14 @@ export async function handleUseProtectionButton(interaction: ButtonInteraction):
         if (protectionItems.length === 0) {
             const noItemsEmbed = new EmbedBuilder()
                 .setColor(0xE74C3C)
-                .setTitle("❌ Aucun stuff à feu")
+                .setTitle("❌ Aucun objet de protection trouvé")
                 .setDescription(
                     `Tu n'as aucun objet de protection dans ton inventaire !\n\n` +
                     `🎁 **Comment en obtenir ?**\n` +
-                    `• Débloque des achievements\n` +
-                    `• Participe aux activités du serveur\n` +
+                    `• Tape des commandes\n` +
+                    `• Utilise les fonctionnalités de Netricsa` +
                     `• Gagne des parties de jeux\n` +
-                    `• Utilise les fonctionnalités de Netricsa`
+                    `• Débloque des achievements\n`
                 )
                 .setFooter({text: "Les objets de protection te permettent de bloquer les effets météo"})
                 .setTimestamp();
@@ -47,6 +47,10 @@ export async function handleUseProtectionButton(interaction: ButtonInteraction):
         if (protectionItems.length === 1) {
             // Un seul type d'objet : demander confirmation directement
             const item = protectionItems[0];
+
+            // Defer l'interaction avant de montrer la confirmation
+            await interaction.deferReply({ephemeral: true});
+
             await showConfirmation(interaction, userId, username, item.type, stackingInfo);
         } else {
             // Plusieurs types : afficher un menu de sélection
@@ -190,10 +194,16 @@ async function showConfirmation(
         .setFooter({text: "Es-tu sûr de vouloir utiliser cet objet ?"})
         .setTimestamp();
 
-    await interaction.editReply({embeds: [confirmEmbed], components: [row]});
-
-    // Collecter la confirmation
-    const message = await interaction.fetchReply();
+    // Gérer le type d'interaction
+    let message;
+    if (interaction.replied || interaction.deferred) {
+        // Si l'interaction a déjà été replied ou deferred, on utilise editReply
+        message = await interaction.editReply({embeds: [confirmEmbed], components: [row]});
+    } else {
+        // Sinon, on reply normalement
+        await interaction.reply({embeds: [confirmEmbed], components: [row], ephemeral: true});
+        message = await interaction.fetchReply();
+    }
     const collector = message.createMessageComponentCollector({
         componentType: ComponentType.Button,
         time: 30000 // 30 secondes

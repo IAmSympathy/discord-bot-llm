@@ -1,6 +1,5 @@
 import {ButtonInteraction, EmbedBuilder} from "discord.js";
 import {createLogger} from "../../utils/logger";
-import {canAddLog, recordLogAdd} from "./fireDataManager";
 import {addLog, updateFireChannel, updateFireEmbed} from "./fireManager";
 import {handleUseProtectionButton} from "./fireProtectionHandler";
 
@@ -28,34 +27,13 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
                     `🎁 **Comment obtenir une bûche ?**\n` +
                     `• Utilise la commande \`/harvest\` (cooldown: 6h)\n` +
                     `• Utilise \`/daily\` pour ta récompense quotidienne\n` +
-                    `• Participe aux activités du serveur (chances aléatoires)\n\n` +
+                    `• Participe aux activités du serveur\n\n` +
                     `💡 Récolte des bûches avec \`/harvest\` et garde-les pour le feu !`
                 )
                 .setFooter({text: "Utilise /harvest pour récolter une bûche !"})
                 .setTimestamp();
 
             await interaction.editReply({embeds: [noBucheEmbed]});
-            return;
-        }
-
-        // Vérifier le cooldown
-        const cooldownCheck = canAddLog(userId);
-
-        if (!cooldownCheck.canAdd) {
-            const cooldownEndSeconds = Math.floor(cooldownCheck.cooldownEndTimestamp! / 1000);
-
-            const cooldownEmbed = new EmbedBuilder()
-                .setColor(0xE74C3C)
-                .setTitle("⏰ Cooldown actif")
-                .setDescription(
-                    `Tu as déjà ajouté une bûche récemment !\n\n` +
-                    `Prochaine bûche disponible <t:${cooldownEndSeconds}:R>\n\n` +
-                    `💡 Tu as toujours ta bûche 🪵 dans ton inventaire !`
-                )
-                .setFooter({text: "Tu peux ajouter une bûche toutes les 6 heures"})
-                .setTimestamp();
-
-            await interaction.editReply({embeds: [cooldownEmbed]});
             return;
         }
 
@@ -76,8 +54,6 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
         // Consommer la bûche de l'inventaire
         removeItemFromInventory(userId, InventoryItemType.FIREWOOD_LOG, 1);
 
-        // Enregistrer le cooldown
-        recordLogAdd(userId);
 
         // Réponse de succès
         const successEmbed = new EmbedBuilder()

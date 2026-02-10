@@ -4,6 +4,7 @@ import {addXP} from "../../services/xpSystem";
 import {logCommand} from "../../utils/discordLogger";
 import * as fs from "fs";
 import * as path from "path";
+import {tryRandomSeasonalReward} from "../../services/rewardService";
 
 const logger = createLogger("SlotsCmd");
 const COOLDOWN_FILE = path.join(process.cwd(), "data", "slots_cooldown.json");
@@ -208,6 +209,14 @@ module.exports = {
                     interaction.channel as TextChannel,
                     false
                 );
+            }
+
+            // Chance d'obtenir un objet saisonnier (1%)
+            try {
+                const {tryRandomSeasonalReward} = require("../../services/rewardService");
+                tryRandomSeasonalReward(interaction.user.id, interaction.user.username, "command");
+            } catch (error) {
+                console.error("Error awarding seasonal reward:", error);
             }
 
 

@@ -2,6 +2,7 @@ import {ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, TextChan
 import {createLogger} from "../../utils/logger";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {logCommand} from "../../utils/discordLogger";
+import {tryRandomSeasonalReward} from "../../services/rewardService";
 
 const logger = createLogger("CucumberCmd");
 
@@ -76,6 +77,14 @@ module.exports = {
                     interaction.channel as TextChannel,
                     false
                 );
+            }
+
+            // Chance d'obtenir un objet saisonnier (1%)
+            try {
+                const {tryRandomSeasonalReward} = require("../../services/rewardService");
+                tryRandomSeasonalReward(interaction.user.id, interaction.user.username, "command");
+            } catch (error) {
+                console.error("Error awarding seasonal reward:", error);
             }
 
             logger.info(`${interaction.user.username} measured their cucumber: ${size} cm (${inches}")`);

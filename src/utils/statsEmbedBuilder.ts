@@ -567,7 +567,6 @@ export function createInventoryEmbed(targetUser: User): EmbedBuilder {
     const currentSeason = getCurrentSeason();
 
     let description = getLevelText(targetUser.id);
-    description += "\n";
 
     const itemCount = Object.keys(inventory.items).length;
 
@@ -590,10 +589,8 @@ export function createInventoryEmbed(targetUser: User): EmbedBuilder {
 
         if (firewoodCount > 0) {
             const firewoodInfo = ITEM_CATALOG[InventoryItemType.FIREWOOD_LOG];
-            description += "**🪵 Bûches pour le Feu**\n";
             description += `${firewoodInfo.emoji} **${firewoodInfo.name}** × ${firewoodCount}\n`;
-            description += `   ↳ ${firewoodInfo.description}\n`;
-            description += `   ↳ Utilise-la au feu de foyer pour augmenter l'intensité !\n\n`;
+            description += `⠀⠀⠀↳ ${firewoodInfo.description}\n`;
         }
 
         // Afficher les items par saison
@@ -651,6 +648,5 @@ export function createInventoryEmbed(targetUser: User): EmbedBuilder {
         .setTitle(`🎒 Inventaire de ${targetUser.displayName}`)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL({size: 128}))
-        .setFooter({text: "Les objets saisonniers te permettent de protéger le feu de foyer des effets météo"})
         .setTimestamp();
 }

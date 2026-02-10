@@ -39,7 +39,8 @@ const GLOBAL_COMMANDS = [
     'leaderboard',
     'test-mission',
     'challenges',
-    'answer'
+    'answer',
+    'harvest',
     // Ajoutez ici d'autres commandes qui peuvent être utilisées n'importe où
 ];
 
