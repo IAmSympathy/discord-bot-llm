@@ -87,7 +87,7 @@ async function showSelectionMenu(
 
     const embed = new EmbedBuilder()
         .setColor(0x3498DB)
-        .setTitle("🛡️ Sélectionne une protection climatique")
+        .setTitle("🛡️ Sélectionne une protection à utiliser")
         .setDescription(
             `\n${stackingInfo}`
         )

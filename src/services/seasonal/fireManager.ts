@@ -725,7 +725,7 @@ function createAddLogButton(): ButtonBuilder {
 function createUseProtectionButton(): ButtonBuilder {
     return new ButtonBuilder()
         .setCustomId("fire_use_protection")
-        .setLabel("❄️ Protection Climatique")
+        .setLabel("❄️ Ajouter une protection")
         .setStyle(ButtonStyle.Success);
 }
 
