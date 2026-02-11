@@ -25,7 +25,8 @@ const GUILD_ONLY_COMMANDS = [
     "test-mission",
     "test-rewind",
     "standby-status",
-    "findmeme"
+    "findmeme",
+    "answer",
 ];
 
 const globalCommands: any[] = [];
