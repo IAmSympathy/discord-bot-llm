@@ -6,7 +6,7 @@ import {getMonthlyXP} from "../../services/monthlyXPService";
 import {getDailyXP, getWeeklyXP} from "../../services/dailyWeeklyXPService";
 import {getCurrentDate} from "../../services/dailyStatsService";
 import {getCurrentWeek, getWeeklyStatsForWeek} from "../../services/weeklyStatsService";
-import {NETRICSA_COLOR} from "../../utils/constants";
+import {getNetricsaColorCached} from "../../utils/colorHelper";
 
 type LeaderboardCategory = "xp" | "messages" | "vocal" | "images" | "jeux";
 type LeaderboardMode = "alltime" | "daily" | "weekly" | "monthly";
@@ -197,7 +197,7 @@ async function createLeaderboardEmbed(
     interaction: ChatInputCommandInteraction
 ): Promise<EmbedBuilder> {
     const embed = new EmbedBuilder()
-        .setColor(NETRICSA_COLOR)
+        .setColor(getNetricsaColorCached())
         .setTimestamp();
 
     let description = "";

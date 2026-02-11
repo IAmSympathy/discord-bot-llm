@@ -8,6 +8,7 @@ import {getCurrentDate, getUserDailyStats} from "../../services/dailyStatsServic
 import {getDailyVoiceTime} from "../../voiceTracker";
 import {EnvConfig} from "../../utils/envConfig";
 import {NETRICSA_COLOR} from "../../utils/constants";
+import {getNetricsaColorCached} from "../../utils/colorHelper";
 
 const logger = createLogger("DailyChallengesCmd");
 const CHALLENGES_FILE = path.join(process.cwd(), "data", "daily_challenges.json");
@@ -659,7 +660,7 @@ module.exports = {
 
             // Créer l'embed avec les défis
             const embed = new EmbedBuilder()
-                .setColor(NETRICSA_COLOR)
+                .setColor(getNetricsaColorCached())
                 .setTitle("🎯 Défis Quotidiens")
                 .setTimestamp();
 

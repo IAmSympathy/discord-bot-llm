@@ -6,11 +6,9 @@ import {createLogger} from "./logger";
 const logger = createLogger("ColorHelper");
 
 /**
- * Cache de la couleur avec timestamp pour rafraîchissement périodique
+ * Cache de la couleur (mis à jour uniquement lors des changements détectés)
  */
-let cachedColor: number | null = null;
-let lastFetchTime: number = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // Rafraîchir toutes les 5 minutes
+let cachedColor: number = 0x397d86;
 
 /**
  * Récupère la couleur du rôle Netricsa depuis Discord
@@ -40,7 +38,7 @@ export async function getNetricsaColor(client: Client): Promise<number> {
 
         // Retourner la couleur du rôle
         const roleColor = role.color;
-        logger.debug(`Netricsa role color fetched: #${roleColor.toString(16).padStart(6, '0')}`);
+        logger.info(`Netricsa role color fetched: #${roleColor.toString(16).padStart(6, '0')}`);
         return roleColor;
     } catch (error) {
         logger.error("Error fetching Netricsa role color:", error);
@@ -49,42 +47,32 @@ export async function getNetricsaColor(client: Client): Promise<number> {
 }
 
 /**
- * Récupère la couleur Netricsa avec cache et rafraîchissement automatique
- * Le cache expire après 5 minutes pour permettre la détection des changements
+ * Initialise le cache de couleur au démarrage
  */
-export async function getNetricsaColorCached(client: Client): Promise<number> {
-    const now = Date.now();
-
-    // Si le cache est valide (moins de 5 minutes), utiliser la couleur en cache
-    if (cachedColor !== null && (now - lastFetchTime) < CACHE_DURATION) {
-        return cachedColor;
-    }
-
-    // Sinon, rafraîchir le cache
-    logger.debug("Refreshing Netricsa color cache...");
+export async function initializeNetricsaColor(client: Client): Promise<void> {
     cachedColor = await getNetricsaColor(client);
-    lastFetchTime = now;
+    logger.info(`Netricsa color initialized: #${cachedColor.toString(16).padStart(6, '0')}`);
+}
 
+/**
+ * Met à jour le cache de couleur (appelé lors d'un changement de rôle détecté)
+ */
+export async function updateNetricsaColor(client: Client): Promise<void> {
+    const newColor = await getNetricsaColor(client);
+    if (newColor !== cachedColor) {
+        const oldColor = cachedColor;
+        cachedColor = newColor;
+        logger.info(`Netricsa color updated: #${oldColor.toString(16).padStart(6, '0')} → #${cachedColor.toString(16).padStart(6, '0')}`);
+    }
+}
+
+/**
+ * Récupère la couleur Netricsa depuis le cache
+ * Retourne toujours la couleur actuellement en cache
+ */
+export function getNetricsaColorCached(): number {
     return cachedColor;
 }
 
-/**
- * Réinitialise le cache de couleur immédiatement
- * Utile pour forcer un rafraîchissement après un changement de rôle
- */
-export function resetColorCache(): void {
-    cachedColor = null;
-    lastFetchTime = 0;
-    logger.info("Color cache reset - will refresh on next request");
-}
-
-/**
- * Récupère la couleur de manière synchrone depuis le cache
- * Retourne la couleur par défaut si le cache n'est pas initialisé
- * À utiliser uniquement si getNetricsaColorCached a déjà été appelé
- */
-export function getNetricsaColorSync(): number {
-    return cachedColor !== null ? cachedColor : NETRICSA_COLOR;
-}
 
 
