@@ -504,10 +504,31 @@ async function sendDMLevelUpNotification(userId: string, username: string, newLe
         const filledBars = Math.floor((progressPercent / 100) * progressBarLength);
         const progressBar = "▰".repeat(filledBars) + "▱".repeat(progressBarLength - filledBars);
 
+        // Récupérer les informations sur le rôle de niveau
+        const levelRoleInfo = await import("./levelRoleService").then(m => m.getLevelRoleForLevel(newLevel));
+        const nextRole = getNextLevelRole(newLevel);
+
+        // Construire la description
+        let description = `Félicitations ! Tu as atteint le **niveau ${newLevel}** !\n\n`;
+
+        // Afficher le rôle actuel (par nom, sans ping car on est en DM)
+        if (levelRoleInfo) {
+            description += `🎖️ **Rôle actuel :** ${levelRoleInfo.roleName}\n\n`;
+        }
+
+        // Section prochain rôle
+        if (nextRole) {
+            description += `🎯 **Prochain Objectif**\n`;
+            description += `Plus que **${nextRole.levelsNeeded} niveau${nextRole.levelsNeeded > 1 ? 'x' : ''}** avant **${nextRole.roleName}** !\n`;
+        } else {
+            description += `👑 **Rang Maximum Atteint !**\n`;
+            description += `Tu as atteint le rang suprême !\n`;
+        }
+
         const embed = new EmbedBuilder()
             .setColor(0xFFD700)
             .setTitle("🎉 Niveau Gagné !")
-            .setDescription(`Félicitations ! Tu as atteint le **niveau ${newLevel}** !`)
+            .setDescription(description)
             .addFields(
                 {
                     name: "📊 Progression vers niveau " + (newLevel + 1),
