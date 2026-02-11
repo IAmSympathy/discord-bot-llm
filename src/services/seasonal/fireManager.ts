@@ -6,20 +6,12 @@ import {FIRE_COLORS, FIRE_CONFIG, FIRE_EMOJIS, FIRE_NAMES, getFireMultiplier, ge
 const logger = createLogger("FireManager");
 
 let decayInterval: NodeJS.Timeout | null = null;
-let updateInterval: NodeJS.Timeout | null = null;
+let embedUpdateInterval: NodeJS.Timeout | null = null; // Pour l'animation de l'embed (2s)
+let channelUpdateInterval: NodeJS.Timeout | null = null; // Pour les noms de salons (5min)
 let dailyResetInterval: NodeJS.Timeout | null = null;
 
 // Frame d'animation actuelle (pour alterner les visuels)
 let animationFrame = 0;
-
-// Cache des noms de salons pour éviter les rate limits Discord
-let lastVoiceChannelName = "";
-let lastTextChannelName = "";
-let lastVoiceChannelUpdate = 0;
-let lastTextChannelUpdate = 0;
-
-// Discord rate limit: 2 changements de nom par 10 minutes
-const CHANNEL_NAME_UPDATE_COOLDOWN = 5 * 60 * 1000; // 5 minutes entre chaque changement
 
 /**
  * Initialise le système de feu
@@ -33,8 +25,9 @@ export async function initializeFireSystem(client: Client): Promise<void> {
     // Démarrer la décroissance automatique
     startDecay();
 
-    // Démarrer la mise à jour de l'interface
-    startInterfaceUpdates(client);
+    // Démarrer les mises à jour (2 intervalles séparés)
+    startEmbedUpdates(client);    // Animation de l'embed toutes les 2 secondes
+    startChannelUpdates(client);  // Noms des salons toutes les 5 minutes
 
     // Démarrer le reset quotidien
     startDailyReset();
@@ -225,23 +218,42 @@ function startDecay(): void {
 }
 
 /**
- * Démarre la mise à jour automatique de l'interface
+ * Démarre la mise à jour automatique de l'embed (animation toutes les 2 secondes)
  */
-function startInterfaceUpdates(client: Client): void {
-    if (updateInterval) {
-        clearInterval(updateInterval);
+function startEmbedUpdates(client: Client): void {
+    if (embedUpdateInterval) {
+        clearInterval(embedUpdateInterval);
     }
 
-    updateInterval = setInterval(async () => {
+    embedUpdateInterval = setInterval(async () => {
         // Incrémenter la frame d'animation
         animationFrame++;
 
-        await updateFireChannel(client);
+        // Mettre à jour l'embed avec la nouvelle frame d'animation
         await updateFireEmbed(client);
         cleanExpiredCooldowns(); // Nettoyer les cooldowns expirés
-    }, FIRE_CONFIG.UPDATE_INTERVAL);
+    }, 2 * 1000); // 2 secondes
 
-    logger.info(`Fire interface updates started (animation enabled, ${FIRE_CONFIG.UPDATE_INTERVAL / 1000}s interval)`);
+    logger.info(`Fire embed animation started (2s interval)`);
+}
+
+/**
+ * Démarre la mise à jour automatique des noms de salons (toutes les 5 minutes)
+ */
+function startChannelUpdates(client: Client): void {
+    if (channelUpdateInterval) {
+        clearInterval(channelUpdateInterval);
+    }
+
+    // Mettre à jour immédiatement au démarrage
+    updateFireChannel(client);
+
+    // Puis toutes les 5 minutes
+    channelUpdateInterval = setInterval(async () => {
+        await updateFireChannel(client);
+    }, 5 * 60 * 1000); // 5 minutes
+
+    logger.info(`Fire channel name updates started (5min interval)`);
 }
 
 /**
@@ -338,48 +350,8 @@ export async function updateFireChannel(client: Client): Promise<void> {
         const fireMultiplier = getFireMultiplier(fireData.intensity);
         const totalMultiplier = fireMultiplier; // Plus tard: fireMultiplier * weatherMultiplier * etc.
 
-        // Animation du nom du salon - 4 frames différentes
-        const frame = animationFrame % 4;
-        let channelName = "";
-
-        // Choisir le style d'animation selon le multiplicateur
-        if (totalMultiplier >= 1.2) {
-            // Multiplicateur élevé - Animation avec étoiles qui bougent
-            const starFrames = [
-                `✨💫 XP ×${totalMultiplier.toFixed(2)} 💫✨`,
-                `💫✨ XP ×${totalMultiplier.toFixed(2)} ✨💫`,
-                `⭐💫 XP ×${totalMultiplier.toFixed(2)} 💫⭐`,
-                `💫⭐ XP ×${totalMultiplier.toFixed(2)} ⭐💫`
-            ];
-            channelName = starFrames[frame];
-        } else if (totalMultiplier >= 0.8) {
-            // Multiplicateur moyen - Animation avec flèches
-            const arrowFrames = [
-                `📊 XP ×${totalMultiplier.toFixed(2)} 📊`,
-                `➡️ XP ×${totalMultiplier.toFixed(2)} ⬅️`,
-                `📈 XP ×${totalMultiplier.toFixed(2)} 📈`,
-                `⬆️ XP ×${totalMultiplier.toFixed(2)} ⬆️`
-            ];
-            channelName = arrowFrames[frame];
-        } else if (totalMultiplier >= 0.5) {
-            // Multiplicateur faible - Animation d'alerte
-            const alertFrames = [
-                `⚠️ XP ×${totalMultiplier.toFixed(2)} ⚠️`,
-                `🔻 XP ×${totalMultiplier.toFixed(2)} 🔻`,
-                `⚠️ XP ×${totalMultiplier.toFixed(2)} ⚠️`,
-                `📉 XP ×${totalMultiplier.toFixed(2)} 📉`
-            ];
-            channelName = alertFrames[frame];
-        } else {
-            // Multiplicateur très faible - Animation critique
-            const criticalFrames = [
-                `🚨 XP ×${totalMultiplier.toFixed(2)} 🚨`,
-                `❗ XP ×${totalMultiplier.toFixed(2)} ❗`,
-                `🚨 XP ×${totalMultiplier.toFixed(2)} 🚨`,
-                `⛔ XP ×${totalMultiplier.toFixed(2)} ⛔`
-            ];
-            channelName = criticalFrames[frame];
-        }
+        // Nom simple basé sur le multiplicateur (sans animation)
+        const channelName = `💫 Multiplicateur XP - ×${totalMultiplier.toFixed(2)}`;
 
         // Trouver ou créer le salon vocal
         let voiceChannel: VoiceChannel | null = null;
@@ -414,18 +386,10 @@ export async function updateFireChannel(client: Client): Promise<void> {
 
             logger.info(`XP Multiplier voice channel created: ${voiceChannel.id}`);
         } else {
-            // Mettre à jour le nom si différent ET si le cooldown est respecté
-            const now = Date.now();
-            const canUpdate = (now - lastVoiceChannelUpdate) >= CHANNEL_NAME_UPDATE_COOLDOWN;
-
-            if (voiceChannel.name !== channelName && canUpdate) {
+            // Mettre à jour le nom si différent
+            if (voiceChannel.name !== channelName) {
                 await voiceChannel.setName(channelName);
-                lastVoiceChannelName = channelName;
-                lastVoiceChannelUpdate = now;
                 logger.info(`XP Multiplier voice channel updated: ${channelName}`);
-            } else if (voiceChannel.name !== channelName) {
-                const timeRemaining = Math.ceil((CHANNEL_NAME_UPDATE_COOLDOWN - (now - lastVoiceChannelUpdate)) / 1000);
-                logger.debug(`Voice channel update skipped (cooldown: ${timeRemaining}s remaining)`);
             }
 
             // Vérifier et mettre à jour les permissions pour empêcher les connexions
@@ -515,71 +479,14 @@ export async function updateFireEmbed(client: Client): Promise<void> {
 
             logger.info(`Fire text channel created: ${textChannel.id}`);
         } else {
-            // Animation du nom du salon textuel - 4 frames différentes
-            const frame = animationFrame % 4;
+            // Mettre à jour l'emoji du nom si le salon existe déjà (sans animation)
             const state = getFireState(fireData.intensity);
-            let channelName = "";
+            const emoji = FIRE_EMOJIS[state];
+            const expectedName = `${emoji}feu-de-foyer`;
 
-            // Choisir le style d'animation selon l'état du feu
-            if (state === "INTENSE") {
-                // Feu intense - Animation avec multiples emojis feu qui dansent
-                const intenseFrames = [
-                    `🔥🔥🔥feu-de-foyer🔥🔥🔥`,
-                    `🔥🔥🌟feu-de-foyer🌟🔥🔥`,
-                    `🔥✨🔥feu-de-foyer🔥✨🔥`,
-                    `🌟🔥🔥feu-de-foyer🔥🔥🌟`
-                ];
-                channelName = intenseFrames[frame];
-            } else if (state === "HIGH") {
-                // Feu fort - Animation avec feu et étincelles
-                const highFrames = [
-                    `🔥🔥feu-de-foyer🔥🔥`,
-                    `🔥✨feu-de-foyer✨🔥`,
-                    `✨🔥feu-de-foyer🔥✨`,
-                    `🔥🔥feu-de-foyer🔥🔥`
-                ];
-                channelName = highFrames[frame];
-            } else if (state === "MEDIUM") {
-                // Feu moyen - Animation simple avec feu
-                const mediumFrames = [
-                    `🔥feu-de-foyer🔥`,
-                    `🔥feu-de-foyer✨`,
-                    `✨feu-de-foyer🔥`,
-                    `🔥feu-de-foyer🔥`
-                ];
-                channelName = mediumFrames[frame];
-            } else if (state === "LOW") {
-                // Feu faible - Animation d'alerte qui clignote
-                const lowFrames = [
-                    `🟠feu-de-foyer🟠`,
-                    `⚠️feu-de-foyer⚠️`,
-                    `🟠feu-de-foyer🟠`,
-                    `🔥feu-de-foyer🔥`
-                ];
-                channelName = lowFrames[frame];
-            } else {
-                // Feu éteint - Animation de fumée
-                const extinguishedFrames = [
-                    `💨feu-de-foyer💨`,
-                    `⚫feu-de-foyer⚫`,
-                    `💨feu-de-foyer💨`,
-                    `🌫️feu-de-foyer🌫️`
-                ];
-                channelName = extinguishedFrames[frame];
-            }
-
-            // Mettre à jour le nom si différent ET si le cooldown est respecté
-            const now = Date.now();
-            const canUpdate = (now - lastTextChannelUpdate) >= CHANNEL_NAME_UPDATE_COOLDOWN;
-
-            if (textChannel.name !== channelName && canUpdate) {
-                await textChannel.setName(channelName);
-                lastTextChannelName = channelName;
-                lastTextChannelUpdate = now;
-                logger.info(`Fire text channel name updated: ${channelName}`);
-            } else if (textChannel.name !== channelName) {
-                const timeRemaining = Math.ceil((CHANNEL_NAME_UPDATE_COOLDOWN - (now - lastTextChannelUpdate)) / 1000);
-                logger.debug(`Text channel update skipped (cooldown: ${timeRemaining}s remaining)`);
+            if (textChannel.name !== expectedName) {
+                await textChannel.setName(expectedName);
+                logger.debug(`Fire text channel name updated: ${expectedName}`);
             }
         }
 
@@ -598,6 +505,7 @@ export async function updateFireEmbed(client: Client): Promise<void> {
             try {
                 const message = await textChannel.messages.fetch(fireData.messageId);
                 await message.edit({embeds: [embed], components: [row]});
+                logger.debug(`Fire embed updated (intensity: ${fireData.intensity.toFixed(1)}%)`);
             } catch (error) {
                 // Message n'existe plus, en créer un nouveau
                 const newMessage = await textChannel.send({embeds: [embed], components: [row]});
@@ -1024,9 +932,14 @@ export function stopFireSystem(): void {
         decayInterval = null;
     }
 
-    if (updateInterval) {
-        clearInterval(updateInterval);
-        updateInterval = null;
+    if (embedUpdateInterval) {
+        clearInterval(embedUpdateInterval);
+        embedUpdateInterval = null;
+    }
+
+    if (channelUpdateInterval) {
+        clearInterval(channelUpdateInterval);
+        channelUpdateInterval = null;
     }
 
     if (dailyResetInterval) {
