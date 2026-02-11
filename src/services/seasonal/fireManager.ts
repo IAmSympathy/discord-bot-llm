@@ -12,6 +12,15 @@ let dailyResetInterval: NodeJS.Timeout | null = null;
 // Frame d'animation actuelle (pour alterner les visuels)
 let animationFrame = 0;
 
+// Cache des noms de salons pour éviter les rate limits Discord
+let lastVoiceChannelName = "";
+let lastTextChannelName = "";
+let lastVoiceChannelUpdate = 0;
+let lastTextChannelUpdate = 0;
+
+// Discord rate limit: 2 changements de nom par 10 minutes
+const CHANNEL_NAME_UPDATE_COOLDOWN = 5 * 60 * 1000; // 5 minutes entre chaque changement
+
 /**
  * Initialise le système de feu
  */
@@ -405,10 +414,18 @@ export async function updateFireChannel(client: Client): Promise<void> {
 
             logger.info(`XP Multiplier voice channel created: ${voiceChannel.id}`);
         } else {
-            // Mettre à jour le nom si différent
-            if (voiceChannel.name !== channelName) {
+            // Mettre à jour le nom si différent ET si le cooldown est respecté
+            const now = Date.now();
+            const canUpdate = (now - lastVoiceChannelUpdate) >= CHANNEL_NAME_UPDATE_COOLDOWN;
+
+            if (voiceChannel.name !== channelName && canUpdate) {
                 await voiceChannel.setName(channelName);
-                logger.debug(`XP Multiplier voice channel updated: ${channelName}`);
+                lastVoiceChannelName = channelName;
+                lastVoiceChannelUpdate = now;
+                logger.info(`XP Multiplier voice channel updated: ${channelName}`);
+            } else if (voiceChannel.name !== channelName) {
+                const timeRemaining = Math.ceil((CHANNEL_NAME_UPDATE_COOLDOWN - (now - lastVoiceChannelUpdate)) / 1000);
+                logger.debug(`Voice channel update skipped (cooldown: ${timeRemaining}s remaining)`);
             }
 
             // Vérifier et mettre à jour les permissions pour empêcher les connexions
@@ -551,10 +568,18 @@ export async function updateFireEmbed(client: Client): Promise<void> {
                 channelName = extinguishedFrames[frame];
             }
 
-            // Mettre à jour le nom si différent
-            if (textChannel.name !== channelName) {
+            // Mettre à jour le nom si différent ET si le cooldown est respecté
+            const now = Date.now();
+            const canUpdate = (now - lastTextChannelUpdate) >= CHANNEL_NAME_UPDATE_COOLDOWN;
+
+            if (textChannel.name !== channelName && canUpdate) {
                 await textChannel.setName(channelName);
-                logger.debug(`Fire text channel name updated: ${channelName}`);
+                lastTextChannelName = channelName;
+                lastTextChannelUpdate = now;
+                logger.info(`Fire text channel name updated: ${channelName}`);
+            } else if (textChannel.name !== channelName) {
+                const timeRemaining = Math.ceil((CHANNEL_NAME_UPDATE_COOLDOWN - (now - lastTextChannelUpdate)) / 1000);
+                logger.debug(`Text channel update skipped (cooldown: ${timeRemaining}s remaining)`);
             }
         }
 
