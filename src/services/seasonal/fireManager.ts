@@ -889,7 +889,7 @@ async function createFireEmbed(fireData: any, client: Client): Promise<EmbedBuil
 
     // Impact météo détaillé (seulement si connu)
     if (weatherImpact.text !== "Conditions inconnues") {
-        description += `${weatherImpact.icon} ${weatherImpact.text}\n\n`;
+        description += `${weatherImpact.text}\n\n`;
     }
     // Taux de brûlage actuel (ligne dédiée claire)
     const currentBurnRate = await getWeatherBurnMultiplier(client);
