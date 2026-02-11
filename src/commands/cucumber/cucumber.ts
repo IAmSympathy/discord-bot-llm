@@ -3,6 +3,7 @@ import {createLogger} from "../../utils/logger";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {logCommand} from "../../utils/discordLogger";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
+import {recordFunCommandStats} from "../../services/statsRecorder";
 
 const logger = createLogger("CucumberCmd");
 
@@ -78,6 +79,10 @@ module.exports = {
                     false
                 );
             }
+
+            // Enregistrer l'utilisation d'une commande fun (pour les défis quotidiens)
+            const {recordFunCommandStats} = require("../../services/statsRecorder");
+            recordFunCommandStats(interaction.user.id, interaction.user.username);
 
             // Chance d'obtenir un objet saisonnier (3% - commande Netricsa)
             const {tryRewardAndNotify} = require("../../services/rewardNotifier");

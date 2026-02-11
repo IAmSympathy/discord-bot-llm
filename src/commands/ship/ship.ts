@@ -276,6 +276,10 @@ module.exports = {
             const {trackShipAchievements} = require("../../services/achievementService");
             await trackShipAchievements(interaction.user.id, interaction.user.username, compatibility, interaction.client, interaction.channelId);
 
+            // Enregistrer l'utilisation d'une commande fun (pour les défis quotidiens)
+            const {recordFunCommandStats} = require("../../services/statsRecorder");
+            recordFunCommandStats(interaction.user.id, interaction.user.username);
+
         } catch (error) {
             console.error("Error executing ship command:", error);
             await interaction.reply({

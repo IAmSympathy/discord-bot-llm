@@ -128,6 +128,10 @@ module.exports = {
                     // Tracker les achievements de ascii
                     const {trackAsciiAchievements} = require("../../services/achievementService");
                     await trackAsciiAchievements(interaction.user.id, interaction.user.username, interaction.client, interaction.channelId);
+
+                    // Enregistrer l'utilisation d'une commande fun (pour les défis quotidiens)
+                    const {recordFunCommandStats} = require("../../services/statsRecorder");
+                    recordFunCommandStats(interaction.user.id, interaction.user.username);
                 }
             );
 

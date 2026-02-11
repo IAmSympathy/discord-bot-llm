@@ -219,6 +219,10 @@ module.exports = {
             const {trackSlotsAchievements} = require("../../services/achievementService");
             await trackSlotsAchievements(userId, username, finalSymbols, interaction.client, interaction.channelId);
 
+            // Enregistrer l'utilisation d'une commande fun (pour les défis quotidiens)
+            const {recordFunCommandStats} = require("../../services/statsRecorder");
+            recordFunCommandStats(userId, username);
+
             const resultEmbed = new EmbedBuilder()
                 .setColor(0x30363c)
                 .setTitle("🎰 Machine à Sous")

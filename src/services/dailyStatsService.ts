@@ -281,6 +281,25 @@ export function recordDailyHangmanPlayed(userId: string, username: string, won: 
 }
 
 /**
+ * Enregistre l'utilisation d'une commande fun aujourd'hui
+ */
+export function recordDailyFunCommand(userId: string, username: string): void {
+    const data = loadDailyStats();
+    const date = getCurrentDate();
+
+    if (!data[date]) {
+        data[date] = {};
+    }
+    if (!data[date][userId]) {
+        data[date][userId] = initDailyUserStats(username);
+    }
+
+    data[date][userId].funCommandesUtilisees++;
+    data[date][userId].username = username;
+    saveDailyStats(data);
+}
+
+/**
  * Récupère les stats quotidiennes pour une date spécifique
  */
 export function getDailyStats(date: string): any {

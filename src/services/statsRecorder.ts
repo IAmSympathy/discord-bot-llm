@@ -144,3 +144,10 @@ export function recordHangmanPlayedStats(userId: string, username: string, won: 
     recordDailyHangmanPlayed(userId, username, won);
 }
 
+/**
+ * Enregistre l'utilisation d'une commande fun (pour les défis quotidiens)
+ */
+export function recordFunCommandStats(userId: string, username: string): void {
+    const {recordDailyFunCommand} = require("./dailyStatsService");
+    recordDailyFunCommand(userId, username);
+}

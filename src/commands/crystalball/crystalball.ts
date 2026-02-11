@@ -2,6 +2,7 @@ import {ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, TextChan
 import {logCommand} from "../../utils/discordLogger";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
+import {recordFunCommandStats} from "../../services/statsRecorder";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -90,6 +91,10 @@ module.exports = {
                     false
                 );
             }
+
+            // Enregistrer l'utilisation d'une commande fun (pour les défis quotidiens)
+            const {recordFunCommandStats} = require("../../services/statsRecorder");
+            recordFunCommandStats(interaction.user.id, interaction.user.username);
 
             // Chance d'obtenir un objet saisonnier (3% - commande Netricsa)
             const {tryRewardAndNotify} = require("../../services/rewardNotifier");
