@@ -253,8 +253,7 @@ async function showConfirmation(
                             .setDescription(
                                 `<@${userId}> a utilisé **${itemInfo.emoji} ${itemInfo.name}** !\n\n` +
                                 `🛡️ **${durationMinutes} minutes ajoutées**\n` +
-                                `🪵 La bûche qui brûle a gagné ${durationMinutes} minutes de vie\n` +
-                                `⏱️ Protection active jusqu'à <t:${Math.floor((Date.now() + duration) / 1000)}:R>`
+                                `🪵 La bûche qui brûle a gagné ${durationMinutes} minutes de vie`
                             )
                             .setFooter({text: "Ce message sera supprimé dans 2 minutes"})
                             .setTimestamp();
