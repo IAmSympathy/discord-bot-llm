@@ -279,6 +279,23 @@ export function activateWeatherProtection(
         });
     }
 
+    // IMPORTANT : Protéger uniquement la bûche qui brûle actuellement (la PREMIÈRE de la queue)
+    // Dans un système FIFO, la première bûche est toujours celle qui brûle
+    if (fireData.logs.length > 0) {
+        const burningLog = fireData.logs[0]; // Première bûche = celle qui brûle
+
+        // Réduire l'âge effectif de la bûche qui brûle pour lui donner plus de temps de vie
+        if (burningLog.effectiveAge !== undefined) {
+            const oldAge = burningLog.effectiveAge;
+            burningLog.effectiveAge = Math.max(0, burningLog.effectiveAge - duration);
+            burningLog.lastUpdate = now;
+            const savedTime = (oldAge - burningLog.effectiveAge) / 60000;
+            logger.info(`Protected burning log (${burningLog.username}) by ${savedTime.toFixed(0)} minutes`);
+        }
+    } else {
+        logger.info("No logs to protect, but protection is active for future logs");
+    }
+
     fireData.weatherProtection = {
         active: true,
         endsAt: newEndsAt,

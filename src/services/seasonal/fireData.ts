@@ -57,8 +57,7 @@ export const FIRE_CONFIG = {
 
     // Bûches
     LOG_BONUS: 10, // +10% par bûche
-    LOG_BURN_TIME: 4 * 60 * 60 * 1000, // Durée de vie d'une bûche : 4 heures
-    MAX_LOGS: 10, // Maximum de bûches dans le feu
+    LOG_BURN_TIME: 12 * 60 * 60 * 1000, // Durée de vie d'une bûche : 12 heures (adapté pour 1-2 utilisateurs actifs)
     USER_COOLDOWN: 4 * 60 * 60 * 1000, // 4 heures (harmonisé avec /harvest)
 
     // Limites
@@ -73,11 +72,11 @@ export const FIRE_CONFIG = {
 
     // Multiplicateurs XP
     MULTIPLIERS: {
-        EXTINGUISHED: 0.33,  // 0-5% - Vraiment éteint
-        LOW: 0.5,          // 6-30% - Faible
-        MEDIUM: 0.8,       // 31-60% - Moyen (neutre)
-        HIGH: 1.0,         // 61-85% - Fort
-        INTENSE: 1.33      // 86-100% - Intense
+        EXTINGUISHED: 1,  // 0-5% - Vraiment éteint
+        LOW: 1.1,          // 6-30% - Faible
+        MEDIUM: 1.25,       // 31-60% - Moyen (neutre)
+        HIGH: 1.4,         // 61-85% - Fort
+        INTENSE: 1.5      // 86-100% - Intense
     },
 
     // Seuils pour les notifications

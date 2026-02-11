@@ -3,7 +3,6 @@ import {createLogger} from "../../utils/logger";
 import {getFireProtectionItems, InventoryItemType, ITEM_CATALOG, removeItemFromInventory} from "../userInventoryService";
 import {getWeatherProtectionInfo} from "./fireDataManager";
 import {updateFireEmbed} from "./fireManager";
-import {FIRE_CONFIG} from "./fireData";
 
 const logger = createLogger("FireProtectionHandler");
 
@@ -35,10 +34,9 @@ export async function handleUseProtectionButton(interaction: ButtonInteraction):
                     `🎁 **Comment en obtenir ?**\n` +
                     `• Tape des commandes\n` +
                     `• Utilise les fonctionnalités de Netricsa\n` +
-                    `• Gagne des parties de jeux\n` +
-                    `• Débloque des achievements\n`
+                    `• Gagne des parties de jeux\n`
                 )
-                .setFooter({text: "Les protections ralentissent la combustion des bûches"})
+                .setFooter({text: "Les protections ajoutent du temps à la bûche qui brûle"})
                 .setTimestamp();
 
             await interaction.reply({embeds: [noItemsEmbed], ephemeral: true});
@@ -175,8 +173,8 @@ async function showConfirmation(
             `Tu es sur le point d'utiliser :\n\n` +
             `${itemInfo.emoji} **${itemInfo.name}**\n` +
             `${timeInfo}\n\n` +
-            `⚡ **Effet :** Combustion ralentie (×0.5)\n` +
-            `🪵 Les bûches dureront 2× plus longtemps`
+            `⚡ **Effet :** Ajoute ${durationMinutes} minutes à la bûche qui brûle\n` +
+            `🪵 La bûche la plus vieille durera plus longtemps`
         )
         .setFooter({text: "Es-tu sûr de vouloir utiliser cet objet ?"})
         .setTimestamp();
@@ -223,7 +221,10 @@ async function showConfirmation(
                 return;
             }
 
-            // Activer la protection
+            // Activer la protection en ajoutant du temps aux bûches
+            const {activateWeatherProtection} = require('./fireDataManager');
+            activateWeatherProtection(userId, username, duration);
+
             // Mettre à jour l'embed du feu immédiatement pour refléter la protection active
             if (btnInteraction.client) {
                 await updateFireEmbed(btnInteraction.client).catch(err =>
@@ -231,19 +232,43 @@ async function showConfirmation(
                 );
             }
 
-            const successEmbed = new EmbedBuilder()
-                .setColor(0x2ECC71)
-                .setTitle("✅ Protection activée !")
-                .setDescription(
-                    `${itemInfo.emoji} **${itemInfo.name}** utilisé avec succès !\n\n` +
-                    `🛡️ **Effet actif pendant ${durationMinutes} minutes**\n` +
-                    `⚡ Combustion ralentie (×${FIRE_CONFIG.PROTECTION_BURN_MULTIPLIER})\n` +
-                    `🪵 Les bûches durent maintenant ${(1 / FIRE_CONFIG.PROTECTION_BURN_MULTIPLIER).toFixed(1)}× plus longtemps\n\n` +
-                    `⏱️ Se termine <t:${Math.floor((Date.now() + duration) / 1000)}:R>`
-                )
-                .setTimestamp();
+            // Fermer le menu de confirmation (éphémère)
+            await interaction.editReply({
+                content: "✅ Protection activée !",
+                embeds: [],
+                components: []
+            });
 
-            await interaction.editReply({embeds: [successEmbed], components: []});
+            // Envoyer un message PUBLIC dans le salon du feu qui s'auto-supprime après 2 minutes
+            try {
+                const fireChannel = await btnInteraction.client.channels.fetch(process.env.FIRE_CHANNEL_ID || "");
+                if (fireChannel && 'send' in fireChannel) {
+                    const publicEmbed = new EmbedBuilder()
+                        .setColor(0x2ECC71)
+                        .setTitle("🛡️ Protection activée !")
+                        .setDescription(
+                            `<@${userId}> a utilisé **${itemInfo.emoji} ${itemInfo.name}** !\n\n` +
+                            `🛡️ **${durationMinutes} minutes ajoutées**\n` +
+                            `🪵 La bûche qui brûle a gagné ${durationMinutes} minutes de vie\n` +
+                            `⏱️ Protection active jusqu'à <t:${Math.floor((Date.now() + duration) / 1000)}:R>`
+                        )
+                        .setFooter({text: "Ce message sera supprimé dans 2 minutes"})
+                        .setTimestamp();
+
+                    const publicMessage = await fireChannel.send({embeds: [publicEmbed]});
+
+                    // Supprimer après 2 minutes
+                    setTimeout(async () => {
+                        try {
+                            await publicMessage.delete();
+                        } catch (error) {
+                            logger.debug("Could not delete protection message (might already be deleted)");
+                        }
+                    }, 120000);
+                }
+            } catch (error) {
+                logger.error("Could not send public protection message:", error);
+            }
 
             logger.info(`${username} activated ${itemInfo.name} for ${durationMinutes} minutes`);
         } else {

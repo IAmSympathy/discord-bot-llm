@@ -10,8 +10,6 @@ const logger = createLogger("FireButtonHandler");
  */
 export async function handleAddLogButton(interaction: ButtonInteraction): Promise<void> {
     try {
-        await interaction.deferReply({ephemeral: true});
-
         const userId = interaction.user.id;
         const username = interaction.user.username;
 
@@ -29,7 +27,7 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
                 )
                 .setTimestamp();
 
-            await interaction.editReply({embeds: [noBucheEmbed]});
+            await interaction.reply({embeds: [noBucheEmbed], ephemeral: true});
             return;
         }
 
@@ -43,25 +41,35 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
                 .setDescription(result.message + "\n\n💡 Tu as toujours ta bûche 🪵 dans ton inventaire !")
                 .setTimestamp();
 
-            await interaction.editReply({embeds: [errorEmbed]});
+            await interaction.reply({embeds: [errorEmbed], ephemeral: true});
             return;
         }
 
         // Consommer la bûche de l'inventaire
         removeItemFromInventory(userId, InventoryItemType.FIREWOOD_LOG, 1);
 
-
-        // Réponse de succès
+        // Réponse de succès - MESSAGE PUBLIC qui s'auto-supprime après 2 minutes
         const successEmbed = new EmbedBuilder()
             .setColor(0x2ECC71)
-            .setTitle("✅ Bûche ajoutée !")
+            .setTitle("✅ Bûche ajoutée au feu !")
             .setDescription(
-                result.message
+                `<@${userId}> a ajouté une bûche au feu de foyer !\n\n` +
+                `${result.message}\n\n` +
+                `🔥 **Le feu brûle plus fort !**`
             )
-            .setFooter({text: "Merci de contribuer au feu de foyer !"})
+            .setFooter({text: "Ce message sera supprimé dans 2 minutes"})
             .setTimestamp();
 
-        await interaction.editReply({embeds: [successEmbed]});
+        const reply = await interaction.reply({embeds: [successEmbed], fetchReply: true});
+
+        // Supprimer le message après 2 minutes (120000 ms)
+        setTimeout(async () => {
+            try {
+                await reply.delete();
+            } catch (error) {
+                logger.debug("Could not delete auto-message (might already be deleted)");
+            }
+        }, 120000);
 
         // Forcer une mise à jour IMMÉDIATE et COMPLÈTE de l'interface
         const fireManager = require("./fireManager");
@@ -85,8 +93,8 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
                 .setDescription("Une erreur est survenue lors de l'ajout de la bûche.")
                 .setTimestamp();
 
-            if (interaction.deferred) {
-                await interaction.editReply({embeds: [errorEmbed]});
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({embeds: [errorEmbed], ephemeral: true});
             } else {
                 await interaction.reply({embeds: [errorEmbed], ephemeral: true});
             }

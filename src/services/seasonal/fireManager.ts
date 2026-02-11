@@ -221,28 +221,34 @@ async function calculateTotalIntensity(fireData: any): Promise<number> {
 }
 
 /**
- * Met à jour l'âge effectif accumulé de toutes les bûches selon les conditions actuelles
- * Cette fonction doit être appelée régulièrement pour accumuler l'âge correctement
+ * Met à jour l'âge effectif de la bûche qui brûle actuellement (système de queue FIFO)
+ * Seule la PREMIÈRE bûche (index 0) brûle - les autres attendent en queue
  */
 async function updateLogsEffectiveAge(fireData: any, now: number, client: Client): Promise<void> {
     const weatherMultiplier = await getWeatherBurnMultiplier(client);
 
-    for (const log of fireData.logs) {
+    // Système de queue : seule la première bûche brûle
+    if (fireData.logs.length > 0) {
+        const burningLog = fireData.logs[0]; // La première bûche est celle qui brûle
+
         // Migration : initialiser effectiveAge et lastUpdate si nécessaire
-        if (log.effectiveAge === undefined) {
-            log.effectiveAge = 0;
-            log.lastUpdate = log.addedAt;
+        if (burningLog.effectiveAge === undefined) {
+            burningLog.effectiveAge = 0;
+            burningLog.lastUpdate = burningLog.addedAt;
         }
 
         // Calculer le temps écoulé depuis la dernière mise à jour
-        const timeSinceLastUpdate = now - log.lastUpdate;
+        const timeSinceLastUpdate = now - burningLog.lastUpdate;
 
         // Accumuler l'âge effectif selon le multiplicateur actuel
         // Plus le multiplicateur est élevé, plus l'âge augmente vite (brûle plus vite)
-        log.effectiveAge += timeSinceLastUpdate * weatherMultiplier;
+        burningLog.effectiveAge += timeSinceLastUpdate * weatherMultiplier;
 
         // Mettre à jour le timestamp
-        log.lastUpdate = now;
+        burningLog.lastUpdate = now;
+
+        // Les autres bûches (index > 0) attendent en queue - elles ne brûlent pas
+        // Leur effectiveAge reste à 0 jusqu'à ce qu'elles deviennent la première bûche
     }
 }
 
@@ -269,18 +275,22 @@ function startUnifiedUpdates(client: Client): void {
             // Obtenir le multiplicateur météo
             const weatherMultiplier = await getWeatherBurnMultiplier(client);
 
-            // Mettre à jour l'âge effectif de toutes les bûches
+            // Mettre à jour l'âge effectif de la bûche qui brûle (première de la queue)
             await updateLogsEffectiveAge(fireData, now, client);
 
-            // Retirer les bûches dont l'âge effectif a dépassé le temps de brûlage
-            const initialLogCount = fireData.logs.length;
-            fireData.logs = fireData.logs.filter(log => {
-                return log.effectiveAge < FIRE_CONFIG.LOG_BURN_TIME;
-            });
+            // Retirer la première bûche si elle est complètement consumée (système FIFO)
+            if (fireData.logs.length > 0 && fireData.logs[0].effectiveAge >= FIRE_CONFIG.LOG_BURN_TIME) {
+                const burnedLog = fireData.logs.shift(); // Retirer la première bûche
 
-            const burnedLogs = initialLogCount - fireData.logs.length;
-            if (burnedLogs > 0) {
-                logger.info(`${burnedLogs} log(s) burned (weather: ${weatherMultiplier.toFixed(2)}x). Remaining: ${fireData.logs.length}`);
+                if (burnedLog) {
+                    logger.info(`Log burned: ${burnedLog.username} (weather: ${weatherMultiplier.toFixed(2)}x). Remaining: ${fireData.logs.length}`);
+                }
+
+                // Si une nouvelle bûche devient la première, initialiser son temps de brûlage
+                if (fireData.logs.length > 0 && fireData.logs[0].lastUpdate === fireData.logs[0].addedAt) {
+                    fireData.logs[0].lastUpdate = now;
+                    logger.info(`Next log starts burning: ${fireData.logs[0].username}`);
+                }
             }
 
             // Recalculer l'intensité totale
@@ -927,40 +937,30 @@ async function createFireEmbed(fireData: any, client: Client): Promise<EmbedBuil
     } else if (currentBurnRate > 1.0) {
         description += `Les bûches brûlent **${currentBurnRate.toFixed(1)}× plus vite**\n`;
     } else {
-        description += `Vitesse normale (4h par bûche)\n`;
+        description += `Vitesse normale (6h par bûche)\n`;
     }
     description += `\n`;
 
     // Statistiques compactes - afficher le nombre réel de bûches
     description += `🪵 **Bûches : ${fireData.logs.length}**\n`;
 
-    // Afficher le temps restant avant que la prochaine bûche brûle
+    // Afficher le temps restant avant que la première bûche brûle (système de queue FIFO)
     if (fireData.logs.length > 0) {
         const now = Date.now();
         const weatherMultiplier = await getWeatherBurnMultiplier(client);
 
-        // Trouver la bûche la plus vieille en calculant son âge effectif EN TEMPS RÉEL
-        let oldestLog = fireData.logs[0];
-        let maxEffectiveAge = 0;
+        // Dans un système de queue, seule la PREMIÈRE bûche brûle
+        const burningLog = fireData.logs[0];
 
-        for (const log of fireData.logs) {
-            // Calculer l'âge effectif actuel en temps réel
-            const baseAge = log.effectiveAge || 0;
-            const timeSinceLastUpdate = now - (log.lastUpdate || log.addedAt);
-            const currentEffectiveAge = baseAge + (timeSinceLastUpdate * weatherMultiplier);
-
-            if (currentEffectiveAge > maxEffectiveAge) {
-                maxEffectiveAge = currentEffectiveAge;
-                oldestLog = log;
-            }
-        }
+        // Calculer l'âge effectif actuel en temps réel
+        const baseAge = burningLog.effectiveAge || 0;
+        const timeSinceLastUpdate = now - (burningLog.lastUpdate || burningLog.addedAt);
+        const currentEffectiveAge = baseAge + (timeSinceLastUpdate * weatherMultiplier);
 
         // Calculer combien de temps effectif il reste avant que cette bûche brûle complètement
-        const effectiveTimeRemaining = FIRE_CONFIG.LOG_BURN_TIME - maxEffectiveAge;
+        const effectiveTimeRemaining = FIRE_CONFIG.LOG_BURN_TIME - currentEffectiveAge;
 
         // Convertir en temps réel selon le multiplicateur actuel
-        // Si multiplier = 0.5 (protection), le temps réel sera 2x plus long
-        // Si multiplier = 1.3 (froid), le temps réel sera plus court
         const actualTimeRemaining = effectiveTimeRemaining / weatherMultiplier;
 
         if (actualTimeRemaining > 0) {
