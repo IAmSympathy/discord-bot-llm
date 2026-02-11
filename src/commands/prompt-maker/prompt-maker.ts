@@ -2,7 +2,7 @@ import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBui
 import {createLogger} from "../../utils/logger";
 import {OLLAMA_API_URL, OLLAMA_TEXT_MODEL, TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
-import {createErrorEmbed} from "../../utils/embedBuilder";
+import {createErrorEmbed, createLowPowerEmbed, createStandbyEmbed} from "../../utils/embedBuilder";
 import {isLowPowerMode} from "../../services/botStateService";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {recordPromptCreatedStats} from "../../services/statsRecorder";
@@ -256,9 +256,9 @@ module.exports = {
         try {
             // Vérifier le mode low power
             if (isLowPowerMode()) {
-                const errorEmbed = createErrorEmbed(
-                    "⚡ Mode Économie d'Énergie",
-                    "Netricsa est en mode économie d'énergie et ne peut pas générer de prompts pour le moment."
+                const errorEmbed = createLowPowerEmbed(
+                    "Mode Économie d'Énergie",
+                    "Netricsa est en mode économie d'énergie, car l'ordinateur de son créateur priorise les performances pour d'autres tâches. La génération de prompt n'est pas disponible pour le moment."
                 );
                 await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
                 return;
@@ -267,9 +267,9 @@ module.exports = {
             // Vérifier le mode standby
             const {isStandbyMode} = require('../../services/standbyModeService');
             if (isStandbyMode()) {
-                const errorEmbed = createErrorEmbed(
-                    "🌙 Mode Veille",
-                    "Je suis en mode veille car je ne peux pas me connecter à l'ordinateur de mon créateur. La génération de prompts n'est pas disponible pour le moment."
+                const errorEmbed = createStandbyEmbed(
+                    "Mode Veille",
+                    "Netricsa est en mode veille, car elle ne peut se connecter à l'ordinateur de son créateur. La génération de prompt n'est pas disponible pour le moment."
                 );
                 await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
                 return;

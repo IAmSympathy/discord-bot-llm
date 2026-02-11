@@ -49,7 +49,7 @@ export function createBackToMenuButton(): ButtonBuilder {
  */
 export function createWaitingEmbed(playerId: string, gameTitle: string): EmbedBuilder {
     return new EmbedBuilder()
-        .setColor(0x2494DB)
+        .setColor(0x14171A)
         .setTitle(`🎮 ${gameTitle}`)
         .setDescription(`<@${playerId}> cherche un adversaire !\n\nClique sur le bouton pour rejoindre la partie.`)
         .setTimestamp();

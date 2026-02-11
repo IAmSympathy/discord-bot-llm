@@ -4,7 +4,7 @@ import {setBotPresence} from "./bot";
 import {generateMentionEmoji} from "./services/emojiService";
 import {collectAllMediaUrls} from "./services/gifService";
 import {updateUserActivityFromPresence} from "./services/activityService";
-import {logBotReaction} from "./utils/discordLogger";
+import {createLowPowerEmbed, createStandbyEmbed, logBotReaction} from "./utils/discordLogger";
 import {BotStatus, clearStatus, setStatus} from "./services/statusService";
 import {isLowPowerMode} from "./services/botStateService";
 import {isStandbyMode} from "./services/standbyModeService";
@@ -21,6 +21,78 @@ const logger = createLogger("WatchChannel");
 
 function isWatchedChannel(message: Message, watchedChannelId?: string): boolean {
     return !!watchedChannelId && message.channelId === watchedChannelId;
+}
+
+/**
+ * Gère les modes Standby et Low Power avec embeds et suppression automatique
+ * Retourne true si un mode est actif et a été géré
+ */
+async function handleBotModes(message: Message, client: Client, watchedChannelId?: string): Promise<boolean> {
+    const isDM = message.channel.type === ChannelType.DM;
+
+    // Vérifier si en Standby Mode (prioritaire)
+    if (isStandbyMode()) {
+        // En DM, toujours répondre. En serveur, vérifier mention ou canal surveillé
+        const shouldRespond = isDM ||
+            (message.mentions.has(client.user!.id) && !message.mentions.everyone) ||
+            isWatchedChannel(message, watchedChannelId);
+
+        if (shouldRespond) {
+            const errorEmbed = createStandbyEmbed(
+                "Mode Veille",
+                "Netricsa est en mode veille, car elle ne peut se connecter à l'ordinateur de son créateur. La conversation intelligente n'est pas disponible pour le moment."
+            );
+            const reply = await message.reply({embeds: [errorEmbed]});
+            logger.info(`${isDM ? '[DM] ' : ''}Standby Mode - sent message to ${message.author.username}`);
+
+            // Supprimer les messages après 10 secondes
+            setTimeout(async () => {
+                try {
+                    await message.delete().catch(() => {
+                    });
+                    await reply.delete().catch(() => {
+                    });
+                    logger.debug(`${isDM ? '[DM] ' : ''}Deleted Standby Mode messages after 10s`);
+                } catch (error) {
+                    logger.debug(`${isDM ? '[DM] ' : ''}Could not delete Standby Mode messages: ${error}`);
+                }
+            }, 10000);
+        }
+        return true; // Mode actif
+    }
+
+    // Vérifier si en Low Power Mode
+    if (isLowPowerMode()) {
+        // En DM, toujours répondre. En serveur, vérifier mention ou canal surveillé
+        const shouldRespond = isDM ||
+            (message.mentions.has(client.user!.id) && !message.mentions.everyone) ||
+            isWatchedChannel(message, watchedChannelId);
+
+        if (shouldRespond) {
+            const errorEmbed = createLowPowerEmbed(
+                "Mode Économie d'Énergie",
+                "Netricsa est en mode économie d'énergie, car l'ordinateur de son créateur priorise les performances pour d'autres tâches. La conversation intelligente n'est pas disponible pour le moment."
+            );
+            const reply = await message.reply({embeds: [errorEmbed]});
+            logger.info(`${isDM ? '[DM] ' : ''}Low Power Mode - sent message to ${message.author.username}`);
+
+            // Supprimer les messages après 10 secondes
+            setTimeout(async () => {
+                try {
+                    await message.delete().catch(() => {
+                    });
+                    await reply.delete().catch(() => {
+                    });
+                    logger.debug(`${isDM ? '[DM] ' : ''}Deleted Low Power Mode messages after 10s`);
+                } catch (error) {
+                    logger.debug(`${isDM ? '[DM] ' : ''}Could not delete Low Power Mode messages: ${error}`);
+                }
+            }, 10000);
+        }
+        return true; // Mode actif
+    }
+
+    return false; // Aucun mode actif
 }
 
 /**
@@ -303,18 +375,9 @@ export function registerWatchedChannelResponder(client: Client) {
                     dmChannel = await dmChannel.fetch();
                 }
 
-                // Vérifier si en Standby Mode (prioritaire)
-                if (isStandbyMode()) {
-                    await message.reply(`🌙 Désolée, je suis en **mode veille** car je ne peux pas me connecter à l'ordinateur de mon créateur.\n\nJe vérifie régulièrement sa disponibilité et reviendrai automatiquement en mode normal dès qu'il sera accessibles.`);
-                    logger.info(`[DM] Standby Mode - sent message to ${message.author.username}`);
-                    return;
-                }
-
-                // Vérifier si en Low Power Mode
-                if (isLowPowerMode()) {
-                    await message.reply(`🔋 Désolée, je suis en mode Low Power pour économiser les ressources. Je ne peux pas effectuer d'analyse LLM pour le moment.\n\n💡 Utilisez \`/lowpower\` pour me réactiver en mode normal.`);
-                    logger.info(`[DM] Low Power Mode - sent message to ${message.author.username}`);
-                    return;
+                // Vérifier et gérer les modes Standby/Low Power
+                if (await handleBotModes(message, client, watchedChannelId)) {
+                    return; // Mode actif, arrêter le traitement
                 }
 
                 let userText = message.content?.trim();
@@ -371,65 +434,9 @@ export function registerWatchedChannelResponder(client: Client) {
             }
             // ===== FIN GESTION DES DMs =====
 
-            // Vérifier si le bot est en Standby Mode (prioritaire)
-            if (isStandbyMode()) {
-                // En mode Standby, répondre seulement si mentionné ou dans le canal surveillé
-                const isMentioned = message.mentions.has(client.user!.id) && !message.mentions.everyone;
-                const isInWatchedChannel = isWatchedChannel(message, watchedChannelId);
-
-                if (isMentioned || isInWatchedChannel) {
-                    const reply = await message.reply(`🌙 Je suis en **mode veille** car je ne peux pas me connecter à l'ordinateur de mon créateur.\n\nJe vérifie régulièrement sa disponibilité (toutes les 2 minutes) et reviendrai automatiquement en mode normal dès qu'il sera accessibles.`);
-                    logger.info(`Standby Mode - sent notification to ${message.author.username}`);
-
-                    // Si c'est dans le watched channel, supprimer les messages après 10 secondes
-                    if (isInWatchedChannel) {
-                        setTimeout(async () => {
-                            try {
-                                await message.delete().catch(() => {
-                                });
-                                await reply.delete().catch(() => {
-                                });
-                                logger.debug(`Deleted Standby Mode messages in watched channel after 10s`);
-                            } catch (error) {
-                                logger.debug(`Could not delete Standby Mode messages: ${error}`);
-                            }
-                        }, 10000);
-                    }
-                }
-                return; // Ne pas traiter les messages en mode Standby
-            }
-
-            // Vérifier si le bot est en Low Power Mode
-            if (isLowPowerMode()) {
-                // En mode Low Power, ne répondre que si mentionné ou dans le canal surveillé
-                const isMentioned = message.mentions.has(client.user!.id) && !message.mentions.everyone;
-                const isInWatchedChannel = isWatchedChannel(message, watchedChannelId);
-
-                if (isMentioned || isInWatchedChannel) {
-                    const lowPowerMessage = `Désolée, j'ai été mise en mode économie d'énergie par Tah-Um.\nJe ne peux pas générer de réponses ou analyser d'images pour le moment.`;
-
-                    const reply = await message.reply(lowPowerMessage);
-                    logger.info(`Low Power Mode - sent message to ${message.author.username}`);
-
-                    // Si c'est dans le watched channel, supprimer les messages après 10 secondes
-                    if (isInWatchedChannel) {
-                        setTimeout(async () => {
-                            try {
-                                await message.delete().catch(() => {
-                                });
-                                await reply.delete().catch(() => {
-                                });
-                                logger.debug(`Deleted Low Power Mode messages in watched channel after 10s`);
-                            } catch (error) {
-                                logger.debug(`Could not delete Low Power Mode messages: ${error}`);
-                            }
-                        }, 10000);
-                    }
-                    return;
-                }
-
-                // En mode Low Power, ignorer tous les autres messages
-                return;
+            // Vérifier et gérer les modes Standby/Low Power pour les canaux serveur
+            if (await handleBotModes(message, client, watchedChannelId)) {
+                return; // Mode actif, arrêter le traitement
             }
 
 

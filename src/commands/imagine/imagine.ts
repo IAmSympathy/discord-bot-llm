@@ -1,7 +1,7 @@
 import {ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {generateImage} from "../../services/imageGenerationService";
 import {logBotImageGeneration} from "../../utils/discordLogger";
-import {createErrorEmbed} from "../../utils/embedBuilder";
+import {createErrorEmbed, createLowPowerEmbed, createStandbyEmbed} from "../../utils/embedBuilder";
 import {createLogger} from "../../utils/logger";
 import {hasActiveGeneration, registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
 import {formatTime} from "../../utils/timeFormat";
@@ -59,11 +59,11 @@ module.exports = {
             return;
         }
 
-        // Vérifier le mode low power (l'owner peut quand même utiliser)
+        // Vérifier le mode low power
         if (isLowPowerMode()) {
-            const errorEmbed = createErrorEmbed(
-                "⚡ Mode Économie d'Énergie",
-                "Netricsa est en mode économie d'énergie et ne peut pas générer d'images pour le moment."
+            const errorEmbed = createLowPowerEmbed(
+                "Mode Économie d'Énergie",
+                "Netricsa est en mode économie d'énergie, car l'ordinateur de son créateur priorise les performances pour d'autres tâches. La génération d'images n'est pas disponible pour le moment."
             );
             await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
             return;
@@ -72,9 +72,9 @@ module.exports = {
         // Vérifier le mode standby
         const {isStandbyMode} = require('../../services/standbyModeService');
         if (isStandbyMode()) {
-            const errorEmbed = createErrorEmbed(
-                "🌙 Mode Veille",
-                "Je suis en mode veille car je ne peux pas me connecter à l'ordinateur de mon créateur. La génération d'images n'est pas disponible pour le moment."
+            const errorEmbed = createStandbyEmbed(
+                "Mode Veille",
+                "Netricsa est en mode veille, car elle ne peut se connecter à l'ordinateur de son créateur. La génération d'images n'est pas disponible pour le moment."
             );
             await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
             return;
@@ -159,7 +159,7 @@ module.exports = {
             // Créer un embed pour afficher les informations de manière compacte
             const {EmbedBuilder} = require("discord.js");
             const embed = new EmbedBuilder()
-                .setColor(0x9b59b6) // Bleu pour génération
+                .setColor(0xd99e82) // Bleu pour génération
                 .addFields(
                     {name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1021) + "..." : prompt}
                 )

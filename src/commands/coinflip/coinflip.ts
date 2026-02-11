@@ -69,7 +69,7 @@ module.exports = {
                     result === "tranche" ? 0xFFD700 : // Or pour la tranche
                         won === true ? 0x57F287 :
                             won === false ? 0xED4245 :
-                                0x5865F2
+                                0xffcc4d
                 )
                 .setTitle("🪙 Pile ou Face");
 

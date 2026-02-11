@@ -1,6 +1,6 @@
 import {ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {generateImage} from "../../services/imageGenerationService";
-import {logBotImageReimagine} from "../../utils/discordLogger";
+import {createLowPowerEmbed, createStandbyEmbed, logBotImageReimagine} from "../../utils/discordLogger";
 import {createErrorEmbed} from "../../utils/embedBuilder";
 import {createLogger} from "../../utils/logger";
 import {hasActiveGeneration, registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
@@ -78,9 +78,9 @@ module.exports = {
 
             // Vérifier le mode low power
             if (isLowPowerMode()) {
-                const errorEmbed = createErrorEmbed(
-                    "⚡ Mode Économie d'Énergie",
-                    "Netricsa est en mode économie d'énergie et ne peut pas transformer d'images pour le moment."
+                const errorEmbed = createLowPowerEmbed(
+                    "Mode Économie d'Énergie",
+                    "Netricsa est en mode économie d'énergie, car l'ordinateur de son créateur priorise les performances pour d'autres tâches. La réimagination d'images n'est pas disponible pour le moment."
                 );
                 await interaction.reply({embeds: [errorEmbed], ephemeral: true});
                 return;
@@ -89,10 +89,11 @@ module.exports = {
             // Vérifier le mode standby
             const {isStandbyMode} = require('../../services/standbyModeService');
             if (isStandbyMode()) {
-                const errorEmbed = createErrorEmbed(
-                    "🌙 Mode Veille",
-                    "Je suis en mode veille car je ne peux pas me connecter à l'ordinateur de mon créateur. La transformation d'images n'est pas disponible pour le moment."
+                const errorEmbed = createStandbyEmbed(
+                    "Mode Veille",
+                    "Netricsa est en mode veille, car elle ne peut se connecter à l'ordinateur de son créateur. La réimagination d'images n'est pas disponible pour le moment."
                 );
+                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
                 await interaction.reply({embeds: [errorEmbed], ephemeral: true});
                 return;
             }
@@ -261,7 +262,7 @@ module.exports = {
             // Créer un embed pour afficher les informations de manière compacte
             const {EmbedBuilder} = require("discord.js");
             const embed = new EmbedBuilder()
-                .setColor(0x3498db) // Violet pour réimagination
+                .setColor(0x4fa0dd) // Violet pour réimagination
                 .addFields(
                     {name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1021) + "..." : prompt}
                 )

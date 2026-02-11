@@ -88,8 +88,8 @@ module.exports = {
 
                     // Créer l'embed
                     const embed = new EmbedBuilder()
-                        .setColor(0x5865F2)
-                        .setTitle("🎨 Art ASCII")
+                        .setColor(0x357bb0)
+                        .setTitle("🔤 Art ASCII")
                         .setDescription(`**Texte :** ${text}\n**Style :** ${style}`)
                         .setFooter({text: `Créé par ${interaction.user.displayName}`})
                         .setTimestamp();

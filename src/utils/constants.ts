@@ -56,6 +56,10 @@ export const DISCORD_MESSAGE_LIMIT = 1900;
 export const DISCORD_TYPING_UPDATE_INTERVAL = 800; // 500ms pour éditions plus réactives (était 2000ms)
 export const TYPING_ANIMATION_INTERVAL = 800;
 
+// Colors
+export const NETRICSA_ROLE_ID = "1462959644195684528"; // ID du rôle Netricsa
+export const NETRICSA_COLOR = 0x397d86; // Couleur du rôle Netricsa (sera remplacée dynamiquement)
+
 // Timeouts
 export const BUTTON_CONFIRMATION_TIMEOUT = 10000;
 

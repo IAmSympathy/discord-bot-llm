@@ -62,7 +62,7 @@ module.exports = {
 
 async function showModeSelection(interaction: any, originalUserId: string) {
     const embed = new EmbedBuilder()
-        .setColor(0x2494DB)
+        .setColor(0x14171A)
         .setTitle("🔴 Connect 4 🟡")
         .setDescription("Choisis ton mode de jeu :")
         .setTimestamp();
@@ -535,7 +535,7 @@ async function updateGameDisplay(interaction: any, gameId: string, useEditReply:
 
 function createGameEmbed(gameState: GameState): EmbedBuilder {
     return new EmbedBuilder()
-        .setColor(0x2494DB)
+        .setColor(0x14171A)
         .setTitle(`🔴 ${GAME_TITLE} 🟡`)
         .setDescription(getBoardDisplay(gameState))
         .setFooter({text: `${gameState.player1Symbol} vs ${gameState.player2Symbol}`})
@@ -604,7 +604,7 @@ async function handleGameEnd(interaction: any, gameId: string, result: string | 
     collector.stop("game_ended");
 
     let resultText = "";
-    let color = 0x2494DB;
+    let color = 0x14171A;
 
     if (result === "draw") {
         resultText = "🤝 Égalité !";

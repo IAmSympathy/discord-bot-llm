@@ -116,6 +116,11 @@ client.once(Events.ClientReady, async () => {
     logger.info("Bot is online!");
     initializeDiscordLogger(client);
 
+    // Initialiser la couleur Netricsa depuis le rôle Discord
+    const {getNetricsaColorCached} = require("./utils/colorHelper");
+    await getNetricsaColorCached(client);
+    logger.info("Netricsa color initialized from role");
+
     // Note: Le statut initial sera géré par l'activityMonitor
     // qui détecte automatiquement si l'owner joue dès le démarrage
     logger.info("Bot started with Auto Low Power Mode enabled by default");
@@ -180,6 +185,30 @@ client.once(Events.ClientReady, async () => {
     // Initialiser le message persistant des défis quotidiens
     const {initializeDailyChallengesMessage} = require("./commands/challenges/challenges");
     await initializeDailyChallengesMessage(client);
+});
+
+// === ÉVÉNEMENT : MISE À JOUR DES RÔLES ===
+// Détecter les changements de couleur du rôle Netricsa
+client.on(Events.GuildRoleUpdate, async (oldRole, newRole) => {
+    try {
+        const {NETRICSA_ROLE_ID} = require("./utils/constants");
+
+        // Si c'est le rôle Netricsa qui a été modifié
+        if (newRole.id === NETRICSA_ROLE_ID) {
+            // Vérifier si la couleur a changé
+            if (oldRole.color !== newRole.color) {
+                logger.info(`Netricsa role color changed: #${oldRole.color.toString(16).padStart(6, '0')} → #${newRole.color.toString(16).padStart(6, '0')}`);
+
+                // Réinitialiser le cache de couleur
+                const {resetColorCache} = require("./utils/colorHelper");
+                resetColorCache();
+
+                logger.info("Color cache reset - new color will be used for next embeds");
+            }
+        }
+    } catch (error) {
+        logger.error("Error handling role update:", error);
+    }
 });
 
 // === ÉVÉNEMENTS SERVEUR DISCORD ===

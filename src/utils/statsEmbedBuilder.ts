@@ -7,7 +7,7 @@ import {getUserCounterContributions} from "../services/counterService";
 import * as fs from "fs";
 import * as path from "path";
 import {getLevelRoleForLevel} from "../services/levelRoleService";
-import {LEVEL_ROLES} from "../utils/constants";
+import {LEVEL_ROLES, NETRICSA_COLOR} from "../utils/constants";
 
 const DAILY_FILE = path.join(process.cwd(), "data", "daily_streaks.json");
 
@@ -140,7 +140,7 @@ export function createDiscordStatsEmbed(targetUser: User): EmbedBuilder {
     }
 
     return new EmbedBuilder()
-        .setColor(0x397d86)
+        .setColor(NETRICSA_COLOR)
         .setTitle(`📊 Statistiques Discord de ${targetUser.displayName}`)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL({size: 128}))
@@ -180,7 +180,7 @@ export function createNetricsaStatsEmbed(targetUser: User): EmbedBuilder {
     }
 
     return new EmbedBuilder()
-        .setColor(0x397d86)
+        .setColor(NETRICSA_COLOR)
         .setTitle(`🤖 Statistiques Netricsa de ${targetUser.displayName}`)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL({size: 128}))
@@ -225,7 +225,7 @@ export function createGameStatsEmbed(targetUser: User): EmbedBuilder {
     }
 
     return new EmbedBuilder()
-        .setColor(0x397d86)
+        .setColor(NETRICSA_COLOR)
         .setTitle(`🎮 Statistiques de Jeux de ${targetUser.displayName}`)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL({size: 128}))
@@ -250,7 +250,7 @@ export async function createServerStatsEmbed(guild?: any, client?: any): Promise
     description += `💬 **Conversations IA :** ${serverStats.totalConversations.toLocaleString()}`;
 
     const embed = new EmbedBuilder()
-        .setColor(0x397d86)
+        .setColor(NETRICSA_COLOR)
         .setTitle("🌐 Statistiques du Serveur")
         .setDescription(description)
         .setFooter({text: "Stats depuis le 5 février 2026"})
@@ -305,7 +305,7 @@ export function createProfileEmbed(targetUser: User): EmbedBuilder {
     const profile = UserProfileService.getProfile(targetUser.id);
 
     const embed = new EmbedBuilder()
-        .setColor(0x397d86)
+        .setColor(NETRICSA_COLOR)
         .setTitle(`📋 Profil de ${targetUser.displayName}`)
         .setThumbnail(targetUser.displayAvatarURL({size: 128}))
         .setTimestamp()
@@ -479,7 +479,7 @@ export function createDetailedGameStatsEmbed(targetUser: User, gameType: string)
     }
 
     const embed = new EmbedBuilder()
-        .setColor(0x397d86)
+        .setColor(NETRICSA_COLOR)
         .setTitle(title)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL())

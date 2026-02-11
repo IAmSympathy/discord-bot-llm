@@ -70,7 +70,7 @@ module.exports = {
 
 async function showModeSelection(interaction: any, originalUserId: string) {
     const embed = new EmbedBuilder()
-        .setColor(0x2494DB)
+        .setColor(0x14171A)
         .setTitle("🎮 Roche-Papier-Ciseaux")
         .setDescription("Choisis ton mode de jeu :")
         .setTimestamp();
@@ -148,7 +148,7 @@ async function waitForPlayer(interaction: any, player1Id: string, gameId: string
     activeGames.set(gameId, gameState);
 
     const embed = new EmbedBuilder()
-        .setColor(0x2494DB)
+        .setColor(0x14171A)
         .setTitle("🎮 Roche-Papier-Ciseaux")
         .setDescription(`<@${player1Id}> cherche un adversaire !\n\nClique sur le bouton pour rejoindre la partie.`)
         .setTimestamp();
@@ -247,7 +247,7 @@ async function startGameAgainstAI(interaction: any, playerId: string, gameId: st
     activeGames.set(gameId, gameState);
 
     const embed = new EmbedBuilder()
-        .setColor(0x2494DB)
+        .setColor(0x14171A)
         .setTitle("🎮 Roche-Papier-Ciseaux vs <:zzzRole_NetricsaModule:1466997072564584631> Netricsa")
         .setDescription("Fais ton choix !")
         .setTimestamp();
@@ -266,7 +266,7 @@ async function startGameAgainstAI(interaction: any, playerId: string, gameId: st
 
 async function startPvPGame(interaction: any, gameState: GameState, gameId: string) {
     const embed = new EmbedBuilder()
-        .setColor(0x2494DB)
+        .setColor(0x14171A)
         .setTitle("🎮 Roche-Papier-Ciseaux")
         .setDescription(`⚔️ <@${gameState.player1}> vs <@${gameState.player2}>\n\nFaites vos choix ! (invisible pour l'adversaire)`)
         .setTimestamp();
@@ -416,7 +416,7 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                 }
 
                 const updatedEmbed = new EmbedBuilder()
-                    .setColor(currentEmbed.color || 0x5865F2)
+                    .setColor(currentEmbed.color || 0x14171A)
                     .setTitle(baseTitle)
                     .setDescription(baseDesc + choiceStatus)
                     .setTimestamp();
@@ -626,7 +626,7 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
 
                 // Créer une nouvelle partie
                 const embed = new EmbedBuilder()
-                    .setColor(0x2494DB)
+                    .setColor(0x14171A)
                     .setTitle("🎮 Roche-Papier-Ciseaux vs <:zzzRole_NetricsaModule:1466997072564584631> Netricsa")
                     .setDescription("🔄 **Nouvelle partie !**\n\nFais ton choix !")
                     .setTimestamp();
@@ -648,7 +648,7 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
 
                 // Mettre à jour l'embed pour indiquer que la partie recommence
                 const embed = new EmbedBuilder()
-                    .setColor(0x2494DB)
+                    .setColor(0x14171A)
                     .setTitle("🎮 Roche-Papier-Ciseaux")
                     .setDescription("🔄 **Les deux joueurs ont accepté ! Nouvelle partie !**\n\nFaites vos choix !")
                     .setTimestamp();

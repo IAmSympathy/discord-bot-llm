@@ -45,7 +45,7 @@ module.exports = {
 
             // Créer l'embed de résultat
             const embed = new EmbedBuilder()
-                .setColor(0x5865F2)
+                .setColor(0xdd2e44)
                 .setTitle("🎯 Choix aléatoire")
                 .addFields(
                     {

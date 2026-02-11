@@ -48,3 +48,28 @@ export function createWarningEmbed(title: string, description: string): EmbedBui
         .setDescription(description)
         .setTimestamp();
 }
+
+/**
+ * Crée un embed pour le mode Standby (Veille)
+ * Couleur nocturne/bleu foncé pour représenter le mode veille
+ */
+export function createStandbyEmbed(title: string, description: string): EmbedBuilder {
+    return new EmbedBuilder()
+        .setColor(0x2c3e50) // Bleu foncé nocturne
+        .setTitle(`🌙 ${title}`)
+        .setDescription(description)
+        .setTimestamp();
+}
+
+/**
+ * Crée un embed pour le mode Low Power (Économie d'énergie)
+ * Couleur orange pour représenter le mode économie d'énergie
+ */
+export function createLowPowerEmbed(title: string, description: string): EmbedBuilder {
+    return new EmbedBuilder()
+        .setColor(0xffa500) // Orange (économie d'énergie)
+        .setTitle(`🔋 ${title}`)
+        .setDescription(description)
+        .setTimestamp();
+}
+

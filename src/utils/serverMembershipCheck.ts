@@ -48,8 +48,7 @@ async function createNotMemberErrorEmbed(interaction: ChatInputCommandInteractio
         .setColor(0xED4245)
         .setTitle("🔒 Accès Restreint")
         .setDescription(
-            `Désolé, cette fonctionnalité n'est disponible que pour les membres du serveur **${SERVER_NAME}**.\n\n` +
-            `Rejoins-nous pour accéder à toutes les fonctionnalités ! 🎨`
+            `Désolé, cette fonctionnalité n'est disponible que pour les membres du serveur **${SERVER_NAME}**.\n\n`
         )
         .setTimestamp();
 

@@ -175,7 +175,7 @@ function createGameEmbed(gameState: GameState): EmbedBuilder {
     description += `\n**Erreurs:** ${gameState.wrongGuesses}/${gameState.maxWrongGuesses}`;
 
     const embed = new EmbedBuilder()
-        .setColor(0x2494DB)
+        .setColor(0x14171A)
         .setTitle("🎮 Bonhomme Pendu")
         .setDescription(description)
         .setTimestamp();

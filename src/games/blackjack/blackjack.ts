@@ -116,7 +116,7 @@ function createGameEmbed(gameState: GameState, hideDealer: boolean = false): Emb
     description += `**<@${gameState.player}>** (${playerScore})\n${formatHand(gameState.playerHand)}`;
 
     const embed = new EmbedBuilder()
-        .setColor(0x2494DB)
+        .setColor(0x14171A)
         .setTitle("🃏 Blackjack")
         .setDescription(description)
         .setTimestamp();

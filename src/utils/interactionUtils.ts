@@ -1,6 +1,6 @@
 import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags} from "discord.js";
 import {createLogger} from "./logger";
-import {createErrorEmbed, createInfoEmbed, createSuccessEmbed, createWarningEmbed} from "./embedBuilder";
+import {createErrorEmbed, createInfoEmbed, createLowPowerEmbed, createStandbyEmbed, createSuccessEmbed, createWarningEmbed} from "./embedBuilder";
 
 const logger = createLogger("InteractionUtils");
 
@@ -10,7 +10,7 @@ const logger = createLogger("InteractionUtils");
  */
 
 // Ré-exporter les fonctions embed pour les commandes
-export {createErrorEmbed, createInfoEmbed, createSuccessEmbed, createWarningEmbed} from "./embedBuilder";
+export {createErrorEmbed, createInfoEmbed, createSuccessEmbed, createWarningEmbed, createStandbyEmbed, createLowPowerEmbed} from "./embedBuilder";
 
 /**
  * Répond à une interaction avec gestion automatique des erreurs

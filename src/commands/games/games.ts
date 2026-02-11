@@ -21,7 +21,7 @@ module.exports = {
 export async function showGameMenu(interaction: any, originalUserId?: string) {
     const userId = originalUserId || interaction.user.id;
     const embed = new EmbedBuilder()
-        .setColor(0x2494DB)
+        .setColor(0x14171A)
         .setTitle("🎮 Menu des Jeux")
         .setDescription(
             "Choisis un jeu pour commencer !\n\n"

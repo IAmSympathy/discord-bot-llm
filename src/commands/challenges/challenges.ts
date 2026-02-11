@@ -7,6 +7,7 @@ import {createLogger} from "../../utils/logger";
 import {getCurrentDate, getUserDailyStats} from "../../services/dailyStatsService";
 import {getDailyVoiceTime} from "../../voiceTracker";
 import {EnvConfig} from "../../utils/envConfig";
+import {NETRICSA_COLOR} from "../../utils/constants";
 
 const logger = createLogger("DailyChallengesCmd");
 const CHALLENGES_FILE = path.join(process.cwd(), "data", "daily_challenges.json");
@@ -325,7 +326,7 @@ function generateDailyChallenges(): ChallengeDefinition[] {
  */
 function createChallengesEmbed(challenges: ChallengeDefinition[]): EmbedBuilder {
     const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(NETRICSA_COLOR)
         .setTitle("🎯 Défis Quotidiens")
         .setDescription(
             "**Complète ces défis pour gagner de l'XP bonus !**\n\n" +
@@ -658,7 +659,7 @@ module.exports = {
 
             // Créer l'embed avec les défis
             const embed = new EmbedBuilder()
-                .setColor(0x5865F2)
+                .setColor(NETRICSA_COLOR)
                 .setTitle("🎯 Défis Quotidiens")
                 .setTimestamp();
 

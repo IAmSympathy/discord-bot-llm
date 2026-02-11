@@ -6,6 +6,7 @@ import {getMonthlyXP} from "../../services/monthlyXPService";
 import {getDailyXP, getWeeklyXP} from "../../services/dailyWeeklyXPService";
 import {getCurrentDate} from "../../services/dailyStatsService";
 import {getCurrentWeek, getWeeklyStatsForWeek} from "../../services/weeklyStatsService";
+import {NETRICSA_COLOR} from "../../utils/constants";
 
 type LeaderboardCategory = "xp" | "messages" | "vocal" | "images" | "jeux";
 type LeaderboardMode = "alltime" | "daily" | "weekly" | "monthly";
@@ -196,7 +197,7 @@ async function createLeaderboardEmbed(
     interaction: ChatInputCommandInteraction
 ): Promise<EmbedBuilder> {
     const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(NETRICSA_COLOR)
         .setTimestamp();
 
     let description = "";
@@ -634,11 +635,11 @@ function createLeaderboardButtons(currentCategory: LeaderboardCategory, currentM
             .setStyle(currentMode === "alltime" ? ButtonStyle.Success : ButtonStyle.Secondary)
             .setDisabled(currentMode === "alltime"),
         new ButtonBuilder()
-            .setCustomId("leaderboard_mode_monthly")
-            .setLabel("Ce mois-ci")
-            .setEmoji("📅")
-            .setStyle(currentMode === "monthly" ? ButtonStyle.Success : ButtonStyle.Secondary)
-            .setDisabled(currentMode === "monthly"),
+            .setCustomId("leaderboard_mode_daily")
+            .setLabel("Aujourd'hui")
+            .setEmoji("📆")
+            .setStyle(currentMode === "daily" ? ButtonStyle.Success : ButtonStyle.Secondary)
+            .setDisabled(currentMode === "daily"),
         new ButtonBuilder()
             .setCustomId("leaderboard_mode_weekly")
             .setLabel("Cette semaine")
@@ -646,11 +647,11 @@ function createLeaderboardButtons(currentCategory: LeaderboardCategory, currentM
             .setStyle(currentMode === "weekly" ? ButtonStyle.Success : ButtonStyle.Secondary)
             .setDisabled(currentMode === "weekly"),
         new ButtonBuilder()
-            .setCustomId("leaderboard_mode_daily")
-            .setLabel("Aujourd'hui")
-            .setEmoji("📆")
-            .setStyle(currentMode === "daily" ? ButtonStyle.Success : ButtonStyle.Secondary)
-            .setDisabled(currentMode === "daily")
+            .setCustomId("leaderboard_mode_monthly")
+            .setLabel("Ce mois-ci")
+            .setEmoji("📅")
+            .setStyle(currentMode === "monthly" ? ButtonStyle.Success : ButtonStyle.Secondary)
+            .setDisabled(currentMode === "monthly")
     );
 
     return [categoryRow, modeRow];

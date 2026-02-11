@@ -68,7 +68,7 @@ module.exports = {
 
             // Créer l'embed de résultat
             const embed = new EmbedBuilder()
-                .setColor(0xA0041E)
+                .setColor(0xea596e)
                 .setTitle(`${emoji} Lancer de dé${numberOfDice > 1 ? 's' : ''}`)
                 .setDescription(`${numberOfDice} x ${diceType.toUpperCase()}`)
                 .addFields({

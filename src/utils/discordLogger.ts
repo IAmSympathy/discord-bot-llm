@@ -1,6 +1,6 @@
 import {Client, EmbedBuilder, TextChannel} from "discord.js";
 import {EnvConfig} from "./envConfig";
-import {createErrorEmbed, createInfoEmbed, createSuccessEmbed, createWarningEmbed} from "./embedBuilder";
+import {createErrorEmbed, createInfoEmbed, createLowPowerEmbed, createStandbyEmbed, createSuccessEmbed, createWarningEmbed} from "./embedBuilder";
 import {formatTimeFromMs} from "./timeFormat";
 
 let clientInstance: Client | null = null;
@@ -758,6 +758,7 @@ export async function logBotReaction(username: string, channelName: string, mess
     });
 }
 
-// Note: Les fonctions createSuccessEmbed, createErrorEmbed, createInfoEmbed, createWarningEmbed
-// sont maintenant centralisées dans ./embedBuilder.ts et ré-exportées ici pour compatibilité
-export {createSuccessEmbed, createErrorEmbed, createInfoEmbed, createWarningEmbed} from "./embedBuilder";
+// Note: Les fonctions createSuccessEmbed, createErrorEmbed, createInfoEmbed, createWarningEmbed,
+// createStandbyEmbed et createLowPowerEmbed sont maintenant centralisées dans ./embedBuilder.ts
+// et ré-exportées ici pour compatibilité
+export {createSuccessEmbed, createErrorEmbed, createInfoEmbed, createWarningEmbed, createStandbyEmbed, createLowPowerEmbed} from "./embedBuilder";
