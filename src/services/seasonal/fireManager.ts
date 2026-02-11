@@ -12,6 +12,69 @@ let dailyResetInterval: NodeJS.Timeout | null = null;
 let animationFrame = 0;
 
 /**
+ * Interface pour les données météo
+ */
+interface WeatherData {
+    temperature: number;
+    condition: string;
+    emoji: string;
+}
+
+/**
+ * Récupère les données météo depuis le nom du salon Discord au lieu d'appeler l'API
+ * Format attendu: "❄️ Chutes de neige, -4°"
+ */
+function getWeatherFromChannel(client: Client): WeatherData | null {
+    try {
+        const guild = client.guilds.cache.first();
+        if (!guild) return null;
+
+        // Liste des emojis météo possibles
+        const WEATHER_EMOJIS = ['☀️', '🌤️', '⛅', '☁️', '🌧️', '🌦️', '⛈️', '🌨️', '❄️', '🌫️', '💨', '🌪️', '🌡️', '🌩️', '🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
+
+        // Chercher le salon météo
+        const weatherChannel = guild.channels.cache.find(
+            channel => {
+                if (channel.type !== ChannelType.GuildVoice) return false;
+                const startsWithWeatherEmoji = WEATHER_EMOJIS.some(emoji => channel.name.startsWith(emoji));
+                const hasTemperature = channel.name.includes('°');
+                return startsWithWeatherEmoji && hasTemperature;
+            }
+        );
+
+        if (!weatherChannel) {
+            logger.debug("Weather channel not found");
+            return null;
+        }
+
+        // Parser le nom du salon: "❄️ Chutes de neige, -4°"
+        const channelName = weatherChannel.name;
+
+        // Extraire l'emoji (premier caractère)
+        const emoji = channelName[0];
+
+        // Extraire la température (chercher un nombre suivi de °)
+        const tempMatch = channelName.match(/(-?\d+)°/);
+        const temperature = tempMatch ? parseInt(tempMatch[1]) : 0;
+
+        // Extraire la condition (entre l'emoji et la température)
+        const conditionMatch = channelName.match(/^\S+\s+(.+),\s*-?\d+°/);
+        const condition = conditionMatch ? conditionMatch[1].trim() : "Inconnu";
+
+        logger.debug(`Weather from channel: ${temperature}°C, ${condition} (${emoji})`);
+
+        return {
+            temperature,
+            condition,
+            emoji
+        };
+    } catch (error) {
+        logger.debug("Error parsing weather from channel:", error);
+        return null;
+    }
+}
+
+/**
  * Initialise le système de feu
  */
 export async function initializeFireSystem(client: Client): Promise<void> {
@@ -57,32 +120,31 @@ function formatTimeRemaining(ms: number): string {
  * Obtient le multiplicateur de vitesse de brûlage selon la température et la protection active
  * Plus le multiplicateur est élevé, plus les bûches se consument vite
  * C'est un feu de FOYER (intérieur), donc seule la température extérieure compte
+ * LIT LES DONNÉES DEPUIS LE SALON MÉTÉO DISCORD
  */
-async function getWeatherBurnMultiplier(): Promise<number> {
+async function getWeatherBurnMultiplier(client: Client): Promise<number> {
     let weatherMultiplier = 1.0; // Par défaut, vitesse normale
 
     try {
-        const {getSherbrookeWeather} = require("../weatherService");
-        const weather = await getSherbrookeWeather();
+        const weather = getWeatherFromChannel(client);
 
         if (weather) {
             const temp = weather.temperature;
 
             // Ajuster la vitesse de brûlage selon la température extérieure
             if (temp < -25) {
-                weatherMultiplier = 1.3; // Froid extrême : brûle plus vite (2h18 au lieu de 3h) - grand besoin de chaleur
+                weatherMultiplier = 1.3; // Froid extrême : brûle plus vite
             } else if (temp < -15) {
-                weatherMultiplier = 1.15; // Froid intense : brûle un peu plus vite (2h36 au lieu de 3h)
+                weatherMultiplier = 1.15; // Froid intense : brûle un peu plus vite
             } else if (temp > 0) {
-                weatherMultiplier = 0.8; // Temps doux : brûle plus lentement (3h45 au lieu de 3h) - moins de besoin
+                weatherMultiplier = 0.8; // Temps doux : brûle plus lentement
             }
         }
     } catch (error) {
-        logger.debug("Could not fetch weather for burn calculation, using default rate");
+        logger.debug("Could not get weather from channel, using default rate");
     }
 
     // Si la protection météo est active, multiplier par le facteur de protection
-    // Exemple: météo ×1.3 (froid) × protection ×0.5 = ×0.65 (brûle moins vite qu'en temps normal malgré le froid)
     if (isWeatherProtectionActive()) {
         weatherMultiplier *= FIRE_CONFIG.PROTECTION_BURN_MULTIPLIER;
     }
@@ -130,8 +192,8 @@ async function calculateTotalIntensity(fireData: any): Promise<number> {
  * Met à jour l'âge effectif accumulé de toutes les bûches selon les conditions actuelles
  * Cette fonction doit être appelée régulièrement pour accumuler l'âge correctement
  */
-async function updateLogsEffectiveAge(fireData: any, now: number): Promise<void> {
-    const weatherMultiplier = await getWeatherBurnMultiplier();
+async function updateLogsEffectiveAge(fireData: any, now: number, client: Client): Promise<void> {
+    const weatherMultiplier = await getWeatherBurnMultiplier(client);
 
     for (const log of fireData.logs) {
         // Migration : initialiser effectiveAge et lastUpdate si nécessaire
@@ -173,10 +235,10 @@ function startUnifiedUpdates(client: Client): void {
             const oldIntensity = fireData.intensity;
 
             // Obtenir le multiplicateur météo
-            const weatherMultiplier = await getWeatherBurnMultiplier();
+            const weatherMultiplier = await getWeatherBurnMultiplier(client);
 
             // Mettre à jour l'âge effectif de toutes les bûches
-            await updateLogsEffectiveAge(fireData, now);
+            await updateLogsEffectiveAge(fireData, now, client);
 
             // Retirer les bûches dont l'âge effectif a dépassé le temps de brûlage
             const initialLogCount = fireData.logs.length;
@@ -470,7 +532,7 @@ export async function updateFireEmbed(client: Client): Promise<void> {
         }
 
         // Créer l'embed complet avec TOUTES les données actuelles (intensité, bûches, météo, etc.)
-        const embed = await createFireEmbed(fireData);
+        const embed = await createFireEmbed(fireData, client);
         const addLogButton = createAddLogButton();
         const useProtectionButton = createUseProtectionButton();
         const row = new ActionRowBuilder<ButtonBuilder>().addComponents(addLogButton, useProtectionButton);
@@ -713,14 +775,14 @@ function getFireVisual(intensity: number): string {
 
 /**
  * Récupère les données météo et calcule son impact
+ * LIT LES DONNÉES DEPUIS LE SALON MÉTÉO DISCORD
  */
-async function getWeatherImpact(): Promise<{ text: string; icon: string }> {
+async function getWeatherImpact(client: Client): Promise<{ text: string; icon: string }> {
     // Vérifier d'abord si la protection est active
     const protectionInfo = getWeatherProtectionInfo();
 
     try {
-        const {getSherbrookeWeather} = require("../weatherService");
-        const weather = await getSherbrookeWeather();
+        const weather = getWeatherFromChannel(client);
 
         if (!weather) {
             return {text: "Conditions inconnues", icon: "🌡️"};
@@ -782,7 +844,7 @@ async function getWeatherImpact(): Promise<{ text: string; icon: string }> {
 /**
  * Crée l'embed du feu
  */
-async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
+async function createFireEmbed(fireData: any, client: Client): Promise<EmbedBuilder> {
     const state = getFireState(fireData.intensity);
     const multiplier = getFireMultiplier(fireData.intensity);
     const emoji = FIRE_EMOJIS[state];
@@ -799,7 +861,7 @@ async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
     const progressBar = "▰".repeat(filledBars) + "▱".repeat(emptyBars);
 
     // Impact météo
-    const weatherImpact = await getWeatherImpact();
+    const weatherImpact = await getWeatherImpact(client);
 
     // Description role-play
     let description = `╔═══════════════════════════════╗\n`;
@@ -816,7 +878,7 @@ async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
         description += `${weatherImpact.icon} ${weatherImpact.text}\n\n`;
     }
     // Taux de brûlage actuel (ligne dédiée claire)
-    const currentBurnRate = await getWeatherBurnMultiplier();
+    const currentBurnRate = await getWeatherBurnMultiplier(client);
     description += `🔥 `;
 
     // Explication du taux
@@ -835,7 +897,7 @@ async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
     // Afficher le temps restant avant que la prochaine bûche brûle
     if (fireData.logs.length > 0) {
         const now = Date.now();
-        const weatherMultiplier = await getWeatherBurnMultiplier();
+        const weatherMultiplier = await getWeatherBurnMultiplier(client);
 
         // Trouver la bûche la plus vieille en calculant son âge effectif EN TEMPS RÉEL
         let oldestLog = fireData.logs[0];
