@@ -116,7 +116,7 @@ function createGameEmbed(gameState: GameState, hideDealer: boolean = false): Emb
     description += `**<@${gameState.player}>** (${playerScore})\n${formatHand(gameState.playerHand)}`;
 
     const embed = new EmbedBuilder()
-        .setColor(0x2F3136)
+        .setColor(0x2494DB)
         .setTitle("🃏 Blackjack")
         .setDescription(description)
         .setTimestamp();
@@ -281,52 +281,68 @@ module.exports = {
     async execute(interaction: ChatInputCommandInteraction) {
         try {
             const playerId = interaction.user.id;
-            const gameState = startNewGame(playerId);
-            gameState.originalUserId = playerId;
-            activeGames.set(playerId, gameState);
-
-            // Vérifier si le joueur a un Blackjack naturel
-            const playerScore = calculateScore(gameState.playerHand);
-            if (playerScore === 21) {
-                gameState.gameOver = true;
-                dealerPlay(gameState);
-                const result = await determineWinner(gameState, interaction.channel);
-
-                const finalEmbed = createGameEmbed(gameState, false);
-                finalEmbed.setDescription(
-                    finalEmbed.data.description + `\n\n${result}`
-                );
-
-                const rematchButton = new ButtonBuilder()
-                    .setCustomId("blackjack_rematch")
-                    .setLabel("Rejouer")
-                    .setStyle(ButtonStyle.Success)
-                    .setEmoji("🔄");
-
-                const backButton = createBackToMenuButton();
-                const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton, backButton);
-
-                const message = await interaction.reply({embeds: [finalEmbed], components: [row], fetchReply: true});
-                setupRematchCollector(message, gameState);
-                return;
-            }
-
-            const embed = createGameEmbed(gameState, true);
-            const buttons = createGameButtons();
-
-            const message = await interaction.reply({
-                embeds: [embed],
-                components: [buttons],
-                fetchReply: true
-            });
-
-            setupGameCollector(message, gameState);
-
+            await startBlackjackGame(interaction, playerId, false);
         } catch (error) {
             await handleInteractionError(interaction, error, "Blackjack");
         }
     },
+
+    // Exporter pour utilisation depuis le menu des jeux
+    startGame: async (interaction: any, originalUserId: string) => {
+        await startBlackjackGame(interaction, interaction.user.id, true, originalUserId);
+    }
 };
+
+/**
+ * Démarre une partie de Blackjack
+ * @param interaction L'interaction Discord
+ * @param playerId L'ID du joueur
+ * @param useUpdate Si true, utilise update() au lieu de reply() (quand appelé depuis le menu)
+ * @param originalUserId L'ID de l'utilisateur qui a lancé /games
+ */
+async function startBlackjackGame(interaction: any, playerId: string, useUpdate: boolean = false, originalUserId?: string) {
+    const gameState = startNewGame(playerId);
+    gameState.originalUserId = originalUserId || playerId;
+    activeGames.set(playerId, gameState);
+
+    // Vérifier si le joueur a un Blackjack naturel
+    const playerScore = calculateScore(gameState.playerHand);
+    if (playerScore === 21) {
+        gameState.gameOver = true;
+        dealerPlay(gameState);
+        const result = await determineWinner(gameState, interaction.channel);
+
+        const finalEmbed = createGameEmbed(gameState, false);
+        finalEmbed.setDescription(
+            finalEmbed.data.description + `\n\n${result}`
+        );
+
+        const rematchButton = new ButtonBuilder()
+            .setCustomId("blackjack_rematch")
+            .setLabel("Rejouer")
+            .setStyle(ButtonStyle.Success)
+            .setEmoji("🔄");
+
+        const backButton = createBackToMenuButton();
+        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton, backButton);
+
+        const message = useUpdate
+            ? await interaction.update({embeds: [finalEmbed], components: [row], fetchReply: true})
+            : await interaction.reply({embeds: [finalEmbed], components: [row], fetchReply: true});
+
+        setupRematchCollector(message, gameState);
+        return;
+    }
+
+    const embed = createGameEmbed(gameState, true);
+    const buttons = createGameButtons();
+
+    const message = useUpdate
+        ? await interaction.update({embeds: [embed], components: [buttons], fetchReply: true})
+        : await interaction.reply({embeds: [embed], components: [buttons], fetchReply: true});
+
+    setupGameCollector(message, gameState);
+}
 
 /**
  * Configure le collector pour les actions du jeu
@@ -488,6 +504,8 @@ function setupRematchCollector(message: any, gameState: GameState): void {
         }
     });
 }
+
+
 
 
 

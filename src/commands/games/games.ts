@@ -58,8 +58,8 @@ export async function showGameMenu(interaction: any, originalUserId?: string) {
         .setStyle(ButtonStyle.Primary)
         .setEmoji("🃏");
 
-    const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(rpsButton, tttButton, hangmanButton);
-    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(connect4Button, blackjackButton);
+    const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(rpsButton, tttButton, connect4Button);
+    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(blackjackButton, hangmanButton);
 
     // Si c'est une interaction de bouton (retour au menu), utiliser update() au lieu de reply()
     const isButtonInteraction = interaction.isButton && interaction.isButton();
@@ -147,6 +147,6 @@ async function showConnect4ModeSelection(interaction: any, originalUserId: strin
 
 async function startBlackjack(interaction: any, originalUserId: string) {
     const blackjackModule = require("../../games/blackjack/blackjack");
-    await blackjackModule.execute(interaction);
+    await blackjackModule.startGame(interaction, originalUserId);
 }
 

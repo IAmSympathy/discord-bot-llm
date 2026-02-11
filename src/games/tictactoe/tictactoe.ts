@@ -61,7 +61,7 @@ module.exports = {
 
 async function showModeSelection(interaction: any, originalUserId: string) {
     const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(0x2494DB)
         .setTitle("❌ Tic-Tac-Toe ⭕")
         .setDescription("Choisis ton mode de jeu :")
         .setTimestamp();
