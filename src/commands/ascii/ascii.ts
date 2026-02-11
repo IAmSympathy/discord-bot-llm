@@ -20,25 +20,25 @@ module.exports = {
                 .setDescription("Style de l'art ASCII")
                 .setRequired(false)
                 .addChoices(
-                    {name: "Standard", value: "standard"},
-                    {name: "Banner", value: "banner"},
-                    {name: "Big", value: "big"},
-                    {name: "Block", value: "block"},
-                    {name: "Bubble", value: "bubble"},
-                    {name: "Digital", value: "digital"},
-                    {name: "Lean", value: "lean"},
-                    {name: "Mini", value: "mini"},
-                    {name: "Script", value: "script"},
-                    {name: "Shadow", value: "shadow"},
-                    {name: "Slant", value: "slant"},
-                    {name: "Small", value: "small"}
+                    {name: "Standard", value: "Standard"},
+                    {name: "Banner", value: "Banner"},
+                    {name: "Big", value: "Big"},
+                    {name: "Block", value: "Block"},
+                    {name: "Bubble", value: "Bubble"},
+                    {name: "Digital", value: "Digital"},
+                    {name: "Lean", value: "Lean"},
+                    {name: "Mini", value: "Mini"},
+                    {name: "Script", value: "Script"},
+                    {name: "Shadow", value: "Shadow"},
+                    {name: "Slant", value: "Slant"},
+                    {name: "Small", value: "Small"}
                 )
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
             let text = interaction.options.getString("text", true);
-            const style = interaction.options.getString("style") || "standard";
+            const style = interaction.options.getString("style") || "Standard";
 
             // Limiter à 20 caractères
             if (text.length > 20) {

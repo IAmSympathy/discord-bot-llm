@@ -839,7 +839,7 @@ module.exports = {
             embed.addFields({
                 name: "━━━━━━━━━━━━━━━━━━━━━━",
                 value: `${bonusClaimedIcon} **💎 Bonus de Complétion**\n` +
-                    `Complète les 4 défis pour 💫 **+50 XP** bonus !\\nn`,
+                    `Complète les 4 défis pour 💫 **+50 XP** bonus !`,
                 inline: false
             });
 
