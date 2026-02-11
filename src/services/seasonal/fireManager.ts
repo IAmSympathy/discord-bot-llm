@@ -5,9 +5,7 @@ import {FIRE_COLORS, FIRE_CONFIG, FIRE_EMOJIS, FIRE_NAMES, getFireMultiplier, ge
 
 const logger = createLogger("FireManager");
 
-let decayInterval: NodeJS.Timeout | null = null;
-let embedUpdateInterval: NodeJS.Timeout | null = null; // Pour l'animation de l'embed (2s)
-let channelUpdateInterval: NodeJS.Timeout | null = null; // Pour les noms de salons (5min)
+let updateInterval: NodeJS.Timeout | null = null; // Intervalle unique qui gère tout (2s)
 let dailyResetInterval: NodeJS.Timeout | null = null;
 
 // Frame d'animation actuelle (pour alterner les visuels)
@@ -22,17 +20,13 @@ export async function initializeFireSystem(client: Client): Promise<void> {
     // Charger les données
     const fireData = loadFireData();
 
-    // Démarrer la décroissance automatique
-    startDecay();
-
-    // Démarrer les mises à jour (2 intervalles séparés)
-    startEmbedUpdates(client);    // Animation de l'embed toutes les 2 secondes
-    startChannelUpdates(client);  // Noms des salons toutes les 5 minutes
+    // Démarrer l'intervalle unique qui gère TOUT (decay + embed + channel)
+    startUnifiedUpdates(client);
 
     // Démarrer le reset quotidien
     startDailyReset();
 
-    // Créer/mettre à jour le salon vocal et l'embed
+    // Créer/mettre à jour le salon vocal et l'embed initialement
     await updateFireChannel(client);
     await updateFireEmbed(client);
 
@@ -159,101 +153,81 @@ async function updateLogsEffectiveAge(fireData: any, now: number): Promise<void>
 }
 
 /**
- * Démarre la décroissance automatique du feu
+ * Démarre l'intervalle unifié qui gère TOUT toutes les 2 secondes :
+ * - Mise à jour de l'âge effectif des bûches (decay)
+ * - Retrait des bûches consumées
+ * - Recalcul de l'intensité
+ * - Mise à jour de l'embed avec animation
+ * - Mise à jour du salon vocal
  */
-function startDecay(): void {
-    if (decayInterval) {
-        clearInterval(decayInterval);
+function startUnifiedUpdates(client: Client): void {
+    if (updateInterval) {
+        clearInterval(updateInterval);
     }
 
-    decayInterval = setInterval(async () => {
-        const fireData = loadFireData();
-        const now = Date.now();
+    updateInterval = setInterval(async () => {
+        try {
+            // === 1. BACKEND : Gestion des bûches et intensité ===
+            const fireData = loadFireData();
+            const now = Date.now();
+            const oldIntensity = fireData.intensity;
 
-        const oldIntensity = fireData.intensity;
+            // Obtenir le multiplicateur météo
+            const weatherMultiplier = await getWeatherBurnMultiplier();
 
-        // Obtenir le multiplicateur météo pour le logging
-        const weatherMultiplier = await getWeatherBurnMultiplier();
+            // Mettre à jour l'âge effectif de toutes les bûches
+            await updateLogsEffectiveAge(fireData, now);
 
-        // 1. Mettre à jour l'âge effectif accumulé de toutes les bûches selon les conditions actuelles
-        await updateLogsEffectiveAge(fireData, now);
+            // Retirer les bûches dont l'âge effectif a dépassé le temps de brûlage
+            const initialLogCount = fireData.logs.length;
+            fireData.logs = fireData.logs.filter(log => {
+                return log.effectiveAge < FIRE_CONFIG.LOG_BURN_TIME;
+            });
 
-        // 2. Retirer les bûches dont l'âge effectif a dépassé le temps de brûlage
-        const initialLogCount = fireData.logs.length;
-        fireData.logs = fireData.logs.filter(log => {
-            return log.effectiveAge < FIRE_CONFIG.LOG_BURN_TIME;
-        });
+            const burnedLogs = initialLogCount - fireData.logs.length;
+            if (burnedLogs > 0) {
+                logger.info(`${burnedLogs} log(s) burned (weather: ${weatherMultiplier.toFixed(2)}x). Remaining: ${fireData.logs.length}`);
+            }
 
-        const burnedLogs = initialLogCount - fireData.logs.length;
-        if (burnedLogs > 0) {
-            logger.info(`${burnedLogs} log(s) burned completely (weather multiplier: ${weatherMultiplier.toFixed(2)}x). Remaining: ${fireData.logs.length}`);
+            // Recalculer l'intensité totale
+            fireData.intensity = await calculateTotalIntensity(fireData);
+
+            // Vérification : si aucune bûche, forcer l'intensité à 0
+            if (fireData.logs.length === 0 && fireData.intensity > 0) {
+                logger.warn(`Intensity reset to 0 (was ${fireData.intensity.toFixed(1)}%) - no logs remaining`);
+                fireData.intensity = 0;
+            }
+
+            fireData.lastUpdate = now;
+            saveFireData(fireData);
+
+            // Log les changements significatifs
+            const oldState = getFireState(oldIntensity);
+            const newState = getFireState(fireData.intensity);
+
+            if (oldState !== newState) {
+                logger.info(`Fire state changed: ${oldState} → ${newState}`);
+            }
+
+            // === 2. FRONTEND : Mise à jour visuelle ===
+            // Incrémenter la frame d'animation
+            animationFrame++;
+
+            // Mettre à jour l'embed (avec animation et toutes les données actuelles)
+            await updateFireEmbed(client);
+
+            // Mettre à jour le salon vocal avec le multiplicateur actuel
+            await updateFireChannel(client);
+
+            // Nettoyer les cooldowns expirés
+            cleanExpiredCooldowns();
+
+        } catch (error) {
+            logger.error("Error in unified update interval:", error);
         }
+    }, FIRE_CONFIG.UPDATE_INTERVAL);
 
-        // 3. Recalculer l'intensité totale basée sur les contributions actuelles de toutes les bûches
-        fireData.intensity = await calculateTotalIntensity(fireData);
-
-        // Vérification de sécurité : si aucune bûche, forcer l'intensité à 0
-        if (fireData.logs.length === 0 && fireData.intensity > 0) {
-            logger.warn(`Intensity reset to 0 (was ${fireData.intensity.toFixed(1)}%) - no logs remaining`);
-            fireData.intensity = 0;
-        }
-
-        fireData.lastUpdate = now;
-        saveFireData(fireData);
-
-        const oldState = getFireState(oldIntensity);
-        const newState = getFireState(fireData.intensity);
-
-        if (oldIntensity !== fireData.intensity) {
-            logger.info(`Fire intensity updated: ${oldIntensity.toFixed(1)}% → ${fireData.intensity.toFixed(1)}% (${fireData.logs.length} active logs, weather: ${weatherMultiplier.toFixed(2)}x)`);
-        }
-
-        // Log si changement d'état
-        if (oldState !== newState) {
-            logger.info(`Fire state changed: ${oldState} → ${newState}`);
-        }
-    }, FIRE_CONFIG.DECAY_INTERVAL);
-
-    logger.info("Fire decay started (individual log contribution system with weather effects)");
-}
-
-/**
- * Démarre la mise à jour automatique de l'embed (animation toutes les 2 secondes)
- */
-function startEmbedUpdates(client: Client): void {
-    if (embedUpdateInterval) {
-        clearInterval(embedUpdateInterval);
-    }
-
-    embedUpdateInterval = setInterval(async () => {
-        // Incrémenter la frame d'animation
-        animationFrame++;
-
-        // Mettre à jour l'embed avec la nouvelle frame d'animation
-        await updateFireEmbed(client);
-        cleanExpiredCooldowns(); // Nettoyer les cooldowns expirés
-    }, 2 * 1000); // 2 secondes
-
-    logger.info(`Fire embed animation started (2s interval)`);
-}
-
-/**
- * Démarre la mise à jour automatique des noms de salons (toutes les 5 minutes)
- */
-function startChannelUpdates(client: Client): void {
-    if (channelUpdateInterval) {
-        clearInterval(channelUpdateInterval);
-    }
-
-    // Mettre à jour immédiatement au démarrage
-    updateFireChannel(client);
-
-    // Puis toutes les 5 minutes
-    channelUpdateInterval = setInterval(async () => {
-        await updateFireChannel(client);
-    }, 5 * 60 * 1000); // 5 minutes
-
-    logger.info(`Fire channel name updates started (5min interval)`);
+    logger.info(`Fire system unified updates started (2s interval - decay + embed + channel)`);
 }
 
 /**
@@ -495,6 +469,7 @@ export async function updateFireEmbed(client: Client): Promise<void> {
             return;
         }
 
+        // Créer l'embed complet avec TOUTES les données actuelles (intensité, bûches, météo, etc.)
         const embed = await createFireEmbed(fireData);
         const addLogButton = createAddLogButton();
         const useProtectionButton = createUseProtectionButton();
@@ -505,7 +480,7 @@ export async function updateFireEmbed(client: Client): Promise<void> {
             try {
                 const message = await textChannel.messages.fetch(fireData.messageId);
                 await message.edit({embeds: [embed], components: [row]});
-                logger.debug(`Fire embed updated (intensity: ${fireData.intensity.toFixed(1)}%)`);
+                logger.debug(`Fire embed fully updated: intensity=${fireData.intensity.toFixed(1)}%, logs=${fireData.logs.length}, frame=${animationFrame}`);
             } catch (error) {
                 // Message n'existe plus, en créer un nouveau
                 const newMessage = await textChannel.send({embeds: [embed], components: [row]});
@@ -859,16 +834,27 @@ async function createFireEmbed(fireData: any): Promise<EmbedBuilder> {
 
     // Afficher le temps restant avant que la prochaine bûche brûle
     if (fireData.logs.length > 0) {
-        // Trouver la bûche avec l'effectiveAge le plus élevé (celle qui va brûler en premier)
-        const oldestLog = fireData.logs.reduce((oldest: typeof fireData.logs[0], log: typeof fireData.logs[0]) =>
-            (log.effectiveAge || 0) > (oldest.effectiveAge || 0) ? log : oldest
-        );
-
         const now = Date.now();
         const weatherMultiplier = await getWeatherBurnMultiplier();
 
-        // Calculer combien de temps effectif il reste avant que la bûche brûle complètement
-        const effectiveTimeRemaining = FIRE_CONFIG.LOG_BURN_TIME - (oldestLog.effectiveAge || 0);
+        // Trouver la bûche la plus vieille en calculant son âge effectif EN TEMPS RÉEL
+        let oldestLog = fireData.logs[0];
+        let maxEffectiveAge = 0;
+
+        for (const log of fireData.logs) {
+            // Calculer l'âge effectif actuel en temps réel
+            const baseAge = log.effectiveAge || 0;
+            const timeSinceLastUpdate = now - (log.lastUpdate || log.addedAt);
+            const currentEffectiveAge = baseAge + (timeSinceLastUpdate * weatherMultiplier);
+
+            if (currentEffectiveAge > maxEffectiveAge) {
+                maxEffectiveAge = currentEffectiveAge;
+                oldestLog = log;
+            }
+        }
+
+        // Calculer combien de temps effectif il reste avant que cette bûche brûle complètement
+        const effectiveTimeRemaining = FIRE_CONFIG.LOG_BURN_TIME - maxEffectiveAge;
 
         // Convertir en temps réel selon le multiplicateur actuel
         // Si multiplier = 0.5 (protection), le temps réel sera 2x plus long
@@ -927,19 +913,9 @@ function createUseProtectionButton(): ButtonBuilder {
  * Arrête le système de feu
  */
 export function stopFireSystem(): void {
-    if (decayInterval) {
-        clearInterval(decayInterval);
-        decayInterval = null;
-    }
-
-    if (embedUpdateInterval) {
-        clearInterval(embedUpdateInterval);
-        embedUpdateInterval = null;
-    }
-
-    if (channelUpdateInterval) {
-        clearInterval(channelUpdateInterval);
-        channelUpdateInterval = null;
+    if (updateInterval) {
+        clearInterval(updateInterval);
+        updateInterval = null;
     }
 
     if (dailyResetInterval) {
