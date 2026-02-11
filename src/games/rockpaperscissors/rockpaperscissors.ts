@@ -315,7 +315,7 @@ function getStatsDescription(gameState: GameState): string {
     if (gameState.player1HighestWinstreak <= 1 && gameState.player2HighestWinstreak <= 1 && gameState.draws === 0) {
         return ``;
     }
-    
+
     let stats = `\n\n**Statistiques:**\n`;
 
     if (gameState.player1HighestWinstreak > 1 || gameState.player2HighestWinstreak > 1) {
@@ -387,39 +387,44 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                 gameState.player2Choice = aiChoices[Math.floor(Math.random() * aiChoices.length)];
             }
 
-            // Mettre à jour l'embed pour afficher qui a choisi
-            const currentEmbed = message.embeds[0];
-            const baseTitle = currentEmbed.title;
-            const baseDesc = currentEmbed.description?.split("\n\n**Choix:**")[0] || currentEmbed.description;
-
-            let choiceStatus = "\n\n**Choix:**\n";
-            if (gameState.player1Choice) {
-                choiceStatus += `✅ <@${gameState.player1}> a fait son choix\n`;
-            } else {
-                choiceStatus += `⏳ <@${gameState.player1}> n'a pas encore choisi\n`;
+            // Si les deux joueurs ont fait leur choix, afficher le résultat directement
+            // (utiliser l'interaction pour update)
+            if (gameState.player1Choice && gameState.player2Choice) {
+                collector.stop("completed");
+                await displayResult(message, gameState, i);
+                activeGames.delete(gameId);
+                return;
             }
 
+            // Sinon, mettre à jour l'embed pour afficher qui a choisi (seulement en PvP)
             if (!gameState.isAI) {
+                const currentEmbed = message.embeds[0];
+                const baseTitle = currentEmbed.title;
+                const baseDesc = currentEmbed.description?.split("\n\n**Choix:**")[0] || currentEmbed.description;
+
+                let choiceStatus = "\n\n**Choix:**\n";
+                if (gameState.player1Choice) {
+                    choiceStatus += `✅ <@${gameState.player1}> a fait son choix\n`;
+                } else {
+                    choiceStatus += `⏳ <@${gameState.player1}> n'a pas encore choisi\n`;
+                }
+
                 if (gameState.player2Choice) {
                     choiceStatus += `✅ <@${gameState.player2}> a fait son choix`;
                 } else {
                     choiceStatus += `⏳ <@${gameState.player2}> n'a pas encore choisi`;
                 }
-            }
 
-            const updatedEmbed = new EmbedBuilder()
-                .setColor(currentEmbed.color || 0x5865F2)
-                .setTitle(baseTitle)
-                .setDescription(baseDesc + (gameState.isAI ? "" : choiceStatus))
-                .setTimestamp();
+                const updatedEmbed = new EmbedBuilder()
+                    .setColor(currentEmbed.color || 0x5865F2)
+                    .setTitle(baseTitle)
+                    .setDescription(baseDesc + choiceStatus)
+                    .setTimestamp();
 
-            await i.update({embeds: [updatedEmbed], components: message.components});
-
-            // Si les deux joueurs ont fait leur choix, afficher le résultat
-            if (gameState.player1Choice && gameState.player2Choice) {
-                collector.stop("completed");
-                await displayResult(message, gameState);
-                activeGames.delete(gameId);
+                await i.update({embeds: [updatedEmbed], components: message.components});
+            } else {
+                // En mode IA, juste defer l'update (pas besoin d'afficher les choix)
+                await i.deferUpdate();
             }
         } catch (error) {
             console.error("[RPS] Error handling choice:", error);
@@ -446,7 +451,7 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
     });
 }
 
-async function displayResult(message: any, gameState: GameState) {
+async function displayResult(message: any, gameState: GameState, lastInteraction?: any) {
     const p1Choice = gameState.player1Choice!;
     const p2Choice = gameState.player2Choice!;
 
@@ -552,7 +557,18 @@ async function displayResult(message: any, gameState: GameState) {
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton, backButton);
 
-    await message.edit({embeds: [embed], components: [row]});
+    // Toujours utiliser l'interaction si disponible (meilleure compatibilité DM)
+    try {
+        if (lastInteraction) {
+            await lastInteraction.update({embeds: [embed], components: [row]});
+        } else {
+            await message.edit({embeds: [embed], components: [row]});
+        }
+    } catch (error: any) {
+        // Fallback : envoyer un nouveau message si l'édition échoue
+        console.log("[RPS] Cannot edit message, sending new one instead. Error:", error.code);
+        await message.channel.send({embeds: [embed], components: [row]});
+    }
 
     // Réinitialiser les états de rematch
     gameState.player1WantsRematch = false;

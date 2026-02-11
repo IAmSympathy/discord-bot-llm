@@ -1,6 +1,6 @@
 {
   "intensity": 0,
-  "lastUpdate": 1770682210584,
+  "lastUpdate": 1770778121170,
   "messageId": "1470572124656635957",
   "channelId": "1470572121909497993",
   "voiceChannelId": "1470616208037646368",
@@ -13,6 +13,6 @@
   "weatherProtection": {
     "active": false,
     "endsAt": null,
-    "activatedBy": null
+    "contributors": []
   }
 }
