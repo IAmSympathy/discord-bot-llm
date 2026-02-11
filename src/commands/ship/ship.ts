@@ -1,12 +1,7 @@
 import {ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, TextChannel, User, VoiceChannel} from "discord.js";
 import {logCommand} from "../../utils/discordLogger";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
-import * as fs from "fs";
-import * as path from "path";
-import {DATA_DIR} from "../../utils/constants";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
-
-const SHIP_RIGGED_FILE = path.join(DATA_DIR, "ship_rigged_data.json");
 
 // IDs spéciaux pour le ship rigged
 const RIGGED_USER_1 = "288799652902469633";
@@ -15,33 +10,10 @@ const RIGGED_USER_2 = "746147605595160697";
 // Noms spéciaux pour le ship rigged (normalisés en minuscules)
 const RIGGED_NAMES = [
     ["Samy", "Laéticia"],
-    ["IAmSympathy", "Mercure"]
+    ["IAmSympathy", "Mercure"],
+    ["Sami", "Laéticia"],
+    ["Sami", "Laeticia"],
 ];
-
-interface RiggedData {
-    lastDate: string; // Format: YYYY-MM-DD
-    count: number;
-}
-
-function loadRiggedData(): Record<string, RiggedData> {
-    try {
-        if (fs.existsSync(SHIP_RIGGED_FILE)) {
-            const data = fs.readFileSync(SHIP_RIGGED_FILE, "utf-8");
-            return JSON.parse(data);
-        }
-    } catch (error) {
-        console.error("Error loading rigged ship data:", error);
-    }
-    return {};
-}
-
-function saveRiggedData(data: Record<string, RiggedData>): void {
-    try {
-        fs.writeFileSync(SHIP_RIGGED_FILE, JSON.stringify(data, null, 2), "utf-8");
-    } catch (error) {
-        console.error("Error saving rigged ship data:", error);
-    }
-}
 
 function shouldRig(userId1: string, userId2: string, name1: string, name2: string): boolean {
     // Vérifier si c'est le couple spécial par IDs Discord
@@ -61,30 +33,6 @@ function shouldRig(userId1: string, userId2: string, name1: string, name2: strin
     if (!isSpecialCoupleById && !isSpecialCoupleByName) {
         return false;
     }
-
-    // Charger les données
-    const riggedData = loadRiggedData();
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const key = "special_couple";
-
-    // Vérifier si on a déjà des données pour aujourd'hui
-    if (riggedData[key] && riggedData[key].lastDate === today) {
-        // Si on a déjà fait 3 ships aujourd'hui, ne pas rigger
-        if (riggedData[key].count >= 3) {
-            return false;
-        }
-        // Incrémenter le compteur
-        riggedData[key].count++;
-    } else {
-        // Nouveau jour, réinitialiser
-        riggedData[key] = {
-            lastDate: today,
-            count: 1
-        };
-    }
-
-    // Sauvegarder les données mises à jour
-    saveRiggedData(riggedData);
 
     return true;
 }

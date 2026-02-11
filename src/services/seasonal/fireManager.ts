@@ -812,9 +812,10 @@ function getFireVisual(intensity: number): string {
 /**
  * Récupère les données météo et calcule son impact
  * LIT LES DONNÉES DEPUIS LE SALON MÉTÉO DISCORD
+ * RECALCULE LE TEMPS DE PROTECTION EN TEMPS RÉEL À CHAQUE APPEL
  */
 async function getWeatherImpact(client: Client): Promise<{ text: string; icon: string }> {
-    // Vérifier d'abord si la protection est active
+    // Recalculer les infos de protection en temps réel (ne pas utiliser de cache ici)
     const protectionInfo = getWeatherProtectionInfo();
 
     try {
@@ -841,20 +842,23 @@ async function getWeatherImpact(client: Client): Promise<{ text: string; icon: s
             weatherText = `${weather.emoji} Temps doux (${temp}°C)`;
         }
 
-        // Si protection active, afficher les détails
+        // Si protection active, afficher les détails avec le temps restant EN TEMPS RÉEL
         if (protectionInfo.active && protectionInfo.remainingTime > 0) {
             const minutes = Math.ceil(protectionInfo.remainingTime / 60000);
 
             let text = `${weatherText}\n`;
             text += `🛡️ **Protection Active** (${minutes} min)`;
 
-            // Ajouter les contributeurs si disponibles
+            // Ajouter les contributeurs uniques si disponibles
             if (protectionInfo.contributors && protectionInfo.contributors.length > 0) {
-                if (protectionInfo.contributors.length === 1) {
-                    text += `\n⠀⠀⠀👤 Par : <@${protectionInfo.contributors[0].userId}>`;
+                // Utiliser un Set pour éviter les doublons
+                const uniqueUserIds = Array.from(new Set(protectionInfo.contributors.map(c => c.userId)));
+
+                if (uniqueUserIds.length === 1) {
+                    text += `\n⠀⠀⠀👤 Par : <@${uniqueUserIds[0]}>`;
                 } else {
-                    const mentions = protectionInfo.contributors
-                        .map(c => `<@${c.userId}>`)
+                    const mentions = uniqueUserIds
+                        .map(userId => `<@${userId}>`)
                         .join(', ');
                     text += `\n⠀⠀⠀👥 Par : ${mentions}`;
                 }
