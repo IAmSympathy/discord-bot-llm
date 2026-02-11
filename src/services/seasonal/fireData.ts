@@ -66,7 +66,7 @@ export const FIRE_CONFIG = {
     MAX_INTENSITY: 100,
 
     // Mise à jour de l'interface
-    UPDATE_INTERVAL: 2 * 1000, // 2 secondes (pour une animation fluide)
+    UPDATE_INTERVAL: 3 * 1000, // 2 secondes (pour une animation fluide)
 
     // Protection météo
     PROTECTION_BURN_MULTIPLIER: 0.5, // Avec protection, les bûches brûlent 2x plus lentement (durent 8h au lieu de 4h)
