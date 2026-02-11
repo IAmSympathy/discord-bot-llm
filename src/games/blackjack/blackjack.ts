@@ -484,8 +484,11 @@ function setupRematchCollector(message: any, gameState: GameState): void {
                 activeGames.delete(gameState.player);
                 collector.stop("menu");
 
+                // Defer l'interaction avant de retourner au menu
+                await i.deferUpdate();
+
                 // Retour au menu des jeux
-                const gamesModule = require("../games");
+                const gamesModule = require("../../commands/games/games");
                 await gamesModule.showGameMenu(i, gameState.originalUserId || gameState.player);
             }
         } catch (error) {

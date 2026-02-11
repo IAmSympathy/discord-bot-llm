@@ -62,14 +62,14 @@ export async function showGameMenu(interaction: any, originalUserId?: string) {
     const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(blackjackButton, hangmanButton);
 
     // Si c'est une interaction de bouton (retour au menu), utiliser update() au lieu de reply()
-    const isButtonInteraction = interaction.isButton && interaction.isButton();
+    // Vérifier si l'interaction a déjà été répondue (replied/deferred)
+    const isButtonInteraction = interaction.replied || interaction.deferred;
     let message;
 
     if (isButtonInteraction) {
-        message = await interaction.update({
+        message = await interaction.editReply({
             embeds: [embed],
-            components: [row1, row2],
-            fetchReply: true
+            components: [row1, row2]
         });
     } else {
         message = await interaction.reply({

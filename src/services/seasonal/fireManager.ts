@@ -955,7 +955,7 @@ async function createFireEmbed(fireData: any, client: Client): Promise<EmbedBuil
         }
     }
 
-    if (fireData.stats.lastLog) {
+    if (fireData.stats.lastLog && fireData.stats.lastLog.userId && fireData.stats.lastLog.timestamp) {
         const timestampSeconds = Math.floor(fireData.stats.lastLog.timestamp / 1000);
         description += `👤 Dernière bûche : <@${fireData.stats.lastLog.userId}> <t:${timestampSeconds}:R>\n`;
     }
