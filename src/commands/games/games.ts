@@ -61,17 +61,25 @@ export async function showGameMenu(interaction: any, originalUserId?: string) {
     const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(rpsButton, tttButton, connect4Button);
     const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(blackjackButton, hangmanButton);
 
-    // Si c'est une interaction de bouton (retour au menu), utiliser update() au lieu de reply()
-    // Vérifier si l'interaction a déjà été répondue (replied/deferred)
-    const isButtonInteraction = interaction.replied || interaction.deferred;
     let message;
 
-    if (isButtonInteraction) {
+    // Déterminer le type d'interaction et répondre en conséquence
+    // isButton() est une méthode qui existe sur ButtonInteraction
+    if (typeof interaction.isButton === 'function' && interaction.isButton()) {
+        // Si c'est un bouton (retour au menu), utiliser update() pour remplacer le message actuel
+        message = await interaction.update({
+            embeds: [embed],
+            components: [row1, row2],
+            fetchReply: true
+        });
+    } else if (interaction.replied || interaction.deferred) {
+        // Si l'interaction a déjà été répondue, utiliser editReply()
         message = await interaction.editReply({
             embeds: [embed],
             components: [row1, row2]
         });
     } else {
+        // Sinon, c'est une nouvelle commande slash, utiliser reply()
         message = await interaction.reply({
             embeds: [embed],
             components: [row1, row2],
@@ -97,12 +105,12 @@ export async function showGameMenu(interaction: any, originalUserId?: string) {
                 await showRPSModeSelection(i, userId);
             } else if (i.customId === "game_ttt") {
                 await showTTTModeSelection(i, userId);
-            } else if (i.customId === "game_hangman") {
-                await startHangman(i, userId);
             } else if (i.customId === "game_connect4") {
                 await showConnect4ModeSelection(i, userId);
             } else if (i.customId === "game_blackjack") {
                 await startBlackjack(i, userId);
+            } else if (i.customId === "game_hangman") {
+                await startHangman(i, userId);
             }
         } catch (error) {
             console.error("[Games] Error handling game selection:", error);
@@ -117,7 +125,11 @@ export async function showGameMenu(interaction: any, originalUserId?: string) {
                 .setDescription("⏱️ Le temps pour choisir un jeu est écoulé.")
                 .setTimestamp();
 
-            await interaction.editReply({embeds: [timeoutEmbed], components: []});
+            try {
+                await interaction.editReply({embeds: [timeoutEmbed], components: []});
+            } catch (error) {
+                console.error("[Games] Error showing timeout:", error);
+            }
         }
     });
 }

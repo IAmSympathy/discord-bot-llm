@@ -108,12 +108,37 @@ Ollama devrait écouter sur `http://0.0.0.0:11434` (accessible depuis internet).
 
 ### 5. Configurer l'API Python pour écouter sur toutes les interfaces
 
-Modifiez le démarrage de votre API Python :
+#### Option A : Démarrage automatique au boot Windows (recommandé)
+
+Des scripts ont été créés pour démarrer automatiquement l'API au démarrage de Windows :
+
+1. **Ouvrir PowerShell en tant qu'administrateur** :
+    - Clic droit sur l'icône Windows → **Terminal (Admin)** ou **Windows PowerShell (Admin)**
+
+2. **Naviguer vers le dossier** :
+   ```powershell
+   cd "C:\Users\samyl\OneDrive\Documents\GitHub\discord-bot-llm\python_services"
+   ```
+
+3. **Exécuter le script de configuration** :
+   ```powershell
+   .\setup-autostart.ps1
+   ```
+
+4. **Suivre les instructions** affichées
+
+✅ L'API Python démarrera automatiquement à chaque démarrage de Windows !
+
+Pour plus de détails, consultez `python_services/README_AUTOSTART.md`
+
+#### Option B : Démarrage manuel
+
+Si vous préférez démarrer l'API manuellement :
 
 ```powershell
 # PowerShell (dans python_services/)
 cd python_services
-.\venv\Scripts\Activate.ps1
+C:\Users\samyl\venv\Scripts\Activate.ps1
 python -m uvicorn image_generation_api:app --host 0.0.0.0 --port 8000
 ```
 
