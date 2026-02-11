@@ -506,7 +506,7 @@ export function createStatsNavigationButtons(currentCategory?: StatsCategory): i
         new ButtonBuilder()
             .setCustomId("stats_netricsa")
             .setLabel("Netricsa")
-            .setEmoji("🤖")
+            .setEmoji("<:zzzRole_NetricsaModule:1466997072564584631>")
             .setStyle(currentCategory === "netricsa" ? ButtonStyle.Success : ButtonStyle.Primary)
             .setDisabled(currentCategory === "netricsa"),
         new ButtonBuilder()

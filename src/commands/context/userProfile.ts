@@ -72,15 +72,12 @@ function createAchievementEmbed(targetUser: any, category: AchievementCategory, 
 
         // Si c'est un succès secret
         if (achievement.secret) {
-            // Si pas débloqué OU si débloqué mais qu'on regarde le profil de quelqu'un d'autre
-            if (isViewingOtherProfile) {
+            // Masquer la description si : pas débloqué OU on regarde le profil de quelqu'un d'autre
+            if (!unlocked || isViewingOtherProfile) {
                 description += `**${displayEmoji} ${achievement.name}**\n`;
-                if (unlocked)
-                    description += `*✅ Succès secret - Débloquez-le pour voir la description*\n\n`;
-                else
-                    description += `*Succès secret - Débloquez-le pour voir la description*\n\n`;
+                description += `*Succès secret - Débloquez-le pour voir la description*\n\n`;
             } else {
-                // Secret débloqué et on regarde son propre profil
+                // Secret débloqué ET on regarde son propre profil - afficher la description
                 description += `**${displayEmoji} ${achievement.name}**\n`;
                 description += `${achievement.description}\n`;
 
@@ -153,7 +150,8 @@ function createAchievementNavigationButtons(currentCategory: AchievementCategory
 
         const button = new ButtonBuilder()
             .setCustomId(`achievements_${category}_${userId}`)
-            .setLabel(`${emoji} ${name}`)
+            .setLabel(name)
+            .setEmoji(emoji)
             .setStyle(isCurrentCategory ? ButtonStyle.Success : ButtonStyle.Primary)
             .setDisabled(isCurrentCategory);
 
