@@ -1,12 +1,11 @@
 import {ChatInputCommandInteraction, EmbedBuilder, GuildMember, SlashCommandBuilder} from "discord.js";
-import {CommandPermissions, hasOwnerPermission} from "../../utils/permissions";
+import {hasOwnerPermission} from "../../utils/permissions";
 import {replyWithError} from "../../utils/interactionUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("test-mission")
         .setDescription("[TAH-UM] 🕵️ Tester les missions imposteur")
-        .setDefaultMemberPermissions(CommandPermissions.OWNER_ONLY)
         .addStringOption(option =>
             option
                 .setName("mission")

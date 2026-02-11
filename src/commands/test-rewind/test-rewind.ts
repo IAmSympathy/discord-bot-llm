@@ -6,7 +6,7 @@ import {publishYearlyRewind} from "../../services/yearlyRewindService";
 import * as fs from "fs";
 import * as path from "path";
 import {EnvConfig} from "../../utils/envConfig";
-import {CommandPermissions, hasOwnerPermission} from "../../utils/permissions";
+import {hasOwnerPermission} from "../../utils/permissions";
 
 const logger = createLogger("TestRewindCmd");
 
@@ -14,7 +14,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("test-rewind")
         .setDescription("[TAH-UM] ⏪ Déclenche manuellement le rewind annuel pour tester")
-        .setDefaultMemberPermissions(CommandPermissions.OWNER_ONLY),
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {

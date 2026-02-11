@@ -2,13 +2,11 @@ import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBui
 import {forceConnectivityCheck, getStandbyStats, isStandbyMode} from "../../services/standbyModeService";
 import {logCommand} from "../../utils/discordLogger";
 import {handleInteractionError, safeReply} from "../../utils/interactionUtils";
-import {CommandPermissions} from "../../utils/permissions";
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("standby-status")
-        .setDescription("🌙 Affiche le statut du mode veille et force une vérification de connectivité")
-        .setDefaultMemberPermissions(CommandPermissions.OWNER_ONLY),
+        .setDescription("🌙 Affiche le statut du mode veille et force une vérification de connectivité"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {

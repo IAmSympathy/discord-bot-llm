@@ -2,7 +2,7 @@ import {ChatInputCommandInteraction, EmbedBuilder, GuildMember, MessageFlags, Sl
 import {addGameToBlacklist, disableLowPowerModeAuto, enableLowPowerModeAuto, getGameBlacklist, isManualMode, removeGameFromBlacklist} from "../../services/botStateService";
 import {getCurrentGame} from "../../services/activityMonitor";
 import {createSuccessEmbed, logCommand} from "../../utils/discordLogger";
-import {CommandPermissions, hasOwnerPermission} from "../../utils/permissions";
+import {hasOwnerPermission} from "../../utils/permissions";
 import {setLowPowerStatus, setNormalStatus} from "../../services/statusService";
 import {createErrorEmbed, handleInteractionError, replyWithError} from "../../utils/interactionUtils";
 
@@ -10,7 +10,6 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("blacklist-game")
         .setDescription("[TAH-UM] 🚫 Gère la blacklist des jeux qui ne déclenchent pas le Low Power Mode")
-        .setDefaultMemberPermissions(CommandPermissions.OWNER_ONLY)
         .addSubcommand(subcommand =>
             subcommand
                 .setName("add-current")

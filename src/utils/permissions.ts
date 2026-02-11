@@ -1,16 +1,4 @@
 import {GuildMember} from "discord.js";
-import {ALLOWED_COMMAND_ROLES, OWNER_ROLES} from "./constants";
-
-/**
- * Permissions pour les commandes slash Discord
- * Pour les commandes owner : utilisez null pour qu'elles soient invisibles par défaut
- * La vérification se fera manuellement par rôle dans execute()
- */
-export const CommandPermissions = {
-    OWNER_ONLY: null, // Invisible à tous - vérification manuelle par rôle owner requise
-    MODERATOR_ONLY: null, // Invisible à tous - vérification manuelle par rôle modérateur requise
-    PUBLIC: undefined // Visible par tous
-} as const;
 
 /**
  * Vérifie si un membre possède au moins un des rôles spécifiés
@@ -24,12 +12,14 @@ export function hasAnyRole(member: GuildMember | null, roleIds: readonly string[
  * Vérifie si un membre a les permissions de modérateur ou supérieur
  */
 export function hasModeratorPermission(member: GuildMember | null): boolean {
-    return hasAnyRole(member, ALLOWED_COMMAND_ROLES);
+    const ALLOWED_ROLES = ["1122751212299767929", "1129445913123880960", "829521404214640671", "828652861218226196"];
+    return hasAnyRole(member, ALLOWED_ROLES);
 }
 
 /**
  * Vérifie si un membre a les permissions de propriétaire
  */
 export function hasOwnerPermission(member: GuildMember | null): boolean {
+    const OWNER_ROLES = ["1122751212299767929", "1129445913123880960"];
     return hasAnyRole(member, OWNER_ROLES);
 }

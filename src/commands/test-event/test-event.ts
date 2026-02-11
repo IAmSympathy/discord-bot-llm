@@ -1,6 +1,6 @@
 import {ChatInputCommandInteraction, GuildMember, SlashCommandBuilder} from "discord.js";
 import {createLogger} from "../../utils/logger";
-import {CommandPermissions, hasOwnerPermission} from "../../utils/permissions";
+import {hasOwnerPermission} from "../../utils/permissions";
 import {startBoss, startCounterChallenge, startImpostorEvent, startMiniBoss, startMysteryBox, startRiddle, startSequence} from "../../services/randomEventsService";
 import {replyWithError} from "../../utils/interactionUtils";
 
@@ -10,7 +10,6 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("test-event")
         .setDescription("[TAH-UM] 🎲 Teste un événement aléatoire")
-        .setDefaultMemberPermissions(CommandPermissions.OWNER_ONLY)
         .addStringOption((option) =>
             option
                 .setName("type")

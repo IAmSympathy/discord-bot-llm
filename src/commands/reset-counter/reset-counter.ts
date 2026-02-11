@@ -5,7 +5,6 @@ import {EnvConfig} from "../../utils/envConfig";
 import {createErrorEmbed, createSuccessEmbed} from "../../utils/embedBuilder";
 import {logCommand} from "../../utils/discordLogger";
 import {handleInteractionError, safeReply} from "../../utils/interactionUtils";
-import {CommandPermissions} from "../../utils/permissions";
 
 const logger = createLogger("ResetCounterCmd");
 
@@ -13,7 +12,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("reset-counter")
         .setDescription("[TAH-UM] 🔄 Réinitialise le compteur à 0")
-        .setDefaultMemberPermissions(CommandPermissions.OWNER_ONLY),
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {

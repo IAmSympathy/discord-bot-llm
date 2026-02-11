@@ -166,41 +166,11 @@ Si votre IP change souvent :
 2. Créez un sous-domaine (ex: `monbot.duckdns.org`)
 3. Installez le client DuckDNS sur votre PC pour mettre à jour automatiquement l'IP
 
-**📖 Guide complet disponible :** `DUCKDNS_CLOUDFLARE_SETUP.md`
-
-**Installation rapide :**
-
-```powershell
-# PowerShell en Administrateur
-cd "C:\Users\samyl\OneDrive\Documents\GitHub\discord-bot-llm"
-.\setup-duckdns-cloudflare.ps1
-```
-
 ### 8. (TRÈS RECOMMANDÉ) Sécuriser avec HTTPS
 
 Pour éviter les attaques, utilisez un reverse proxy avec HTTPS :
 
 **Option A : Cloudflare Tunnel (gratuit, recommandé)**
-
-**📖 Guide complet avec démarrage automatique :** `DUCKDNS_CLOUDFLARE_SETUP.md`
-
-**Installation rapide :**
-
-```powershell
-# PowerShell en Administrateur
-cd "C:\Users\samyl\OneDrive\Documents\GitHub\discord-bot-llm"
-.\setup-duckdns-cloudflare.ps1
-```
-
-Cloudflare Tunnel offre :
-
-- ✅ HTTPS automatique avec certificats SSL
-- ✅ Pas de port forwarding nécessaire
-- ✅ Protection DDoS
-- ✅ Cache pour meilleures performances
-- ✅ Démarrage automatique au boot Windows
-
-**Configuration manuelle :**
 
 ```powershell
 # Télécharger cloudflared

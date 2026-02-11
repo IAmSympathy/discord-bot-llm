@@ -1,14 +1,11 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, GuildMember, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {clearAllMemory} from "../../queue/queue";
-import {CommandPermissions, hasOwnerPermission} from "../../utils/permissions";
+import {hasOwnerPermission} from "../../utils/permissions";
 import {createInfoEmbed, createSuccessEmbed, createWarningEmbed, logCommand} from "../../utils/discordLogger";
 import {handleInteractionError, replyWithError} from "../../utils/interactionUtils";
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName("reset")
-        .setDescription("[TAH-UM] 🔄 Efface la mémoire de conversation de Netricsa sur le serveur")
-        .setDefaultMemberPermissions(CommandPermissions.MODERATOR_ONLY),
+    data: new SlashCommandBuilder().setName("reset").setDescription("[TAH-UM] 🔄 Efface la mémoire de conversation de Netricsa sur le serveur"),
     async execute(interaction: ChatInputCommandInteraction) {
         try {
             const member = interaction.member instanceof GuildMember ? interaction.member : null;
