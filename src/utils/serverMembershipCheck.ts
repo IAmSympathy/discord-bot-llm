@@ -79,8 +79,7 @@ export async function checkServerMembershipOrReply(interaction: ChatInputCommand
     if (!isMember) {
         const errorEmbed = await createNotMemberErrorEmbed(interaction);
         await interaction.reply({
-            embeds: [errorEmbed],
-            ephemeral: true
+            embeds: [errorEmbed]
         });
     }
 

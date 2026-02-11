@@ -177,7 +177,7 @@ module.exports = {
                 )
                 .setTimestamp();
 
-            const message = await interaction.reply({embeds: [animationEmbed], fetchReply: true});
+            await interaction.reply({embeds: [animationEmbed]});
 
             // Animation étape 1
             await new Promise(resolve => setTimeout(resolve, 800));
@@ -185,11 +185,7 @@ module.exports = {
                 `<@${userId}> lance sa machine !\n\n` +
                 `🎰 [ ${finalSymbols[0]} | ❔ | ❔ ]`
             );
-            try {
-                await message.edit({embeds: [animationEmbed]});
-            } catch (error: any) {
-                logger.warn(`Cannot edit animation step 1. Error: ${error.code}`);
-            }
+            await interaction.editReply({embeds: [animationEmbed]});
 
             // Animation étape 2
             await new Promise(resolve => setTimeout(resolve, 800));
@@ -197,11 +193,7 @@ module.exports = {
                 `<@${userId}> lance sa machine !\n\n` +
                 `🎰 [ ${finalSymbols[0]} | ${finalSymbols[1]} | ❔ ]`
             );
-            try {
-                await message.edit({embeds: [animationEmbed]});
-            } catch (error: any) {
-                logger.warn(`Cannot edit animation step 2. Error: ${error.code}`);
-            }
+            await interaction.editReply({embeds: [animationEmbed]});
 
             // Animation étape 3 - Résultat final
             await new Promise(resolve => setTimeout(resolve, 800));
@@ -231,7 +223,7 @@ module.exports = {
                 .setColor(0x30363c)
                 .setTitle("🎰 Machine à Sous")
                 .setDescription(
-                    `**${username}** lance la machine !\n\n` +
+                    `<@${userId}> lance la machine !\n\n` +
                     `🎰 [ ${finalSymbols[0]} | ${finalSymbols[1]} | ${finalSymbols[2]} ]\n\n` +
                     `${resultMessage}\n` +
                     `${xp > 0 ? '+' : ''}${xp} XP 💫`
@@ -239,17 +231,7 @@ module.exports = {
                 .setFooter({text: `La machine provient de TEMU et brise à chaque utilisation.`})
                 .setTimestamp();
 
-            try {
-                await message.edit({embeds: [resultEmbed]});
-            } catch (error: any) {
-                logger.warn(`Cannot edit final result. Error: ${error.code}`);
-                // Si on ne peut pas éditer, essayer d'envoyer un nouveau message
-                try {
-                    await interaction.followUp({embeds: [resultEmbed]});
-                } catch (followUpError: any) {
-                    logger.error("Cannot send follow-up message:", followUpError);
-                }
-            }
+            await interaction.editReply({embeds: [resultEmbed]});
 
             // Enregistrer le cooldown
             cooldowns[userId] = now + COOLDOWN_DURATION;
