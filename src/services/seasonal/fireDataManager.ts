@@ -264,12 +264,20 @@ export function activateWeatherProtection(
         logger.info(`Weather protection activated by ${username} for ${duration / 60000} minutes`);
     }
 
-    // Ajouter le contributeur à la liste
-    contributors.push({
-        userId,
-        username,
-        duration
-    });
+    // Vérifier si l'utilisateur a déjà contribué
+    const existingContributor = contributors.find(c => c.userId === userId);
+
+    if (existingContributor) {
+        // L'utilisateur a déjà contribué, ajouter à sa durée totale
+        existingContributor.duration += duration;
+    } else {
+        // Nouveau contributeur
+        contributors.push({
+            userId,
+            username,
+            duration
+        });
+    }
 
     fireData.weatherProtection = {
         active: true,
