@@ -323,7 +323,7 @@ module.exports = {
             setupGameCollector(message, gameState);
 
         } catch (error) {
-            await handleInteractionError(interaction, error);
+            await handleInteractionError(interaction, error, "Blackjack");
         }
     },
 };
@@ -488,5 +488,6 @@ function setupRematchCollector(message: any, gameState: GameState): void {
         }
     });
 }
+
 
 

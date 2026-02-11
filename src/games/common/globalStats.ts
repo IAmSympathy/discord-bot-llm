@@ -124,7 +124,8 @@ export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tic
             rockpaperscissors: initGameStats(),
             tictactoe: initGameStats(),
             hangman: initGameStats(),
-            connect4: initGameStats()
+            connect4: initGameStats(),
+            blackjack: initGameStats()
         };
     }
 
@@ -259,7 +260,8 @@ export async function recordLoss(userId: string, game: 'rockpaperscissors' | 'ti
             rockpaperscissors: initGameStats(),
             tictactoe: initGameStats(),
             hangman: initGameStats(),
-            connect4: initGameStats()
+            connect4: initGameStats(),
+            blackjack: initGameStats()
         };
     }
 
@@ -368,7 +370,8 @@ export async function recordDraw(userId: string, game: 'rockpaperscissors' | 'ti
             rockpaperscissors: initGameStats(),
             tictactoe: initGameStats(),
             hangman: initGameStats(),
-            connect4: initGameStats()
+            connect4: initGameStats(),
+            blackjack: initGameStats()
         };
     }
 
