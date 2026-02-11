@@ -604,7 +604,7 @@ export async function logBotResponse(username: string, userId: string, channelNa
 
     await logToDiscord({
         level: LogLevel.BOT_RESPONSE,
-        title: "🤖 Réponse de Netricsa",
+        title: "<:zzzRole_NetricsaModule:1466997072564584631> Réponse de Netricsa",
         fields
     });
 }

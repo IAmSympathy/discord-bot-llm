@@ -182,7 +182,7 @@ export function createNetricsaStatsEmbed(targetUser: User): EmbedBuilder {
 
     return new EmbedBuilder()
         .setColor(0xe1e8ed)
-        .setTitle(`🤖 Statistiques Netricsa de ${targetUser.displayName}`)
+        .setTitle(`<:zzzRole_NetricsaModule:1466997072564584631> Statistiques Netricsa de ${targetUser.displayName}`)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL({size: 128}))
         .setFooter({text: "Stats depuis le 5 février 2026"})

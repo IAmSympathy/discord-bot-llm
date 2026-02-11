@@ -6,7 +6,7 @@ import {AchievementCategory} from "../../services/achievementService";
 
 const CATEGORY_EMOJIS: Partial<{ [key in AchievementCategory]: string }> = {
     [AchievementCategory.PROFIL]: "📋",
-    [AchievementCategory.NETRICSA]: "🤖",
+    [AchievementCategory.NETRICSA]: "<:zzzRole_NetricsaModule:1466997072564584631>",
     [AchievementCategory.DISCORD]: "💬",
     [AchievementCategory.JEUX]: "🎮",
     [AchievementCategory.FUN]: "🎪"
