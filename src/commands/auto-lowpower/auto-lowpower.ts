@@ -1,14 +1,15 @@
 import {ChatInputCommandInteraction, EmbedBuilder, GuildMember, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {disableLowPowerModeAuto, isLowPowerMode, resetToAutoMode} from "../../services/botStateService";
 import {logCommand} from "../../utils/discordLogger";
-import {hasOwnerPermission} from "../../utils/permissions";
+import {CommandPermissions, hasOwnerPermission} from "../../utils/permissions";
 import {checkOwnerActivity, getCurrentGame} from "../../services/activityMonitor";
 import {handleInteractionError, replyWithError, safeReply} from "../../utils/interactionUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("auto-lowpower")
-        .setDescription("[TAH-UM] 🔋 Active/Désactive le Low Power Mode automatiquement"),
+        .setDescription("[TAH-UM] 🔋 Active/Désactive le Low Power Mode automatiquement")
+        .setDefaultMemberPermissions(CommandPermissions.OWNER_ONLY),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {

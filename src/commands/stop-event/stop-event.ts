@@ -1,6 +1,6 @@
 ﻿import {ChannelType, ChatInputCommandInteraction, GuildMember, SlashCommandBuilder} from "discord.js";
 import {createLogger} from "../../utils/logger";
-import {hasOwnerPermission} from "../../utils/permissions";
+import {CommandPermissions, hasOwnerPermission} from "../../utils/permissions";
 import {loadEventsData, saveEventsData} from "../../services/events/eventsDataManager";
 import {deleteEventChannel} from "../../services/events/eventChannelManager";
 import {replyWithError} from "../../utils/interactionUtils";
@@ -10,7 +10,8 @@ const logger = createLogger("StopEventCmd");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("stop-event")
-        .setDescription("[TAH-UM] 🛑 Arrête l'événement aléatoire en cours"),
+        .setDescription("[TAH-UM] 🛑 Arrête l'événement aléatoire en cours")
+        .setDefaultMemberPermissions(CommandPermissions.OWNER_ONLY),
 
     async execute(interaction: ChatInputCommandInteraction) {
         const member = interaction.member instanceof GuildMember ? interaction.member : null;

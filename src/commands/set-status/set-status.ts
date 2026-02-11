@@ -5,7 +5,7 @@ import {DATA_DIR} from "../../utils/constants";
 import {logCommand} from "../../utils/discordLogger";
 import {createErrorEmbed} from "../../utils/embedBuilder";
 import {applyDefaultStatus} from "../../services/statusService";
-import {hasOwnerPermission} from "../../utils/permissions";
+import {CommandPermissions, hasOwnerPermission} from "../../utils/permissions";
 import {replyWithError} from "../../utils/interactionUtils";
 
 const STATUS_FILE = path.join(DATA_DIR, "bot_default_status.json");
@@ -39,6 +39,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("set-status")
         .setDescription("[TAH-UM] 🎭 Modifie le statut par défaut de Netricsa")
+        .setDefaultMemberPermissions(CommandPermissions.OWNER_ONLY) // Visible uniquement aux owners
         .addStringOption((option) =>
             option
                 .setName("text")

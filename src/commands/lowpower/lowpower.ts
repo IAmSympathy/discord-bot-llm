@@ -3,11 +3,13 @@ import {toggleLowPowerMode} from "../../services/botStateService";
 import {logCommand} from "../../utils/discordLogger";
 import {setLowPowerStatus, setNormalStatus} from "../../services/statusService";
 import {handleInteractionError, safeReply} from "../../utils/interactionUtils";
+import {CommandPermissions} from "../../utils/permissions";
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("lowpower")
-        .setDescription("[TAH-UM] 🔋 Active/Désactive le Low Power Mode manuellement (désactive l'automatique)"),
+        .setDescription("[TAH-UM] 🔋 Active/Désactive le Low Power Mode manuellement (désactive l'automatique)")
+        .setDefaultMemberPermissions(CommandPermissions.OWNER_ONLY),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
