@@ -830,24 +830,20 @@ async function getWeatherImpact(client: Client): Promise<{ text: string; icon: s
 
         const temp = weather.temperature;
 
-        // Calculer le multiplicateur météo de base
-        let weatherMultiplier = 1.0;
-        let weatherText = `${weather.emoji} Temps hivernal (${temp}°C)`;
+        // Déterminer le texte SANS l'emoji (on l'ajoutera séparément)
+        let weatherText = `Temps hivernal (${temp}°C)`;
 
         if (temp < -20) {
-            weatherMultiplier = 1.2;
-            weatherText = `${weather.emoji} Froid extrême (${temp}°C)`;
+            weatherText = `Froid extrême (${temp}°C)`;
         } else if (temp < -13) {
-            weatherMultiplier = 1.1;
-            weatherText = `${weather.emoji} Froid (${temp}°C)`;
+            weatherText = `Froid (${temp}°C)`;
         } else if (temp > 0) {
-            weatherMultiplier = 0.9;
-            weatherText = `${weather.emoji} Temps doux (${temp}°C)`;
+            weatherText = `Temps doux (${temp}°C)`;
         }
 
         return {
-            text: `${weatherText}`,
-            icon: weatherMultiplier > 1.0 ? "🥶" : (weatherMultiplier < 1.0 ? "☀️" : "❄️")
+            text: weatherText, // Texte SANS emoji
+            icon: weather.emoji // Emoji coloré du salon météo (❄️ et non ❄)
         };
 
     } catch (error) {
@@ -889,7 +885,7 @@ async function createFireEmbed(fireData: any, client: Client): Promise<EmbedBuil
 
     // Impact météo détaillé (seulement si connu)
     if (weatherImpact.text !== "Conditions inconnues") {
-        description += `${weatherImpact.text}\n\n`;
+        description += `${weatherImpact.icon} ${weatherImpact.text}\n\n`;
     }
     // Taux de brûlage actuel (ligne dédiée claire)
     const currentBurnRate = await getWeatherBurnMultiplier(client);
