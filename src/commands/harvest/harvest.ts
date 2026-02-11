@@ -109,7 +109,7 @@ function getSeasonalResource(): {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("harvest")
-        .setDescription("⛏️ Récolte une ressource de saison (cooldown: 4h)"),
+        .setDescription("⛏️ Récolte une ressource de saison (cooldown: 6h)"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
@@ -139,7 +139,7 @@ module.exports = {
                             `Tu as déjà récolté une ressource récemment !\n\n` +
                             `Prochaine récolte disponible <t:${nextHarvestTime}:R>`
                         )
-                        .setFooter({text: "Tu peux récolter une ressource toutes les 4 heures"})
+                        .setFooter({text: "Tu peux récolter une ressource toutes les 6 heures"})
                         .setTimestamp();
 
                     await interaction.reply({embeds: [cooldownEmbed], flags: MessageFlags.Ephemeral});

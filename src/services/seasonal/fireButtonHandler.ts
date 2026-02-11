@@ -23,7 +23,7 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
                 .setDescription(
                     `Tu n'as pas de bûche dans ton inventaire !\n\n` +
                     `🎁 **Comment obtenir une bûche ?**\n` +
-                    `Utilise la commande \`/harvest\` (cooldown: 4h)`
+                    `Utilise la commande \`/harvest\` (cooldown: 6h)`
                 )
                 .setTimestamp();
 

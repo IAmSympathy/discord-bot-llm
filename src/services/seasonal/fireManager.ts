@@ -149,10 +149,11 @@ function formatTimeRemaining(ms: number): string {
 }
 
 /**
- * Obtient le multiplicateur de vitesse de brûlage selon la température et la protection active
+ * Obtient le multiplicateur de vitesse de brûlage selon la température
  * Plus le multiplicateur est élevé, plus les bûches se consument vite
  * C'est un feu de FOYER (intérieur), donc seule la température extérieure compte
  * LIT LES DONNÉES DEPUIS LE SALON MÉTÉO DISCORD
+ * Note : Les protections ne modifient plus ce multiplicateur, elles réduisent directement l'âge effectif
  */
 async function getWeatherBurnMultiplier(client: Client): Promise<number> {
     let weatherMultiplier = 1.0; // Par défaut, vitesse normale
@@ -164,21 +165,17 @@ async function getWeatherBurnMultiplier(client: Client): Promise<number> {
             const temp = weather.temperature;
 
             // Ajuster la vitesse de brûlage selon la température extérieure
-            if (temp < -25) {
-                weatherMultiplier = 1.3; // Froid extrême : brûle plus vite
-            } else if (temp < -15) {
-                weatherMultiplier = 1.15; // Froid intense : brûle un peu plus vite
+            // Multiplicateurs adoucis pour s'adapter aux bûches de 12h
+            if (temp < -20) {
+                weatherMultiplier = 1.2; // Froid extrême : brûle 20% plus vite (10h au lieu de 12h)
+            } else if (temp < -13) {
+                weatherMultiplier = 1.1; // Froid : brûle 10% plus vite (≈11h au lieu de 12h)
             } else if (temp > 0) {
-                weatherMultiplier = 0.8; // Temps doux : brûle plus lentement
+                weatherMultiplier = 0.9; // Temps doux : brûle 10% plus lentement (≈13h au lieu de 12h)
             }
         }
     } catch (error) {
         logger.debug("Could not get weather from channel, using default rate");
-    }
-
-    // Si la protection météo est active, multiplier par le facteur de protection
-    if (isWeatherProtectionActive()) {
-        weatherMultiplier *= FIRE_CONFIG.PROTECTION_BURN_MULTIPLIER;
     }
 
     return weatherMultiplier;
@@ -528,7 +525,7 @@ export async function updateFireEmbed(client: Client): Promise<void> {
             textChannel = await guild.channels.create({
                 name: `${emoji}feu-de-foyer`,
                 type: ChannelType.GuildText,
-                topic: "Maintenez le feu allumé pour conserver le multiplicateur d'XP ! Utilisez /harvest toutes les 4h pour obtenir des bûches.",
+                topic: "Maintenez le feu allumé pour conserver le multiplicateur d'XP ! Utilisez /harvest toutes les 6h pour obtenir des bûches.",
                 parent: CATEGORY_ID,
                 permissionOverwrites: [
                     {
@@ -822,12 +819,8 @@ function getFireVisual(intensity: number): string {
 /**
  * Récupère les données météo et calcule son impact
  * LIT LES DONNÉES DEPUIS LE SALON MÉTÉO DISCORD
- * RECALCULE LE TEMPS DE PROTECTION EN TEMPS RÉEL À CHAQUE APPEL
  */
 async function getWeatherImpact(client: Client): Promise<{ text: string; icon: string }> {
-    // Recalculer les infos de protection en temps réel (ne pas utiliser de cache ici)
-    const protectionInfo = getWeatherProtectionInfo();
-
     try {
         const weather = getWeatherFromChannel(client);
 
@@ -842,45 +835,16 @@ async function getWeatherImpact(client: Client): Promise<{ text: string; icon: s
         let weatherText = `${weather.emoji} Temps hivernal (${temp}°C)`;
 
         if (temp < -20) {
-            weatherMultiplier = 1.3;
+            weatherMultiplier = 1.2;
             weatherText = `${weather.emoji} Froid extrême (${temp}°C)`;
         } else if (temp < -13) {
-            weatherMultiplier = 1.15;
+            weatherMultiplier = 1.1;
             weatherText = `${weather.emoji} Froid (${temp}°C)`;
         } else if (temp > 0) {
-            weatherMultiplier = 0.8;
+            weatherMultiplier = 0.9;
             weatherText = `${weather.emoji} Temps doux (${temp}°C)`;
         }
 
-        // Si protection active, afficher les détails avec le temps restant EN TEMPS RÉEL
-        if (protectionInfo.active && protectionInfo.remainingTime > 0) {
-            const minutes = Math.ceil(protectionInfo.remainingTime / 60000);
-
-            let text = `${weatherText}\n`;
-            text += `🛡️ **Protection Active** (${minutes} min)`;
-
-            // Ajouter les contributeurs uniques si disponibles
-            if (protectionInfo.contributors && protectionInfo.contributors.length > 0) {
-                // Utiliser un Set pour éviter les doublons
-                const uniqueUserIds = Array.from(new Set(protectionInfo.contributors.map(c => c.userId)));
-
-                if (uniqueUserIds.length === 1) {
-                    text += `\n⠀⠀⠀👤 Par : <@${uniqueUserIds[0]}>`;
-                } else {
-                    const mentions = uniqueUserIds
-                        .map(userId => `<@${userId}>`)
-                        .join(', ');
-                    text += `\n⠀⠀⠀👥 Par : ${mentions}`;
-                }
-            }
-
-            return {
-                text,
-                icon: "🛡️"
-            };
-        }
-
-        // Pas de protection, afficher juste la météo
         return {
             text: `${weatherText}`,
             icon: weatherMultiplier > 1.0 ? "🥶" : (weatherMultiplier < 1.0 ? "☀️" : "❄️")
@@ -937,7 +901,7 @@ async function createFireEmbed(fireData: any, client: Client): Promise<EmbedBuil
     } else if (currentBurnRate > 1.0) {
         description += `Les bûches brûlent **${currentBurnRate.toFixed(1)}× plus vite**\n`;
     } else {
-        description += `Vitesse normale (6h par bûche)\n`;
+        description += `Vitesse normale (12h par bûche)\n`;
     }
     description += `\n`;
 

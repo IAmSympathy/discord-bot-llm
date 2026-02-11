@@ -241,30 +241,35 @@ async function showConfirmation(
 
             // Envoyer un message PUBLIC dans le salon du feu qui s'auto-supprime après 2 minutes
             try {
-                const fireChannel = await btnInteraction.client.channels.fetch(process.env.FIRE_CHANNEL_ID || "");
-                if (fireChannel && 'send' in fireChannel) {
-                    const publicEmbed = new EmbedBuilder()
-                        .setColor(0x2ECC71)
-                        .setTitle("🛡️ Protection activée !")
-                        .setDescription(
-                            `<@${userId}> a utilisé **${itemInfo.emoji} ${itemInfo.name}** !\n\n` +
-                            `🛡️ **${durationMinutes} minutes ajoutées**\n` +
-                            `🪵 La bûche qui brûle a gagné ${durationMinutes} minutes de vie\n` +
-                            `⏱️ Protection active jusqu'à <t:${Math.floor((Date.now() + duration) / 1000)}:R>`
-                        )
-                        .setFooter({text: "Ce message sera supprimé dans 2 minutes"})
-                        .setTimestamp();
+                const {loadFireData} = require('./fireDataManager');
+                const fireData = loadFireData();
 
-                    const publicMessage = await fireChannel.send({embeds: [publicEmbed]});
+                if (fireData.channelId) {
+                    const fireChannel = await btnInteraction.client.channels.fetch(fireData.channelId);
+                    if (fireChannel && 'send' in fireChannel) {
+                        const publicEmbed = new EmbedBuilder()
+                            .setColor(0x2ECC71)
+                            .setTitle("🛡️ Protection activée !")
+                            .setDescription(
+                                `<@${userId}> a utilisé **${itemInfo.emoji} ${itemInfo.name}** !\n\n` +
+                                `🛡️ **${durationMinutes} minutes ajoutées**\n` +
+                                `🪵 La bûche qui brûle a gagné ${durationMinutes} minutes de vie\n` +
+                                `⏱️ Protection active jusqu'à <t:${Math.floor((Date.now() + duration) / 1000)}:R>`
+                            )
+                            .setFooter({text: "Ce message sera supprimé dans 2 minutes"})
+                            .setTimestamp();
 
-                    // Supprimer après 2 minutes
-                    setTimeout(async () => {
-                        try {
-                            await publicMessage.delete();
-                        } catch (error) {
-                            logger.debug("Could not delete protection message (might already be deleted)");
-                        }
-                    }, 120000);
+                        const publicMessage = await fireChannel.send({embeds: [publicEmbed]});
+
+                        // Supprimer après 2 minutes
+                        setTimeout(async () => {
+                            try {
+                                await publicMessage.delete();
+                            } catch (error) {
+                                logger.debug("Could not delete protection message (might already be deleted)");
+                            }
+                        }, 120000);
+                    }
                 }
             } catch (error) {
                 logger.error("Could not send public protection message:", error);

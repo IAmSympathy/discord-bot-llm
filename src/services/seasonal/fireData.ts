@@ -58,7 +58,7 @@ export const FIRE_CONFIG = {
     // Bûches
     LOG_BONUS: 10, // +10% par bûche
     LOG_BURN_TIME: 12 * 60 * 60 * 1000, // Durée de vie d'une bûche : 12 heures (adapté pour 1-2 utilisateurs actifs)
-    USER_COOLDOWN: 4 * 60 * 60 * 1000, // 4 heures (harmonisé avec /harvest)
+    USER_COOLDOWN: 6 * 60 * 60 * 1000, // 4 heures (harmonisé avec /harvest)
 
     // Limites
     MIN_INTENSITY: 0,
