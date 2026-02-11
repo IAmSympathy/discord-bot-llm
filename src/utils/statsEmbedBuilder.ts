@@ -427,11 +427,12 @@ export function createDetailedGameStatsEmbed(targetUser: User, gameType: string)
             rockpaperscissors: "Roche-Papier-Ciseaux",
             tictactoe: "Tic-Tac-Toe",
             connect4: "Connect 4",
-            hangman: "Pendu"
+            hangman: "Pendu",
+            blackjack: "Blackjack"
         };
 
         title += ` - Jeux (${gameNames[gameType]})`;
-        const gameStats = stats[gameType as 'rockpaperscissors' | 'tictactoe' | 'connect4' | 'hangman'];
+        const gameStats = stats[gameType as 'rockpaperscissors' | 'tictactoe' | 'connect4' | 'hangman' | 'blackjack'];
         const totalGames = gameStats.wins + gameStats.losses + gameStats.draws;
 
         if (totalGames === 0) {
@@ -553,7 +554,12 @@ export function createGameSelectMenu(): import("discord.js").ActionRowBuilder<im
                     .setLabel("Pendu")
                     .setDescription("Statistiques du jeu Pendu")
                     .setValue("hangman")
-                    .setEmoji("🔤")
+                    .setEmoji("🔤"),
+                new StringSelectMenuOptionBuilder()
+                    .setLabel("Blackjack")
+                    .setDescription("Statistiques du jeu Blackjack")
+                    .setValue("blackjack")
+                    .setEmoji("🃏")
             )
     );
 }

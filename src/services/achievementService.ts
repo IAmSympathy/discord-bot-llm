@@ -581,6 +581,62 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         xpReward: 250
     },
 
+    // === ACHIEVEMENTS JEUX - BLACKJACK ===
+    {
+        id: "blackjack_first",
+        category: AchievementCategory.JEUX,
+        name: "Première Main",
+        description: "Jouer sa première partie de Blackjack",
+        emoji: "🃏",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "blackjack_win_10",
+        category: AchievementCategory.JEUX,
+        name: "Compteur de Cartes",
+        description: "Gagner 10 parties de Blackjack",
+        emoji: "🎰",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "blackjack_win_50",
+        category: AchievementCategory.JEUX,
+        name: "Pro du Blackjack",
+        description: "Gagner 50 parties de Blackjack",
+        emoji: "🏆",
+        secret: false,
+        xpReward: 200
+    },
+    {
+        id: "blackjack_streak_5",
+        category: AchievementCategory.JEUX,
+        name: "Série Chanceuse",
+        description: "Gagner 5 parties de Blackjack d'affilée",
+        emoji: "🔥",
+        secret: false,
+        xpReward: 150
+    },
+    {
+        id: "blackjack_natural",
+        category: AchievementCategory.JEUX,
+        name: "Blackjack Naturel",
+        description: "Obtenir un Blackjack (21 avec 2 cartes)",
+        emoji: "💎",
+        secret: false,
+        xpReward: 100
+    },
+    {
+        id: "blackjack_21_perfect",
+        category: AchievementCategory.JEUX,
+        name: "Perfection",
+        description: "Atteindre 21 avec 5 cartes ou plus",
+        emoji: "✨",
+        secret: true,
+        xpReward: 200
+    },
+
     // === ACHIEVEMENTS JEUX - SECRETS & FUN ===
     {
         id: "game_easy",
@@ -2305,3 +2361,50 @@ async function checkGlobalFunAchievements(
         await unlockAchievement(userId, username, "fun_addict", client, channelId);
     }
 }
+
+/**
+ * Track les achievements Blackjack
+ */
+export async function trackBlackjackAchievements(
+    userId: string,
+    username: string,
+    hasWon: boolean,
+    isNaturalBlackjack: boolean,
+    has21With5Cards: boolean,
+    client?: Client,
+    channelId?: string
+): Promise<void> {
+    const {getPlayerStats} = require("../games/common/globalStats");
+    const stats = getPlayerStats(userId);
+
+    // Achievement première partie
+    const totalGames = stats.blackjack.wins + stats.blackjack.losses + stats.blackjack.draws;
+    if (totalGames === 1) {
+        await unlockAchievement(userId, username, "blackjack_first", client, channelId);
+    }
+
+    // Achievements basés sur les victoires
+    if (hasWon) {
+        if (stats.blackjack.wins === 10) {
+            await unlockAchievement(userId, username, "blackjack_win_10", client, channelId);
+        } else if (stats.blackjack.wins === 50) {
+            await unlockAchievement(userId, username, "blackjack_win_50", client, channelId);
+        }
+
+        // Achievement série de 5
+        if (stats.blackjack.currentStreak === 5) {
+            await unlockAchievement(userId, username, "blackjack_streak_5", client, channelId);
+        }
+
+        // Achievement Blackjack naturel
+        if (isNaturalBlackjack) {
+            await unlockAchievement(userId, username, "blackjack_natural", client, channelId);
+        }
+
+        // Achievement secret: 21 avec 5 cartes ou plus
+        if (has21With5Cards) {
+            await unlockAchievement(userId, username, "blackjack_21_perfect", client, channelId);
+        }
+    }
+}
+

@@ -52,8 +52,14 @@ export async function showGameMenu(interaction: any, originalUserId?: string) {
         .setStyle(ButtonStyle.Primary)
         .setEmoji("🔴");
 
+    const blackjackButton = new ButtonBuilder()
+        .setCustomId("game_blackjack")
+        .setLabel("Blackjack (1 Joueur)")
+        .setStyle(ButtonStyle.Primary)
+        .setEmoji("🃏");
+
     const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(rpsButton, tttButton, hangmanButton);
-    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(connect4Button);
+    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(connect4Button, blackjackButton);
 
     // Si c'est une interaction de bouton (retour au menu), utiliser update() au lieu de reply()
     const isButtonInteraction = interaction.isButton && interaction.isButton();
@@ -95,6 +101,8 @@ export async function showGameMenu(interaction: any, originalUserId?: string) {
                 await startHangman(i, userId);
             } else if (i.customId === "game_connect4") {
                 await showConnect4ModeSelection(i, userId);
+            } else if (i.customId === "game_blackjack") {
+                await startBlackjack(i, userId);
             }
         } catch (error) {
             console.error("[Games] Error handling game selection:", error);
@@ -136,3 +144,9 @@ async function showConnect4ModeSelection(interaction: any, originalUserId: strin
     const c4Module = require("../../games/connect4/connect4");
     await c4Module.showModeSelection(interaction, originalUserId);
 }
+
+async function startBlackjack(interaction: any, originalUserId: string) {
+    const blackjackModule = require("../../games/blackjack/blackjack");
+    await blackjackModule.execute(interaction);
+}
+

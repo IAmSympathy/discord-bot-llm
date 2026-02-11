@@ -28,6 +28,7 @@ export interface PlayerStats {
     tictactoe: PlayerGameStats;
     hangman: PlayerGameStats;
     connect4: PlayerGameStats;
+    blackjack: PlayerGameStats;
 }
 
 interface StatsDatabase {
@@ -89,8 +90,15 @@ export function getPlayerStats(userId: string): PlayerStats {
             rockpaperscissors: initGameStats(),
             tictactoe: initGameStats(),
             hangman: initGameStats(),
-            connect4: initGameStats()
+            connect4: initGameStats(),
+            blackjack: initGameStats()
         };
+        saveStats(allStats);
+    }
+
+    // Migration : ajouter blackjack si manquant
+    if (!allStats[userId].blackjack) {
+        allStats[userId].blackjack = initGameStats();
         saveStats(allStats);
     }
 
@@ -107,7 +115,7 @@ export function getPlayerStats(userId: string): PlayerStats {
  * @param isVsAI true si c'est contre Netricsa, false si contre un joueur
  * @param channel Canal où envoyer la notification de level up (optionnel)
  */
-export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false, channel?: any): Promise<void> {
+export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4' | 'blackjack', isVsAI: boolean = false, channel?: any): Promise<void> {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -181,6 +189,9 @@ export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tic
                 case 'hangman':
                     xpAmount = XP_REWARDS.hangmanVictoire;
                     break;
+                case 'blackjack':
+                    xpAmount = XP_REWARDS.rpsVictoireVsIA; // Même XP que RPS
+                    break;
             }
         } else {
             // Contre joueur (PvP)
@@ -196,6 +207,9 @@ export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tic
                     break;
                 case 'hangman':
                     xpAmount = XP_REWARDS.hangmanVictoire; // Hangman est toujours vs IA
+                    break;
+                case 'blackjack':
+                    xpAmount = XP_REWARDS.rpsVictoireVsIA; // Blackjack est toujours vs IA
                     break;
             }
         }
@@ -236,7 +250,7 @@ export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tic
  * @param isVsAI true si c'est contre Netricsa, false si contre un joueur
  * @param channel Canal où envoyer la notification de level up (optionnel)
  */
-export async function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false, channel?: any): Promise<void> {
+export async function recordLoss(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4' | 'blackjack', isVsAI: boolean = false, channel?: any): Promise<void> {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
@@ -345,7 +359,7 @@ export async function recordLoss(userId: string, game: 'rockpaperscissors' | 'ti
  * @param isVsAI true si c'est contre Netricsa, false si contre un joueur
  * @param channel Canal où envoyer la notification de level up (optionnel)
  */
-export async function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4', isVsAI: boolean = false, channel?: any): Promise<void> {
+export async function recordDraw(userId: string, game: 'rockpaperscissors' | 'tictactoe' | 'hangman' | 'connect4' | 'blackjack', isVsAI: boolean = false, channel?: any): Promise<void> {
     const allStats = loadStats();
 
     if (!allStats[userId]) {
