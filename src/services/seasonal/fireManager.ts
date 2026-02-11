@@ -11,6 +11,10 @@ let dailyResetInterval: NodeJS.Timeout | null = null;
 // Frame d'animation actuelle (pour alterner les visuels)
 let animationFrame = 0;
 
+// Cache de la météo pour éviter de fetch plusieurs fois par cycle
+let weatherCache: { data: WeatherData | null; timestamp: number } | null = null;
+const WEATHER_CACHE_DURATION = 30000; // 5 minutes
+
 /**
  * Interface pour les données météo
  */
@@ -23,8 +27,14 @@ interface WeatherData {
 /**
  * Récupère les données météo depuis le nom du salon Discord au lieu d'appeler l'API
  * Format attendu: "❄️ Chutes de neige, -4°"
+ * Utilise un cache pour éviter de fetch plusieurs fois par cycle
  */
 function getWeatherFromChannel(client: Client): WeatherData | null {
+    // Vérifier si on a un cache valide
+    const now = Date.now();
+    if (weatherCache && (now - weatherCache.timestamp) < WEATHER_CACHE_DURATION) {
+        return weatherCache.data;
+    }
     try {
         const guild = client.guilds.cache.first();
         if (!guild) return null;
@@ -61,15 +71,30 @@ function getWeatherFromChannel(client: Client): WeatherData | null {
         const conditionMatch = channelName.match(/^\S+\s+(.+),\s*-?\d+°/);
         const condition = conditionMatch ? conditionMatch[1].trim() : "Inconnu";
 
-        logger.debug(`Weather from channel: ${temperature}°C, ${condition} (${emoji})`);
-
-        return {
+        const weatherData = {
             temperature,
             condition,
             emoji
         };
+
+        // Mettre à jour le cache
+        weatherCache = {
+            data: weatherData,
+            timestamp: Date.now()
+        };
+
+        logger.debug(`Weather from channel: ${temperature}°C, ${condition} (${emoji})`);
+
+        return weatherData;
     } catch (error) {
         logger.debug("Error parsing weather from channel:", error);
+
+        // En cas d'erreur, mettre en cache null
+        weatherCache = {
+            data: null,
+            timestamp: Date.now()
+        };
+
         return null;
     }
 }

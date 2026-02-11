@@ -55,6 +55,12 @@ module.exports = {
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
+        // Vérifier que l'utilisateur est membre du serveur requis
+        const {checkServerMembershipOrReply} = require("../../utils/serverMembershipCheck");
+        if (!await checkServerMembershipOrReply(interaction)) {
+            return;
+        }
+
         let tempFilePath: string | null = null;
         let progressMessage: any = null;
         let statusId: string = "";
@@ -273,22 +279,42 @@ module.exports = {
                 ? `Voici l'image que tu m'as demandé de réimaginer`
                 : `Voici ${amount} versions de l'image que tu m'as demandé de réimaginer`;
 
-            const finalMessage = await progressMessage.edit({
-                content: baseContent,
-                embeds: [embed],
-                files: results.map(r => r.attachment),
-            });
+            try {
+                const finalMessage = await progressMessage.edit({
+                    content: baseContent,
+                    embeds: [embed],
+                    files: results.map(r => r.attachment),
+                });
 
-            // Récupérer les URLs des 3 images envoyées pour le log
-            const imageUrls = Array.from(finalMessage.attachments.values()).map((att: any) => att.url);
+                // Récupérer les URLs des 3 images envoyées pour le log
+                const imageUrls = Array.from(finalMessage.attachments.values()).map((att: any) => att.url);
 
-            // Logger les 3 images en une seule entrée
-            await logBotImageReimagine(
-                interaction.user.username,
-                prompt,
-                formatTime(parseFloat(generationTime)),
-                imageUrls
-            );
+                // Logger les 3 images en une seule entrée
+                await logBotImageReimagine(
+                    interaction.user.username,
+                    prompt,
+                    formatTime(parseFloat(generationTime)),
+                    imageUrls
+                );
+            } catch (editError: any) {
+                logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
+                const followUpMessage = await interaction.followUp({
+                    content: baseContent,
+                    embeds: [embed],
+                    files: results.map(r => r.attachment),
+                });
+
+                // Récupérer les URLs des 3 images envoyées pour le log
+                const imageUrls = Array.from(followUpMessage.attachments.values()).map((att: any) => att.url);
+
+                // Logger les 3 images en une seule entrée
+                await logBotImageReimagine(
+                    interaction.user.username,
+                    prompt,
+                    formatTime(parseFloat(generationTime)),
+                    imageUrls
+                );
+            }
 
             // Enregistrer dans les statistiques utilisateur (UNE SEULE fois par commande, peu importe le nombre de variantes)
             recordImageReimaginedStats(interaction.user.id, interaction.user.username);
@@ -385,8 +411,11 @@ module.exports = {
             if (error instanceof Error && error.message === "CANCELLED") {
                 logger.info("Reimagination cancelled by user");
                 if (progressMessage) {
-                    await progressMessage.edit("🛑 Réimagination annulée.").catch(() => {
-                    });
+                    try {
+                        await progressMessage.edit("🛑 Réimagination annulée.");
+                    } catch (editError) {
+                        await interaction.followUp({content: "🛑 Réimagination annulée.", ephemeral: true});
+                    }
                 }
                 return;
             }

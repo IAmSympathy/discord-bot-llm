@@ -779,7 +779,11 @@ function setupRematchCollector(interaction: any, gameId: string, originalEmbed: 
                 embed.setFooter({text: footerText});
             }
 
-            await interaction.message.edit({embeds: [embed], components: []});
+            try {
+                await interaction.message.edit({embeds: [embed], components: []});
+            } catch (error: any) {
+                console.log("[Connect4] Cannot edit rematch timeout message. Error:", error.code);
+            }
         }
     });
 }

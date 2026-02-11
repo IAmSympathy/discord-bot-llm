@@ -4,7 +4,26 @@ import {createLogger} from "../utils/logger";
 
 const logger = createLogger("DeployCommands");
 
-const commands: any[] = [];
+// Liste des commandes qui doivent être UNIQUEMENT dans le serveur (pas exportées en externe)
+const GUILD_ONLY_COMMANDS = [
+    "reset",
+    "reset-counter",
+    "reset-dm",
+    "add-note",
+    "set-birthday",
+    "remove-birthday",
+    "remove-note",
+    "set-status",
+    "stop-event",
+    "test-event",
+    "auto-lowpower",
+    "blacklist",
+    "lowpower",
+    "leaderboard",
+];
+
+const globalCommands: any[] = [];
+const guildOnlyCommands: any[] = [];
 const foldersPath = path.join(__dirname, "..", "commands");
 const commandFolders = require("fs").readdirSync(foldersPath);
 
@@ -18,7 +37,14 @@ for (const folder of commandFolders) {
         const filePath = path.join(commandsPath, file);
         const command = require(filePath);
         if ("data" in command && "execute" in command) {
-            commands.push(command.data.toJSON());
+            const commandData = command.data.toJSON();
+
+            // Vérifier si c'est une commande guild-only
+            if (GUILD_ONLY_COMMANDS.includes(commandData.name)) {
+                guildOnlyCommands.push(commandData);
+            } else {
+                globalCommands.push(commandData);
+            }
         } else {
             logger.warn(`The command at ${filePath} is missing a required "data" or "execute" property.`);
         }
@@ -27,24 +53,37 @@ for (const folder of commandFolders) {
 
 const deployCommands = async () => {
     const rest = new REST().setToken(process.env.DISCORD_LLM_BOT_TOKEN!);
+    const GUILD_ID = process.env.GUILD_ID!;
 
     try {
-        logger.info(`Started refreshing ${commands.length} application (/) commands.`);
+        logger.info(`Started refreshing application (/) commands.`);
+        logger.info(`- ${globalCommands.length} global commands (with User App support)`);
+        logger.info(`- ${guildOnlyCommands.length} guild-only commands (admin/owner)`);
 
-        // Ajouter les integration_types et contexts pour User Apps
-        const commandsWithUserApp = commands.map(cmd => ({
+        // Déployer les commandes globales avec User App support
+        const globalCommandsWithUserApp = globalCommands.map(cmd => ({
             ...cmd,
             // 0 = Guild Install (serveur), 1 = User Install (application utilisateur)
             integration_types: [0, 1],
-            // 0 = Guild (serveur), 1 = Bot DM, 2 = Group DM, 3 = Private Channel
+            // 0 = Guild (serveur), 1 = Bot DM, 2 = Group DM
             contexts: [0, 1, 2]
         }));
 
-        const data: any = await rest.put(Routes.applicationCommands(process.env.DISCORD_LLM_BOT_CLIENT_ID!), {
-            body: commandsWithUserApp,
-        });
+        const globalData: any = await rest.put(
+            Routes.applicationCommands(process.env.DISCORD_LLM_BOT_CLIENT_ID!),
+            {body: globalCommandsWithUserApp}
+        );
 
-        logger.info(`Successfully reloaded ${data.length} application (/) commands with User App support.`);
+        logger.info(`✅ Successfully deployed ${globalData.length} global commands with User App support.`);
+
+        // Déployer les commandes guild-only (uniquement dans le serveur, pas de User Apps)
+        const guildData: any = await rest.put(
+            Routes.applicationGuildCommands(process.env.DISCORD_LLM_BOT_CLIENT_ID!, GUILD_ID),
+            {body: guildOnlyCommands}
+        );
+
+        logger.info(`✅ Successfully deployed ${guildData.length} guild-only commands (admin/owner).`);
+
     } catch (error) {
         logger.error("Error deploying commands:", error);
     }

@@ -352,7 +352,12 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                 timeoutEmbed.setFooter({text: footerText});
             }
 
-            await message.edit({embeds: [timeoutEmbed], components: []});
+            try {
+                await message.edit({embeds: [timeoutEmbed], components: []});
+            } catch (error: any) {
+                console.log("[Hangman] Cannot edit timeout message, sending new one. Error:", error.code);
+                await message.channel.send({embeds: [timeoutEmbed], components: []});
+            }
         }
     });
 }
@@ -437,7 +442,12 @@ async function displayResult(message: any, gameState: GameState, isWon: boolean,
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(playAgainButton, backButton);
 
-    await message.edit({embeds: [embed], components: [row]});
+    try {
+        await message.edit({embeds: [embed], components: [row]});
+    } catch (error: any) {
+        console.log("[Hangman] Cannot edit result message, sending new one. Error:", error.code);
+        await message.channel.send({embeds: [embed], components: [row]});
+    }
 
     setupRestartCollector(message, gameState);
 }
@@ -543,7 +553,11 @@ function setupRestartCollector(message: any, gameState: GameState) {
                 embed.setFooter({text: footerText});
             }
 
-            await message.edit({embeds: [embed], components: []});
+            try {
+                await message.edit({embeds: [embed], components: []});
+            } catch (error: any) {
+                console.log("[Hangman] Cannot edit restart timeout message. Error:", error.code);
+            }
         }
     });
 }

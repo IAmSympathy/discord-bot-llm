@@ -43,6 +43,11 @@ module.exports = {
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
+        // Vérifier que l'utilisateur est membre du serveur requis
+        const {checkServerMembershipOrReply} = require("../../utils/serverMembershipCheck");
+        if (!await checkServerMembershipOrReply(interaction)) {
+            return;
+        }
 
         // Vérifier si l'utilisateur a déjà une génération en cours
         if (hasActiveGeneration(interaction.user.id)) {
@@ -173,21 +178,40 @@ module.exports = {
                 : `Voici ${amount} versions de l'image que tu m'as demandé d'imaginer`;
 
             // Envoyer les images avec l'embed
-            const finalMessage = await progressMessage.edit({
-                content: baseContent,
-                embeds: [embed],
-                files: results.map(r => r.attachment)
-            });
+            try {
+                const finalMessage = await progressMessage.edit({
+                    content: baseContent,
+                    embeds: [embed],
+                    files: results.map(r => r.attachment)
+                });
 
-            const imageUrls = Array.from(finalMessage.attachments.values()).map((att: any) => att.url);
+                const imageUrls = Array.from(finalMessage.attachments.values()).map((att: any) => att.url);
 
-            // Logger les 3 images en une seule entrée
-            await logBotImageGeneration(
-                interaction.user.username,
-                prompt,
-                formatTime(parseFloat(generationTime)),
-                imageUrls
-            );
+                // Logger les 3 images en une seule entrée
+                await logBotImageGeneration(
+                    interaction.user.username,
+                    prompt,
+                    formatTime(parseFloat(generationTime)),
+                    imageUrls
+                );
+            } catch (editError: any) {
+                logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
+                const followUpMessage = await interaction.followUp({
+                    content: baseContent,
+                    embeds: [embed],
+                    files: results.map(r => r.attachment)
+                });
+
+                const imageUrls = Array.from(followUpMessage.attachments.values()).map((att: any) => att.url);
+
+                // Logger les 3 images en une seule entrée
+                await logBotImageGeneration(
+                    interaction.user.username,
+                    prompt,
+                    formatTime(parseFloat(generationTime)),
+                    imageUrls
+                );
+            }
 
             // Enregistrer dans les statistiques utilisateur (UNE SEULE fois par commande, peu importe le nombre de variantes)
             recordImageGeneratedStats(interaction.user.id, interaction.user.username);
@@ -241,8 +265,11 @@ module.exports = {
             if (error instanceof Error && error.message === "CANCELLED") {
                 logger.info("Generation cancelled by user");
                 if (progressMessage) {
-                    await progressMessage.edit("🛑 Génération annulée.").catch(() => {
-                    });
+                    try {
+                        await progressMessage.edit("🛑 Génération annulée.");
+                    } catch (editError) {
+                        await interaction.followUp({content: "🛑 Génération annulée.", ephemeral: true});
+                    }
                 }
                 return;
             }

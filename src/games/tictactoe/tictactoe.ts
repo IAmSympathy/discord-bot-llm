@@ -339,7 +339,13 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                         gameState.currentTurn = gameState.player1;
                         const embed = createGameEmbed(gameState);
                         const buttons = createBoardButtons(gameState, gameId);
-                        await message.edit({embeds: [embed], components: buttons});
+
+                        try {
+                            await message.edit({embeds: [embed], components: buttons});
+                        } catch (error: any) {
+                            console.log("[TicTacToe] Cannot edit message, sending new one. Error:", error.code);
+                            await message.channel.send({embeds: [embed], components: buttons});
+                        }
                     }
                 }, 800);
             } else {
@@ -372,7 +378,12 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                 timeoutEmbed.setFooter({text: footerText});
             }
 
-            await message.edit({embeds: [timeoutEmbed], components: []});
+            try {
+                await message.edit({embeds: [timeoutEmbed], components: []});
+            } catch (error: any) {
+                console.log("[TicTacToe] Cannot edit timeout message, sending new one. Error:", error.code);
+                await message.channel.send({embeds: [timeoutEmbed], components: []});
+            }
         }
     });
 }
@@ -567,7 +578,12 @@ async function displayResult(message: any, gameState: GameState, winner: string 
     const backButton = createBackToMenuButton();
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton, backButton);
 
-    await message.edit({embeds: [embed], components: [row]});
+    try {
+        await message.edit({embeds: [embed], components: [row]});
+    } catch (error: any) {
+        console.log("[TicTacToe] Cannot edit result message, sending new one. Error:", error.code);
+        await message.channel.send({embeds: [embed], components: [row]});
+    }
 
     gameState.player1WantsRematch = false;
     gameState.player2WantsRematch = false;
@@ -690,7 +706,11 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
                 embed.setFooter({text: footerText});
             }
 
-            await message.edit({embeds: [embed], components: []});
+            try {
+                await message.edit({embeds: [embed], components: []});
+            } catch (error: any) {
+                console.log("[TicTacToe] Cannot edit rematch timeout message. Error:", error.code);
+            }
         }
     });
 }

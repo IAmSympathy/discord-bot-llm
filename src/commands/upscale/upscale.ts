@@ -87,6 +87,12 @@ module.exports = {
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
+        // Vérifier que l'utilisateur est membre du serveur requis
+        const {checkServerMembershipOrReply} = require("../../utils/serverMembershipCheck");
+        if (!await checkServerMembershipOrReply(interaction)) {
+            return;
+        }
+
         let tempFilePath: string | null = null;
         let progressMessage: any = null;
         let statusId: string = "";
@@ -189,22 +195,42 @@ module.exports = {
             unregisterImageGeneration(interaction.user.id);
 
             // Envoyer l'image upscalée
-            const finalMessage = await progressMessage.edit({
-                content: `Voici l'image que tu m'as demandé d'upscaler avec la méthode **${modelName} (x${scale})** :\n`,
-                files: [result.attachment]
-            });
+            try {
+                const finalMessage = await progressMessage.edit({
+                    content: `Voici l'image que tu m'as demandé d'upscaler avec la méthode **${modelName} (x${scale})** :\n`,
+                    files: [result.attachment]
+                });
 
-            // Récupérer l'URL de l'image envoyée pour le log
-            const imageUrl = finalMessage.attachments.first()?.url;
+                // Récupérer l'URL de l'image envoyée pour le log
+                const imageUrl = finalMessage.attachments.first()?.url;
 
-            // Logger la commande avec le log spécifique à l'upscaling
-            await logBotImageUpscale(
-                interaction.user.username,
-                "Real-ESRGAN",
-                scale,
-                formatTime(parseFloat(processingTime)),
-                imageUrl
-            );
+                // Logger la commande avec le log spécifique à l'upscaling
+                await logBotImageUpscale(
+                    interaction.user.username,
+                    "Real-ESRGAN",
+                    scale,
+                    formatTime(parseFloat(processingTime)),
+                    imageUrl
+                );
+            } catch (editError: any) {
+                logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
+                const followUpMessage = await interaction.followUp({
+                    content: `Voici l'image que tu m'as demandé d'upscaler avec la méthode **${modelName} (x${scale})** :\n`,
+                    files: [result.attachment]
+                });
+
+                // Récupérer l'URL de l'image envoyée pour le log
+                const imageUrl = followUpMessage.attachments.first()?.url;
+
+                // Logger la commande avec le log spécifique à l'upscaling
+                await logBotImageUpscale(
+                    interaction.user.username,
+                    "Real-ESRGAN",
+                    scale,
+                    formatTime(parseFloat(processingTime)),
+                    imageUrl
+                );
+            }
 
             // Enregistrer dans les statistiques utilisateur
             recordImageUpscaledStats(interaction.user.id, interaction.user.username);
@@ -296,8 +322,11 @@ module.exports = {
             if (error instanceof Error && error.message === "CANCELLED") {
                 logger.info("Upscaling cancelled by user");
                 if (progressMessage) {
-                    await progressMessage.edit("🛑 Upscaling annulé.").catch(() => {
-                    });
+                    try {
+                        await progressMessage.edit("🛑 Upscaling annulé.");
+                    } catch (editError) {
+                        await interaction.followUp({content: "🛑 Upscaling annulé.", ephemeral: true});
+                    }
                 }
                 return;
             }

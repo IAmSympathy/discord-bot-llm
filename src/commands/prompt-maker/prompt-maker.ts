@@ -241,6 +241,12 @@ module.exports = {
 
 
     async execute(interaction: ChatInputCommandInteraction) {
+        // Vérifier que l'utilisateur est membre du serveur requis
+        const {checkServerMembershipOrReply} = require("../../utils/serverMembershipCheck");
+        if (!await checkServerMembershipOrReply(interaction)) {
+            return;
+        }
+
         const client = interaction.client;
 
         let statusId: string = "";
@@ -341,10 +347,17 @@ module.exports = {
             embed.setFooter({text: "Généré par Netricsa"});
             embed.setTimestamp();
 
-            await progressMessage.edit({
-                content: null,
-                embeds: [embed]
-            });
+            try {
+                await progressMessage.edit({
+                    content: null,
+                    embeds: [embed]
+                });
+            } catch (editError: any) {
+                logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
+                await interaction.followUp({
+                    embeds: [embed]
+                });
+            }
 
             // Enregistrer dans les logs Discord
             const channelName = interaction.channel?.isDMBased()
@@ -415,7 +428,11 @@ module.exports = {
             );
 
             if (progressMessage) {
-                await progressMessage.edit({embeds: [errorEmbed]});
+                try {
+                    await progressMessage.edit({embeds: [errorEmbed]});
+                } catch (editError) {
+                    await interaction.followUp({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+                }
             } else if (interaction.replied || interaction.deferred) {
                 await interaction.editReply({embeds: [errorEmbed]});
             } else {

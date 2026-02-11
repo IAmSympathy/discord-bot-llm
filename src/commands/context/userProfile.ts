@@ -8,14 +8,16 @@ const CATEGORY_EMOJIS: Partial<{ [key in AchievementCategory]: string }> = {
     [AchievementCategory.PROFIL]: "📋",
     [AchievementCategory.NETRICSA]: "🤖",
     [AchievementCategory.DISCORD]: "💬",
-    [AchievementCategory.JEUX]: "🎮"
+    [AchievementCategory.JEUX]: "🎮",
+    [AchievementCategory.FUN]: "🎪"
 };
 
 const CATEGORY_NAMES: Partial<{ [key in AchievementCategory]: string }> = {
     [AchievementCategory.PROFIL]: "Profil",
     [AchievementCategory.NETRICSA]: "Netricsa",
     [AchievementCategory.DISCORD]: "Discord",
-    [AchievementCategory.JEUX]: "Jeux"
+    [AchievementCategory.JEUX]: "Jeux",
+    [AchievementCategory.FUN]: "Fun"
 };
 
 /**
@@ -137,7 +139,8 @@ function createAchievementNavigationButtons(currentCategory: AchievementCategory
         AchievementCategory.PROFIL,
         AchievementCategory.NETRICSA,
         AchievementCategory.DISCORD,
-        AchievementCategory.JEUX
+        AchievementCategory.JEUX,
+        AchievementCategory.FUN
     ];
     const buttons: ButtonBuilder[] = [];
 
