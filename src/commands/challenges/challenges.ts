@@ -720,7 +720,7 @@ module.exports = {
             const maxDisplayXP = 300;
             const xpProgressPercent = Math.min((totalVoiceXP / maxDisplayXP) * 100, 100);
             const xpFilledBars = Math.floor(xpProgressPercent / 5);
-            const xpEmptyBars = 20 - xpFilledBars;
+            const xpEmptyBars = 10 - xpFilledBars;
             const xpProgressBar = "▰".repeat(xpFilledBars) + "▱".repeat(xpEmptyBars);
 
             const voiceXPPerMinute = Math.ceil(1 * currentVoiceTier.multiplier);
