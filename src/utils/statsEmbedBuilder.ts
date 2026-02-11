@@ -480,7 +480,7 @@ export function createDetailedGameStatsEmbed(targetUser: User, gameType: string)
     }
 
     const embed = new EmbedBuilder()
-        .setColor(getNetricsaColorCached())
+        .setColor(0xe1e8ed)
         .setTitle(title)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL())
