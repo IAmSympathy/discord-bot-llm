@@ -7,31 +7,31 @@ const logger = createLogger("PromptBuilder");
 
 /**
  * Formate un tour de mémoire pour l'historique
- * SIMPLIFIÉ : Moins de métadonnées, focus sur le contenu
+ * FORMAT AMÉLIORÉ : Plus clair pour que le LLM comprenne la continuité
  */
 function formatMemoryTurn(turn: MemoryTurn, showChannelHeader: boolean = false): string {
-    const imageContext = turn.imageDescriptions?.length ? ` [Images: ${turn.imageDescriptions.join(", ")}]` : "";
+    const imageContext = turn.imageDescriptions?.length ? ` [avec ${turn.imageDescriptions.length} image(s)]` : "";
 
-    const channelHeader = showChannelHeader ? `📍 #${turn.channelName}\n` : "";
+    const channelHeader = showChannelHeader ? `[Dans le salon #${turn.channelName}]\n` : "";
 
     // Âge simplifié (seulement si > 1 jour)
     const ageInMs = Date.now() - turn.ts;
     const ageInDays = Math.floor(ageInMs / (1000 * 60 * 60 * 24));
-    const ageNote = ageInDays > 1 ? ` [${ageInDays}j]` : "";
+    const timeAgo = ageInDays > 0 ? ` (il y a ${ageInDays} jour${ageInDays > 1 ? 's' : ''})` : " (récemment)";
 
     // Si pas de réponse du bot (commande ou message sans interaction)
     if (!turn.assistantText) {
-        return `${channelHeader}👤 ${turn.displayName}: "${turn.userText}"${imageContext}${ageNote}`;
+        return `${channelHeader}${turn.displayName} a dit${timeAgo} : "${turn.userText}"${imageContext}`;
     }
 
     // Message normal avec réponse du bot
-    return `${channelHeader}👤 ${turn.displayName}: "${turn.userText}"${imageContext}${ageNote}
-🤖 Toi: "${turn.assistantText}"`;
+    return `${channelHeader}${turn.displayName} a dit${timeAgo} : "${turn.userText}"${imageContext}
+→ Tu as répondu : "${turn.assistantText}"`;
 }
 
 /**
  * Construit le bloc d'historique de conversation
- * Groupe les messages par salon et indique les changements de contexte
+ * FORMAT AMÉLIORÉ : Plus naturel et explicite pour la compréhension du LLM
  */
 export function buildHistoryBlock(recentTurns: MemoryTurn[], currentChannelId: string): string {
     if (recentTurns.length === 0) return "";
@@ -44,27 +44,35 @@ export function buildHistoryBlock(recentTurns: MemoryTurn[], currentChannelId: s
         const channelChanged = lastChannelId !== null && lastChannelId !== turn.channelId;
 
         if (channelChanged) {
-            formattedParts.push(`\n⚠️ CHANGEMENT DE SALON ⚠️\n`);
+            formattedParts.push(`\n━━━ CHANGEMENT DE SALON ━━━\n`);
         }
 
         formattedParts.push(formatMemoryTurn(turn, i === 0 || channelChanged));
 
         if (i < recentTurns.length - 1) {
-            formattedParts.push("---");
+            formattedParts.push(""); // Ligne vide entre les tours
         }
 
         lastChannelId = turn.channelId;
     }
 
     const currentChannelNote = lastChannelId && lastChannelId !== currentChannelId
-        ? `\n⚠️ Le message actuel vient d'un AUTRE SALON ⚠️`
+        ? `\n\n⚠️ ATTENTION : Le message actuel ci-dessous provient d'un AUTRE SALON que le dernier message de l'historique.`
         : "";
 
-    return `=== HISTORIQUE RÉCENT ===
-[Note: "[Vu]" = tu as observé ce message passivement. "[Vu, réagi]" = tu as observé et ajouté une réaction emoji. Tu connais ces infos même si tu n'as pas répondu en texte.]
+    return `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📜 HISTORIQUE DE LA CONVERSATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Note importante : Ceci est l'historique de tes échanges PASSÉS. Les messages ci-dessous ont DÉJÀ eu lieu.
+Si tu vois des salutations, questions-réponses ou sujets déjà abordés avec certains utilisateurs, ne les répète PAS.
+Continue naturellement la conversation à partir de là où elle en était.
 
 ${formattedParts.join("\n")}
-=== FIN HISTORIQUE ===${currentChannelNote}`;
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📜 FIN DE L'HISTORIQUE${currentChannelNote}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 }
 
 /**
@@ -86,23 +94,32 @@ ${starterContext.content}${imageContext}
 
 /**
  * Construit le bloc de message actuel de l'utilisateur
+ * FORMAT AMÉLIORÉ : Clarifier que c'est le NOUVEAU message qui nécessite une réponse
  */
 export function buildCurrentUserBlock(userId: string, userName: string, prompt: string, imageDescriptions: string[], recentTurns: MemoryTurn[] = []): string {
     const currentTs = Date.now();
     const currentDate = new Date(currentTs);
-    const imageContext = imageDescriptions.length > 0 ? `\n[Images/GIFs attachés]:\n- ${imageDescriptions.join("\n- ")}` : "";
+    const imageContext = imageDescriptions.length > 0 ? `\n[📎 ${imageDescriptions.length} image(s)/GIF(s) attaché(s)]:\n${imageDescriptions.map((desc, i) => `  ${i + 1}. ${desc}`).join("\n")}` : "";
 
     // Chercher des profils d'utilisateurs mentionnés dans le message ET l'historique
     // Exclut l'utilisateur actuel
     const mentionedProfilesContext = buildMentionedProfilesContext(prompt, recentTurns, userId);
 
     return `
-=== MESSAGE ACTUEL ===
-👤 ${userName} (UID: ${userId})
-📅 ${currentDate.toLocaleDateString("fr-CA", {year: "numeric", month: "long", day: "numeric"})} à ${currentDate.toLocaleTimeString("fr-CA", {hour: "2-digit", minute: "2-digit"})}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💬 NOUVEAU MESSAGE (À TRAITER MAINTENANT)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+👤 De : ${userName} (ID: ${userId})
+📅 Date/Heure : ${currentDate.toLocaleDateString("fr-CA", {year: "numeric", month: "long", day: "numeric"})} à ${currentDate.toLocaleTimeString("fr-CA", {hour: "2-digit", minute: "2-digit"})}
+
+📝 Message :
 "${prompt}"${imageContext}
-=== FIN MESSAGE ===${mentionedProfilesContext}`;
+
+⚠️ IMPORTANT : C'est le message actuel qui nécessite ta réponse. 
+   Prends en compte l'historique ci-dessus pour le contexte, mais réponds SPÉCIFIQUEMENT à CE message.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${mentionedProfilesContext}`;
 }
 
 /**

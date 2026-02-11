@@ -544,7 +544,8 @@ module.exports = {
                             completed: false,
                             rewardClaimed: false
                         }
-                    ]
+                    ],
+                    completionBonusClaimed: false
                 };
             } else {
                 // Vérifier si l'utilisateur a les bons IDs de défis (au cas où les défis ont changé)
@@ -575,6 +576,8 @@ module.exports = {
                             rewardClaimed: false
                         }
                     ];
+                    // Réinitialiser aussi le bonus de complétion
+                    challengesData.users[userId].completionBonusClaimed = false;
                     saveChallengesData(challengesData);
                 }
             }
@@ -835,7 +838,7 @@ module.exports = {
             const totalCompleted = randomChallengesCompleted + (hangmanCompleted ? 1 : 0);
 
             // === SECTION 3.5 : BONUS DE COMPLÉTION ===
-            const bonusClaimedIcon = challengesData.users[userId].completionBonusClaimed ? "✅" : allCompleted ? "⬜" : "⬜";
+            const bonusClaimedIcon = challengesData.users[userId].completionBonusClaimed ? "✅" : "⬜";
             embed.addFields({
                 name: "━━━━━━━━━━━━━━━━━━━━━━",
                 value: `${bonusClaimedIcon} **💎 Bonus de Complétion**\n` +
