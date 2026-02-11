@@ -8,7 +8,6 @@ const logger = createLogger("DeployCommands");
 const GUILD_ONLY_COMMANDS = [
     "reset",
     "reset-counter",
-    "reset-dm",
     "add-note",
     "set-birthday",
     "remove-birthday",
