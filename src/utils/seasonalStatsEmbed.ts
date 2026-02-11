@@ -54,7 +54,7 @@ export function createSeasonalStatsEmbed(userId: string, username: string, displ
     }
 
     const embed = new EmbedBuilder()
-        .setColor(0x2494DB)
+        .setColor(0xe8890b)
         .setTitle(`🔥 Feu de Foyer - ${username}`)
         .setDescription(description)
         .setThumbnail(displayAvatarURL)

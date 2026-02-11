@@ -140,7 +140,7 @@ export function createDiscordStatsEmbed(targetUser: User): EmbedBuilder {
     }
 
     return new EmbedBuilder()
-        .setColor(NETRICSA_COLOR)
+        .setColor(0xe1e8ed)
         .setTitle(`📊 Statistiques Discord de ${targetUser.displayName}`)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL({size: 128}))
@@ -180,7 +180,7 @@ export function createNetricsaStatsEmbed(targetUser: User): EmbedBuilder {
     }
 
     return new EmbedBuilder()
-        .setColor(NETRICSA_COLOR)
+        .setColor(0xe1e8ed)
         .setTitle(`🤖 Statistiques Netricsa de ${targetUser.displayName}`)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL({size: 128}))
@@ -225,7 +225,7 @@ export function createGameStatsEmbed(targetUser: User): EmbedBuilder {
     }
 
     return new EmbedBuilder()
-        .setColor(NETRICSA_COLOR)
+        .setColor(0xe1e8ed)
         .setTitle(`🎮 Statistiques de Jeux de ${targetUser.displayName}`)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL({size: 128}))
@@ -656,7 +656,7 @@ export function createInventoryEmbed(targetUser: User): EmbedBuilder {
     }
 
     return new EmbedBuilder()
-        .setColor(0xF39C12)
+        .setColor(0xc1694f)
         .setTitle(`🎒 Inventaire de ${targetUser.displayName}`)
         .setDescription(description)
         .setThumbnail(targetUser.displayAvatarURL({size: 128}))
