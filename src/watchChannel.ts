@@ -16,6 +16,7 @@ import {recordAIConversationStats, recordMentionReceivedStats, recordMessageStat
 import {addXP, XP_REWARDS} from "./services/xpSystem";
 import {handleCounterMessage} from "./services/counterService";
 import {tryRewardAndNotify} from "./services/rewardNotifier";
+import {createDMNotMemberErrorEmbed, isUserInRequiredServerFromDM} from "./utils/serverMembershipCheck";
 
 const logger = createLogger("WatchChannel");
 
@@ -368,6 +369,17 @@ export function registerWatchedChannelResponder(client: Client) {
             // ===== GESTION DES DMs =====
             if (message.channel.type === ChannelType.DM) {
                 logger.info(`[DM] Message from ${message.author.username}: "${message.content.substring(0, 50)}..."`);
+
+                // Vérifier si l'utilisateur est membre du serveur
+                const isMember = await isUserInRequiredServerFromDM(client, message.author);
+
+                if (!isMember) {
+                    logger.info(`[DM] User ${message.author.username} (${message.author.id}) is not a member of the server - blocking AI conversation`);
+
+                    const errorEmbed = await createDMNotMemberErrorEmbed(client);
+                    await message.reply({embeds: [errorEmbed]});
+                    return;
+                }
 
                 // Fetch le canal complet si c'est un partial
                 let dmChannel = message.channel;

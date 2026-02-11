@@ -1,4 +1,4 @@
-import {ChatInputCommandInteraction, EmbedBuilder} from "discord.js";
+import {ChatInputCommandInteraction, Client, EmbedBuilder, User} from "discord.js";
 import {createLogger} from "./logger";
 
 const logger = createLogger("ServerCheck");
@@ -83,6 +83,60 @@ export async function checkServerMembershipOrReply(interaction: ChatInputCommand
     }
 
     return isMember;
+}
+
+/**
+ * Vérifie si un utilisateur (depuis un DM) est membre du serveur requis
+ * @param client Le client Discord
+ * @param user L'utilisateur à vérifier
+ * @returns true si l'utilisateur est membre, false sinon
+ */
+export async function isUserInRequiredServerFromDM(client: Client, user: User): Promise<boolean> {
+    try {
+        // Récupérer le serveur requis
+        const guild = await client.guilds.fetch(REQUIRED_GUILD_ID).catch(() => null);
+
+        if (!guild) {
+            logger.error("Required guild not found");
+            return false;
+        }
+
+        // Vérifier si l'utilisateur est membre
+        const member = await guild.members.fetch(user.id).catch(() => null);
+
+        return member !== null;
+    } catch (error) {
+        logger.error("Error checking server membership from DM:", error);
+        return false;
+    }
+}
+
+/**
+ * Crée un embed d'erreur pour les utilisateurs qui tentent de parler en DM sans être membres du serveur
+ * @param client Le client Discord
+ * @returns Un embed d'erreur
+ */
+export async function createDMNotMemberErrorEmbed(client: Client): Promise<EmbedBuilder> {
+    const embed = new EmbedBuilder()
+        .setColor(0xED4245)
+        .setTitle("🔒 Accès aux Conversations Privées Restreint")
+        .setDescription(
+            `Désolé, les conversations privées avec Netricsa sont réservées aux membres du serveur **${SERVER_NAME}**.`
+        )
+        .setTimestamp();
+
+    // Tenter de récupérer l'icône du serveur
+    try {
+        const guild = await client.guilds.fetch(REQUIRED_GUILD_ID).catch(() => null);
+
+        if (guild && guild.iconURL()) {
+            embed.setThumbnail(guild.iconURL()!);
+        }
+    } catch (error) {
+        logger.debug("Could not fetch guild icon for DM error embed");
+    }
+
+    return embed;
 }
 
 
