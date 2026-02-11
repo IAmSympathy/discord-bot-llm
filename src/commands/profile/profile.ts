@@ -352,7 +352,7 @@ module.exports = {
                         await i.update({embeds: [embed], components: [navButtons, gameMenu, backButton]});
                     } else if (customId === "stats_serveur") {
                         currentStatsCategory = "serveur";
-                        const embed = createServerStatsEmbed(i.guild);
+                        const embed = await createServerStatsEmbed(i.guild, i.client);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()

@@ -236,7 +236,7 @@ export function createGameStatsEmbed(targetUser: User): EmbedBuilder {
 /**
  * Crée l'embed pour les statistiques du serveur
  */
-export function createServerStatsEmbed(guild?: any): EmbedBuilder {
+export async function createServerStatsEmbed(guild?: any, client?: any): Promise<EmbedBuilder> {
     const serverStats = getServerStats();
 
     // Pas de niveau pour les stats serveur
@@ -256,9 +256,20 @@ export function createServerStatsEmbed(guild?: any): EmbedBuilder {
         .setFooter({text: "Stats depuis le 5 février 2026"})
         .setTimestamp();
 
+    // Si on n'a pas le guild mais qu'on a le client, essayer de le fetch
+    let targetGuild = guild;
+    if (!targetGuild && client) {
+        const REQUIRED_GUILD_ID = process.env.GUILD_ID || "827364829567647774";
+        try {
+            targetGuild = await client.guilds.fetch(REQUIRED_GUILD_ID).catch(() => null);
+        } catch (error) {
+            // Ignorer les erreurs
+        }
+    }
+
     // Utiliser l'icône du serveur si disponible
-    if (guild && guild.iconURL) {
-        embed.setThumbnail(guild.iconURL({size: 128}));
+    if (targetGuild && targetGuild.iconURL) {
+        embed.setThumbnail(targetGuild.iconURL({size: 128}));
     }
 
     return embed;
@@ -272,7 +283,7 @@ export type StatsCategory = "discord" | "netricsa" | "jeux" | "serveur" | "seaso
 /**
  * Crée l'embed pour une catégorie de stats donnée
  */
-export function createStatsEmbed(targetUser: User, category: StatsCategory, guild?: any): EmbedBuilder {
+export async function createStatsEmbed(targetUser: User, category: StatsCategory, guild?: any, client?: any): Promise<EmbedBuilder> {
     switch (category) {
         case "discord":
             return createDiscordStatsEmbed(targetUser);
@@ -281,7 +292,7 @@ export function createStatsEmbed(targetUser: User, category: StatsCategory, guil
         case "jeux":
             return createGameStatsEmbed(targetUser);
         case "serveur":
-            return createServerStatsEmbed(guild);
+            return await createServerStatsEmbed(guild, client);
         default:
             return createDiscordStatsEmbed(targetUser);
     }
@@ -551,15 +562,15 @@ export function createGameSelectMenu(): import("discord.js").ActionRowBuilder<im
                     .setValue("connect4")
                     .setEmoji("🔴"),
                 new StringSelectMenuOptionBuilder()
-                    .setLabel("Pendu")
-                    .setDescription("Statistiques du jeu Pendu")
-                    .setValue("hangman")
-                    .setEmoji("🔤"),
-                new StringSelectMenuOptionBuilder()
                     .setLabel("Blackjack")
                     .setDescription("Statistiques du jeu Blackjack")
                     .setValue("blackjack")
-                    .setEmoji("🃏")
+                    .setEmoji("🃏"),
+                new StringSelectMenuOptionBuilder()
+                    .setLabel("Pendu")
+                    .setDescription("Statistiques du jeu Pendu")
+                    .setValue("hangman")
+                    .setEmoji("🔤")
             )
     );
 }
