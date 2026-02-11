@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import {createLogger} from "../utils/logger";
-import {AttachmentBuilder, EmbedBuilder, TextChannel, VoiceChannel} from "discord.js";
+import {AttachmentBuilder, Client, EmbedBuilder, TextChannel, VoiceChannel} from "discord.js";
 import {getNextLevelRole, updateUserLevelRoles} from "./levelRoleService";
 import {getRoleUpImage} from "./levelUpImageService";
 import {DATA_DIR, LEVEL_ROLES} from "../utils/constants";
@@ -276,6 +276,13 @@ export async function addXP(
  */
 async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: string, username: string, newLevel: number): Promise<void> {
     try {
+        // En DM ou DM de groupe, envoyer une notification simplifiée en DM
+        if (!channel.guild) {
+            logger.debug(`Level up for ${username} in DM context - sending DM notification`);
+            await sendDMLevelUpNotification(userId, username, newLevel, channel.client);
+            return;
+        }
+
         // Vérifier si c'est un bot
         const guild = channel.guild;
         if (!guild) {
@@ -475,6 +482,64 @@ async function sendLevelUpMessage(channel: TextChannel | VoiceChannel, userId: s
 
     } catch (error) {
         logger.error(`Error sending level up message for ${username}:`, error);
+    }
+}
+
+/**
+ * Envoie une notification de level up en DM pour les contextes externes (DM, DM de groupe)
+ */
+async function sendDMLevelUpNotification(userId: string, username: string, newLevel: number, client: Client): Promise<void> {
+    try {
+        const xpData = loadXP();
+        const userXP = xpData[userId];
+        const currentXP = userXP?.totalXP || 0;
+        const currentLevelXP = getXPForLevel(newLevel);
+        const nextLevelXP = getXPForNextLevel(newLevel);
+        const xpInCurrentLevel = currentXP - currentLevelXP;
+        const xpNeededForNext = nextLevelXP - currentLevelXP;
+        const progressPercent = Math.min(100, Math.round((xpInCurrentLevel / xpNeededForNext) * 100));
+
+        // Créer la barre de progression
+        const progressBarLength = 10;
+        const filledBars = Math.floor((progressPercent / 100) * progressBarLength);
+        const progressBar = "▰".repeat(filledBars) + "▱".repeat(progressBarLength - filledBars);
+
+        const embed = new EmbedBuilder()
+            .setColor(0xFFD700)
+            .setTitle("🎉 Niveau Gagné !")
+            .setDescription(`Félicitations ! Tu as atteint le **niveau ${newLevel}** !`)
+            .addFields(
+                {
+                    name: "📊 Progression vers niveau " + (newLevel + 1),
+                    value: `${progressBar}\n${xpInCurrentLevel.toLocaleString()} / ${xpNeededForNext.toLocaleString()} XP (${progressPercent}%)`,
+                    inline: false
+                },
+                {
+                    name: "💎 XP Total",
+                    value: currentXP.toLocaleString(),
+                    inline: true
+                },
+                {
+                    name: "⭐ Niveau",
+                    value: `${newLevel}`,
+                    inline: true
+                }
+            )
+            .setFooter({text: "Continue à être actif pour gagner plus d'XP !"})
+            .setTimestamp();
+
+        // Récupérer l'utilisateur et envoyer le DM
+        const user = await client.users.fetch(userId).catch(() => null);
+
+        if (user) {
+            await user.send({embeds: [embed]}).catch((error: any) => {
+                logger.warn(`Could not send DM level up notification to ${username}: ${error.message}`);
+            });
+            logger.info(`DM level up notification sent to ${username} (Level ${newLevel})`);
+        }
+
+    } catch (error) {
+        logger.error(`Error sending DM level up notification for ${username}:`, error);
     }
 }
 

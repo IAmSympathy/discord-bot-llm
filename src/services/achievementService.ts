@@ -1638,9 +1638,14 @@ async function sendAchievementNotification(
 
         // Fetch le channel seulement si ce n'est pas le startup check et pas un achievement de profil
         let channel: any = null;
+        let isExternalContext = false; // DM ou DM de groupe (pas de guild)
+
         if (!isStartupCheck && achievement.category !== AchievementCategory.PROFIL) {
             channel = await client.channels.fetch(channelId);
             if (!channel || !channel.isTextBased()) return;
+
+            // Vérifier si on est dans un contexte externe (DM ou DM de groupe)
+            isExternalContext = !channel.guild;
         }
 
         const {EmbedBuilder, AttachmentBuilder} = require("discord.js");
@@ -1706,12 +1711,14 @@ async function sendAchievementNotification(
         let notificationSent = false;
         let targetChannel: TextChannel | null = null;
 
-        // Décider si DM ou Public basé sur l'XP et la catégorie
+        // Décider si DM ou Public basé sur l'XP, la catégorie et le contexte
+        // - Contexte externe (DM/DM de groupe) : TOUJOURS en DM
         // - Achievements PROFIL : toujours en DM
         // - Achievements SECRET : toujours en DM
         // - Achievements ≤ 150 XP : en DM
         // - Achievements > 150 XP : en public
         const sendInDM = (
+            isExternalContext || // Nouveau : forcer DM si contexte externe
             achievement.category === AchievementCategory.PROFIL ||
             achievement.secret ||
             achievement.xpReward <= 150
@@ -1721,7 +1728,13 @@ async function sendAchievementNotification(
             try {
                 const user = await client.users.fetch(userId);
                 await user.send(messageOptions);
-                logger.info(`Achievement notification sent via DM to ${user.username}`);
+
+                if (isExternalContext) {
+                    logger.info(`Achievement notification sent via DM to ${user.username} (external context)`);
+                } else {
+                    logger.info(`Achievement notification sent via DM to ${user.username}`);
+                }
+
                 notificationSent = true;
                 // Pour les notifications de level up, on utilisera le DM du user
                 targetChannel = await user.createDM() as any;

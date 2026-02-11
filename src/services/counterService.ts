@@ -63,26 +63,38 @@ export async function handleCounterMessage(message: Message): Promise<boolean> {
     // Vérifier que le message est un nombre
     const number = parseInt(content);
     if (isNaN(number) || content !== number.toString()) {
-        logger.info(`Invalid counter input from ${message.author.username}: "${content}"`);
-        await message.delete().catch(() => {
+        logger.info(`[Counter] ❌ Invalid input from ${message.author.username}: "${content}" - Deleting in 3s`);
+        await message.react("❌").catch(() => {
         });
+        setTimeout(async () => {
+            await message.delete().catch(() => {
+            });
+        }, 3000);
         return false;
     }
 
     // Vérifier que ce n'est pas le même utilisateur que le précédent
     if (state.lastUserId === message.author.id) {
-        logger.info(`User ${message.author.username} tried to count twice in a row`);
-        await message.delete().catch(() => {
+        logger.info(`[Counter] ❌ User ${message.author.username} tried to count twice in a row (number: ${number}) - Deleting in 3s`);
+        await message.react("🚫").catch(() => {
         });
+        setTimeout(async () => {
+            await message.delete().catch(() => {
+            });
+        }, 3000);
         return false;
     }
 
     // Vérifier que c'est le bon nombre
     const expectedNumber = state.currentNumber + 1;
     if (number !== expectedNumber) {
-        logger.info(`Wrong number from ${message.author.username}: expected ${expectedNumber}, got ${number}`);
-        await message.delete().catch(() => {
+        logger.warn(`[Counter] ❌ Wrong number from ${message.author.username}: expected ${expectedNumber}, got ${number} - Deleting in 3s`);
+        await message.react("⚠️").catch(() => {
         });
+        setTimeout(async () => {
+            await message.delete().catch(() => {
+            });
+        }, 3000);
 
         // Si c'était un reset intentionnel à 1 et que le compteur était > 0, on reset
         if (number === 1 && state.currentNumber > 0) {
@@ -96,10 +108,12 @@ export async function handleCounterMessage(message: Message): Promise<boolean> {
     state.currentNumber = number;
     state.lastUserId = message.author.id;
 
+    logger.info(`[Counter] ✅ Valid count from ${message.author.username}: ${number}`);
+
     // Mettre à jour le record
     if (number > state.highestReached) {
         state.highestReached = number;
-        logger.info(`🎉 New record reached: ${number}`);
+        logger.info(`[Counter] 🎉 New record reached: ${number}`);
 
         // Réagir au message pour célébrer le nouveau record
         if (number % 1000 === 0) {

@@ -31,11 +31,20 @@ const deployCommands = async () => {
     try {
         logger.info(`Started refreshing ${commands.length} application (/) commands.`);
 
+        // Ajouter les integration_types et contexts pour User Apps
+        const commandsWithUserApp = commands.map(cmd => ({
+            ...cmd,
+            // 0 = Guild Install (serveur), 1 = User Install (application utilisateur)
+            integration_types: [0, 1],
+            // 0 = Guild (serveur), 1 = Bot DM, 2 = Group DM, 3 = Private Channel
+            contexts: [0, 1, 2]
+        }));
+
         const data: any = await rest.put(Routes.applicationCommands(process.env.DISCORD_LLM_BOT_CLIENT_ID!), {
-            body: commands,
+            body: commandsWithUserApp,
         });
 
-        logger.info(`Successfully reloaded ${data.length} application (/) commands.`);
+        logger.info(`Successfully reloaded ${data.length} application (/) commands with User App support.`);
     } catch (error) {
         logger.error("Error deploying commands:", error);
     }
