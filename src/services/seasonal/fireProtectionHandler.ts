@@ -1,7 +1,7 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, StringSelectMenuBuilder, StringSelectMenuInteraction} from "discord.js";
 import {createLogger} from "../../utils/logger";
 import {getFireProtectionItems, InventoryItemType, ITEM_CATALOG, removeItemFromInventory} from "../userInventoryService";
-import {activateWeatherProtection, getWeatherProtectionInfo} from "./fireDataManager";
+import {getWeatherProtectionInfo} from "./fireDataManager";
 import {updateFireEmbed} from "./fireManager";
 import {FIRE_CONFIG} from "./fireData";
 
@@ -224,8 +224,6 @@ async function showConfirmation(
             }
 
             // Activer la protection
-            activateWeatherProtection(userId, username, duration);
-
             // Mettre à jour l'embed du feu immédiatement pour refléter la protection active
             if (btnInteraction.client) {
                 await updateFireEmbed(btnInteraction.client).catch(err =>

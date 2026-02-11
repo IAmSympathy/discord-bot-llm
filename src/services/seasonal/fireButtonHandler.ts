@@ -64,8 +64,10 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
         await interaction.editReply({embeds: [successEmbed]});
 
         // Forcer une mise à jour IMMÉDIATE et COMPLÈTE de l'interface
-        // On force l'incrémentation de la frame pour éviter d'utiliser un cache
         const fireManager = require("./fireManager");
+
+        // Invalider le cache météo pour forcer un refresh complet
+        fireManager.invalidateWeatherCache();
 
         // Mettre à jour le salon vocal ET l'embed immédiatement
         await fireManager.updateFireChannel(interaction.client);

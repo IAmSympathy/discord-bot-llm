@@ -13,7 +13,7 @@ let animationFrame = 0;
 
 // Cache de la météo pour éviter de fetch plusieurs fois par cycle
 let weatherCache: { data: WeatherData | null; timestamp: number } | null = null;
-const WEATHER_CACHE_DURATION = 30000; // 5 minutes
+const WEATHER_CACHE_DURATION = 15000; // 15 secondes (synchronisé avec l'intervalle de mise à jour)
 
 /**
  * Interface pour les données météo
@@ -97,6 +97,13 @@ function getWeatherFromChannel(client: Client): WeatherData | null {
 
         return null;
     }
+}
+
+/**
+ * Invalide le cache météo pour forcer un refresh
+ */
+export function invalidateWeatherCache(): void {
+    weatherCache = null;
 }
 
 /**
@@ -376,6 +383,10 @@ export async function addLog(userId: string, username: string): Promise<{ succes
     };
 
     saveFireData(fireData);
+
+    // Incrémenter le compteur historique de bûches pour cet utilisateur
+    const {incrementUserLogCount} = require("./seasonalUserStatsService");
+    incrementUserLogCount(userId);
 
     const oldState = getFireState(oldIntensity);
     const newState = getFireState(fireData.intensity);
