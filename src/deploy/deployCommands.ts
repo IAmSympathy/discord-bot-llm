@@ -27,6 +27,7 @@ const GUILD_ONLY_COMMANDS = [
     "standby-status",
     "findmeme",
     "answer",
+    "harvest",
 ];
 
 const globalCommands: any[] = [];
