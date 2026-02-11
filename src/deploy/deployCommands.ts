@@ -18,16 +18,14 @@ const GUILD_ONLY_COMMANDS = [
     "test-event",
     "auto-lowpower",
     "blacklist",
-    "blacklist-game add",
-    "blacklist-game remove",
-    "whitelist-game add-current",
-    "whitelist-game list",
+    "blacklist-game",
+    "whitelist-game",
     "lowpower",
     "leaderboard",
     "test-mission",
     "test-rewind",
     "standby-status",
-    "find-meme",
+    "findmeme"
 ];
 
 const globalCommands: any[] = [];
