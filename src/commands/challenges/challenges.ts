@@ -682,6 +682,7 @@ module.exports = {
 
             // === SECTION 4 : STATUT VOCAL (EN BAS) ===
             const dailyVoiceMinutes = getDailyVoiceTime(userId);
+            logger.info(`User ${userId} has ${dailyVoiceMinutes} daily voice minutes`);
             let currentVoiceTier = VOICE_XP_TIERS[0];
             for (const tier of VOICE_XP_TIERS) {
                 if (dailyVoiceMinutes >= tier.minMinutes && dailyVoiceMinutes < tier.maxMinutes) {
@@ -689,6 +690,7 @@ module.exports = {
                     break;
                 }
             }
+            logger.info(`Current tier for user ${userId}: ${currentVoiceTier.label} (${currentVoiceTier.minMinutes}-${currentVoiceTier.maxMinutes} min)`);
 
             const formatTime = (minutes: number): string => {
                 if (minutes === 0) return "0 min";
@@ -700,14 +702,23 @@ module.exports = {
 
             // Calculer l'XP vocal accumulé aujourd'hui
             let totalVoiceXP = 0;
+            logger.info(`Calculating voice XP for ${dailyVoiceMinutes} minutes:`);
             for (const tier of VOICE_XP_TIERS) {
-                if (dailyVoiceMinutes <= tier.minMinutes) break;
+                // Si on n'a pas atteint ce palier, arrêter (dailyVoiceMinutes doit être > minMinutes)
+                if (dailyVoiceMinutes <= tier.minMinutes) {
+                    logger.info(`  Stopping at tier ${tier.label} (dailyVoiceMinutes ${dailyVoiceMinutes} <= minMinutes ${tier.minMinutes})`);
+                    break;
+                }
 
+                // Calculer combien de minutes on a passé dans ce palier
                 const minutesInTier = Math.min(dailyVoiceMinutes, tier.maxMinutes) - tier.minMinutes;
                 if (minutesInTier > 0) {
-                    totalVoiceXP += Math.ceil(minutesInTier * tier.multiplier);
+                    const xpForTier = Math.ceil(minutesInTier * tier.multiplier);
+                    totalVoiceXP += xpForTier;
+                    logger.info(`  Tier ${tier.label}: ${minutesInTier} min × ${tier.multiplier} = ${xpForTier} XP (total: ${totalVoiceXP} XP)`);
                 }
             }
+            logger.info(`Total voice XP: ${totalVoiceXP}`);
 
             // Barre de progression pour le temps (sur 4h = 240 min max pour visualisation)
             const maxDisplayMinutes = 240;
