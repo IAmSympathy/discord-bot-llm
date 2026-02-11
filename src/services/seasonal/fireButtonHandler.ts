@@ -1,6 +1,6 @@
 import {ButtonInteraction, EmbedBuilder} from "discord.js";
 import {createLogger} from "../../utils/logger";
-import {addLog, updateFireChannel, updateFireEmbed} from "./fireManager";
+import {addLog} from "./fireManager";
 import {handleUseProtectionButton} from "./fireProtectionHandler";
 
 const logger = createLogger("FireButtonHandler");
@@ -63,9 +63,13 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
 
         await interaction.editReply({embeds: [successEmbed]});
 
-        // Mettre à jour l'interface
-        await updateFireChannel(interaction.client);
-        await updateFireEmbed(interaction.client);
+        // Forcer une mise à jour IMMÉDIATE et COMPLÈTE de l'interface
+        // On force l'incrémentation de la frame pour éviter d'utiliser un cache
+        const fireManager = require("./fireManager");
+
+        // Mettre à jour le salon vocal ET l'embed immédiatement
+        await fireManager.updateFireChannel(interaction.client);
+        await fireManager.updateFireEmbed(interaction.client);
 
         logger.info(`${username} (${userId}) added a log. New intensity: ${result.newIntensity}%`);
 
