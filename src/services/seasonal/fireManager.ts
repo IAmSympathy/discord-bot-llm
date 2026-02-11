@@ -60,8 +60,13 @@ function getWeatherFromChannel(client: Client): WeatherData | null {
         // Parser le nom du salon: "❄️ Chutes de neige, -4°"
         const channelName = weatherChannel.name;
 
-        // Extraire l'emoji (premier caractère)
-        const emoji = channelName[0];
+        // Extraire l'emoji (peut être 1 ou 2 caractères pour les emojis avec variante de couleur)
+        // Les emojis comme ❄️ sont composés de 2 caractères (❄ + sélecteur de variation)
+        let emoji = channelName[0];
+        // Vérifier s'il y a un sélecteur de variation (U+FE0F) pour les emojis colorés
+        if (channelName.length > 1 && channelName.charCodeAt(1) === 0xFE0F) {
+            emoji = channelName.substring(0, 2); // Capturer l'emoji avec sa variante
+        }
 
         // Extraire la température (chercher un nombre suivi de °)
         const tempMatch = channelName.match(/(-?\d+)°/);
