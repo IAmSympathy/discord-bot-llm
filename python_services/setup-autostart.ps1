@@ -51,7 +51,8 @@ $settings = New-ScheduledTaskSettingsSet `
     -DontStopIfGoingOnBatteries `
     -StartWhenAvailable `
     -RunOnlyIfNetworkAvailable `
-    -DontStopOnIdleEnd
+    -DontStopOnIdleEnd `
+    -Hidden
 
 # Créer le principal (utilisateur qui exécutera la tâche)
 $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Limited
