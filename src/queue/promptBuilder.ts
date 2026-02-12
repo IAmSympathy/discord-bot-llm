@@ -204,11 +204,22 @@ ${profiles.join("\n\n")}
 export function buildWebContextBlock(webContext: WebContext | null): string {
     if (!webContext) return "";
 
-    return `=== CONTEXTE FACTUEL ===
-Requête utilisée: ${webContext.query}
-Faits vérifiés:
-- ${webContext.facts.join("\n- ")}
-=== FIN CONTEXTE FACTUEL ===
+    return `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌐 CONTEXTE WEB (Recherche effectuée)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ INFORMATIONS RÉCENTES : Ces faits proviennent d'une recherche web en temps réel
+   → Utilise ces informations pour répondre avec des données actualisées
+   → Ces faits sont vérifiés et pertinents pour le message actuel
+
+🔍 REQUÊTE DE RECHERCHE : "${webContext.query}"
+
+📊 FAITS VÉRIFIÉS (${webContext.facts.length}) :
+${webContext.facts.map((fact, i) => `   ${i + 1}. ${fact}`).join("\n")}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌐 FIN DU CONTEXTE WEB
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 `;
 }

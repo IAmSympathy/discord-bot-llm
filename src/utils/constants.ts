@@ -40,9 +40,9 @@ export const MONTHLY_RANKING_ROLES = {
 } as const;
 
 // Memory Configuration - Sliding Window System
-export const MEMORY_MAX_TURNS = 28; // Total turns to keep in memory
+export const MEMORY_MAX_TURNS = 18; // Total turns to keep in memory
 export const MEMORY_RECENT_TURNS = 8; // Always keep last 8 turns (recent context) - SANS FILTRE
-export const MEMORY_IMPORTANT_OLD_TURNS = 20; // Keep N "important" old turns (historical context)
+export const MEMORY_IMPORTANT_OLD_TURNS = 10; // Keep N "important" old turns (historical context)
 export const MEMORY_IMPORTANCE_THRESHOLD = 2; // Minimum score to keep old turns
 export const MEMORY_FILE_PATH = EnvConfig.MEMORY_FILE_PATH;
 
