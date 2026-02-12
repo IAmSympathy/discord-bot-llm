@@ -34,7 +34,7 @@ module.exports = {
             }
 
 
-            const success = streamAborted || imageAnalysisAborted || imageGenerationAborted || askNetricsaAborted;
+            const success = streamAborted || imageAnalysisAborted || imageGenerationAborted;
 
             if (success) {
                 let message = "D'accord, j'arrête";
