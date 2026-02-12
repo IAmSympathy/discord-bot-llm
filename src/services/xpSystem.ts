@@ -209,7 +209,7 @@ export async function addXP(
     let finalAmount = amount;
 
     // Appliquer le multiplicateur saisonnier SAUF si skipMultiplier est true
-    if (!skipMultiplier) {
+    if (!skipMultiplier || amount < 0) {
         try {
             const {getCurrentFireMultiplier} = require("./seasonal/fireManager");
             const fireMultiplier = getCurrentFireMultiplier();

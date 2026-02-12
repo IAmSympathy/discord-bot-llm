@@ -42,7 +42,7 @@ const PAYOUTS: { [key: string]: number } = {
     "🍊🍊": 15,
     "🍋🍋": 10,
     "🍒🍒": 5,
-    
+
     "default": -25
 };
 
@@ -171,7 +171,7 @@ module.exports = {
                     username,
                     xp,
                     interaction.channel as TextChannel,
-                    false
+                    false,
                 );
             }
 
