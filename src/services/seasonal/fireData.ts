@@ -74,8 +74,8 @@ export const FIRE_CONFIG = {
     MULTIPLIERS: {
         EXTINGUISHED: 1,  // 0-5% - Vraiment éteint
         LOW: 1.1,          // 6-30% - Faible
-        MEDIUM: 1.25,       // 31-60% - Moyen (neutre)
-        HIGH: 1.4,         // 61-85% - Fort
+        MEDIUM: 1.2,       // 31-60% - Moyen (neutre)
+        HIGH: 1.35,         // 61-85% - Fort
         INTENSE: 1.5      // 86-100% - Intense
     },
 
