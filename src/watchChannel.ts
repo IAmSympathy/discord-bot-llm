@@ -405,17 +405,15 @@ export function registerWatchedChannelResponder(client: Client) {
                 // Collecter les médias (images, GIFs)
                 const imageUrls = await collectAllMediaUrls(message);
 
-                // Construire le prompt pour le DM
-                let dmPrompt = `[Conversation privée (DM) avec ${userName}]\n\n${userText}`;
-
                 // Récupérer l'historique de conversation DM
                 const dmMemory = await getDMRecentTurns(userId, 20);
 
                 logger.info(`[DM] Processing message from ${userName} (${dmMemory.length} turns in memory)`);
 
                 // Traiter avec processLLMRequest
+                // Note: Le system prompt indique déjà que c'est une conversation privée DM
                 await processLLMRequest({
-                    prompt: dmPrompt,
+                    prompt: userText, // Pas de préfixe - le system prompt gère le contexte DM
                     userId: userId,
                     userName: userName,
                     channel: dmChannel as DMChannel,

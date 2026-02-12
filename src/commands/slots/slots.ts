@@ -8,7 +8,7 @@ import {tryRewardAndNotify} from "../../services/rewardNotifier";
 
 const logger = createLogger("SlotsCmd");
 const COOLDOWN_FILE = path.join(process.cwd(), "data", "slots_cooldown.json");
-const COOLDOWN_DURATION = 10 * 60 * 1000; // 10 minutes de cooldown
+const COOLDOWN_DURATION = 5 * 60 * 1000; // 10 minutes de cooldown
 
 // Symboles de la machine à sous
 const SYMBOLS = ["🍒", "🍋", "🍊", "🍇", "💎", "⭐", "7️⃣"];
@@ -27,25 +27,25 @@ const SYMBOL_WEIGHTS = {
 // Gains/pertes selon les combinaisons
 const PAYOUTS: { [key: string]: number } = {
     // 3 symboles identiques
-    "7️⃣7️⃣7️⃣": 100,   // JACKPOT
-    "⭐⭐⭐": 75,
-    "💎💎💎": 50,
-    "🍇🍇🍇": 30,
-    "🍊🍊🍊": 20,
-    "🍋🍋🍋": 15,
-    "🍒🍒🍒": 10,
+    "7️⃣7️⃣7️⃣": 500,   // JACKPOT
+    "⭐⭐⭐": 300,
+    "💎💎💎": 150,
+    "🍇🍇🍇": 75,
+    "🍊🍊🍊": 50,
+    "🍋🍋🍋": 35,
+    "🍒🍒🍒": 25,
 
     // 2 symboles identiques
-    "7️⃣7️⃣": 25,
-    "⭐⭐": 20,
-    "💎💎": 15,
-    "🍇🍇": 10,
-    "🍊🍊": 5,
-    "🍋🍋": 3,
-    "🍒🍒": 2,
+    "7️⃣7️⃣": 50,
+    "⭐⭐": 40,
+    "💎💎": 30,
+    "🍇🍇": 15,
+    "🍊🍊": 8,
+    "🍋🍋": 5,
+    "🍒🍒": 3,
 
     // Aucune correspondance
-    "default": -10  // Perte de 10 XP
+    "default": -30  // Perte de 10 XP
 };
 
 interface CooldownData {
