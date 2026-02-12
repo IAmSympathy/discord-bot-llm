@@ -11,7 +11,7 @@ import {OLLAMA_API_URL} from "../utils/constants";
 
 const logger = createLogger("StandbyMode");
 
-const IMAGE_API_URL = process.env.IMAGE_API_URL || "http://localhost:8000";
+const IMAGE_API_URL = process.env.IMAGE_API_URL || "http://mabite:8000";
 const CHECK_INTERVAL_STANDBY = 2 * 60 * 1000; // Vérifier toutes les 2 minutes en mode Standby
 const CHECK_INTERVAL_NORMAL = 10 * 60 * 1000; // Vérifier toutes les 5 minutes en mode normal
 const TIMEOUT_MS = 10000; // Timeout de 10 secondes pour les checks

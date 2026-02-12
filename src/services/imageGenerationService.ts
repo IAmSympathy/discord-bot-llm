@@ -13,7 +13,7 @@ const logger = createLogger("ImageGeneration");
  */
 
 // URL du microservice Python
-const IMAGE_API_URL = process.env.IMAGE_API_URL || "http://localhost:8000";
+const IMAGE_API_URL = process.env.IMAGE_API_URL || "http://mabite:8000";
 
 // Dossier de sortie pour les images générées
 const OUTPUT_DIR = path.join(process.cwd(), "generated_images");

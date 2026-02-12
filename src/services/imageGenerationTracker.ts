@@ -15,6 +15,9 @@ interface ImageGeneration {
     jobId?: string; // Job ID Python pour annulation
 }
 
+// URL du microservice Python
+const IMAGE_API_URL = process.env.IMAGE_API_URL || "http://mabite:8000";
+
 // Map pour stocker les générations en cours : clé = userId
 const activeGenerations = new Map<string, ImageGeneration>();
 
@@ -63,7 +66,7 @@ export function abortImageGeneration(userId: string): boolean {
     if (generation.jobId) {
         // Si on a un job_id spécifique, l'annuler
         console.log(`[ImageGeneration] Cancelling specific job: ${generation.jobId}`);
-        fetch(`http://localhost:8000/cancel/${generation.jobId}`, {
+        fetch(`${IMAGE_API_URL}/cancel/${generation.jobId}`, {
             method: "POST"
         })
             .then(res => res.json())
@@ -137,7 +140,7 @@ export function abortImageGenerationByChannel(channelId: string, requestingUserI
             if (generation.jobId) {
                 // Si on a un job_id spécifique, l'annuler
                 console.log(`[ImageGeneration] Cancelling specific job: ${generation.jobId}`);
-                fetch(`http://localhost:8000/cancel/${generation.jobId}`, {
+                fetch(`${IMAGE_API_URL}/cancel/${generation.jobId}`, {
                     method: "POST"
                 })
                     .then(res => res.json())
