@@ -156,6 +156,18 @@ function buildMentionedProfilesContext(prompt: string, recentTurns: MemoryTurn[]
 
     logger.info(`[ProfileDetection] Searching in: "${prompt.substring(0, 60)}..."`);
 
+    // Extraire les User IDs des mentions Discord (<@userId> ou <@!userId>)
+    const mentionRegex = /<@!?(\d+)>/g;
+    const mentionedUserIds = new Set<string>();
+    let match;
+    while ((match = mentionRegex.exec(prompt)) !== null) {
+        mentionedUserIds.add(match[1]);
+    }
+
+    if (mentionedUserIds.size > 0) {
+        logger.info(`[ProfileDetection] Found ${mentionedUserIds.size} Discord mention(s): ${Array.from(mentionedUserIds).join(', ')}`);
+    }
+
     for (const profile of allProfiles) {
         // IMPORTANT : Exclure l'utilisateur actuel
         if (currentUserId && profile.userId === currentUserId) {
@@ -166,10 +178,14 @@ function buildMentionedProfilesContext(prompt: string, recentTurns: MemoryTurn[]
         const normalizedUsername = normalizeAccents(profile.username);
         const usernameBase = lowerUsername.split(/[0-9_-]/)[0]; // "eddie" de "eddie64"
 
+        // Vérifier si l'User ID est mentionné directement dans le message (<@userId>)
+        const isUserIdMentioned = mentionedUserIds.has(profile.userId);
+
         // Vérifier si le username ou un alias est mentionné dans le message actuel
         // Utiliser à la fois la comparaison normale ET la comparaison sans accents
-        const isInPrompt = lowerPrompt.includes(lowerUsername) ||
-            normalizedPrompt.includes(normalizedUsername) || // ← NOUVEAU : détecte "jeremy" pour "Jérémy"
+        const isInPrompt = isUserIdMentioned || // ← NOUVEAU : détecte les mentions Discord <@userId>
+            lowerPrompt.includes(lowerUsername) ||
+            normalizedPrompt.includes(normalizedUsername) || // détecte "jeremy" pour "Jérémy"
             (usernameBase.length > 2 && lowerPrompt.includes(usernameBase)) || // Éviter les faux positifs avec les chaînes vides ou trop courtes
             (profile.aliases && profile.aliases.some((alias: string) => {
                 const normalizedAlias = normalizeAccents(alias);
@@ -187,7 +203,8 @@ function buildMentionedProfilesContext(prompt: string, recentTurns: MemoryTurn[]
             if (!profilesMap.has(profile.userId)) {
                 const summary = UserProfileService.getProfileSummary(profile.userId);
                 if (summary) {
-                    logger.info(`[ProfileDetection] ✓ Found profile: ${profile.username}`);
+                    const detectionMethod = isUserIdMentioned ? "via User ID mention" : (isInPrompt ? "in message" : "in history");
+                    logger.info(`[ProfileDetection] ✓ Found profile: ${profile.username} (${detectionMethod})`);
                     profilesMap.set(profile.userId, `━━━ PROFIL DE ${profile.username.toUpperCase()} (UID Discord: ${profile.userId}) ━━━\n${summary}\n━━━ FIN PROFIL DE ${profile.username.toUpperCase()} ━━━`);
                 }
             }
