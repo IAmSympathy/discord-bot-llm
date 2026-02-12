@@ -219,7 +219,7 @@ module.exports = {
             // === PRÉPARATION DU PROMPT ===
             const ollamaService = new OllamaService();
             const isDM = interaction.channel?.type === 1; // Type 1 = DM
-            const {finalPrompt: systemPrompt} = ollamaService.loadSystemPrompts(interaction.channelId || "", isDM);
+            const {finalPrompt: systemPrompt} = ollamaService.loadSystemPrompts(interaction.channelId || "", isDM, true); // true = isAskNetricsa
 
             // Pas de mémoire pour ask-netricsa
             const recentTurns: any[] = [];

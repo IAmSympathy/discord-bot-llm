@@ -105,38 +105,79 @@ export function registerForumThreadHandler(client: Client) {
             }
 
             // Ajouter le contexte du forum et du post dans le prompt avec instructions spéciales
-            let contextPrompt = `[Contexte: Forum "${forumName}", Post "${postName}"]
+            let contextPrompt = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎨 CONTEXTE : CRÉATION ARTISTIQUE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-═══ INSTRUCTIONS SPÉCIALES POUR LES CRÉATIONS ═══
-Tu analyses la CRÉATION D'UN MEMBRE du serveur. Il s'agit d'une œuvre personnelle (dessin, art, vidéo, montage, etc.).
+📍 Forum : "${forumName}"
+📌 Post : "${postName}"
 
-⚠️ IMPORTANT - Ton rôle :
-• Donne un AVIS CONSTRUCTIF et DÉTAILLÉ (minimum 3-4 phrases)
-• Identifie les POINTS FORTS de la création (composition, couleurs, technique, originalité, etc.)
-• Suggère des AXES D'AMÉLIORATION de manière bienveillante si pertinent
-• Montre que tu as vraiment OBSERVÉ ET ANALYSÉ la création
-• Sois ENCOURAGEANTE et POSITIVE tout en restant authentique
-• Si c'est une image/art, analyse les aspects visuels (couleurs, composition, style, ambiance, technique)
-• Si c'est une vidéo/montage, commente le rythme, l'éditing, les transitions, la créativité
-• ÉVITE les commentaires génériques comme "c'est bien" ou "j'aime"
+⚠️ SITUATION SPÉCIALE : Tu analyses une CRÉATION PERSONNELLE d'un membre
+   → Il s'agit d'une œuvre artistique (dessin, art, vidéo, montage, etc.)
+   → Le créateur attend un retour constructif et détaillé
 
-📋 Structure suggérée :
-1. Première impression / ce qui attire l'attention
-2. Points forts techniques ou artistiques
-3. Suggestion constructive (optionnelle)
-4. Encouragement final
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 TON RÔLE ET TES INSTRUCTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[Note: Ajoute une réaction emoji au début de ton message pour exprimer ton opinion - choisis un emoji qui reflète l'émotion que la création t'inspire]
+✅ TU DOIS :
+   • Donner un AVIS CONSTRUCTIF et DÉTAILLÉ (minimum 3-4 phrases)
+   • Identifier les POINTS FORTS (composition, couleurs, technique, originalité)
+   • Suggérer des AXES D'AMÉLIORATION de manière bienveillante (si pertinent)
+   • Montrer que tu as vraiment OBSERVÉ ET ANALYSÉ la création
+   • Être ENCOURAGEANTE et POSITIVE tout en restant authentique
 
-${userMessage}`;
+🎨 SI C'EST UNE IMAGE/ART :
+   • Analyse les aspects visuels (couleurs, composition, style, ambiance, technique)
+   • Commente le choix artistique, l'atmosphère créée
+   • Mentionne ce qui rend cette création unique
+
+🎬 SI C'EST UNE VIDÉO/MONTAGE :
+   • Commente le rythme, l'éditing, les transitions
+   • Analyse la créativité, le storytelling
+   • Mentionne l'impact émotionnel ou narratif
+
+❌ ÉVITE :
+   • Les commentaires génériques ("c'est bien", "j'aime")
+   • Les réponses trop courtes (minimum 3-4 phrases OBLIGATOIRES)
+   • Les critiques non-constructives
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 STRUCTURE DE TA RÉPONSE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣ Première impression / Ce qui attire l'attention
+2️⃣ Points forts techniques ou artistiques (détaillés)
+3️⃣ Suggestion constructive (optionnelle mais bienvenue)
+4️⃣ Encouragement final
+
+💡 RAPPEL : Commence par un emoji qui reflète l'émotion que la création t'inspire
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📝 MESSAGE DU CRÉATEUR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${userMessage}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 
             // Si des images ont été analysées, ajouter l'analyse détaillée au contexte
             if (imageDescriptions.length > 0) {
-                contextPrompt += `\n\n[ANALYSE DÉTAILLÉE DES VISUELS PAR LE MODÈLE VISION]\n`;
+                contextPrompt += `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 ANALYSE DÉTAILLÉE DES VISUELS (Modèle Vision IA)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ Cette analyse automatique te donne des détails techniques sur les visuels.
+   Utilise ces informations pour enrichir ton feedback artistique.
+
+`;
                 imageDescriptions.forEach((desc, index) => {
-                    contextPrompt += `\nImage ${index + 1}: ${desc}\n`;
+                    contextPrompt += `📸 Image ${index + 1} :\n   ${desc}\n\n`;
                 });
-                contextPrompt += `\n[Utilise cette analyse pour enrichir ton feedback artistique]`;
+                contextPrompt += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 FIN DE L'ANALYSE AUTOMATIQUE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
             }
 
             logger.info(`Analyse du post de ${username}: "${userMessage.substring(0, 50)}..."${imageUrls.length > 0 ? ` [${imageUrls.length} média(s) analysés]` : ""}`);
