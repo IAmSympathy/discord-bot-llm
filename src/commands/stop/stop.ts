@@ -1,6 +1,7 @@
 import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
 import {abortImageAnalysis, abortStream} from "../../queue/queue";
 import {abortImageGeneration, abortImageGenerationByChannel} from "../../services/imageGenerationTracker";
+import {abortAskNetricsaByChannel, abortAskNetricsaRequest} from "../../services/askNetricsaTracker";
 import {logCommand} from "../../utils/discordLogger";
 import {EnvConfig} from "../../utils/envConfig";
 import {createInfoEmbed, handleInteractionError, safeReply} from "../../utils/interactionUtils";
@@ -33,7 +34,20 @@ module.exports = {
                 imageGenerationAborted = abortImageGeneration(requestingUserId);
             }
 
-            const success = streamAborted || imageAnalysisAborted || imageGenerationAborted;
+            // Pour les requêtes ask-netricsa :
+            // Si admin/owner : chercher toutes les requêtes dans le canal
+            // Sinon : chercher seulement les requêtes de l'utilisateur
+            let askNetricsaAborted = false;
+
+            if (isAdminOrOwner) {
+                // Admin peut arrêter n'importe quelle requête dans le canal
+                askNetricsaAborted = abortAskNetricsaByChannel(channelKey, requestingUserId, true);
+            } else {
+                // Utilisateur normal ne peut arrêter que ses propres requêtes
+                askNetricsaAborted = abortAskNetricsaRequest(requestingUserId);
+            }
+
+            const success = streamAborted || imageAnalysisAborted || imageGenerationAborted || askNetricsaAborted;
 
             if (success) {
                 let message = "D'accord, j'arrête";
@@ -42,6 +56,7 @@ module.exports = {
                 if (streamAborted) actions.push("de parler");
                 if (imageAnalysisAborted) actions.push("l'analyse d'image");
                 if (imageGenerationAborted) actions.push("la génération d'image");
+                if (askNetricsaAborted) actions.push("de réfléchir");
 
                 if (actions.length > 0) {
                     message += " " + actions.join(" et ") + ".";
@@ -49,13 +64,19 @@ module.exports = {
 
                 await safeReply(interaction, message);
 
-                console.log(`[Stop Command] ${streamAborted ? 'Stream' : ''}${streamAborted && (imageAnalysisAborted || imageGenerationAborted) ? ' and ' : ''}${imageAnalysisAborted ? 'Image analysis' : ''}${imageAnalysisAborted && imageGenerationAborted ? ' and ' : ''}${imageGenerationAborted ? 'Image generation' : ''} aborted by ${interaction.user.displayName}`);
+                console.log(`[Stop Command] Aborted by ${interaction.user.displayName}: ${[
+                    streamAborted && 'Stream',
+                    imageAnalysisAborted && 'Image analysis',
+                    imageGenerationAborted && 'Image generation',
+                    askNetricsaAborted && 'Ask-Netricsa'
+                ].filter(Boolean).join(', ')}`);
 
                 // Logger l'arrêt forcé
                 const logActions = [];
                 if (streamAborted) logActions.push("Arrêt du raisonnement");
                 if (imageAnalysisAborted) logActions.push("Arrêt de l'analyse d'image");
                 if (imageGenerationAborted) logActions.push("Arrêt de la génération d'image");
+                if (askNetricsaAborted) logActions.push("Arrêt de ask-netricsa");
 
                 await logCommand("🛑 Arrêt forcé", undefined, [
                     {name: "👤 Par", value: interaction.user.displayName, inline: true},

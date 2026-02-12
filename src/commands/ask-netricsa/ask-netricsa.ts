@@ -4,7 +4,7 @@ import {processImagesWithMetadata} from "../../services/imageService";
 import {recordAIConversationStats} from "../../services/statsRecorder";
 import {setBotPresence} from "../../bot";
 import {isLowPowerMode} from "../../services/botStateService";
-import {createLowPowerEmbed, createStandbyEmbed} from "../../utils/embedBuilder";
+import {createErrorEmbed, createLowPowerEmbed, createStandbyEmbed} from "../../utils/embedBuilder";
 import {isStandbyMode} from "../../services/standbyModeService";
 import {TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 import {OllamaService} from "../../services/ollamaService";
@@ -14,6 +14,7 @@ import {getWebContext} from "../../services/searchService";
 import {logBotImageAnalysis, logBotResponse} from "../../utils/discordLogger";
 import {NETRICSA_USER_ID, NETRICSA_USERNAME} from "../../services/userStatsService";
 import {EmojiReactionHandler} from "../../queue/emojiReactionHandler";
+import {hasActiveRequest, registerAskNetricsaRequest, unregisterAskNetricsaRequest} from "../../services/askNetricsaTracker";
 
 const logger = createLogger("AskNetricsaCmd");
 const wait = require("node:timers/promises").setTimeout;
@@ -47,6 +48,16 @@ module.exports = {
         // Vérifier que l'utilisateur est membre du serveur requis
         const {checkServerMembershipOrReply} = require("../../utils/serverMembershipCheck");
         if (!await checkServerMembershipOrReply(interaction)) {
+            return;
+        }
+
+        // Vérifier si l'utilisateur a déjà une requête en cours
+        if (hasActiveRequest(interaction.user.id)) {
+            const errorEmbed = createErrorEmbed(
+                "⏳ Requête en Cours",
+                "Tu as déjà une requête ask-netricsa en cours. Attends qu'elle soit terminée avant d'en lancer une nouvelle, ou utilise `/stop` pour l'annuler."
+            );
+            await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
             return;
         }
 
@@ -169,6 +180,17 @@ module.exports = {
                 }
             }, TYPING_ANIMATION_INTERVAL);
 
+            // Créer un AbortController pour gérer l'annulation
+            const abortController = new AbortController();
+
+            // Enregistrer la requête dans le tracker
+            registerAskNetricsaRequest(
+                interaction.user.id,
+                interaction.channelId || "",
+                abortController,
+                animationInterval
+            );
+
             // === TRAITEMENT DES IMAGES ===
             let imageDescriptions: string[] = [];
             if (hasImages) {
@@ -243,6 +265,27 @@ module.exports = {
             // Lire le stream
             let done = false;
             while (!done) {
+                // Vérifier si la requête a été annulée
+                if (abortController.signal.aborted) {
+                    logger.info("Ask-netricsa request aborted by user");
+
+                    // Arrêter l'animation
+                    if (animationInterval) {
+                        clearInterval(animationInterval);
+                        animationInterval = null;
+                    }
+
+                    // Désenregistrer
+                    unregisterAskNetricsaRequest(interaction.user.id);
+
+                    // Éditer le message pour indiquer l'annulation
+                    if (progressMessage) {
+                        await progressMessage.edit("🛑 Réflexion annulée.");
+                    }
+
+                    return;
+                }
+
                 const {value, done: doneReading} = await reader!.read();
                 done = doneReading;
 
@@ -269,6 +312,9 @@ module.exports = {
                 clearInterval(animationInterval);
                 animationInterval = null;
             }
+
+            // Désenregistrer la requête terminée
+            unregisterAskNetricsaRequest(interaction.user.id);
 
             await wait(500);
 
@@ -335,6 +381,9 @@ module.exports = {
 
         } catch (error) {
             logger.error("Error in /ask-netricsa command:", error);
+
+            // Désenregistrer en cas d'erreur
+            unregisterAskNetricsaRequest(interaction.user.id);
 
             // Arrêter l'animation en cas d'erreur
             if (animationInterval) {
