@@ -10,27 +10,32 @@ const logger = createLogger("DiscordMessageManager");
  */
 export class ImageAnalysisAnimation {
     private message: Message | null = null;
+    private interaction: ChatInputCommandInteraction | null = null;
     private interval: NodeJS.Timeout | null = null;
     private dotCount = 1;
+    private isInteraction = false;
 
     async start(replyToMessage?: Message, channel?: TextChannel | ThreadChannel | DMChannel, interaction?: ChatInputCommandInteraction): Promise<void> {
         try {
-            // Si c'est une interaction, utiliser editReply() comme /imagine
+            // Si c'est une interaction, utiliser interaction.reply() comme /imagine
             if (interaction) {
-                // Utiliser editReply sur l'interaction déférée
-                this.message = await interaction.editReply({content: "`Analyse de l'image.`"}) as Message;
+                this.interaction = interaction;
+                this.isInteraction = true;
+                // IMPORTANT: Utiliser interaction.reply() (pas editReply!) pour pouvoir éditer après
+                const response = await interaction.reply({content: "`Analyse de l'image.`", fetchReply: true});
+                this.message = response as Message;
             } else if (replyToMessage) {
                 this.message = await replyToMessage.reply("`Analyse de l'image.`");
             } else if (channel) {
                 this.message = await channel.send("`Analyse de l'image.`");
             }
 
+            // Animation pour tous les types de messages
             if (this.message) {
                 this.interval = setInterval(async () => {
                     if (this.message) {
                         this.dotCount = (this.dotCount % 3) + 1;
                         const dots = ".".repeat(this.dotCount);
-                        // Utiliser .edit() directement sur le message (marche pour interactions et messages normaux)
                         await this.message.edit(`\`Analyse de l'image${dots}\``).catch(() => {
                         });
                     }
@@ -124,9 +129,16 @@ export class DiscordMessageManager {
                 this.messages.push(analysisMessage);
                 this.analysisAnimation!.clearMessage();
             } else if (this.interaction) {
-                // Pas d'animation, utiliser editReply pour les interactions
-                const message = await this.interaction.editReply({content: currentContent});
-                this.messages.push(message as Message);
+                // Pas d'animation, l'interaction n'a pas encore été répondue
+                // Utiliser editReply si déférée, ou reply si pas encore répondue
+                if (this.interaction.deferred) {
+                    const message = await this.interaction.editReply({content: currentContent});
+                    this.messages.push(message as Message);
+                } else {
+                    // L'interaction n'a pas été répondue du tout (cas rare)
+                    const response = await this.interaction.reply({content: currentContent, fetchReply: true});
+                    this.messages.push(response as Message);
+                }
             } else {
                 // Créer un nouveau message pour les messages normaux
                 if (this.replyToMessage) {

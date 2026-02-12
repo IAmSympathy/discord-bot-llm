@@ -67,8 +67,11 @@ module.exports = {
             const imageAttachment = interaction.options.getAttachment("image", false);
             const replyToId = interaction.options.getString("reply-to", false);
 
-            // Déférer la réponse car le traitement peut prendre du temps
-            await interaction.deferReply();
+            // NE PAS déférer si on a une image - l'animation le fera avec interaction.reply()
+            // Sinon déférer car le traitement peut prendre du temps
+            if (!imageAttachment) {
+                await interaction.deferReply();
+            }
 
             logger.info(`Processing /ask-netricsa from ${interaction.user.displayName}: ${question}${imageAttachment ? ' [with image]' : ''}${replyToId ? ' [replying to message]' : ''}`);
 
@@ -80,9 +83,16 @@ module.exports = {
                     logger.info(`Referenced message from ${referencedMessage.author.username}: ${referencedMessage.content.substring(0, 100)}...`);
                 } catch (error) {
                     logger.warn(`Could not fetch message with ID ${replyToId}:`, error);
-                    await interaction.editReply({
-                        content: `❌ Impossible de récupérer le message avec l'ID \`${replyToId}\`. Vérifie que l'ID est correct et que le message existe dans ce canal.`
-                    });
+                    // Si pas d'image, utiliser editReply, sinon reply
+                    if (!imageAttachment) {
+                        await interaction.editReply({
+                            content: `❌ Impossible de récupérer le message avec l'ID \`${replyToId}\`. Vérifie que l'ID est correct et que le message existe dans ce canal.`
+                        });
+                    } else {
+                        await interaction.reply({
+                            content: `❌ Impossible de récupérer le message avec l'ID \`${replyToId}\`. Vérifie que l'ID est correct et que le message existe dans ce canal.`
+                        });
+                    }
                     return;
                 }
             }
@@ -96,7 +106,8 @@ module.exports = {
                     logger.info(`Image attachment added: ${imageAttachment.url}`);
                 } else {
                     logger.warn(`Invalid attachment type provided: ${imageAttachment.contentType}`);
-                    await interaction.editReply({
+                    // Si on a une image (interaction pas encore répondue), utiliser reply
+                    await interaction.reply({
                         content: `❌ Le fichier fourni n'est pas une image valide. Types acceptés : PNG, JPG, JPEG, GIF, WEBP.`
                     });
                     return;
