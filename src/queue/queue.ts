@@ -398,7 +398,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             let result = "";
 
             // Gestionnaires
-            const messageManager = new DiscordMessageManager(channel, replyToMessage);
+            const messageManager = new DiscordMessageManager(channel, replyToMessage, interaction);
             messageManager.setAnalysisAnimation(analysisAnimation);
 
             // Configurer le callback pour arrêter le typing indicator dès le premier message envoyé

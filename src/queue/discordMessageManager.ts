@@ -1,4 +1,4 @@
-import {DMChannel, Message, TextChannel, ThreadChannel} from "discord.js";
+import {ChatInputCommandInteraction, DMChannel, Message, TextChannel, ThreadChannel} from "discord.js";
 import {DISCORD_MESSAGE_LIMIT, TYPING_ANIMATION_INTERVAL} from "../utils/constants";
 import {cleanDiscordText} from "../utils/textTransformers";
 import {createLogger} from "../utils/logger";
@@ -54,18 +54,21 @@ export class ImageAnalysisAnimation {
 
 /**
  * Gère les messages Discord pour les réponses du bot en plusieurs chunks
+ * Supporte à la fois les messages normaux et les interactions (avec followUp)
  */
 export class DiscordMessageManager {
     private messages: Message[] = [];
     private responseChunks: string[] = [];
     private replyToMessage?: Message;
+    private interaction?: ChatInputCommandInteraction;
     private channel: any;
     private analysisAnimation: ImageAnalysisAnimation | null = null;
     private onFirstMessageSent?: () => void;
 
-    constructor(channel: any, replyToMessage?: Message) {
+    constructor(channel: any, replyToMessage?: Message, interaction?: ChatInputCommandInteraction) {
         this.channel = channel;
         this.replyToMessage = replyToMessage;
+        this.interaction = interaction;
     }
 
     setAnalysisAnimation(animation: ImageAnalysisAnimation): void {
@@ -106,21 +109,27 @@ export class DiscordMessageManager {
 
             const currentContent = cleanDiscordText(rawContent);
 
-            // Vérifier si on a un message d'analyse à réutiliser
-            const analysisMessage = this.analysisAnimation?.getMessage();
-            if (analysisMessage) {
-                await this.analysisAnimation!.stop();
-                await analysisMessage.edit(currentContent);
-                this.messages.push(analysisMessage);
-                this.analysisAnimation!.clearMessage();
+            // Si c'est une interaction, utiliser editReply pour le premier message (qui était déféré)
+            if (this.interaction) {
+                const message = await this.interaction.editReply({content: currentContent});
+                this.messages.push(message as Message);
             } else {
-                // Créer un nouveau message
-                if (this.replyToMessage) {
-                    const message = await this.replyToMessage.reply({content: currentContent, allowedMentions: {repliedUser: true}});
-                    this.messages.push(message);
+                // Vérifier si on a un message d'analyse à réutiliser
+                const analysisMessage = this.analysisAnimation?.getMessage();
+                if (analysisMessage) {
+                    await this.analysisAnimation!.stop();
+                    await analysisMessage.edit(currentContent);
+                    this.messages.push(analysisMessage);
+                    this.analysisAnimation!.clearMessage();
                 } else {
-                    const message = await this.channel.send(currentContent);
-                    this.messages.push(message);
+                    // Créer un nouveau message
+                    if (this.replyToMessage) {
+                        const message = await this.replyToMessage.reply({content: currentContent, allowedMentions: {repliedUser: true}});
+                        this.messages.push(message);
+                    } else {
+                        const message = await this.channel.send(currentContent);
+                        this.messages.push(message);
+                    }
                 }
             }
 
@@ -140,13 +149,20 @@ export class DiscordMessageManager {
                 break;
             }
             const currentContent = cleanDiscordText(rawContent);
-            const message = await this.channel.send(currentContent);
-            this.messages.push(message);
+
+            // Pour les chunks supplémentaires, utiliser followUp si c'est une interaction
+            if (this.interaction) {
+                const message = await this.interaction.followUp({content: currentContent});
+                this.messages.push(message as Message);
+            } else {
+                const message = await this.channel.send(currentContent);
+                this.messages.push(message);
+            }
         }
 
         // OPTIMISATION : Mettre à jour UNIQUEMENT le dernier message (celui en cours d'édition)
-        // Au lieu de mettre à jour TOUS les messages à chaque fois
-        if (this.messages.length > 0 && this.responseChunks.length > 0) {
+        // SAUF pour les interactions où on ne peut PAS éditer les followUp
+        if (this.messages.length > 0 && this.responseChunks.length > 0 && !this.interaction) {
             const lastIndex = this.messages.length - 1;
             const message = this.messages[lastIndex];
             const rawChunk = this.responseChunks[lastIndex];
@@ -158,9 +174,16 @@ export class DiscordMessageManager {
                 }
             }
         }
+        // Pour les interactions, on ne peut pas faire d'edit sur les followUp
+        // On envoie simplement de nouveaux followUp quand le chunk est plein
     }
 
     async finalizeLastMessage(): Promise<void> {
+        // Pour les interactions, on ne peut pas éditer les followUp, donc on skip
+        if (this.interaction) {
+            return;
+        }
+
         if (this.messages.length > 0 && this.responseChunks.length > 0) {
             const finalContent = cleanDiscordText(this.responseChunks[this.responseChunks.length - 1]);
             await this.messages[this.messages.length - 1].edit(finalContent);
