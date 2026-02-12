@@ -42,9 +42,8 @@ const PAYOUTS: { [key: string]: number } = {
     "🍊🍊": 15,
     "🍋🍋": 10,
     "🍒🍒": 5,
-
-    // 🔥 HIGH RISK
-    "default": -50
+    
+    "default": -25
 };
 
 
