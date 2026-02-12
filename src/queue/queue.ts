@@ -289,10 +289,14 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         // Charger les prompts système avec le contexte approprié (DM ou serveur)
         const {finalPrompt: finalSystemPrompt} = ollamaService.loadSystemPrompts(channel.id, isDM);
 
-        // Charger la mémoire appropriée
-        let recentTurns;
+        // Charger la mémoire appropriée (sauf si skipMemory est activé)
+        let recentTurns: any[];
 
-        if (isDM) {
+        if (skipMemory) {
+            // Ne pas charger de mémoire
+            recentTurns = [];
+            logger.info(`Memory skipped (skipMemory flag)`);
+        } else if (isDM) {
             // Charger la mémoire DM de l'utilisateur
             recentTurns = await getDMRecentTurns(userId, MEMORY_MAX_TURNS);
             logger.info(`${recentTurns.length} DM turns loaded for ${userName}`);
@@ -438,11 +442,18 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                 }
             }, 5000); // Attendre 5 secondes avant d'afficher le message
 
-            const throttleResponseInterval = setInterval(() => {
-                if (sendMessage) {
-                    messageManager.throttleUpdate().catch((err) => logger.error("[Throttle] Update error:", err));
-                }
-            }, DISCORD_TYPING_UPDATE_INTERVAL);
+            // Pour les interactions, on désactive le throttling (on enverra tout d'un coup à la fin)
+            // Pour les messages normaux, on garde le throttling pour la mise à jour en temps réel
+            let throttleResponseInterval: NodeJS.Timeout | null = null;
+            if (!interaction) {
+                throttleResponseInterval = setInterval(() => {
+                    if (sendMessage) {
+                        messageManager.throttleUpdate().catch((err) => logger.error("[Throttle] Update error:", err));
+                    }
+                }, DISCORD_TYPING_UPDATE_INTERVAL);
+            } else {
+                logger.info("Interaction detected - streaming disabled, will send complete message at the end");
+            }
 
 
             return new ReadableStream({
@@ -453,7 +464,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                         return reader?.read().then(async function ({done, value}) {
                             if (streamInfo.abortFlag) {
                                 logger.info(`Stream aborted by user for channel ${channelKey}`);
-                                clearInterval(throttleResponseInterval);
+                                if (throttleResponseInterval) clearInterval(throttleResponseInterval);
                                 if (typingInterval) clearInterval(typingInterval);
                                 await analysisAnimation.stop();
                                 activeStreams.delete(channelKey);
@@ -477,8 +488,24 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                 }
 
                                 await wait(2000);
-                                if (sendMessage && messageManager.hasMessages()) {
-                                    await messageManager.finalizeLastMessage();
+
+                                // Pour les interactions, envoyer le message complet d'un coup
+                                if (interaction && sendMessage) {
+                                    logger.info("Sending complete message for interaction (no streaming)");
+                                    messageManager.addToCurrentChunk(result);
+                                    await messageManager.throttleUpdate(true); // Force=true pour envoyer même si < 20 chars
+                                } else if (sendMessage) {
+                                    // Pour les messages normaux, finaliser ou créer le message
+                                    if (messageManager.hasMessages()) {
+                                        // Des messages ont été créés pendant le streaming, les finaliser
+                                        await messageManager.finalizeLastMessage();
+                                    } else {
+                                        // Aucun message créé (réponse courte < 20 chars), créer maintenant
+                                        logger.info("No messages created during streaming, creating final message now");
+                                        const cleanedResult = await emojiHandler.extractAndApply(result);
+                                        messageManager.addToCurrentChunk(cleanedResult);
+                                        await messageManager.throttleUpdate(true); // Force=true pour envoyer même si < 20 chars
+                                    }
                                 }
 
                                 // Nettoyer et sauvegarder
@@ -570,7 +597,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                 await clearStatus(client);
 
                                 activeStreams.delete(channelKey);
-                                clearInterval(throttleResponseInterval);
+                                if (throttleResponseInterval) clearInterval(throttleResponseInterval);
                                 if (typingInterval) clearInterval(typingInterval);
                                 controller.close();
 
@@ -620,14 +647,24 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
                                 result += chunk;
 
-                                const cleanedResult = await emojiHandler.extractAndApply(result);
-                                messageManager.addToCurrentChunk(cleanedResult);
+                                // Pour les interactions, on accumule sans envoyer (pas de streaming)
+                                // Pour les messages normaux, on met à jour les chunks en temps réel
+                                if (!interaction) {
+                                    const cleanedResult = await emojiHandler.extractAndApply(result);
+                                    messageManager.addToCurrentChunk(cleanedResult);
 
-                                // Envoyer le premier message immédiatement pour arrêter le typing indicator
-                                if (!firstChunkReceived && sendMessage && cleanedResult.trim().length > 0) {
-                                    firstChunkReceived = true;
-                                    if (loadingTimeout) clearTimeout(loadingTimeout); // Annuler le timeout de chargement
-                                    await messageManager.throttleUpdate().catch((err) => logger.error("[FirstChunk] Update error:", err));
+                                    // Envoyer le premier message immédiatement pour arrêter le typing indicator
+                                    if (!firstChunkReceived && sendMessage && cleanedResult.trim().length > 0) {
+                                        firstChunkReceived = true;
+                                        if (loadingTimeout) clearTimeout(loadingTimeout); // Annuler le timeout de chargement
+                                        await messageManager.throttleUpdate().catch((err) => logger.error("[FirstChunk] Update error:", err));
+                                    }
+                                } else {
+                                    // Pour les interactions, juste nettoyer le timeout si on reçoit le premier chunk
+                                    if (!firstChunkReceived) {
+                                        firstChunkReceived = true;
+                                        if (loadingTimeout) clearTimeout(loadingTimeout);
+                                    }
                                 }
                             }
 

@@ -98,12 +98,13 @@ export class DiscordMessageManager {
         }
     }
 
-    async throttleUpdate(): Promise<void> {
+    async throttleUpdate(force: boolean = false): Promise<void> {
         // Créer le premier message si nécessaire
         if (this.messages.length === 0) {
             const rawContent = this.responseChunks[0];
             // Attendre d'avoir au moins 20 caractères avant d'envoyer le premier message
-            if (!rawContent || rawContent.trim().length < 20) {
+            // SAUF si force=true (appel final)
+            if (!rawContent || (!force && rawContent.trim().length < 20)) {
                 return;
             }
 

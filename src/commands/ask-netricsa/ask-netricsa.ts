@@ -12,7 +12,7 @@ const logger = createLogger("AskNetricsaCmd");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("ask-netricsa")
-        .setDescription("💬 Pose une question à Netricsa")
+        .setDescription("💬 Pose une question à Netricsa (Aucune mémoire entre les interactions)")
         .addStringOption((option) =>
             option
                 .setName("question")
@@ -156,6 +156,7 @@ module.exports = {
                 referencedMessage: referencedMessage || undefined, // Message référencé (si fourni)
                 imageUrls: imageUrls.length > 0 ? imageUrls : undefined, // Images (si fournies)
                 originalUserMessage: question,
+                skipMemory: true, // Ne pas enregistrer dans la mémoire et ne pas charger l'historique
             });
 
             // Enregistrer la conversation IA dans les statistiques
