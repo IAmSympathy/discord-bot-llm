@@ -277,8 +277,8 @@ module.exports = {
             }
 
             let baseContent = amount === 1
-                ? `Voici l'image que tu m'as demandé de réimaginer`
-                : `Voici ${amount} versions de l'image que tu m'as demandé de réimaginer`;
+                ? `Voici l'image que tu m'as demandé de réimaginer :`
+                : `Voici ${amount} versions de l'image que tu m'as demandé de réimaginer :`;
 
             try {
                 const finalMessage = await progressMessage.edit({

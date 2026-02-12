@@ -41,6 +41,7 @@ interface DirectLLMRequest {
     skipMemory?: boolean; // Flag pour ne pas enregistrer dans la mémoire (ex: messages de bienvenue)
     returnResponse?: boolean; // Flag pour retourner le contenu final généré
     interaction?: ChatInputCommandInteraction; // Interaction optionnelle pour les messages éphémères
+    progressMessage?: any; // Message d'animation déjà créé (comme /imagine) à réutiliser pour la réponse
 }
 
 // Configuration mémoire persistante

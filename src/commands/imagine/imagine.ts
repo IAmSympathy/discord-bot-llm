@@ -174,8 +174,8 @@ module.exports = {
             }
 
             let baseContent = amount === 1
-                ? `Voici l'image que tu m'as demandé d'imaginer`
-                : `Voici ${amount} versions de l'image que tu m'as demandé d'imaginer`;
+                ? `Voici l'image que tu m'as demandé d'imaginer :`
+                : `Voici ${amount} versions de l'image que tu m'as demandé d'imaginer :`;
 
             // Envoyer les images avec l'embed
             try {

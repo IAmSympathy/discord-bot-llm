@@ -153,21 +153,48 @@ module.exports = {
                 }
             }
 
+            // Si on a une image, créer l'animation EXACTEMENT comme /imagine
+            let progressMessage: any = null;
+            let animationInterval: NodeJS.Timeout | null = null;
+
+            if (imageUrls.length > 0) {
+                // Animation d'analyse d'image (comme /imagine)
+                progressMessage = await interaction.reply({
+                    content: "`Analyse de l'image.`"
+                });
+
+                // Animation des points (EXACTEMENT comme /imagine)
+                let dotCount = 1;
+                animationInterval = setInterval(async () => {
+                    dotCount = (dotCount % 3) + 1;
+                    const dots = ".".repeat(dotCount);
+
+                    await progressMessage
+                        .edit(`\`Analyse de l'image${dots}\``)
+                        .catch(() => {
+                        });
+                }, 2000); // TYPING_ANIMATION_INTERVAL = 2000ms
+            }
+
             // Traiter la requête LLM
-            // Note: On passe l'interaction au lieu d'un message pour que le système
-            // utilise followUp au lieu de reply/edit (qui ne marchent pas pour les chunks)
+            // Note: Si on a une animation, l'interaction est déjà "replied", on passera progressMessage
             await processLLMRequest({
                 prompt: question,
                 userId: interaction.user.id,
                 userName: interaction.user.displayName,
                 channel: interaction.channel as TextChannel,
                 client: interaction.client,
-                interaction: interaction, // Passer l'interaction pour gérer les followUp
-                referencedMessage: referencedMessage || undefined, // Message référencé (si fourni)
-                imageUrls: imageUrls.length > 0 ? imageUrls : undefined, // Images (si fournies)
+                interaction: progressMessage ? undefined : interaction, // Si animation, pas d'interaction (déjà replied)
+                referencedMessage: referencedMessage || undefined,
+                imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
                 originalUserMessage: question,
-                skipMemory: true, // Ne pas enregistrer dans la mémoire et ne pas charger l'historique
+                skipMemory: true,
             });
+
+            // Arrêter l'animation si elle existe
+            if (animationInterval) {
+                clearInterval(animationInterval);
+            }
 
             // Enregistrer la conversation IA dans les statistiques
             recordAIConversationStats(interaction.user.id, interaction.user.displayName);
