@@ -1,6 +1,7 @@
 import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
-import {abortImageAnalysis, abortStream} from "../../queue/queue";
+import {abortImageAnalysis} from "../../queue/queue";
 import {abortImageGeneration, abortImageGenerationByChannel} from "../../services/imageGenerationTracker";
+import {abortChannelOperations, abortUserOperation} from "../../queue/globalQueue";
 import {logCommand} from "../../utils/discordLogger";
 import {EnvConfig} from "../../utils/envConfig";
 import {createInfoEmbed, handleInteractionError, safeReply} from "../../utils/interactionUtils";
@@ -16,31 +17,34 @@ module.exports = {
             // Vérifier si l'utilisateur est modérateur ou owner
             const isAdminOrOwner = hasOwnerPermission(interaction.member as any) || hasModeratorPermission(interaction.member as any);
 
-            // Essayer d'arrêter le stream et l'analyse d'image (avec permissions)
-            const streamAborted = abortStream(channelKey, requestingUserId, isAdminOrOwner);
+            // Essayer d'arrêter toutes les opérations via la queue globale
+            let globalQueueAborted = false;
+            if (isAdminOrOwner) {
+                // Admin peut arrêter toutes les opérations dans le canal
+                globalQueueAborted = abortChannelOperations(channelKey, requestingUserId, true);
+            } else {
+                // Utilisateur normal ne peut arrêter que ses propres opérations
+                globalQueueAborted = abortUserOperation(requestingUserId);
+            }
+
+            // Essayer d'arrêter l'analyse d'image (pour les anciennes animations en cours)
             const imageAnalysisAborted = await abortImageAnalysis(channelKey, requestingUserId, isAdminOrOwner);
 
-            // Pour les générations d'images :
-            // Si admin/owner : chercher toutes les générations dans le canal
-            // Sinon : chercher seulement les générations de l'utilisateur
+            // Essayer d'arrêter les générations d'images (pour les jobs Python en cours)
             let imageGenerationAborted = false;
-
             if (isAdminOrOwner) {
-                // Admin peut arrêter n'importe quelle génération dans le canal
                 imageGenerationAborted = abortImageGenerationByChannel(channelKey, requestingUserId, true);
             } else {
-                // Utilisateur normal ne peut arrêter que ses propres générations
                 imageGenerationAborted = abortImageGeneration(requestingUserId);
             }
 
-
-            const success = streamAborted || imageAnalysisAborted || imageGenerationAborted;
+            const success = globalQueueAborted || imageAnalysisAborted || imageGenerationAborted;
 
             if (success) {
                 let message = "D'accord, j'arrête";
                 const actions = [];
 
-                if (streamAborted) actions.push("ma réfléxion");
+                if (globalQueueAborted) actions.push("ma réfléxion");
                 if (imageAnalysisAborted) actions.push("l'analyse d'image");
                 if (imageGenerationAborted) actions.push("la génération d'image");
 
@@ -51,14 +55,14 @@ module.exports = {
                 await safeReply(interaction, message, true);
 
                 console.log(`[Stop Command] Aborted by ${interaction.user.displayName}: ${[
-                    streamAborted && 'Stream',
+                    globalQueueAborted && 'Global queue operation',
                     imageAnalysisAborted && 'Image analysis',
                     imageGenerationAborted && 'Image generation',
                 ].filter(Boolean).join(', ')}`);
 
                 // Logger l'arrêt forcé
                 const logActions = [];
-                if (streamAborted) logActions.push("Arrêt du raisonnement");
+                if (globalQueueAborted) logActions.push("Arrêt de l'opération");
                 if (imageAnalysisAborted) logActions.push("Arrêt de l'analyse d'image");
                 if (imageGenerationAborted) logActions.push("Arrêt de la génération d'image");
 

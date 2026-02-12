@@ -3,12 +3,13 @@ import {createLogger} from "../../utils/logger";
 import {recordAIConversationStats} from "../../services/statsRecorder";
 import {setBotPresence} from "../../bot";
 import {isLowPowerMode} from "../../services/botStateService";
-import {createLowPowerEmbed, createStandbyEmbed} from "../../utils/embedBuilder";
+import {createErrorEmbed, createLowPowerEmbed, createStandbyEmbed} from "../../utils/embedBuilder";
 import {isStandbyMode} from "../../services/standbyModeService";
 import {TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 import {UserProfileService} from "../../services/userProfileService";
 import {NETRICSA_USER_ID, NETRICSA_USERNAME} from "../../services/userStatsService";
 import {processLLMRequest} from "../../queue/queue";
+import {getUserQueueOperation, isUserInQueue} from "../../queue/globalQueue";
 
 const logger = createLogger("AskNetricsaCmd");
 
@@ -41,6 +42,17 @@ module.exports = {
         // Vérifier que l'utilisateur est membre du serveur requis
         const {checkServerMembershipOrReply} = require("../../utils/serverMembershipCheck");
         if (!await checkServerMembershipOrReply(interaction)) {
+            return;
+        }
+
+        // Vérifier si l'utilisateur est déjà dans la queue globale
+        if (isUserInQueue(interaction.user.id)) {
+            const operation = getUserQueueOperation(interaction.user.id);
+            const errorEmbed = createErrorEmbed(
+                "⏳ Opération en Cours",
+                `Tu as déjà une opération en cours (${operation}). Attends qu'elle soit terminée avant d'en lancer une nouvelle, ou utilise \`/stop\` pour l'annuler.`
+            );
+            await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
             return;
         }
 

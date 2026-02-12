@@ -3,7 +3,7 @@ import {upscaleImage} from "../../services/imageGenerationService";
 import {logBotImageUpscale} from "../../utils/discordLogger";
 import {createErrorEmbed, createLowPowerEmbed, createStandbyEmbed} from "../../utils/embedBuilder";
 import {createLogger} from "../../utils/logger";
-import {hasActiveGeneration, registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
+import {registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
 import {formatTime} from "../../utils/timeFormat";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
@@ -15,6 +15,7 @@ import * as path from "path";
 import * as https from "https";
 import * as http from "http";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
+import {addUserToQueue, getUserQueueOperation, isOperationAborted, isUserInQueue, registerActiveOperation, removeUserFromQueue, unregisterActiveOperation} from "../../queue/globalQueue";
 
 const logger = createLogger("UpscaleCmd");
 
@@ -98,11 +99,12 @@ module.exports = {
         let statusId: string = "";
 
         try {
-            // Vérifier si l'utilisateur a déjà une génération en cours
-            if (hasActiveGeneration(interaction.user.id)) {
+            // Vérifier si l'utilisateur est déjà dans la queue globale
+            if (isUserInQueue(interaction.user.id)) {
+                const operation = getUserQueueOperation(interaction.user.id);
                 const errorEmbed = createErrorEmbed(
-                    "⏳ Génération en Cours",
-                    "Tu as déjà une génération d'image en cours. Attends qu'elle soit terminée avant d'en lancer une nouvelle."
+                    "⏳ Opération en Cours",
+                    `Tu as déjà une opération en cours (${operation}). Attends qu'elle soit terminée avant d'en lancer une nouvelle, ou utilise \`/stop\` pour l'annuler.`
                 );
                 await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
                 return;
@@ -163,7 +165,14 @@ module.exports = {
                 });
             }, TYPING_ANIMATION_INTERVAL);
 
-            // Enregistrer l'upscaling dans le tracker
+            // Ajouter l'utilisateur à la queue globale
+            addUserToQueue(interaction.user.id, 'upscale');
+
+            // Créer un ID unique pour cette opération
+            const operationId = `upscale-${interaction.user.id}-${Date.now()}`;
+            registerActiveOperation(operationId, 'upscale', interaction.user.id, interaction.channelId);
+
+            // Enregistrer l'upscaling dans le tracker (pour l'annulation spécifique)
             registerImageGeneration(
                 interaction.user.id,
                 interaction.channelId,
@@ -173,6 +182,24 @@ module.exports = {
 
             // Télécharger l'image
             tempFilePath = await downloadImage(attachment.url);
+
+            // Vérifier si l'opération a été annulée
+            if (isOperationAborted(operationId)) {
+                logger.info(`Upscale cancelled by user for ${interaction.user.id}`);
+                clearInterval(animationInterval);
+                unregisterImageGeneration(interaction.user.id);
+                unregisterActiveOperation(operationId);
+                removeUserFromQueue(interaction.user.id);
+
+                // Nettoyer le fichier temporaire
+                if (tempFilePath && fs.existsSync(tempFilePath)) {
+                    fs.unlinkSync(tempFilePath);
+                }
+
+                await progressMessage.edit("🛑 Upscaling annulé.");
+                await clearStatus(interaction.client, statusId);
+                return;
+            }
 
             // Upscaler l'image avec le scale spécifié
             const startTime = Date.now();
@@ -191,8 +218,10 @@ module.exports = {
             // Arrêter l'animation
             clearInterval(animationInterval);
 
-            // Désenregistrer l'upscaling du tracker
+            // Désenregistrer l'upscaling du tracker et de la queue globale
             unregisterImageGeneration(interaction.user.id);
+            unregisterActiveOperation(operationId);
+            removeUserFromQueue(interaction.user.id);
 
             // Envoyer l'image upscalée
             try {
@@ -293,6 +322,7 @@ module.exports = {
 
             // Désenregistrer l'upscaling en cas d'erreur
             unregisterImageGeneration(interaction.user.id);
+            removeUserFromQueue(interaction.user.id);
 
             // Réinitialiser le statut Discord
             await clearStatus(interaction.client, statusId);

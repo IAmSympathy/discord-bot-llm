@@ -3,7 +3,7 @@ import {generateImage} from "../../services/imageGenerationService";
 import {createLowPowerEmbed, createStandbyEmbed, logBotImageReimagine} from "../../utils/discordLogger";
 import {createErrorEmbed} from "../../utils/embedBuilder";
 import {createLogger} from "../../utils/logger";
-import {hasActiveGeneration, registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
+import {registerImageGeneration, unregisterImageGeneration, updateJobId} from "../../services/imageGenerationTracker";
 import {formatTime} from "../../utils/timeFormat";
 import {BotStatus, clearStatus, setStatus} from "../../services/statusService";
 import {TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
@@ -11,6 +11,7 @@ import {isLowPowerMode} from "../../services/botStateService";
 import {NETRICSA_USER_ID, NETRICSA_USERNAME} from "../../services/userStatsService";
 import {recordImageReimaginedStats} from "../../services/statsRecorder";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
+import {addUserToQueue, getUserQueueOperation, isOperationAborted, isUserInQueue, registerActiveOperation, removeUserFromQueue, unregisterActiveOperation} from "../../queue/globalQueue";
 
 const logger = createLogger("ReimageCmd");
 
@@ -66,11 +67,12 @@ module.exports = {
         let statusId: string = "";
 
         try {
-            // Vérifier si l'utilisateur a déjà une génération en cours
-            if (hasActiveGeneration(interaction.user.id)) {
+            // Vérifier si l'utilisateur est déjà dans la queue globale
+            if (isUserInQueue(interaction.user.id)) {
+                const operation = getUserQueueOperation(interaction.user.id);
                 const errorEmbed = createErrorEmbed(
-                    "⏳ Génération en Cours",
-                    "Tu as déjà une génération d'image en cours. Attends qu'elle soit terminée avant d'en lancer une nouvelle."
+                    "⏳ Opération en Cours",
+                    `Tu as déjà une opération en cours (${operation}). Attends qu'elle soit terminée avant d'en lancer une nouvelle, ou utilise \`/stop\` pour l'annuler.`
                 );
                 await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
                 return;
@@ -138,7 +140,14 @@ module.exports = {
                 });
             }, TYPING_ANIMATION_INTERVAL);
 
-            // Enregistrer la génération dans le tracker
+            // Ajouter l'utilisateur à la queue globale
+            addUserToQueue(interaction.user.id, 'reimagine');
+
+            // Créer un ID unique pour cette opération
+            const operationId = `reimagine-${interaction.user.id}-${Date.now()}`;
+            registerActiveOperation(operationId, 'reimagine', interaction.user.id, interaction.channelId);
+
+            // Enregistrer la génération dans le tracker (pour l'annulation spécifique)
             registerImageGeneration(
                 interaction.user.id,
                 interaction.channelId,
@@ -231,6 +240,24 @@ module.exports = {
             const results = [];
 
             for (let i = 0; i < amount; i++) {
+                // Vérifier si l'opération a été annulée
+                if (isOperationAborted(operationId)) {
+                    logger.info(`Reimagine cancelled by user for ${interaction.user.id}`);
+                    clearInterval(animationInterval);
+                    unregisterImageGeneration(interaction.user.id);
+                    unregisterActiveOperation(operationId);
+                    removeUserFromQueue(interaction.user.id);
+
+                    // Nettoyer le fichier temporaire
+                    if (tempFilePath && fs.existsSync(tempFilePath)) {
+                        fs.unlinkSync(tempFilePath);
+                    }
+
+                    await progressMessage.edit("🛑 Réimagination annulée.");
+                    await clearStatus(interaction.client, statusId);
+                    return;
+                }
+
                 const result = await generateImage({
                     prompt: enhancedPrompt,
                     negativePrompt: negativePrompt,
@@ -256,8 +283,10 @@ module.exports = {
             // Arrêter l'animation
             clearInterval(animationInterval);
 
-            // Désenregistrer la génération du tracker
+            // Désenregistrer la génération du tracker et de la queue globale
             unregisterImageGeneration(interaction.user.id);
+            unregisterActiveOperation(operationId);
+            removeUserFromQueue(interaction.user.id);
 
             // Créer un embed pour afficher les informations de manière compacte
             const {EmbedBuilder} = require("discord.js");
@@ -382,6 +411,7 @@ module.exports = {
 
             // Désenregistrer la génération en cas d'erreur
             unregisterImageGeneration(interaction.user.id);
+            removeUserFromQueue(interaction.user.id);
 
             // Réinitialiser le statut Discord
             await clearStatus(interaction.client, statusId);
