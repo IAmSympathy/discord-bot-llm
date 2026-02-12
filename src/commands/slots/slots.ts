@@ -195,7 +195,7 @@ module.exports = {
                     `<@${userId}> lance la machine !\n\n` +
                     `🎰 [ ${finalSymbols[0]} | ${finalSymbols[1]} | ${finalSymbols[2]} ]\n\n` +
                     `${resultMessage}\n` +
-                    `${xp > 0 ? '+' : ''}${xp} XP 💫`
+                    `💫 ${xp > 0 ? '+' : ''}${xp} XP`
                 )
                 .setTimestamp();
 
