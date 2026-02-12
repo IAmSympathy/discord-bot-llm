@@ -6,6 +6,7 @@ import {setBotPresence} from "../../bot";
 import {isLowPowerMode} from "../../services/botStateService";
 import {createLowPowerEmbed, createStandbyEmbed} from "../../utils/embedBuilder";
 import {isStandbyMode} from "../../services/standbyModeService";
+import {TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 
 const logger = createLogger("AskNetricsaCmd");
 
@@ -66,12 +67,6 @@ module.exports = {
             const question = interaction.options.getString("question", true);
             const imageAttachment = interaction.options.getAttachment("image", false);
             const replyToId = interaction.options.getString("reply-to", false);
-
-            // NE PAS déférer si on a une image - l'animation le fera avec interaction.reply()
-            // Sinon déférer car le traitement peut prendre du temps
-            if (!imageAttachment) {
-                await interaction.deferReply();
-            }
 
             logger.info(`Processing /ask-netricsa from ${interaction.user.displayName}: ${question}${imageAttachment ? ' [with image]' : ''}${replyToId ? ' [replying to message]' : ''}`);
 
@@ -153,28 +148,27 @@ module.exports = {
                 }
             }
 
-            // Si on a une image, créer l'animation EXACTEMENT comme /imagine
-            let progressMessage: any = null;
             let animationInterval: NodeJS.Timeout | null = null;
 
-            if (imageUrls.length > 0) {
-                // Animation d'analyse d'image (comme /imagine)
-                progressMessage = await interaction.reply({
-                    content: "`Analyse de l'image.`"
-                });
+            // Animation d'analyse d'image (comme /imagine)
+            const progressMessage = await interaction.reply({
+                content: imageUrls.length > 0
+                    ? "`Analyse en cours.`"
+                    : "`Netricsa réfléchit.`"
+            });
 
-                // Animation des points (EXACTEMENT comme /imagine)
-                let dotCount = 1;
-                animationInterval = setInterval(async () => {
-                    dotCount = (dotCount % 3) + 1;
-                    const dots = ".".repeat(dotCount);
+            // Animation des points (EXACTEMENT comme /imagine)
+            let dotCount = 1;
+            animationInterval = setInterval(async () => {
+                dotCount = (dotCount % 3) + 1;
+                const dots = ".".repeat(dotCount);
 
-                    await progressMessage
-                        .edit(`\`Analyse de l'image${dots}\``)
-                        .catch(() => {
-                        });
-                }, 2000); // TYPING_ANIMATION_INTERVAL = 2000ms
-            }
+                await progressMessage
+                    .edit(imageUrls.length > 0 ? `\`Analyse de l'image${dots}\`` : `\`Netricsa réfléchit${dots}\``)
+                    .catch(() => {
+                    });
+            }, TYPING_ANIMATION_INTERVAL);
+
 
             // Traiter la requête LLM
             // Note: Si on a une animation, l'interaction est déjà "replied", on passera progressMessage
@@ -184,7 +178,7 @@ module.exports = {
                 userName: interaction.user.displayName,
                 channel: interaction.channel as TextChannel,
                 client: interaction.client,
-                interaction: progressMessage ? undefined : interaction, // Si animation, pas d'interaction (déjà replied)
+                interaction: undefined, // Si animation, pas d'interaction (déjà replied)
                 referencedMessage: referencedMessage || undefined,
                 imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
                 originalUserMessage: question,
