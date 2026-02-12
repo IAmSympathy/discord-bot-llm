@@ -188,6 +188,7 @@ module.exports = {
                 originalUserMessage: question,
                 skipMemory: true, // Pas de mémoire pour ask-netricsa
                 progressMessage: progressMessage, // Passer le message d'animation
+                animationInterval: animationInterval, // Passer l'interval pour qu'il soit arrêté
                 sendMessage: true
             });
 

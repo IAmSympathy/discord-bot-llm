@@ -73,6 +73,7 @@ export class DiscordMessageManager {
     private interaction?: ChatInputCommandInteraction;
     private channel: any;
     private analysisAnimation: ImageAnalysisAnimation | null = null;
+    private progressMessage: Message | null = null; // Message d'animation fourni (pour /ask-netricsa)
     private onFirstMessageSent?: () => void;
 
     constructor(channel: any, replyToMessage?: Message, interaction?: ChatInputCommandInteraction) {
@@ -83,6 +84,10 @@ export class DiscordMessageManager {
 
     setAnalysisAnimation(animation: ImageAnalysisAnimation): void {
         this.analysisAnimation = animation;
+    }
+
+    setProgressMessage(message: Message): void {
+        this.progressMessage = message;
     }
 
     setOnFirstMessageSent(callback: () => void): void {
@@ -120,13 +125,34 @@ export class DiscordMessageManager {
 
             const currentContent = cleanDiscordText(rawContent);
 
-            // Vérifier si on a un message d'analyse à réutiliser (pour interactions ET messages normaux)
-            const analysisMessage = this.analysisAnimation?.getMessage();
-            if (analysisMessage) {
+            // Priorité 1 : Vérifier si on a un progressMessage fourni (comme /ask-netricsa)
+            if (this.progressMessage) {
+                try {
+                    await this.progressMessage.edit(currentContent);
+                    this.messages.push(this.progressMessage);
+                    this.progressMessage = null; // Ne réutiliser qu'une fois
+                } catch (editError) {
+                    logger.warn("Cannot edit progressMessage, falling back to new message");
+                    // Fallback : créer un nouveau message
+                    if (this.interaction) {
+                        const message = await this.interaction.followUp({content: currentContent});
+                        this.messages.push(message as Message);
+                    } else if (this.replyToMessage) {
+                        const message = await this.replyToMessage.reply({content: currentContent, allowedMentions: {repliedUser: true}});
+                        this.messages.push(message);
+                    } else {
+                        const message = await this.channel.send(currentContent);
+                        this.messages.push(message);
+                    }
+                }
+            }
+            // Priorité 2 : Vérifier si on a un message d'analyse à réutiliser
+            else if (this.analysisAnimation?.getMessage()) {
+                const analysisMessage = this.analysisAnimation.getMessage();
                 // Arrêter l'animation et réutiliser le message
                 await this.analysisAnimation!.stop();
-                await analysisMessage.edit(currentContent);
-                this.messages.push(analysisMessage);
+                await analysisMessage!.edit(currentContent);
+                this.messages.push(analysisMessage!);
                 this.analysisAnimation!.clearMessage();
             } else if (this.interaction) {
                 // Pas d'animation, l'interaction n'a pas encore été répondue

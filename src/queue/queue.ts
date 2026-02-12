@@ -353,7 +353,20 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
             // Gestionnaires
             const messageManager = new DiscordMessageManager(channel, replyToMessage, interaction);
-            // Toujours passer l'animation au messageManager
+
+            // Si un progressMessage est fourni (comme /ask-netricsa), l'utiliser
+            if (progressMessage) {
+                messageManager.setProgressMessage(progressMessage);
+                logger.info("Using provided progressMessage for response");
+
+                // Arrêter l'animation fournie car le messageManager va éditer le message
+                if (animationInterval) {
+                    clearInterval(animationInterval);
+                    logger.info("Stopped provided animationInterval");
+                }
+            }
+
+            // Toujours passer l'animation au messageManager (pour les cas normaux)
             // - Si l'animation a été utilisée pour l'analyse d'images, elle sera réutilisée pour le premier message
             // - Si c'est une interaction, l'animation n'a pas été créée (skip) donc pas de réutilisation
             messageManager.setAnalysisAnimation(analysisAnimation);
