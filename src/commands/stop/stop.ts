@@ -6,6 +6,7 @@ import {logCommand} from "../../utils/discordLogger";
 import {EnvConfig} from "../../utils/envConfig";
 import {createInfoEmbed, handleInteractionError, safeReply} from "../../utils/interactionUtils";
 import {hasModeratorPermission, hasOwnerPermission} from "../../utils/permissions";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 module.exports = {
     data: new SlashCommandBuilder().setName("stop").setDescription("🛑 Arrête de force le raisonnement, l'analyse d'image(s) et la génération d'image de Netricsa"),
@@ -61,6 +62,7 @@ module.exports = {
                 ].filter(Boolean).join(', ')}`);
 
                 // Logger l'arrêt forcé
+                const channelName = getChannelNameFromInteraction(interaction);
                 const logActions = [];
                 if (globalQueueAborted) logActions.push("Arrêt de l'opération");
                 if (imageAnalysisAborted) logActions.push("Arrêt de l'analyse d'image");
@@ -70,7 +72,7 @@ module.exports = {
                     {name: "👤 Par", value: interaction.user.displayName, inline: true},
                     {name: "⚙️ Action", value: logActions.join(" + "), inline: true},
                     {name: "✅ Statut", value: "Succès", inline: true}
-                ]);
+                ], undefined, channelName);
             } else {
                 // Créer un embed éphémère quand il n'y a rien à arrêter
                 const embed = createInfoEmbed(

@@ -3,6 +3,7 @@ import {logCommand} from "../../utils/discordLogger";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
 import {recordFunCommandStats} from "../../services/statsRecorder";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -106,6 +107,7 @@ module.exports = {
             await interaction.reply({embeds: [embed]});
 
             // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand(
                 `🎲 Lancer de dé${numberOfDice > 1 ? 's' : ''}`,
                 undefined,
@@ -113,7 +115,9 @@ module.exports = {
                     {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
                     {name: "🎲 Dé", value: `${numberOfDice}${diceType.toUpperCase()}`, inline: true},
                     {name: "📊 Résultat", value: numberOfDice > 1 ? `Total: ${total}` : `${results[0]}`, inline: true}
-                ]
+                ],
+                undefined,
+                channelName
             );
 
             // Ajouter XP

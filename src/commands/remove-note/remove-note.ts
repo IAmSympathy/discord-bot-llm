@@ -2,6 +2,7 @@ import {ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder} from "di
 import {UserProfileService} from "../../services/userProfileService";
 import {logCommand} from "../../utils/discordLogger";
 import {createErrorEmbed, createSuccessEmbed, createWarningEmbed} from "../../utils/interactionUtils";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -94,12 +95,13 @@ module.exports = {
             console.log(`[Remove Command] ${interaction.user.username} removed ${removeType} from ${username}: "${content}" (success: ${success})`);
 
             if (success) {
+                const channelName = getChannelNameFromInteraction(interaction);
                 await logCommand(`🗑️ Note supprimée`, undefined, [
                     {name: "👤 Par", value: interaction.user.username, inline: true},
                     {name: "👥 Utilisateur", value: username, inline: true},
                     {name: "🏷️ Type", value: typeLabel, inline: true},
                     {name: "📄 Contenu", value: content.length > 100 ? content.substring(0, 100) + "..." : content, inline: false}
-                ]);
+                ], undefined, channelName);
             }
         } catch (error) {
             console.error("[Remove Command] Error:", error);

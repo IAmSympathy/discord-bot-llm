@@ -7,6 +7,7 @@ import * as fs from "fs";
 import * as path from "path";
 import {EnvConfig} from "../../utils/envConfig";
 import {hasOwnerPermission} from "../../utils/permissions";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const logger = createLogger("TestRewindCmd");
 
@@ -34,9 +35,13 @@ module.exports = {
             logger.info(`Manual rewind triggered by ${interaction.user.username}`);
 
             // Log la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand(
                 interaction.user.username,
-                "/test-rewind"
+                "/test-rewind",
+                undefined,
+                undefined,
+                channelName
             );
 
             // Sauvegarder l'état actuel

@@ -3,6 +3,7 @@ import {clearAllMemory} from "../../queue/queue";
 import {hasOwnerPermission} from "../../utils/permissions";
 import {createInfoEmbed, createSuccessEmbed, createWarningEmbed, logCommand} from "../../utils/discordLogger";
 import {handleInteractionError, replyWithError} from "../../utils/interactionUtils";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 module.exports = {
     data: new SlashCommandBuilder().setName("reset").setDescription("[TAH-UM] 🔄 Efface la mémoire de conversation de Netricsa sur le serveur"),
@@ -67,9 +68,10 @@ module.exports = {
                     console.log(`[Reset-Memory Command] Conversation memory cleared by ${interaction.user.displayName}`);
 
                     // Logger la commande
+                    const channelName = getChannelNameFromInteraction(interaction);
                     await logCommand("🗑️ Mémoire effacée", undefined, [
                         {name: "👤 Par", value: interaction.user.displayName, inline: true},
-                    ]);
+                    ], undefined, channelName);
 
                     // Mettre à jour le message éphémère
                     const successEmbed = createSuccessEmbed(

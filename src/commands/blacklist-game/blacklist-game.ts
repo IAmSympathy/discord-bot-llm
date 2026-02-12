@@ -5,6 +5,7 @@ import {createSuccessEmbed, logCommand} from "../../utils/discordLogger";
 import {hasOwnerPermission} from "../../utils/permissions";
 import {setLowPowerStatus, setNormalStatus} from "../../services/statusService";
 import {createErrorEmbed, handleInteractionError, replyWithError} from "../../utils/interactionUtils";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -58,6 +59,7 @@ module.exports = {
             }
 
             const subcommand = interaction.options.getSubcommand();
+            const channelName = getChannelNameFromInteraction(interaction);
 
             switch (subcommand) {
                 case "add-current": {
@@ -95,7 +97,7 @@ module.exports = {
                     await logCommand("🎮 Jeu blacklisté", undefined, [
                         {name: "👤 Par", value: interaction.user.username, inline: true},
                         {name: "🎮 Jeu", value: currentGame, inline: true}
-                    ]);
+                    ], undefined, channelName);
                     break;
                 }
 
@@ -124,7 +126,7 @@ module.exports = {
                     await logCommand("🎮 Jeu blacklisté", undefined, [
                         {name: "👤 Par", value: interaction.user.username, inline: true},
                         {name: "🎮 Jeu", value: gameName, inline: true}
-                    ]);
+                    ], undefined, channelName);
                     break;
                 }
 
@@ -153,7 +155,7 @@ module.exports = {
                         await logCommand("🎮 Jeu retiré de la blacklist", undefined, [
                             {name: "👤 Par", value: interaction.user.username, inline: true},
                             {name: "🎮 Jeu", value: gameName, inline: true}
-                        ]);
+                        ], undefined, channelName);
                     } else {
                         const errorEmbed = createErrorEmbed(
                             "Jeu introuvable",

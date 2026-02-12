@@ -1694,14 +1694,17 @@ async function sendAchievementNotification(
 
         // Fetch le channel seulement si ce n'est pas le startup check et pas un achievement de profil
         let channel: any = null;
-        let isExternalContext = false; // DM ou DM de groupe (pas de guild)
+        let isExternalContext = false; // DM, DM de groupe, ou serveur externe (UserApp)
 
         if (!isStartupCheck && achievement.category !== AchievementCategory.PROFIL) {
             channel = await client.channels.fetch(channelId);
             if (!channel || !channel.isTextBased()) return;
 
-            // Vérifier si on est dans un contexte externe (DM ou DM de groupe)
-            isExternalContext = !channel.guild;
+            // Vérifier si on est dans un contexte externe
+            // 1. Pas de guild (DM ou DM de groupe)
+            // 2. Guild différent du serveur principal (UserApp sur serveur externe)
+            const GUILD_ID = process.env.GUILD_ID;
+            isExternalContext = !channel.guild || (channel.guild && channel.guildId !== GUILD_ID);
         }
 
         const {EmbedBuilder, AttachmentBuilder} = require("discord.js");
@@ -1768,13 +1771,13 @@ async function sendAchievementNotification(
         let targetChannel: TextChannel | null = null;
 
         // Décider si DM ou Public basé sur l'XP, la catégorie et le contexte
-        // - Contexte externe (DM/DM de groupe) : TOUJOURS en DM
+        // - Contexte externe (DM/DM de groupe/Serveur externe) : TOUJOURS en DM
         // - Achievements PROFIL : toujours en DM
         // - Achievements SECRET : toujours en DM
         // - Achievements ≤ 150 XP : en DM
         // - Achievements > 150 XP : en public
         const sendInDM = (
-            isExternalContext || // Nouveau : forcer DM si contexte externe
+            isExternalContext || // Nouveau : forcer DM si contexte externe (DM, Groupe DM ou Serveur externe)
             achievement.category === AchievementCategory.PROFIL ||
             achievement.secret ||
             achievement.xpReward <= 150
@@ -1837,13 +1840,21 @@ async function sendAchievementNotification(
             const notificationType = sendInDM ? "DM" : "Public";
             const achievementType = achievement.secret ? "Secret" : achievement.category;
 
+            // Récupérer le nom du canal
+            let channelName = "Unknown";
+            if (sendInDM) {
+                channelName = `DM avec ${user.displayName || user.username}`;
+            } else if (targetChannel) {
+                channelName = targetChannel.name;
+            }
+
             await logCommand("🏆 Achievement Débloqué", undefined, [
                 {name: "👤 Utilisateur", value: user.username, inline: true},
                 {name: "🎯 Achievement", value: `${achievement.emoji} ${achievement.name}`, inline: true},
                 {name: "🎁 XP", value: `+${achievement.xpReward} XP`, inline: true},
                 {name: "📋 Type", value: achievementType, inline: true},
                 {name: "📨 Notification", value: notificationType, inline: true}
-            ]);
+            ], undefined, channelName);
 
             const {addXP} = require("./xpSystem");
             const member = await client.guilds.cache.first()?.members.fetch(userId);

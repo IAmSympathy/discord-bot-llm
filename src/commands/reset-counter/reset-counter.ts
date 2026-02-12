@@ -5,6 +5,7 @@ import {EnvConfig} from "../../utils/envConfig";
 import {createErrorEmbed, createSuccessEmbed} from "../../utils/embedBuilder";
 import {logCommand} from "../../utils/discordLogger";
 import {handleInteractionError, safeReply} from "../../utils/interactionUtils";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const logger = createLogger("ResetCounterCmd");
 
@@ -16,9 +17,10 @@ module.exports = {
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand("🔄 Compteur réinitialisé", undefined, [
                 {name: "Administrateur", value: interaction.user.username, inline: true}
-            ]);
+            ], undefined, channelName);
 
             // Vérifier qu'on est bien dans un serveur
             if (!interaction.guild) {

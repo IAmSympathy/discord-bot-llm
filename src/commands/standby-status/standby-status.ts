@@ -2,6 +2,7 @@ import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBui
 import {forceConnectivityCheck, getStandbyStats, isStandbyMode} from "../../services/standbyModeService";
 import {logCommand} from "../../utils/discordLogger";
 import {handleInteractionError, safeReply} from "../../utils/interactionUtils";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -59,12 +60,13 @@ module.exports = {
             await safeReply(interaction, {embeds: [embed]}, true);
 
             // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand("🌙 Vérification du mode veille", undefined, [
                 {name: "👤 Par", value: interaction.user.username, inline: true},
                 {name: "📊 État", value: isStandby ? "Veille" : "Normal", inline: true},
                 {name: "🔍 Ollama", value: status.ollama ? "✅" : "❌", inline: true},
                 {name: "🎨 Python API", value: status.pythonAPI ? "✅" : "❌", inline: true}
-            ]);
+            ], undefined, channelName);
 
         } catch (error: any) {
             await handleInteractionError(interaction, error, "StandbyStatus");

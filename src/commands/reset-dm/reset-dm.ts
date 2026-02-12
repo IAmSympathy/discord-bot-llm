@@ -1,7 +1,8 @@
-import {ChatInputCommandInteraction, SlashCommandBuilder} from "discord.js";
+import {ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {clearDMMemory} from "../../services/dmMemoryService";
 import {logCommand} from "../../utils/discordLogger";
 import {createSuccessEmbed, handleInteractionError, safeReply} from "../../utils/interactionUtils";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,17 +19,17 @@ module.exports = {
             const embed = createSuccessEmbed(
                 "Mémoire DM réinitialisée",
                 `Ta mémoire de conversation en DM avec Netricsa a été effacée.\n\n` +
-                `✅ Netricsa ne se souviendra plus de vos conversations précédentes en DM.\n` +
                 `💡 Tu peux maintenant commencer une nouvelle conversation avec elle en lui envoyant un message privé.`
             );
 
-            await safeReply(interaction, {embeds: [embed]}, true);
+            await safeReply(interaction, {embeds: [embed], flags: MessageFlags.Ephemeral}, true);
 
             // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand("🔄 Mémoire DM réinitialisée", undefined, [
                 {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
                 {name: "🆔 User ID", value: userId, inline: true}
-            ]);
+            ], undefined, channelName);
 
         } catch (error: any) {
             await handleInteractionError(interaction, error, "ResetDM");

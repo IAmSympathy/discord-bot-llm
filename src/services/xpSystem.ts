@@ -392,8 +392,12 @@ async function sendLevelUpNotification(userId: string, username: string, newLeve
         // Décider où envoyer la notification
         let notificationSent = false;
 
-        if (channel) {
-            // CAS 1 : Channel fourni - Envoyer dans le channel
+        // Vérifier si on est dans un contexte externe (DM, Groupe DM, ou Serveur externe)
+        const GUILD_ID = process.env.GUILD_ID;
+        const isExternalContext = channel && (!channel.guild || channel.guildId !== GUILD_ID);
+
+        if (channel && !isExternalContext) {
+            // CAS 1 : Channel fourni ET serveur principal - Envoyer dans le channel
             const EnvConfig = await import("../utils/envConfig").then(m => m.EnvConfig);
             const COUNTER_CHANNEL_ID = EnvConfig.COUNTER_CHANNEL_ID;
             const isCounterChannel = COUNTER_CHANNEL_ID && channel.id === COUNTER_CHANNEL_ID;
@@ -423,7 +427,7 @@ async function sendLevelUpNotification(userId: string, username: string, newLeve
             }
         }
 
-        // CAS 2 : Pas de channel OU erreur d'envoi - Fallback DM
+        // CAS 2 : Pas de channel OU contexte externe OU erreur d'envoi - Fallback DM
         if (!notificationSent) {
             // Retirer la mention pour le DM
             delete messageOptions.content;
@@ -460,7 +464,16 @@ async function sendLevelUpNotification(userId: string, username: string, newLeve
                 fields.push({name: "⬆️ Prochain Rôle", value: `${nextRole.levelsNeeded} niveau${nextRole.levelsNeeded > 1 ? 'x' : ''}`, inline: true});
             }
 
-            await logCommand(isRoleUp ? "🎖️ Role Up" : "⭐ Level Up", undefined, fields);
+            // Déterminer le nom du canal
+            let channelName: string;
+            if (channel) {
+                channelName = (channel as any).name || channel.id;
+            } else {
+                // Si pas de channel, c'était envoyé en DM
+                channelName = `DM avec ${username}`;
+            }
+
+            await logCommand(isRoleUp ? "🎖️ Role Up" : "⭐ Level Up", undefined, fields, undefined, channelName);
         }
 
     } catch (error) {

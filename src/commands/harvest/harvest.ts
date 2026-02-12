@@ -4,6 +4,7 @@ import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {createLogger} from "../../utils/logger";
 import * as fs from "fs";
 import * as path from "path";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const logger = createLogger("HarvestCmd");
 
@@ -199,6 +200,7 @@ module.exports = {
             await interaction.reply({embeds: [successEmbed], flags: MessageFlags.Ephemeral});
 
             // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand(
                 "⛏️ Harvest",
                 undefined,
@@ -206,7 +208,9 @@ module.exports = {
                     {name: "👤 Utilisateur", value: username, inline: true},
                     {name: "🎁 Ressource", value: resource.itemName, inline: true},
                     {name: "🌍 Saison", value: resource.seasonName, inline: true}
-                ]
+                ],
+                undefined,
+                channelName
             );
 
         } catch (error) {

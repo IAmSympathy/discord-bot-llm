@@ -7,6 +7,7 @@ import {createErrorEmbed} from "../../utils/embedBuilder";
 import {applyDefaultStatus} from "../../services/statusService";
 import {hasOwnerPermission} from "../../utils/permissions";
 import {replyWithError} from "../../utils/interactionUtils";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const STATUS_FILE = path.join(DATA_DIR, "bot_default_status.json");
 
@@ -112,6 +113,7 @@ module.exports = {
             await interaction.reply({embeds: [successEmbed], ephemeral: true});
 
             // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand(
                 "🔧 Set Status",
                 undefined,
@@ -119,7 +121,9 @@ module.exports = {
                     {name: "👤 Owner", value: interaction.user.username, inline: true},
                     {name: "📝 Type", value: `${typeEmoji} ${typeName}`, inline: true},
                     {name: "💬 Texte", value: text, inline: false}
-                ]
+                ],
+                undefined,
+                channelName
             );
 
         } catch (error) {

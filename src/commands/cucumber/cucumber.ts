@@ -4,6 +4,7 @@ import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {logCommand} from "../../utils/discordLogger";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
 import {recordFunCommandStats} from "../../services/statsRecorder";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const logger = createLogger("CucumberCmd");
 
@@ -59,6 +60,7 @@ module.exports = {
             await interaction.reply({embeds: [embed]});
 
             // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand(
                 "🥒 Cucumber",
                 undefined,
@@ -66,7 +68,9 @@ module.exports = {
                     {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
                     {name: "📏 Taille", value: `${inches}" (${size} cm)`, inline: true},
                     {name: "💬 Commentaire", value: comment, inline: false}
-                ]
+                ],
+                undefined,
+                channelName
             );
 
             // Ajouter XP

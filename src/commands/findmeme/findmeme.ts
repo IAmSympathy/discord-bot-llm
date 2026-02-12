@@ -8,6 +8,7 @@ import {recordMemeSearchedStats} from "../../services/statsRecorder";
 import * as fs from "fs";
 import * as path from "path";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const MEME_CHANNEL_ID = EnvConfig.MEME_CHANNEL_ID;
 const MEME_HISTORY_FILE = path.join(process.cwd(), "data", "posted_memes.json");
@@ -118,10 +119,11 @@ module.exports = {
             await trackMemeAchievements(interaction.user.id, interaction.user.username, interaction.client, interaction.channelId);
 
             // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand("🎭 Meme posté", undefined, [
                 {name: "👤 Demandé par", value: interaction.user.username, inline: true},
                 {name: "📺 Salon", value: `<#${MEME_CHANNEL_ID}>`, inline: true}
-            ]);
+            ], undefined, channelName);
         } catch (error: any) {
             await handleInteractionError(interaction, error, "FindMeme");
         }

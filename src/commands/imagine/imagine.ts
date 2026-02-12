@@ -12,6 +12,7 @@ import {NETRICSA_USER_ID, NETRICSA_USERNAME} from "../../services/userStatsServi
 import {recordImageGeneratedStats} from "../../services/statsRecorder";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
 import {addUserToQueue, getUserQueueOperation, isOperationAborted, isUserInQueue, registerActiveOperation, removeUserFromQueue, unregisterActiveOperation} from "../../queue/globalQueue";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const logger = createLogger("GenerateImageCmd");
 
@@ -49,6 +50,9 @@ module.exports = {
         if (!await checkServerMembershipOrReply(interaction)) {
             return;
         }
+
+        // Obtenir le nom du canal pour le logging
+        const channelName = getChannelNameFromInteraction(interaction);
 
         // Vérifier si l'utilisateur est déjà dans la queue globale
         if (isUserInQueue(interaction.user.id)) {
@@ -216,7 +220,8 @@ module.exports = {
                     interaction.user.username,
                     prompt,
                     formatTime(parseFloat(generationTime)),
-                    imageUrls
+                    imageUrls,
+                    channelName
                 );
             } catch (editError: any) {
                 logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
@@ -233,7 +238,8 @@ module.exports = {
                     interaction.user.username,
                     prompt,
                     formatTime(parseFloat(generationTime)),
-                    imageUrls
+                    imageUrls,
+                    channelName
                 );
             }
 

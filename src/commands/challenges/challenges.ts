@@ -8,6 +8,7 @@ import {getCurrentDate, getUserDailyStats} from "../../services/dailyStatsServic
 import {getDailyVoiceTime} from "../../voiceTracker";
 import {EnvConfig} from "../../utils/envConfig";
 import {getNetricsaColorCached} from "../../utils/colorHelper";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const logger = createLogger("DailyChallengesCmd");
 const CHALLENGES_FILE = path.join(process.cwd(), "data", "daily_challenges.json");
@@ -858,6 +859,7 @@ module.exports = {
 
             // Logger la commande
             if (newCompletions > 0) {
+                const channelName = getChannelNameFromInteraction(interaction);
                 await logCommand(
                     "🎯 Daily Challenges",
                     undefined,
@@ -865,7 +867,9 @@ module.exports = {
                         {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
                         {name: "✅ Complétés", value: `${newCompletions}`, inline: true},
                         {name: "💫 XP gagné", value: `${totalXPEarned}`, inline: true}
-                    ]
+                    ],
+                    undefined,
+                    channelName
                 );
             }
 

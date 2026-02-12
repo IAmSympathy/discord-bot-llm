@@ -4,6 +4,7 @@ import {addXP} from "../../services/xpSystem";
 import * as fs from "fs";
 import * as path from "path";
 import {createLogger} from "../../utils/logger";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const logger = createLogger("DailyCmd");
 const DAILY_FILE = path.join(process.cwd(), "data", "daily_streaks.json");
@@ -227,6 +228,7 @@ module.exports = {
             await interaction.reply({embeds: [embed]});
 
             // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand(
                 "📅 Daily Reward",
                 undefined,
@@ -234,7 +236,9 @@ module.exports = {
                     {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
                     {name: "💰 XP gagné", value: `${totalXP}`, inline: true},
                     {name: "🔥 Série", value: `${newStreak} jours`, inline: true}
-                ]
+                ],
+                undefined,
+                channelName
             );
 
         } catch (error) {

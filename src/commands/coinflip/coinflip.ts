@@ -3,6 +3,7 @@ import {logCommand} from "../../utils/discordLogger";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
 import {recordFunCommandStats} from "../../services/statsRecorder";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -127,6 +128,7 @@ module.exports = {
             await interaction.editReply({content: null, embeds: [embed]});
 
             // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand(
                 "🪙 Coinflip",
                 undefined,
@@ -134,7 +136,9 @@ module.exports = {
                     {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
                     {name: "🎯 Choix", value: userChoice ? (userChoice === "pile" ? "Pile" : "Face") : "Aucun", inline: true},
                     {name: "💫 Résultat", value: resultText, inline: true}
-                ]
+                ],
+                undefined,
+                channelName
             );
 
             // Ajouter XP

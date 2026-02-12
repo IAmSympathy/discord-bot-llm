@@ -241,8 +241,23 @@ export async function logProfile(title: string, description?: string, fields?: {
     await logToDiscord({level: LogLevel.PROFILE, title, description, fields});
 }
 
-export async function logCommand(title: string, description?: string, fields?: { name: string; value: string; inline?: boolean }[], imageUrl?: string) {
-    await logToDiscord({level: LogLevel.BOT_COMMAND, title, description, fields, imageUrl});
+export async function logCommand(title: string, description?: string, fields?: { name: string; value: string; inline?: boolean }[], imageUrl?: string, channelName?: string) {
+    // Détecter si c'est un DM ou un Groupe DM
+    const isDM = channelName?.startsWith("DM avec ");
+    const isGroupDM = channelName?.startsWith("Groupe DM");
+    const isExternalServer = channelName?.includes("(Serveur externe:");
+
+    // Ajouter le champ de localisation aux fields existants si channelName est fourni
+    let enhancedFields = fields ? [...fields] : [];
+    if (channelName) {
+        enhancedFields.push({
+            name: isDM ? "📧 DM" : (isGroupDM ? "👥 Groupe DM" : (isExternalServer ? "🌐 Serveur externe" : "📺 Salon")),
+            value: isDM || isGroupDM ? channelName : `#${channelName}`,
+            inline: true
+        });
+    }
+
+    await logToDiscord({level: LogLevel.BOT_COMMAND, title, description, fields: enhancedFields, imageUrl});
 }
 
 // Fonctions helper pour les événements serveur Discord
@@ -652,15 +667,31 @@ export async function logBotWebSearch(username: string, query: string, resultsCo
     });
 }
 
-export async function logBotImageGeneration(username: string, prompt: string, generationTime: string, imageUrls?: string[]) {
+export async function logBotImageGeneration(username: string, prompt: string, generationTime: string, imageUrls?: string[], channelName?: string) {
     const imageCount = imageUrls?.length || 1;
+
+    // Détecter si c'est un DM ou un Groupe DM
+    const isDM = channelName?.startsWith("DM avec ");
+    const isGroupDM = channelName?.startsWith("Groupe DM");
+    const isExternalServer = channelName?.includes("(Serveur externe:");
+
     const fields = [
         {name: "👤 Utilisateur", value: username, inline: true},
         {name: "🎨 Mode", value: "txt2img", inline: true},
-        {name: "⏱️ Temps", value: generationTime, inline: true},
-        {name: "🖼️ Images", value: `${imageCount} image${imageCount > 1 ? 's' : ''}`, inline: true},
-        {name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1024) + "..." : prompt, inline: false}
+        {name: "⏱️ Temps", value: generationTime, inline: true}
     ];
+
+    // Ajouter le champ de localisation si channelName est fourni
+    if (channelName) {
+        fields.push({
+            name: isDM ? "📧 DM" : (isGroupDM ? "👥 Groupe DM" : (isExternalServer ? "🌐 Serveur externe" : "📺 Salon")),
+            value: isDM || isGroupDM ? channelName : `#${channelName}`,
+            inline: true
+        });
+    }
+
+    fields.push({name: "🖼️ Images", value: `${imageCount} image${imageCount > 1 ? 's' : ''}`, inline: true});
+    fields.push({name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1024) + "..." : prompt, inline: false});
 
     // Si plusieurs images, créer un message avec toutes les URLs
     let description = undefined;
@@ -677,15 +708,31 @@ export async function logBotImageGeneration(username: string, prompt: string, ge
     });
 }
 
-export async function logBotImageReimagine(username: string, prompt: string, generationTime: string, imageUrls?: string[]) {
+export async function logBotImageReimagine(username: string, prompt: string, generationTime: string, imageUrls?: string[], channelName?: string) {
     const imageCount = imageUrls?.length || 1;
+
+    // Détecter si c'est un DM ou un Groupe DM
+    const isDM = channelName?.startsWith("DM avec ");
+    const isGroupDM = channelName?.startsWith("Groupe DM");
+    const isExternalServer = channelName?.includes("(Serveur externe:");
+
     const fields = [
         {name: "👤 Utilisateur", value: username, inline: true},
         {name: "🎨 Mode", value: "img2img", inline: true},
-        {name: "⏱️ Temps", value: generationTime, inline: true},
-        {name: "🖼️ Images", value: `${imageCount} image${imageCount > 1 ? 's' : ''}`, inline: true},
-        {name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1024) + "..." : prompt, inline: false}
+        {name: "⏱️ Temps", value: generationTime, inline: true}
     ];
+
+    // Ajouter le champ de localisation si channelName est fourni
+    if (channelName) {
+        fields.push({
+            name: isDM ? "📧 DM" : (isGroupDM ? "👥 Groupe DM" : (isExternalServer ? "🌐 Serveur externe" : "📺 Salon")),
+            value: isDM || isGroupDM ? channelName : `#${channelName}`,
+            inline: true
+        });
+    }
+
+    fields.push({name: "🖼️ Images", value: `${imageCount} image${imageCount > 1 ? 's' : ''}`, inline: true});
+    fields.push({name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1024) + "..." : prompt, inline: false});
 
     // Si plusieurs images, créer un message avec toutes les URLs
     let description = undefined;
@@ -702,13 +749,27 @@ export async function logBotImageReimagine(username: string, prompt: string, gen
     });
 }
 
-export async function logBotImageUpscale(username: string, method: string, scale: number, generationTime: string, imageUrl?: string) {
+export async function logBotImageUpscale(username: string, method: string, scale: number, generationTime: string, imageUrl?: string, channelName?: string) {
+    // Détecter si c'est un DM ou un Groupe DM
+    const isDM = channelName?.startsWith("DM avec ");
+    const isGroupDM = channelName?.startsWith("Groupe DM");
+    const isExternalServer = channelName?.includes("(Serveur externe:");
+
     const fields = [
         {name: "👤 Utilisateur", value: username, inline: true},
         {name: "🔍 Méthode", value: method.toUpperCase(), inline: true},
         {name: "📏 Échelle", value: `x${scale}`, inline: true},
         {name: "⏱️ Temps", value: generationTime, inline: true}
     ];
+
+    // Ajouter le champ de localisation si channelName est fourni
+    if (channelName) {
+        fields.push({
+            name: isDM ? "📧 DM" : (isGroupDM ? "👥 Groupe DM" : (isExternalServer ? "🌐 Serveur externe" : "📺 Salon")),
+            value: isDM || isGroupDM ? channelName : `#${channelName}`,
+            inline: true
+        });
+    }
 
     await logToDiscord({
         level: LogLevel.BOT_IMAGE_UPSCALE,
@@ -719,10 +780,19 @@ export async function logBotImageUpscale(username: string, method: string, scale
 }
 
 export async function logBotCommand(username: string, commandName: string, channelName: string, options?: string) {
+    // Détecter si c'est un DM ou un Groupe DM
+    const isDM = channelName.startsWith("DM avec ");
+    const isGroupDM = channelName.startsWith("Groupe DM");
+    const isExternalServer = channelName.includes("(Serveur externe:");
+
     const fields = [
         {name: "👤 Utilisateur", value: username, inline: true},
         {name: "⚡ Commande", value: `/${commandName}`, inline: true},
-        {name: "📺 Salon", value: `#${channelName}`, inline: true}
+        {
+            name: isDM ? "📧 DM" : (isGroupDM ? "👥 Groupe DM" : (isExternalServer ? "🌐 Serveur externe" : "📺 Salon")),
+            value: isDM || isGroupDM ? channelName : `#${channelName}`,
+            inline: true
+        }
     ];
 
     if (options) {

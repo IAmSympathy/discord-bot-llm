@@ -8,6 +8,7 @@ import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {recordPromptCreatedStats} from "../../services/statsRecorder";
 import {logBotCommand} from "../../utils/discordLogger";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const logger = createLogger("PromptMakerCmd");
 
@@ -359,10 +360,8 @@ module.exports = {
                 });
             }
 
-            // Enregistrer dans les logs Discord
-            const channelName = interaction.channel?.isDMBased()
-                ? "DM"
-                : (interaction.channel as any)?.name || "unknown";
+            // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
 
             const optionsText = `Type: ${isImg2Img ? "img2img (reimagine)" : "text2img (imagine)"}\nDescription: ${description.substring(0, 100)}${description.length > 100 ? "..." : ""}`;
 

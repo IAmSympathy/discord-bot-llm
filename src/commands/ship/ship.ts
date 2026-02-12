@@ -2,6 +2,7 @@ import {ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, TextChan
 import {logCommand} from "../../utils/discordLogger";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 // IDs spéciaux pour le ship rigged
 const RIGGED_USER_1 = "288799652902469633";
@@ -101,7 +102,6 @@ module.exports = {
                 // Résultat rigged : toujours entre 95 et 100%
                 compatibility = Math.floor(Math.random() * (100 - 95 + 1)) + 95;
             } else {
-                // ...existing code...
                 // Calculer un pourcentage de compatibilité déterministe basé sur les noms
                 // Utiliser une fonction de hachage simple pour que le même couple donne toujours le même résultat
                 const hash = (str: string) => {
@@ -194,6 +194,7 @@ module.exports = {
             await interaction.reply({embeds: [embed]});
 
             // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand(
                 `${emoji} Ship`,
                 undefined,
@@ -201,7 +202,9 @@ module.exports = {
                     {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
                     {name: "💑 Couple", value: `${person1Name} + ${person2Name}`, inline: true},
                     {name: "💯 Résultat", value: `${compatibility}%`, inline: true}
-                ]
+                ],
+                undefined,
+                channelName
             );
 
             // Donner de l'XP

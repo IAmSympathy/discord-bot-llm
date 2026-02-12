@@ -5,6 +5,7 @@ import {logCommand} from "../../utils/discordLogger";
 import * as fs from "fs";
 import * as path from "path";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const logger = createLogger("SlotsCmd");
 const COOLDOWN_FILE = path.join(process.cwd(), "data", "slots_cooldown.json");
@@ -201,6 +202,7 @@ module.exports = {
             await interaction.editReply({embeds: [resultEmbed]});
 
             // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand(
                 "🎰 Slots",
                 undefined,
@@ -208,7 +210,9 @@ module.exports = {
                     {name: "👤 Utilisateur", value: username, inline: true},
                     {name: "🎲 Résultat", value: finalSymbols.join(" "), inline: true},
                     {name: "💫 XP", value: `${xp > 0 ? '+' : ''}${xp}`, inline: true}
-                ]
+                ],
+                undefined,
+                channelName
             );
 
             logger.info(`${username} played slots: ${finalSymbols.join("")} = ${xp} XP`);

@@ -159,7 +159,27 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
     // Mettre en queue globale unique (un seul LLM pour toutes les requêtes)
     enqueueGlobally(async () => {
         const requestStartTime = Date.now();
-        logger.info(`Processing request from user ${userId} in ${channel.type === ChannelType.DM ? 'DM' : `#${(channel as any).name || channelKey}`}`);
+
+        // Déterminer le contexte pour le logging
+        const GUILD_ID = process.env.GUILD_ID;
+        const isExternalServerForLog = interaction && interaction.guild && interaction.guildId !== GUILD_ID;
+        const isDMForLog = channel.type === ChannelType.DM;
+        const isGroupDMForLog = channel.type === 1; // GroupDM
+
+        let contextLog: string;
+        if (isDMForLog) {
+            const dmChannel = channel as DMChannel;
+            const recipientName = dmChannel.recipient?.displayName || dmChannel.recipient?.username || userName;
+            contextLog = `DM avec ${recipientName}`;
+        } else if (isGroupDMForLog) {
+            contextLog = `Groupe DM${(channel as any).name ? ` (${(channel as any).name})` : ''}`;
+        } else if (isExternalServerForLog && interaction?.guild) {
+            contextLog = `#${(channel as any).name || channelKey} (Serveur externe: ${interaction.guild.name})`;
+        } else {
+            contextLog = `#${(channel as any).name || channelKey}`;
+        }
+
+        logger.info(`Processing request from user ${userId} in ${contextLog}`);
         logger.info(`User ${userId} sent prompt: ${prompt}${imageUrls && imageUrls.length > 0 ? ` with ${imageUrls.length} image(s)` : ""}`);
 
         // Enregistrer cette opération comme active
@@ -234,8 +254,13 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             }
         }
 
-        // Déterminer si c'est un DM
+        // Déterminer le type de canal et le contexte
         const isDM = channel.type === ChannelType.DM;
+        const isGroupDM = channel.type === 1; // GroupDM typ
+
+        // Déterminer si c'est un serveur externe (UserApp utilisé dans un serveur où le bot n'est pas installé)
+        // GUILD_ID déjà déclaré au début de la fonction
+        const isExternalServer = interaction && interaction.guild && interaction.guildId !== GUILD_ID;
 
         // Charger les prompts système avec le contexte approprié (DM ou serveur)
         const {finalPrompt: finalSystemPrompt} = ollamaService.loadSystemPrompts(channel.id, isDM);
@@ -247,8 +272,8 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             // Ne pas charger de mémoire
             recentTurns = [];
             logger.info(`Memory skipped (skipMemory flag)`);
-        } else if (isDM) {
-            // Charger la mémoire DM de l'utilisateur
+        } else if (isDM || isGroupDM) {
+            // Charger la mémoire DM de l'utilisateur (même pour GroupDM)
             recentTurns = await getDMRecentTurns(userId, MEMORY_MAX_TURNS);
             logger.info(`${recentTurns.length} DM turns loaded for ${userName}`);
         } else {
@@ -290,10 +315,26 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             logger.info(`Profile loaded for ${userName}`);
         }
 
-        // Obtenir le nom du channel actuel (ou "DM avec {userName}" si c'est un DM)
-        const channelName = isDM
-            ? `DM avec ${userName}`
-            : ((channel as any).name || `channel-${channel.id}`);
+        // Obtenir le nom du channel actuel avec détection du contexte
+        let channelName: string;
+
+        if (isDM) {
+            // Pour un DM 1-1, récupérer le nom du destinataire
+            const dmChannel = channel as DMChannel;
+            const recipientName = dmChannel.recipient?.displayName || dmChannel.recipient?.username || userName;
+            channelName = `DM avec ${recipientName}`;
+        } else if (isGroupDM) {
+            // Pour un groupe DM
+            channelName = `Groupe DM${(channel as any).name ? ` (${(channel as any).name})` : ''}`;
+        } else if (isExternalServer && interaction?.guild) {
+            // UserApp utilisé dans un serveur externe
+            const guildName = interaction.guild.name;
+            const channelNameInGuild = (channel as any).name || 'canal-inconnu';
+            channelName = `#${channelNameInGuild} (Serveur externe: ${guildName})`;
+        } else {
+            // Serveur normal
+            channelName = (channel as any).name || `channel-${channel.id}`;
+        }
 
         // Construire les blocs de prompt
         const threadStarterBlock = threadStarterContext ? buildThreadStarterBlock(threadStarterContext, threadStarterImageDescriptions) : "";

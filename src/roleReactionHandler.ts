@@ -125,11 +125,12 @@ export function registerRoleReactionHandler(client: Client) {
             logger.info(`✅ Role given to ${user.username}`);
 
             // Logger dans Discord
+            const channelName = (reaction.message.channel as any).name || "Unknown";
             await logCommand("🎭 Rôle attribué par réaction", undefined, [
                 {name: "👤 Membre", value: user.username || user.id, inline: true},
                 {name: "📝 Rôle", value: `<@&${ROLE_TO_GIVE_ID}>`, inline: true},
                 {name: "💬 Message", value: ROLE_REACTION_MESSAGE_ID, inline: true}
-            ]);
+            ], undefined, channelName);
 
         } catch (error) {
             logger.error("Error handling reaction add:", error);
@@ -189,11 +190,12 @@ export function registerRoleReactionHandler(client: Client) {
             logger.info(`✅ Role removed from ${user.username}`);
 
             // Logger dans Discord
+            const channelName = (reaction.message.channel as any).name || "Unknown";
             await logCommand("🎭 Rôle retiré par réaction", undefined, [
                 {name: "👤 Membre", value: user.username || user.id, inline: true},
                 {name: "📝 Rôle", value: `<@&${ROLE_TO_GIVE_ID}>`, inline: true},
                 {name: "💬 Message", value: ROLE_REACTION_MESSAGE_ID, inline: true}
-            ]);
+            ], undefined, channelName);
 
         } catch (error) {
             logger.error("Error handling reaction remove:", error);

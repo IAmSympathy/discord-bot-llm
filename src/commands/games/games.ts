@@ -1,5 +1,7 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, SlashCommandBuilder} from "discord.js";
 import {handleInteractionError} from "../../utils/interactionUtils";
+import {logCommand} from "../../utils/discordLogger";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,6 +11,12 @@ module.exports = {
     async execute(interaction: ChatInputCommandInteraction) {
         try {
             await showGameMenu(interaction);
+            const userId = interaction.user.id;
+            const channelName = getChannelNameFromInteraction(interaction);
+            await logCommand("🎮 Session de jeu démarré", undefined, [
+                {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
+                {name: "🆔 User ID", value: userId, inline: true}
+            ], undefined, channelName);
         } catch (error: any) {
             await handleInteractionError(interaction, error, "Games");
         }

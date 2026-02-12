@@ -2,6 +2,7 @@ import {ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder} from "di
 import {UserProfileService} from "../../services/userProfileService";
 import {logCommand} from "../../utils/discordLogger";
 import {createErrorEmbed, createSuccessEmbed} from "../../utils/interactionUtils";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -25,9 +26,10 @@ module.exports = {
                 await interaction.editReply({embeds: [successEmbed]});
 
                 // Logger la commande
+                const channelName = getChannelNameFromInteraction(interaction);
                 await logCommand("🎂 Anniversaire supprimé", undefined, [
                     {name: "👤 Utilisateur", value: username, inline: true}
-                ]);
+                ], undefined, channelName);
             } else {
                 const errorEmbed = createErrorEmbed(
                     "Aucun anniversaire",

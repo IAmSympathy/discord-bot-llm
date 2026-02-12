@@ -4,6 +4,7 @@ import {logCommand} from "../../utils/discordLogger";
 import {hasOwnerPermission} from "../../utils/permissions";
 import {checkOwnerActivity, getCurrentGame} from "../../services/activityMonitor";
 import {handleInteractionError, replyWithError, safeReply} from "../../utils/interactionUtils";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -54,9 +55,10 @@ module.exports = {
             await safeReply(interaction, {embeds: [embed], flags: MessageFlags.Ephemeral}, true);
 
             // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand("🔄 Mode automatique Low Power réactivé", undefined, [
                 {name: "👤 Par", value: interaction.user.username, inline: true}
-            ]);
+            ], undefined, channelName);
         } catch (error: any) {
             await handleInteractionError(interaction, error, "AutoLowPower");
         }

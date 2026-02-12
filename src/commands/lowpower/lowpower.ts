@@ -3,6 +3,7 @@ import {toggleLowPowerMode} from "../../services/botStateService";
 import {logCommand} from "../../utils/discordLogger";
 import {setLowPowerStatus, setNormalStatus} from "../../services/statusService";
 import {handleInteractionError, safeReply} from "../../utils/interactionUtils";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -37,10 +38,10 @@ module.exports = {
             await safeReply(interaction, {embeds: [embed], flags: MessageFlags.Ephemeral}, true);
 
             // Logger la commande
+            const channelName = getChannelNameFromInteraction(interaction);
             await logCommand(newState ? "🔋 Low Power Mode activé" : "⚡ Low Power Mode désactivé", undefined, [
-                {name: "👤 Par", value: interaction.user.username, inline: true},
-                {name: "📺 Salon", value: `#${(interaction.channel as any)?.name || "DM"}`, inline: true}
-            ]);
+                {name: "👤 Par", value: interaction.user.username, inline: true}
+            ], undefined, channelName);
 
         } catch (error: any) {
             await handleInteractionError(interaction, error, "LowPower");

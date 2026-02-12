@@ -12,6 +12,7 @@ import {NETRICSA_USER_ID, NETRICSA_USERNAME} from "../../services/userStatsServi
 import {recordImageReimaginedStats} from "../../services/statsRecorder";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
 import {addUserToQueue, getUserQueueOperation, isOperationAborted, isUserInQueue, registerActiveOperation, removeUserFromQueue, unregisterActiveOperation} from "../../queue/globalQueue";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const logger = createLogger("ReimageCmd");
 
@@ -61,6 +62,9 @@ module.exports = {
         if (!await checkServerMembershipOrReply(interaction)) {
             return;
         }
+
+        // Obtenir le nom du canal pour le logging
+        const channelName = getChannelNameFromInteraction(interaction);
 
         let tempFilePath: string | null = null;
         let progressMessage: any = null;
@@ -324,7 +328,8 @@ module.exports = {
                     interaction.user.username,
                     prompt,
                     formatTime(parseFloat(generationTime)),
-                    imageUrls
+                    imageUrls,
+                    channelName
                 );
             } catch (editError: any) {
                 logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
@@ -342,7 +347,8 @@ module.exports = {
                     interaction.user.username,
                     prompt,
                     formatTime(parseFloat(generationTime)),
-                    imageUrls
+                    imageUrls,
+                    channelName
                 );
             }
 

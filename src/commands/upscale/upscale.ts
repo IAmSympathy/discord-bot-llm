@@ -16,6 +16,7 @@ import * as https from "https";
 import * as http from "http";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
 import {addUserToQueue, getUserQueueOperation, isOperationAborted, isUserInQueue, registerActiveOperation, removeUserFromQueue, unregisterActiveOperation} from "../../queue/globalQueue";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const logger = createLogger("UpscaleCmd");
 
@@ -93,6 +94,9 @@ module.exports = {
         if (!await checkServerMembershipOrReply(interaction)) {
             return;
         }
+
+        // Obtenir le nom du canal pour le logging
+        const channelName = getChannelNameFromInteraction(interaction);
 
         let tempFilePath: string | null = null;
         let progressMessage: any = null;
@@ -239,7 +243,8 @@ module.exports = {
                     "Real-ESRGAN",
                     scale,
                     formatTime(parseFloat(processingTime)),
-                    imageUrl
+                    imageUrl,
+                    channelName
                 );
             } catch (editError: any) {
                 logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
@@ -257,7 +262,8 @@ module.exports = {
                     "Real-ESRGAN",
                     scale,
                     formatTime(parseFloat(processingTime)),
-                    imageUrl
+                    imageUrl,
+                    channelName
                 );
             }
 
