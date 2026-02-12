@@ -38,15 +38,34 @@ async function checkOllamaConnection(): Promise<boolean> {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
+        logger.debug(`Checking Ollama at: ${OLLAMA_API_URL}/api/tags`);
+
         const response = await fetch(`${OLLAMA_API_URL}/api/tags`, {
             method: "GET",
-            signal: controller.signal
+            signal: controller.signal,
+            headers: {
+                'User-Agent': 'Netricsa-Bot/1.0'
+            }
         });
 
         clearTimeout(timeoutId);
-        return response.ok;
+
+        if (response.ok) {
+            logger.info(`✅ Ollama connection successful (${response.status})`);
+            return true;
+        } else {
+            logger.warn(`⚠️ Ollama responded with status ${response.status}`);
+            return false;
+        }
     } catch (error) {
-        logger.warn(`Ollama connection check failed: ${error instanceof Error ? error.message : error}`);
+        if (error instanceof Error) {
+            logger.warn(`❌ Ollama connection check failed: ${error.name} - ${error.message}`);
+            if (error.stack) {
+                logger.debug(`Stack trace: ${error.stack}`);
+            }
+        } else {
+            logger.warn(`❌ Ollama connection check failed: ${String(error)}`);
+        }
         return false;
     }
 }
@@ -59,15 +78,34 @@ async function checkPythonAPIConnection(): Promise<boolean> {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
+        logger.debug(`Checking Python API at: ${IMAGE_API_URL}/`);
+
         const response = await fetch(`${IMAGE_API_URL}/`, {
             method: "GET",
-            signal: controller.signal
+            signal: controller.signal,
+            headers: {
+                'User-Agent': 'Netricsa-Bot/1.0'
+            }
         });
 
         clearTimeout(timeoutId);
-        return response.ok;
+
+        if (response.ok) {
+            logger.info(`✅ Python API connection successful (${response.status})`);
+            return true;
+        } else {
+            logger.warn(`⚠️ Python API responded with status ${response.status}`);
+            return false;
+        }
     } catch (error) {
-        logger.warn(`Python API connection check failed: ${error instanceof Error ? error.message : error}`);
+        if (error instanceof Error) {
+            logger.warn(`❌ Python API connection check failed: ${error.name} - ${error.message}`);
+            if (error.stack) {
+                logger.debug(`Stack trace: ${error.stack}`);
+            }
+        } else {
+            logger.warn(`❌ Python API connection check failed: ${String(error)}`);
+        }
         return false;
     }
 }
