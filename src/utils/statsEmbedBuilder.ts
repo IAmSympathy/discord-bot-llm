@@ -285,6 +285,8 @@ export function createFunStatsEmbed(targetUser: User): EmbedBuilder {
     const FUN_STATS_FILE = path.join(process.cwd(), "data", "fun_command_stats.json");
     let description = getLevelText(targetUser.id);
 
+    const userStats = getUserStats(targetUser.id);
+
     let funStats: any = null;
     try {
         if (fs.existsSync(FUN_STATS_FILE)) {
@@ -311,7 +313,7 @@ export function createFunStatsEmbed(targetUser: User): EmbedBuilder {
             {name: "🤔 Choix", count: funStats.choose || 0, emoji: "🤔"},
             {name: "📝 ASCII", count: funStats.ascii || 0, emoji: "📝"},
             {name: "🥒 Concombre", count: funStats.cucumber || 0, emoji: "🥒"},
-            {name: "🎭 Meme trouvés", count: funStats.netricsa.memesRecherches || 0, emoji: "🎭"}
+            {name: "🎭 Memes trouvés", count: userStats?.netricsa?.memesRecherches || 0, emoji: "🎭"}
         ].sort((a, b) => b.count - a.count);
 
         // Afficher les statistiques triées

@@ -437,12 +437,18 @@ function setupGameCollector(message: any, gameState: GameState): void {
         if (reason === "time" && !gameState.gameOver) {
             activeGames.delete(gameState.player);
 
+            const timeoutEmbed = new EmbedBuilder()
+                .setColor(0xED4245)
+                .setTitle("🃏 Blackjack")
+                .setDescription("⏱️ Le temps de jeu est écoulé. La partie a été annulée.")
+                .setTimestamp();
+
             try {
                 // Utiliser originalInteraction.editReply pour supporter UserApp
                 if (gameState.originalInteraction) {
-                    await gameState.originalInteraction.editReply({components: []});
+                    await gameState.originalInteraction.editReply({embeds: [timeoutEmbed], components: []});
                 } else {
-                    await message.edit({components: []});
+                    await message.edit({embeds: [timeoutEmbed], components: []});
                 }
             } catch (error: any) {
                 console.log("[Blackjack] Cannot edit timeout message. Error:", error.code);
@@ -503,12 +509,18 @@ function setupRematchCollector(message: any, gameState: GameState): void {
         if (reason === "time") {
             activeGames.delete(gameState.player);
 
+            const timeoutEmbed = new EmbedBuilder()
+                .setColor(0xED4245)
+                .setTitle("🃏 Blackjack")
+                .setDescription("⏱️ Le temps pour rejouer est écoulé.")
+                .setTimestamp();
+
             try {
                 // Utiliser originalInteraction.editReply pour supporter UserApp
                 if (gameState.originalInteraction) {
-                    await gameState.originalInteraction.editReply({components: []});
+                    await gameState.originalInteraction.editReply({embeds: [timeoutEmbed], components: []});
                 } else {
-                    await message.edit({components: []});
+                    await message.edit({embeds: [timeoutEmbed], components: []});
                 }
             } catch (error: any) {
                 console.log("[Blackjack] Cannot edit rematch timeout message. Error:", error.code);

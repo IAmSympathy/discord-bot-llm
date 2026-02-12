@@ -178,8 +178,14 @@ async function waitForPlayer(interaction: any, player1Id: string, gameId: string
         if (reason === "time") {
             activeGames.delete(gameId);
 
+            const timeoutEmbed = new EmbedBuilder()
+                .setColor(0xED4245)
+                .setTitle("🔴🟡 Connect 4")
+                .setDescription("⏱️ Aucun joueur n'a rejoint. La partie a été annulée.")
+                .setTimestamp();
+
             try {
-                await interaction.editReply({components: []});
+                await interaction.editReply({embeds: [timeoutEmbed], components: []});
             } catch (error: any) {
                 console.log("[Connect4] Cannot edit timeout message. Error:", error.code);
             }
@@ -265,8 +271,14 @@ async function startGame(interaction: any, gameId: string) {
         if (reason === "time") {
             activeGames.delete(gameId);
 
+            const timeoutEmbed = new EmbedBuilder()
+                .setColor(0xED4245)
+                .setTitle("🔴🟡 Connect 4")
+                .setDescription("⏱️ Le temps de jeu est écoulé. La partie a été annulée.")
+                .setTimestamp();
+
             try {
-                await interaction.editReply({components: []});
+                await interaction.editReply({embeds: [timeoutEmbed], components: []});
             } catch (error: any) {
                 console.log("[Connect4] Cannot edit timeout message. Error:", error.code);
             }
@@ -772,6 +784,22 @@ function setupRematchCollector(interaction: any, gameId: string, originalEmbed: 
             }
         } catch (error) {
             console.error("[Connect4] Error in rematch collector:", error);
+        }
+    });
+
+    collector.on("end", async (_collected: any, reason: string) => {
+        if (reason === "time") {
+            const timeoutEmbed = new EmbedBuilder()
+                .setColor(0xED4245)
+                .setTitle("🔴🟡 Connect 4")
+                .setDescription("⏱️ Le temps pour rejouer est écoulé.")
+                .setTimestamp();
+
+            try {
+                await interaction.message.edit({embeds: [timeoutEmbed], components: []});
+            } catch (error: any) {
+                console.log("[Connect4] Cannot edit rematch timeout message. Error:", error.code);
+            }
         }
     });
 }

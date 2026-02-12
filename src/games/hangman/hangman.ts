@@ -343,12 +343,18 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
         if (reason === "time" && !gameState.isCompleted) {
             activeGames.delete(gameId);
 
+            const timeoutEmbed = new EmbedBuilder()
+                .setColor(0xED4245)
+                .setTitle("🔤 Bonhomme Pendu")
+                .setDescription("⏱️ Le temps de jeu est écoulé. La partie a été annulée.")
+                .setTimestamp();
+
             try {
                 // Utiliser originalInteraction.editReply pour supporter UserApp
                 if (gameState.originalInteraction) {
-                    await gameState.originalInteraction.editReply({components: []});
+                    await gameState.originalInteraction.editReply({embeds: [timeoutEmbed], components: []});
                 } else {
-                    await message.edit({components: []});
+                    await message.edit({embeds: [timeoutEmbed], components: []});
                 }
             } catch (error: any) {
                 console.log("[Hangman] Cannot edit timeout message. Error:", error.code);
@@ -532,6 +538,22 @@ function setupRestartCollector(message: any, gameState: GameState) {
             }
         } catch (error) {
             console.error("[Hangman] Error handling restart:", error);
+        }
+    });
+
+    collector.on("end", async (_collected: any, reason: string) => {
+        if (reason === "time") {
+            const timeoutEmbed = new EmbedBuilder()
+                .setColor(0xED4245)
+                .setTitle("🔤 Bonhomme Pendu")
+                .setDescription("⏱️ Le temps pour rejouer est écoulé.")
+                .setTimestamp();
+
+            try {
+                await message.edit({embeds: [timeoutEmbed], components: []});
+            } catch (error: any) {
+                console.log("[Hangman] Cannot edit restart timeout message. Error:", error.code);
+            }
         }
     });
 }

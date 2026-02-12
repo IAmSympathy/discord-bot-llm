@@ -218,8 +218,14 @@ async function waitForPlayer(interaction: any, player1Id: string, gameId: string
         if (reason === "time") {
             activeGames.delete(gameId);
 
+            const timeoutEmbed = new EmbedBuilder()
+                .setColor(0xED4245)
+                .setTitle("🎮 Roche-Papier-Ciseaux")
+                .setDescription("⏱️ Aucun joueur n'a rejoint. La partie a été annulée.")
+                .setTimestamp();
+
             try {
-                await interaction.editReply({components: []});
+                await interaction.editReply({embeds: [timeoutEmbed], components: []});
             } catch (error: any) {
                 console.log("[RPS] Cannot edit timeout message. Error:", error.code);
             }
@@ -436,12 +442,18 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
         if (reason === "time") {
             activeGames.delete(gameId);
 
+            const timeoutEmbed = new EmbedBuilder()
+                .setColor(0xED4245)
+                .setTitle("🎮 Roche-Papier-Ciseaux")
+                .setDescription("⏱️ Le temps de jeu est écoulé. La partie a été annulée.")
+                .setTimestamp();
+
             try {
                 // Utiliser originalInteraction.editReply pour supporter UserApp
                 if (gameState.originalInteraction) {
-                    await gameState.originalInteraction.editReply({components: []});
+                    await gameState.originalInteraction.editReply({embeds: [timeoutEmbed], components: []});
                 } else {
-                    await message.edit({components: []});
+                    await message.edit({embeds: [timeoutEmbed], components: []});
                 }
             } catch (error: any) {
                 console.log("[RPS] Cannot edit timeout message. Error:", error.code);
@@ -691,6 +703,22 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
             }
         } catch (error) {
             console.error("[RPS] Error handling rematch:", error);
+        }
+    });
+
+    collector.on("end", async (_collected: any, reason: string) => {
+        if (reason === "time") {
+            const timeoutEmbed = new EmbedBuilder()
+                .setColor(0xED4245)
+                .setTitle("🎮 Roche-Papier-Ciseaux")
+                .setDescription("⏱️ Le temps pour rejouer est écoulé.")
+                .setTimestamp();
+
+            try {
+                await message.edit({embeds: [timeoutEmbed], components: []});
+            } catch (error: any) {
+                console.log("[RPS] Cannot edit rematch timeout message. Error:", error.code);
+            }
         }
     });
 }

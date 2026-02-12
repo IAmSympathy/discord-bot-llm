@@ -1,7 +1,7 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {UserProfileService} from "../../services/userProfileService";
 import {updateUserActivityFromPresence} from "../../services/activityService";
-import {createDetailedGameStatsEmbed, createDiscordStatsEmbed, createGameSelectMenu, createNetricsaStatsEmbed, createProfileEmbed, createServerStatsEmbed, createStatsNavigationButtons, StatsCategory} from "../../utils/statsEmbedBuilder";
+import {createDetailedGameStatsEmbed, createDiscordStatsEmbed, createFunStatsEmbed, createGameSelectMenu, createNetricsaStatsEmbed, createProfileEmbed, createServerStatsEmbed, createStatsNavigationButtons, StatsCategory} from "../../utils/statsEmbedBuilder";
 import {AchievementCategory} from "../../services/achievementService";
 
 const CATEGORY_EMOJIS: Partial<{ [key in AchievementCategory]: string }> = {
@@ -358,7 +358,6 @@ module.exports = {
                     } else if (customId === "stats_fun") {
                         await i.deferUpdate();
                         currentStatsCategory = "fun";
-                        const {createFunStatsEmbed} = require("../../utils/statsEmbedBuilder");
                         const embed = createFunStatsEmbed(targetUser);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
