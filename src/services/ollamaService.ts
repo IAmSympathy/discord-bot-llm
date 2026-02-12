@@ -70,29 +70,15 @@ export class OllamaService {
      * @param isAskNetricsa - Indique si c'est la commande /ask-netricsa (pas de réaction emoji)
      */
     loadSystemPrompts(channelId: string, isDM: boolean = false, isAskNetricsa: boolean = false): { systemPrompt: string; serverPrompt: string; finalPrompt: string } {
-        const promptPath = EnvConfig.SYSTEM_PROMPT_PATH;
+        const promptPath = isAskNetricsa
+            ? EnvConfig.SYSTEM_PROMPT_PATH?.replace('system_prompt.txt', 'system_prompt_ask_netricsa.txt')
+            : EnvConfig.SYSTEM_PROMPT_PATH;
 
         if (!promptPath) {
             throw new Error("SYSTEM_PROMPT_PATH n'est pas défini dans le .env");
         }
 
-        let systemPrompt = fs.readFileSync(promptPath, "utf8");
-
-        // Si c'est /ask-netricsa, retirer la section sur l'emoji de réaction
-        if (isAskNetricsa) {
-            systemPrompt = systemPrompt.replace(
-                /1\. 😊 COMMENCE TOUJOURS PAR UN EMOJI[\s\S]*?→ Exemple : "😊 Super idée ! 🎉" → Réaction: 😊 \| Texte affiché: "Super idée ! 🎉"/,
-                `1. 💬 FORMAT DE RÉPONSE
-   → Sois naturelle et directe dans ta réponse
-   → Tu peux utiliser des emojis dans ton texte pour exprimer des émotions`
-            );
-
-            // Retirer aussi la mention de l'emoji dans le résumé
-            systemPrompt = systemPrompt.replace(
-                /1\. ✅ Commence TOUJOURS par un emoji/,
-                `1. ✅ Réponds de manière naturelle et directe`
-            );
-        }
+        const systemPrompt = fs.readFileSync(promptPath, "utf8");
 
         let serverPrompt: string;
 
