@@ -250,6 +250,11 @@ module.exports = {
 
         const client = interaction.client;
 
+        // Déterminer si on doit utiliser des messages éphémères
+        const REQUIRED_GUILD_ID = process.env.GUILD_ID || "827364829567647774";
+        const isMainServer = interaction.guildId === REQUIRED_GUILD_ID;
+        const shouldBeEphemeral = !isMainServer;
+
         let statusId: string = "";
         let progressMessage: any = null;
         let animationInterval: NodeJS.Timeout | null = null;
@@ -286,7 +291,8 @@ module.exports = {
 
             // Message de progression avec animation de points
             progressMessage = await interaction.reply({
-                content: "\`Génération du prompt.\`"
+                content: "\`Génération du prompt.\`",
+                ...(shouldBeEphemeral && {flags: MessageFlags.Ephemeral})
             });
 
             // Animation des points
@@ -356,7 +362,8 @@ module.exports = {
             } catch (editError: any) {
                 logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
                 await interaction.followUp({
-                    embeds: [embed]
+                    embeds: [embed],
+                    ...(shouldBeEphemeral && {flags: MessageFlags.Ephemeral})
                 });
             }
 
