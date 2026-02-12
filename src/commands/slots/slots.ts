@@ -176,7 +176,7 @@ module.exports = {
                 );
             }
 
-            // Chance d'obtenir un objet saisonnier (3% - commande Netricsa)
+            // Chance d'obtenir un objet saisonnier (3% - commande)
             const {tryRewardAndNotify} = require("../../services/rewardNotifier");
             await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
 
