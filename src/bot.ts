@@ -1,3 +1,7 @@
+// ⚠️ IMPORTANT: Charger dotenv EN PREMIER avant tous les imports
+// pour que les variables d'environnement soient disponibles lors de l'évaluation des imports
+require("dotenv").config();
+
 import {tryRewardAndNotify} from "./services/rewardNotifier";
 import path from "path";
 import fs from "fs";
@@ -26,7 +30,6 @@ import {getAllXP} from "./services/xpSystem";
 import {initializeLevelRolesForGuild} from "./services/levelRoleService";
 import {initializeRandomEventsService} from "./services/randomEventsService";
 
-require("dotenv").config();
 
 const logger = createLogger("Bot");
 
