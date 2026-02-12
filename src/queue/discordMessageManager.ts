@@ -16,7 +16,7 @@ export class ImageAnalysisAnimation {
     async start(replyToMessage?: Message, channel?: TextChannel | ThreadChannel | DMChannel): Promise<void> {
         try {
             if (replyToMessage) {
-                this.message = await replyToMessage.reply("Analyse de l'image.");
+                this.message = await replyToMessage.reply("\`Analyse de l'image.\`");
             } else if (channel) {
                 this.message = await channel.send("\`Analyse de l'image.\`");
             }

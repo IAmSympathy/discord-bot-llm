@@ -277,7 +277,19 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             } finally {
                 // Arrêter l'animation d'analyse d'image dans tous les cas (succès ou erreur)
                 await analysisAnimation.stop();
-                logger.info("Image analysis animation stopped");
+
+                // Supprimer le message d'animation s'il existe
+                const animationMessage = analysisAnimation.getMessage();
+                if (animationMessage) {
+                    try {
+                        await animationMessage.delete();
+                        logger.info("Image analysis animation message deleted");
+                    } catch (deleteError) {
+                        logger.warn("Could not delete animation message:", deleteError);
+                    }
+                } else {
+                    logger.info("Image analysis animation stopped (no message to delete)");
+                }
             }
         }
 

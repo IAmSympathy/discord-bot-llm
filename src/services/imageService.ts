@@ -178,6 +178,9 @@ Donne une analyse CONSTRUCTIVE qui pourra aider l'artiste.`;
         const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 secondes (2 minutes)
 
         try {
+            console.log(`[ImageService] Sending vision request to ${OLLAMA_API_URL}/api/chat with model ${OLLAMA_VISION_MODEL}`);
+            console.log(`[ImageService] Image base64 length: ${imageBase64.length} characters`);
+
             const response = await fetch(`${OLLAMA_API_URL}/api/chat`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
@@ -189,8 +192,8 @@ Donne une analyse CONSTRUCTIVE qui pourra aider l'artiste.`;
                     ],
                     stream: false,
                     options: {
-                        temperature: context === 'creation' ? 0.4 : 0.2, // Plus de créativité pour les créations
-                        num_predict: context === 'creation' ? 800 : 500, // Plus de tokens pour analyses détaillées
+                        temperature: context === 'creation' ? 0.4 : 0.2,
+                        num_predict: context === 'creation' ? 800 : 500,
                     },
                 }),
                 signal: controller.signal,
@@ -198,12 +201,23 @@ Donne une analyse CONSTRUCTIVE qui pourra aider l'artiste.`;
 
             clearTimeout(timeoutId);
 
+            console.log(`[ImageService] Received response: ${response.status} ${response.statusText}`);
+
             if (!response.ok) {
                 console.error(`[ImageService] Error: ${response.status} ${response.statusText}`);
 
+                // Essayer de lire le corps de la réponse pour plus de détails
+                try {
+                    const errorText = await response.text();
+                    console.error(`[ImageService] Error response body: ${errorText}`);
+                } catch (e) {
+                    console.error(`[ImageService] Could not read error response body`);
+                }
+
                 await logError("Erreur de génération de description d'image", undefined, [
                     {name: "Status", value: `${response.status} ${response.statusText}`, inline: true},
-                    {name: "Modèle", value: OLLAMA_VISION_MODEL, inline: true}
+                    {name: "Modèle", value: OLLAMA_VISION_MODEL, inline: true},
+                    {name: "URL", value: OLLAMA_API_URL, inline: true}
                 ]);
 
                 return null;
@@ -227,6 +241,14 @@ Donne une analyse CONSTRUCTIVE qui pourra aider l'artiste.`;
                 ]);
                 return null;
             }
+
+            // Logger TOUS les détails de l'erreur fetch
+            console.error(`[ImageService] Fetch error details:`);
+            console.error(`  - Name: ${fetchError.name}`);
+            console.error(`  - Message: ${fetchError.message}`);
+            console.error(`  - Code: ${fetchError.code || 'N/A'}`);
+            console.error(`  - Cause: ${fetchError.cause?.message || 'N/A'}`);
+            console.error(`  - Stack: ${fetchError.stack || 'N/A'}`);
 
             // Erreur de connexion ou autre
             throw fetchError;
