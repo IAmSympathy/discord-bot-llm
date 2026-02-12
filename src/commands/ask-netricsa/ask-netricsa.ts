@@ -22,7 +22,7 @@ const wait = require("node:timers/promises").setTimeout;
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("ask-netricsa")
-        .setDescription("💬 Pose une question à Netricsa (Aucune mémoire entre les interactions)")
+        .setDescription("💬 Pose une question à Netricsa (aucune mémoire entre les interactions)")
         .addStringOption((option) =>
             option
                 .setName("question")
@@ -38,7 +38,7 @@ module.exports = {
         .addStringOption((option) =>
             option
                 .setName("reply-to")
-                .setDescription("ID du message auquel répondre (facultatif)")
+                .setDescription("ID du message auquel tu veux reply (facultatif)")
                 .setRequired(false)
         )
         // Rendre la commande visible UNIQUEMENT dans les user apps (intégrations)
@@ -164,10 +164,12 @@ module.exports = {
             const hasImages = imageUrls.length > 0;
             const animationText = hasImages ? "Analyse de l'image" : "Netricsa réfléchit";
 
-            progressMessage = await interaction.reply({
-                content: `\`${animationText}.\``,
-                fetchReply: true
-            }) as Message;
+            await interaction.reply({
+                content: `\`${animationText}.\``
+            });
+
+            // Récupérer le message via fetchReply
+            progressMessage = await interaction.fetchReply() as Message;
 
             // Animation des points
             let dotCount = 1;
