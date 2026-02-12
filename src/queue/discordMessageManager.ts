@@ -128,11 +128,19 @@ export class DiscordMessageManager {
             // Priorité 1 : Vérifier si on a un progressMessage fourni (comme /ask-netricsa)
             if (this.progressMessage) {
                 try {
-                    await this.progressMessage.edit(currentContent);
-                    this.messages.push(this.progressMessage);
-                    this.progressMessage = null; // Ne réutiliser qu'une fois
+                    // Si c'est une interaction (UserApp), utiliser interaction.editReply()
+                    if (this.interaction) {
+                        const message = await this.interaction.editReply({content: currentContent});
+                        this.messages.push(message as Message);
+                        this.progressMessage = null; // Ne réutiliser qu'une fois
+                    } else {
+                        // Sinon, éditer le message directement
+                        await this.progressMessage.edit(currentContent);
+                        this.messages.push(this.progressMessage);
+                        this.progressMessage = null; // Ne réutiliser qu'une fois
+                    }
                 } catch (editError) {
-                    logger.warn("Cannot edit progressMessage, falling back to new message");
+                    logger.warn("Cannot edit progressMessage, falling back to new message:", editError);
                     // Fallback : créer un nouveau message
                     if (this.interaction) {
                         const message = await this.interaction.followUp({content: currentContent});
