@@ -259,6 +259,7 @@ module.exports = {
 
                     // === NAVIGATION PRINCIPALE ===
                     if (customId.startsWith("view_stats_")) {
+                        await i.deferUpdate();
                         currentView = "stats";
                         currentStatsCategory = "discord";
                         const embed = createDiscordStatsEmbed(targetUser);
@@ -269,8 +270,9 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
+                        await interaction.editReply({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId.startsWith("view_achievements_")) {
+                        await i.deferUpdate();
                         currentView = "achievements";
                         currentAchievementCategory = AchievementCategory.PROFIL;
                         currentAchievementPage = 0;
@@ -294,8 +296,9 @@ module.exports = {
                             ? [paginationButtons, ...navButtons, backButton]
                             : [...navButtons, backButton];
 
-                        await i.update({embeds: [embed], components});
+                        await interaction.editReply({embeds: [embed], components});
                     } else if (customId.startsWith("view_inventory_")) {
+                        await i.deferUpdate();
                         currentView = "stats"; // Réutiliser le type stats
                         const {createInventoryEmbed} = require("../../utils/statsEmbedBuilder");
                         const embed = createInventoryEmbed(targetUser);
@@ -305,15 +308,17 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [backButton]});
+                        await interaction.editReply({embeds: [embed], components: [backButton]});
                     } else if (customId.startsWith("back_to_profile_")) {
+                        await i.deferUpdate();
                         currentView = "profile";
                         const embed = createProfileEmbed(targetUser);
-                        await i.update({embeds: [embed], components: [profileButtons]});
+                        await interaction.editReply({embeds: [embed], components: [profileButtons]});
                     }
 
                     // === NAVIGATION STATS ===
                     else if (customId === "stats_discord") {
+                        await i.deferUpdate();
                         currentStatsCategory = "discord";
                         const embed = createDiscordStatsEmbed(targetUser);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
@@ -323,8 +328,9 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
+                        await interaction.editReply({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId === "stats_netricsa") {
+                        await i.deferUpdate();
                         currentStatsCategory = "netricsa";
                         const embed = createNetricsaStatsEmbed(targetUser);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
@@ -334,8 +340,9 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
+                        await interaction.editReply({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId === "stats_jeux") {
+                        await i.deferUpdate();
                         currentStatsCategory = "jeux";
                         currentGameType = "global";
                         const embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
@@ -347,8 +354,9 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [...navButtons, gameMenu, backButton]});
+                        await interaction.editReply({embeds: [embed], components: [...navButtons, gameMenu, backButton]});
                     } else if (customId === "stats_fun") {
+                        await i.deferUpdate();
                         currentStatsCategory = "fun";
                         const {createFunStatsEmbed} = require("../../utils/statsEmbedBuilder");
                         const embed = createFunStatsEmbed(targetUser);
@@ -359,8 +367,9 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
+                        await interaction.editReply({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId === "stats_serveur") {
+                        await i.deferUpdate();
                         currentStatsCategory = "serveur";
                         const embed = await createServerStatsEmbed(i.guild, i.client);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
@@ -370,8 +379,9 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
+                        await interaction.editReply({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId === "stats_seasonal") {
+                        await i.deferUpdate();
                         currentStatsCategory = "seasonal";
                         const {createSeasonalStatsEmbed} = require("../../utils/seasonalStatsEmbed");
                         const embed = createSeasonalStatsEmbed(targetUser.id, targetUser.displayName, targetUser.displayAvatarURL({size: 128}));
@@ -382,15 +392,17 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
+                        await interaction.editReply({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId === "stats_game_select" && i.isStringSelectMenu()) {
+                        await i.deferUpdate();
                         currentGameType = i.values[0];
                         const embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
-                        await i.update({embeds: [embed]});
+                        await interaction.editReply({embeds: [embed]});
                     }
 
                     // === NAVIGATION ACHIEVEMENTS ===
                     else if (customId.startsWith("achievements_")) {
+                        await i.deferUpdate();
                         const [, categoryStr] = customId.split("_");
                         currentAchievementCategory = categoryStr as AchievementCategory;
                         currentAchievementPage = 0; // Reset page quand on change de catégorie
@@ -415,10 +427,11 @@ module.exports = {
                             ? [paginationButtons, ...navButtons, backButton]
                             : [...navButtons, backButton];
 
-                        await i.update({embeds: [embed], components});
+                        await interaction.editReply({embeds: [embed], components});
                     }
                     // === PAGINATION ACHIEVEMENTS ===
                     else if (customId.startsWith("achievement_page_")) {
+                        await i.deferUpdate();
                         const action = customId.includes("prev") ? "prev" : "next";
 
                         if (action === "prev" && currentAchievementPage > 0) {
@@ -451,7 +464,7 @@ module.exports = {
                             ? [paginationButtons, ...navButtons, backButton]
                             : [...navButtons, backButton];
 
-                        await i.update({embeds: [embed], components});
+                        await interaction.editReply({embeds: [embed], components});
                     }
                 } catch (error) {
                     console.error("[Profile] Error handling button:", error);

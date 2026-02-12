@@ -270,7 +270,8 @@ function startNewGame(playerId: string): GameState {
         draws: existingState?.draws || 0,
         currentStreak: existingState?.currentStreak || 0,
         highestStreak: existingState?.highestStreak || 0,
-        originalUserId: existingState?.originalUserId
+        originalUserId: existingState?.originalUserId,
+        originalInteraction: existingState?.originalInteraction // Conserver pour les timeouts
     };
 }
 
