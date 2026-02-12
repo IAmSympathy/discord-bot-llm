@@ -8,7 +8,6 @@ import {tryRewardAndNotify} from "../../services/rewardNotifier";
 
 const logger = createLogger("SlotsCmd");
 const COOLDOWN_FILE = path.join(process.cwd(), "data", "slots_cooldown.json");
-const COOLDOWN_DURATION = 5 * 60 * 1000; // 10 minutes de cooldown
 
 // Symboles de la machine à sous
 const SYMBOLS = ["🍒", "🍋", "🍊", "🍇", "💎", "⭐", "7️⃣"];
@@ -26,27 +25,28 @@ const SYMBOL_WEIGHTS = {
 
 // Gains/pertes selon les combinaisons
 const PAYOUTS: { [key: string]: number } = {
-    // 3 symboles identiques
-    "7️⃣7️⃣7️⃣": 500,   // JACKPOT
-    "⭐⭐⭐": 300,
-    "💎💎💎": 150,
-    "🍇🍇🍇": 75,
-    "🍊🍊🍊": 50,
-    "🍋🍋🍋": 35,
-    "🍒🍒🍒": 25,
+    // 🔥 JACKPOTS LÉGENDAIRES
+    "7️⃣7️⃣7️⃣": 1000,  // ULTIME
+    "⭐⭐⭐": 600,      // ÉNORME
+    "💎💎💎": 300,      // GROS
+    "🍇🍇🍇": 150,      // SOLIDE
+    "🍊🍊🍊": 100,      // BON
+    "🍋🍋🍋": 75,       // PETIT
+    "🍒🍒🍒": 50,       // MINI
 
-    // 2 symboles identiques
-    "7️⃣7️⃣": 50,
-    "⭐⭐": 40,
-    "💎💎": 30,
-    "🍇🍇": 15,
-    "🍊🍊": 8,
-    "🍋🍋": 5,
-    "🍒🍒": 3,
+    // Gains moyens
+    "7️⃣7️⃣": 100,
+    "⭐⭐": 75,
+    "💎💎": 50,
+    "🍇🍇": 25,
+    "🍊🍊": 15,
+    "🍋🍋": 10,
+    "🍒🍒": 5,
 
-    // Aucune correspondance
-    "default": -30  // Perte de 10 XP
+    // 🔥 HIGH RISK
+    "default": -50
 };
+
 
 interface CooldownData {
     [userId: string]: number;
@@ -64,17 +64,6 @@ function loadCooldowns(): CooldownData {
     return {};
 }
 
-function saveCooldowns(cooldowns: CooldownData): void {
-    try {
-        const dataDir = path.dirname(COOLDOWN_FILE);
-        if (!fs.existsSync(dataDir)) {
-            fs.mkdirSync(dataDir, {recursive: true});
-        }
-        fs.writeFileSync(COOLDOWN_FILE, JSON.stringify(cooldowns, null, 2));
-    } catch (error) {
-        logger.error("Error saving cooldowns:", error);
-    }
-}
 
 function getWeightedRandomSymbol(): string {
     const totalWeight = Object.values(SYMBOL_WEIGHTS).reduce((sum, weight) => sum + weight, 0);
@@ -93,28 +82,28 @@ function getWeightedRandomSymbol(): string {
 function calculatePayout(symbols: string[]): { xp: number; message: string } {
     const [s1, s2, s3] = symbols;
 
-    // 3 symboles identiques
     if (s1 === s2 && s2 === s3) {
         const key = `${s1}${s2}${s3}`;
         const xp = PAYOUTS[key] || 10;
 
         if (s1 === "7️⃣") {
-            return {xp, message: "🎰 **JACKPOT LÉGENDAIRE !** 🎰"};
+            return {xp, message: "🎰💥 **JACKPOT ULTIME ! TU VIENS DE CASSER LE JEU !** 💥🎰"};
         } else if (s1 === "⭐") {
-            return {xp, message: "✨ **SUPER GROS GAIN !** ✨"};
+            return {xp, message: "✨🌟 **IMMENSE GAIN ! LA FOULE T'ACCLAME !** 🌟✨"};
         } else if (s1 === "💎") {
-            return {xp, message: "💎 **GROS GAIN !** 💎"};
+            return {xp, message: "💎💰 **GROS GAIN ! TU ES RICHE !** 💰💎"};
+        } else if (s1 === "🍇") {
+            return {xp, message: "🍇🎉 **Belle victoire !** 🎉🍇"};
         } else {
-            return {xp, message: "🎉 **Triple combo !** 🎉"};
+            return {xp, message: "🎉 Tu repars gagnant !** 🎉"};
         }
     }
 
-    // 2 symboles identiques
     if (s1 === s2 || s2 === s3) {
         const matchSymbol = s1 === s2 ? s1 : s2;
         const key = `${matchSymbol}${matchSymbol}`;
         const xp = PAYOUTS[key] || 5;
-        return {xp, message: "✅ **Petit gain !**"};
+        return {xp, message: "✅ **Bon gain ! Continue comme ça !**"};
     }
 
     if (s1 === s3) {
@@ -123,8 +112,7 @@ function calculatePayout(symbols: string[]): { xp: number; message: string } {
         return {xp, message: "✅ **Petit gain !**"};
     }
 
-    // Aucune correspondance
-    return {xp: PAYOUTS.default, message: "❌ **Aucun gain...**"};
+    return {xp: PAYOUTS.default, message: "❌ **Pas de chance, tu as perdu** ❌"};
 }
 
 module.exports = {
@@ -136,29 +124,6 @@ module.exports = {
         try {
             const userId = interaction.user.id;
             const username = interaction.user.username;
-
-            // Vérifier le cooldown
-            const cooldowns = loadCooldowns();
-            const now = Date.now();
-            const userCooldown = cooldowns[userId] || 0;
-            const remainingTime = userCooldown - now;
-
-            if (remainingTime > 0) {
-                const minutes = Math.floor(remainingTime / 60000);
-                const seconds = Math.floor((remainingTime % 60000) / 1000);
-
-                const cooldownEmbed = new EmbedBuilder()
-                    .setColor(0xED4245)
-                    .setTitle("💥 Ta machine est en panne !")
-                    .setDescription(
-                        `Tu dois les réparations avant de rejouer !\n\n` +
-                        `**Temps restant :** ${minutes}m ${seconds}s`
-                    )
-                    .setTimestamp();
-
-                await interaction.reply({embeds: [cooldownEmbed], ephemeral: true});
-                return;
-            }
 
             // Générer les symboles
             const finalSymbols = [
@@ -232,14 +197,9 @@ module.exports = {
                     `${resultMessage}\n` +
                     `${xp > 0 ? '+' : ''}${xp} XP 💫`
                 )
-                .setFooter({text: `La machine provient de TEMU et brise à chaque utilisation.`})
                 .setTimestamp();
 
             await interaction.editReply({embeds: [resultEmbed]});
-
-            // Enregistrer le cooldown
-            cooldowns[userId] = now + COOLDOWN_DURATION;
-            saveCooldowns(cooldowns);
 
             // Logger la commande
             await logCommand(
