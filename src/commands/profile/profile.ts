@@ -269,7 +269,7 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [navButtons, backButton]});
+                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId.startsWith("view_achievements_")) {
                         currentView = "achievements";
                         currentAchievementCategory = AchievementCategory.PROFIL;
@@ -323,7 +323,7 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [navButtons, backButton]});
+                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId === "stats_netricsa") {
                         currentStatsCategory = "netricsa";
                         const embed = createNetricsaStatsEmbed(targetUser);
@@ -334,7 +334,7 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [navButtons, backButton]});
+                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId === "stats_jeux") {
                         currentStatsCategory = "jeux";
                         currentGameType = "global";
@@ -347,7 +347,19 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [navButtons, gameMenu, backButton]});
+                        await i.update({embeds: [embed], components: [...navButtons, gameMenu, backButton]});
+                    } else if (customId === "stats_fun") {
+                        currentStatsCategory = "fun";
+                        const {createFunStatsEmbed} = require("../../utils/statsEmbedBuilder");
+                        const embed = createFunStatsEmbed(targetUser);
+                        const navButtons = createStatsNavigationButtons(currentStatsCategory);
+                        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`back_to_profile_${targetUser.id}`)
+                                .setLabel("◀️ Retour au profil")
+                                .setStyle(ButtonStyle.Danger)
+                        );
+                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId === "stats_serveur") {
                         currentStatsCategory = "serveur";
                         const embed = await createServerStatsEmbed(i.guild, i.client);
@@ -358,7 +370,7 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [navButtons, backButton]});
+                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId === "stats_seasonal") {
                         currentStatsCategory = "seasonal";
                         const {createSeasonalStatsEmbed} = require("../../utils/seasonalStatsEmbed");
@@ -370,7 +382,7 @@ module.exports = {
                                 .setLabel("◀️ Retour au profil")
                                 .setStyle(ButtonStyle.Danger)
                         );
-                        await i.update({embeds: [embed], components: [navButtons, backButton]});
+                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId === "stats_game_select" && i.isStringSelectMenu()) {
                         currentGameType = i.values[0];
                         const embed = createDetailedGameStatsEmbed(targetUser, currentGameType);

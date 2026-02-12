@@ -35,40 +35,38 @@ export const XP_REWARDS = {
     // Stats Création
     postCreation: 500,              // Réduit de 1000 à 500 (-50%)
 
-    // === JEUX - ROCHE PAPIER CISEAUX ===
-    // Contre joueur (PvP)
-    rpsVictoireVsJoueur: 15,
-    rpsDefaiteVsJoueur: 0,
-    rpsEgaliteVsJoueur: 0,
-    // Contre Netricsa (PvE)
+// === ROCHE PAPIER CISEAUX ===
+    rpsVictoireVsJoueur: 10,
+    rpsDefaiteVsJoueur: 3,        // +3 XP
+    rpsEgaliteVsJoueur: 5,        // +3 XP
     rpsVictoireVsIA: 8,
-    rpsDefaiteVsIA: 0,
-    rpsEgaliteVsIA: 0,
+    rpsDefaiteVsIA: 2,            // +2 XP
+    rpsEgaliteVsIA: 4,            // +2 XP
 
-    // === JEUX - TIC TAC TOE ===
-    // Contre joueur (PvP)
+// === TIC TAC TOE ===
     tttVictoireVsJoueur: 20,
-    tttDefaiteVsJoueur: 0,
+    tttDefaiteVsJoueur: 6,        // +4 XP
     tttEgaliteVsJoueur: 10,
-    // Contre Netricsa (PvE)
     tttVictoireVsIA: 10,
-    tttDefaiteVsIA: 0,
+    tttDefaiteVsIA: 3,            // +2 XP
     tttEgaliteVsIA: 5,
 
-    // === JEUX - CONNECT 4 ===
-    // Contre joueur (PvP)
+// === CONNECT 4 ===
     c4VictoireVsJoueur: 25,
-    c4DefaiteVsJoueur: 0,
-    c4EgaliteVsJoueur: 12,
-    // Contre Netricsa (PvE)
-    c4VictoireVsIA: 12,
-    c4DefaiteVsIA: 0,
+    c4DefaiteVsJoueur: 8,         // +5 XP
+    c4EgaliteVsJoueur: 13,
+    c4VictoireVsIA: 13,
+    c4DefaiteVsIA: 3,             // +3 XP
     c4EgaliteVsIA: 6,
 
-    // === JEUX - PENDU ===
-    // Le pendu est toujours contre l'IA
-    hangmanVictoire: 15,
-    hangmanDefaite: 0
+// === HANGMAN ===
+    hangmanVictoire: 20,
+    hangmanDefaite: 8,            // +2 XP
+
+// === BLACKJACK ===
+    blackjackVictoireVsIA: 12,    // +4 XP
+    blackjackDefaiteVsIA: 3,      // +4 XP (enlever pénalité)
+    blackjackEgaliteVsIA: 6,      // +3 XP
 };
 
 /**

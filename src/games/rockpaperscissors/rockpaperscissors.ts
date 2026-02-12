@@ -19,6 +19,7 @@ interface GameState {
     player2HighestWinstreak: number;
     draws: number;
     originalUserId?: string; // Celui qui a lancé /games
+    originalInteraction?: any; // Pour éditer les messages en contexte UserApp
 }
 
 const activeGames = new Map<string, GameState>();
@@ -142,7 +143,8 @@ async function waitForPlayer(interaction: any, player1Id: string, gameId: string
         player1HighestWinstreak: 0,
         player2HighestWinstreak: 0,
         draws: 0,
-        originalUserId: originalUserId
+        originalUserId: originalUserId,
+        originalInteraction: interaction // Stocker l'interaction pour les timeouts
     };
 
     activeGames.set(gameId, gameState);
@@ -216,13 +218,11 @@ async function waitForPlayer(interaction: any, player1Id: string, gameId: string
         if (reason === "time") {
             activeGames.delete(gameId);
 
-            const timeoutEmbed = new EmbedBuilder()
-                .setColor(0xED4245)
-                .setTitle("🎮 Roche-Papier-Ciseaux")
-                .setDescription("⏱️ Temps écoulé ! Aucun joueur n'a rejoint.")
-                .setTimestamp();
-
-            await interaction.editReply({embeds: [timeoutEmbed], components: []});
+            try {
+                await interaction.editReply({components: []});
+            } catch (error: any) {
+                console.log("[RPS] Cannot edit timeout message. Error:", error.code);
+            }
         }
     });
 }
@@ -241,7 +241,8 @@ async function startGameAgainstAI(interaction: any, playerId: string, gameId: st
         player1HighestWinstreak: 0,
         player2HighestWinstreak: 0,
         draws: 0,
-        originalUserId: originalUserId
+        originalUserId: originalUserId,
+        originalInteraction: interaction // Stocker l'interaction pour les timeouts
     };
 
     activeGames.set(gameId, gameState);
@@ -435,18 +436,16 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
         if (reason === "time") {
             activeGames.delete(gameId);
 
-            const timeoutEmbed = new EmbedBuilder()
-                .setColor(0xED4245)
-                .setTitle("🎮 Roche-Papier-Ciseaux")
-                .setDescription("⏱️ Temps écoulé ! La partie est annulée." + getStatsDescription(gameState))
-                .setTimestamp();
-
-            const footerText = getStatsFooter(gameState);
-            if (footerText) {
-                timeoutEmbed.setFooter({text: footerText});
+            try {
+                // Utiliser originalInteraction.editReply pour supporter UserApp
+                if (gameState.originalInteraction) {
+                    await gameState.originalInteraction.editReply({components: []});
+                } else {
+                    await message.edit({components: []});
+                }
+            } catch (error: any) {
+                console.log("[RPS] Cannot edit timeout message. Error:", error.code);
             }
-
-            await message.edit({embeds: [timeoutEmbed], components: []});
         }
     });
 }
@@ -692,23 +691,6 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
             }
         } catch (error) {
             console.error("[RPS] Error handling rematch:", error);
-        }
-    });
-
-    collector.on("end", async (_collected: any, reason: string) => {
-        if (reason === "time") {
-            const embed = new EmbedBuilder()
-                .setColor(0xED4245)
-                .setTitle("🎮 Roche-Papier-Ciseaux")
-                .setDescription("⏱️ Le temps pour accepter un rematch est écoulé." + getStatsDescription(gameState))
-                .setTimestamp();
-
-            const footerText = getStatsFooter(gameState);
-            if (footerText) {
-                embed.setFooter({text: footerText});
-            }
-
-            await message.edit({embeds: [embed], components: []});
         }
     });
 }

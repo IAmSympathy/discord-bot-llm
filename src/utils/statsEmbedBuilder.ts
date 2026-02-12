@@ -171,9 +171,6 @@ export function createNetricsaStatsEmbed(targetUser: User): EmbedBuilder {
         if (isBot && userStats.netricsa.recherchesWebNetricsa !== undefined) {
             description += `🌐 **Recherches web effectuées :** ${userStats.netricsa.recherchesWebNetricsa}\n`;
         }
-
-        description += `🐸 **Memes recherchés :** ${userStats.netricsa.memesRecherches || 0}`;
-
         // Si c'est Netricsa, ajouter un message personnalisé
         if (isBot) {
             description += `\n\n✨ Voilà toutes mes actions depuis que j'ai commencé à les compter !`;
@@ -279,7 +276,66 @@ export async function createServerStatsEmbed(guild?: any, client?: any): Promise
 /**
  * Type pour les catégories de stats
  */
-export type StatsCategory = "discord" | "netricsa" | "jeux" | "serveur" | "seasonal";
+export type StatsCategory = "discord" | "netricsa" | "jeux" | "serveur" | "seasonal" | "fun";
+
+/**
+ * Crée l'embed pour les statistiques des commandes fun
+ */
+export function createFunStatsEmbed(targetUser: User): EmbedBuilder {
+    const FUN_STATS_FILE = path.join(process.cwd(), "data", "fun_command_stats.json");
+    let description = getLevelText(targetUser.id);
+
+    let funStats: any = null;
+    try {
+        if (fs.existsSync(FUN_STATS_FILE)) {
+            const data = fs.readFileSync(FUN_STATS_FILE, "utf-8");
+            const allStats = JSON.parse(data);
+            funStats = allStats[targetUser.id];
+        }
+    } catch (error) {
+        // Silently fail
+    }
+
+    if (!funStats || funStats.total === 0) {
+        description += "Aucune commande fun utilisée pour le moment.";
+    } else {
+        description += `🎪 **Total de commandes fun :** ${funStats.total}\n\n`;
+
+        // Trier les commandes par utilisation
+        const commands = [
+            {name: "🎰 Slots", count: funStats.slots || 0, emoji: "🎰"},
+            {name: "❤️ Ship", count: funStats.ship || 0, emoji: "❤️"},
+            {name: "🎲 Dés", count: funStats.dice || 0, emoji: "🎲"},
+            {name: "🪙 Pièce", count: funStats.coinflip || 0, emoji: "🪙"},
+            {name: "🔮 Boule de Cristal", count: funStats.crystalball || 0, emoji: "🔮"},
+            {name: "🤔 Choix", count: funStats.choose || 0, emoji: "🤔"},
+            {name: "📝 ASCII", count: funStats.ascii || 0, emoji: "📝"},
+            {name: "🥒 Concombre", count: funStats.cucumber || 0, emoji: "🥒"},
+            {name: "🎭 Meme trouvés", count: funStats.netricsa.memesRecherches || 0, emoji: "🎭"}
+        ].sort((a, b) => b.count - a.count);
+
+        // Afficher les statistiques triées
+        commands.forEach(cmd => {
+            if (cmd.count > 0) {
+                description += `${cmd.emoji} **${cmd.name} :** ${cmd.count}\n`;
+            }
+        });
+
+        // Trouver la commande préférée
+        const favorite = commands[0];
+        if (favorite.count > 0) {
+            description += `\n🌟 **Commande fun préférée :** ${favorite.name} (${favorite.count} fois)`;
+        }
+    }
+
+    return new EmbedBuilder()
+        .setColor(0xFF69B4) // Rose pour Fun
+        .setTitle(`🎪 Statistiques Fun de ${targetUser.displayName}`)
+        .setDescription(description)
+        .setThumbnail(targetUser.displayAvatarURL({size: 128}))
+        .setFooter({text: "Stats depuis le 10 février 2026"})
+        .setTimestamp();
+}
 
 /**
  * Crée l'embed pour une catégorie de stats donnée
@@ -292,6 +348,8 @@ export async function createStatsEmbed(targetUser: User, category: StatsCategory
             return createNetricsaStatsEmbed(targetUser);
         case "jeux":
             return createGameStatsEmbed(targetUser);
+        case "fun":
+            return createFunStatsEmbed(targetUser);
         case "serveur":
             return await createServerStatsEmbed(guild, client);
         default:
@@ -313,7 +371,7 @@ export function createProfileEmbed(targetUser: User): EmbedBuilder {
         .setFooter({text: `ID: ${targetUser.id}`});
 
     if (!profile) {
-        embed.setDescription(`Aucun profil trouvé pour **${targetUser.username}**.\nL'IA n'a pas encore appris d'informations sur cet utilisateur.`);
+        embed.setDescription(`Aucun profil trouvé pour **${targetUser.username}**.`);
         return embed;
     }
 
@@ -491,12 +549,13 @@ export function createDetailedGameStatsEmbed(targetUser: User, gameType: string)
 }
 
 /**
- * Crée les boutons de navigation pour les stats
+ * Crée les boutons de navigation pour les stats (retourne 2 lignes)
  */
-export function createStatsNavigationButtons(currentCategory?: StatsCategory): import("discord.js").ActionRowBuilder<import("discord.js").ButtonBuilder> {
+export function createStatsNavigationButtons(currentCategory?: StatsCategory): import("discord.js").ActionRowBuilder<import("discord.js").ButtonBuilder>[] {
     const {ActionRowBuilder, ButtonBuilder, ButtonStyle} = require("discord.js");
 
-    return new ActionRowBuilder().addComponents(
+    // Première ligne : Discord, Netricsa, Jeux, Fun
+    const row1 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId("stats_discord")
             .setLabel("Discord")
@@ -516,6 +575,16 @@ export function createStatsNavigationButtons(currentCategory?: StatsCategory): i
             .setStyle(currentCategory === "jeux" ? ButtonStyle.Success : ButtonStyle.Primary)
             .setDisabled(currentCategory === "jeux"),
         new ButtonBuilder()
+            .setCustomId("stats_fun")
+            .setLabel("Fun")
+            .setEmoji("🎪")
+            .setStyle(currentCategory === "fun" ? ButtonStyle.Success : ButtonStyle.Primary)
+            .setDisabled(currentCategory === "fun")
+    );
+
+    // Deuxième ligne : Saisonnier, Serveur
+    const row2 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
             .setCustomId("stats_seasonal")
             .setLabel("Saisonnier")
             .setEmoji("❄️")
@@ -528,6 +597,8 @@ export function createStatsNavigationButtons(currentCategory?: StatsCategory): i
             .setStyle(currentCategory === "serveur" ? ButtonStyle.Success : ButtonStyle.Secondary)
             .setDisabled(currentCategory === "serveur")
     );
+
+    return [row1, row2];
 }
 
 

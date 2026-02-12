@@ -23,6 +23,7 @@ interface GameState {
     currentStreak: number;
     highestStreak: number;
     originalUserId?: string;
+    originalInteraction?: any; // Pour éditer les messages en contexte UserApp
 }
 
 const activeGames = new Map<string, GameState>();
@@ -303,6 +304,7 @@ module.exports = {
 async function startBlackjackGame(interaction: any, playerId: string, useUpdate: boolean = false, originalUserId?: string) {
     const gameState = startNewGame(playerId);
     gameState.originalUserId = originalUserId || playerId;
+    gameState.originalInteraction = interaction; // Stocker l'interaction pour les timeouts
     activeGames.set(playerId, gameState);
 
     // Vérifier si le joueur a un Blackjack naturel
@@ -433,14 +435,14 @@ function setupGameCollector(message: any, gameState: GameState): void {
     collector.on("end", async (_collected: any, reason: string) => {
         if (reason === "time" && !gameState.gameOver) {
             activeGames.delete(gameState.player);
-            const timeoutEmbed = new EmbedBuilder()
-                .setColor(0xED4245)
-                .setTitle("🃏 Blackjack")
-                .setDescription("⏱️ Temps écoulé ! La partie est annulée.")
-                .setTimestamp();
 
             try {
-                await message.edit({embeds: [timeoutEmbed], components: []});
+                // Utiliser originalInteraction.editReply pour supporter UserApp
+                if (gameState.originalInteraction) {
+                    await gameState.originalInteraction.editReply({components: []});
+                } else {
+                    await message.edit({components: []});
+                }
             } catch (error: any) {
                 console.log("[Blackjack] Cannot edit timeout message. Error:", error.code);
             }
@@ -499,8 +501,14 @@ function setupRematchCollector(message: any, gameState: GameState): void {
     collector.on("end", async (_collected: any, reason: string) => {
         if (reason === "time") {
             activeGames.delete(gameState.player);
+
             try {
-                await message.edit({components: []});
+                // Utiliser originalInteraction.editReply pour supporter UserApp
+                if (gameState.originalInteraction) {
+                    await gameState.originalInteraction.editReply({components: []});
+                } else {
+                    await message.edit({components: []});
+                }
             } catch (error: any) {
                 console.log("[Blackjack] Cannot edit rematch timeout message. Error:", error.code);
             }

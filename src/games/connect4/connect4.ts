@@ -1,7 +1,7 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, SlashCommandBuilder} from "discord.js";
 import {handleInteractionError} from "../../utils/interactionUtils";
-import {GameStats, getStatsDescription, getStatsFooter, getWinstreakDisplay, initializeStats, updateStatsOnDraw, updateStatsOnWin} from "../common/gameStats";
-import {canJoinGame, COLLECTOR_CONFIG, createBackToMenuButton, createCancelButton, createJoinButton, createRematchButton, createTimeoutEmbed, createWaitingEmbed, handleGameCancellation} from "../common/gameUtils";
+import {GameStats, getStatsFooter, getWinstreakDisplay, initializeStats, updateStatsOnDraw, updateStatsOnWin} from "../common/gameStats";
+import {canJoinGame, COLLECTOR_CONFIG, createBackToMenuButton, createCancelButton, createJoinButton, createRematchButton, createWaitingEmbed, handleGameCancellation} from "../common/gameUtils";
 import {NETRICSA_GAME_ID, recordDraw, recordLoss, recordWin} from "../common/globalStats";
 
 interface GameState {
@@ -16,6 +16,7 @@ interface GameState {
     player1WantsRematch?: boolean;
     player2WantsRematch?: boolean;
     originalUserId?: string;
+    originalInteraction?: any; // Pour éditer les messages en contexte UserApp
 }
 
 const activeGames = new Map<string, GameState>();
@@ -126,7 +127,8 @@ async function waitForPlayer(interaction: any, player1Id: string, gameId: string
         player1Symbol: "🔴",
         player2Symbol: "🟡",
         stats: initializeStats(),
-        originalUserId: originalUserId
+        originalUserId: originalUserId,
+        originalInteraction: interaction // Stocker pour les timeouts
     };
 
     activeGames.set(gameId, gameState);
@@ -174,9 +176,13 @@ async function waitForPlayer(interaction: any, player1Id: string, gameId: string
 
     collector.on("end", async (_collected: any, reason: string) => {
         if (reason === "time") {
-            const timeoutEmbed = createTimeoutEmbed(GAME_TITLE);
-            await interaction.editReply({embeds: [timeoutEmbed], components: []});
             activeGames.delete(gameId);
+
+            try {
+                await interaction.editReply({components: []});
+            } catch (error: any) {
+                console.log("[Connect4] Cannot edit timeout message. Error:", error.code);
+            }
         }
     });
 }
@@ -191,7 +197,8 @@ async function startGameAgainstAI(interaction: any, player1Id: string, gameId: s
         player1Symbol: "🔴",
         player2Symbol: "🟡",
         stats: initializeStats(),
-        originalUserId: originalUserId
+        originalUserId: originalUserId,
+        originalInteraction: interaction // Stocker pour les timeouts
     };
 
     activeGames.set(gameId, gameState);
@@ -256,9 +263,13 @@ async function startGame(interaction: any, gameId: string) {
 
     collector.on("end", async (_collected: any, reason: string) => {
         if (reason === "time") {
-            const timeoutEmbed = createTimeoutEmbed(GAME_TITLE);
-            await interaction.editReply({embeds: [timeoutEmbed], components: []});
             activeGames.delete(gameId);
+
+            try {
+                await interaction.editReply({components: []});
+            } catch (error: any) {
+                console.log("[Connect4] Cannot edit timeout message. Error:", error.code);
+            }
         }
     });
 }
@@ -761,29 +772,6 @@ function setupRematchCollector(interaction: any, gameId: string, originalEmbed: 
             }
         } catch (error) {
             console.error("[Connect4] Error in rematch collector:", error);
-        }
-    });
-
-    collector.on("end", async (_collected: any, reason: string) => {
-        if (reason === "time") {
-            const description = `⏱️ Le temps pour accepter un rematch est écoulé.${getStatsDescription(gameState.stats, gameState.player1, gameState.player2, gameState.isAI)}`;
-
-            const embed = new EmbedBuilder()
-                .setColor(0xED4245)
-                .setTitle(`🎮 ${GAME_TITLE}`)
-                .setDescription(description)
-                .setTimestamp();
-
-            const footerText = getStatsFooter(gameState.stats);
-            if (footerText) {
-                embed.setFooter({text: footerText});
-            }
-
-            try {
-                await interaction.message.edit({embeds: [embed], components: []});
-            } catch (error: any) {
-                console.log("[Connect4] Cannot edit rematch timeout message. Error:", error.code);
-            }
         }
     });
 }

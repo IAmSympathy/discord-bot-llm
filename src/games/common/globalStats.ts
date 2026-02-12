@@ -191,7 +191,7 @@ export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tic
                     xpAmount = XP_REWARDS.hangmanVictoire;
                     break;
                 case 'blackjack':
-                    xpAmount = XP_REWARDS.rpsVictoireVsIA; // Même XP que RPS
+                    xpAmount = XP_REWARDS.blackjackVictoireVsIA; // Même XP que RPS
                     break;
             }
         } else {
@@ -210,7 +210,7 @@ export async function recordWin(userId: string, game: 'rockpaperscissors' | 'tic
                     xpAmount = XP_REWARDS.hangmanVictoire; // Hangman est toujours vs IA
                     break;
                 case 'blackjack':
-                    xpAmount = XP_REWARDS.rpsVictoireVsIA; // Blackjack est toujours vs IA
+                    xpAmount = XP_REWARDS.blackjackVictoireVsIA; // Blackjack est toujours vs IA
                     break;
             }
         }
@@ -310,6 +310,9 @@ export async function recordLoss(userId: string, game: 'rockpaperscissors' | 'ti
                 case 'hangman':
                     xpAmount = XP_REWARDS.hangmanDefaite;
                     break;
+                case 'blackjack':
+                    xpAmount = XP_REWARDS.blackjackDefaiteVsIA;
+                    break;
             }
         } else {
             // Contre joueur (PvP)
@@ -325,6 +328,9 @@ export async function recordLoss(userId: string, game: 'rockpaperscissors' | 'ti
                     break;
                 case 'hangman':
                     xpAmount = XP_REWARDS.hangmanDefaite; // Hangman est toujours vs IA
+                    break;
+                case 'blackjack':
+                    xpAmount = XP_REWARDS.blackjackDefaiteVsIA;
                     break;
             }
         }
@@ -414,6 +420,9 @@ export async function recordDraw(userId: string, game: 'rockpaperscissors' | 'ti
                 case 'hangman':
                     xpAmount = 0; // Pas d'égalité au pendu
                     break;
+                case 'blackjack':
+                    xpAmount = XP_REWARDS.blackjackEgaliteVsIA;
+                    break;
             }
         } else {
             // Contre joueur (PvP)
@@ -429,6 +438,9 @@ export async function recordDraw(userId: string, game: 'rockpaperscissors' | 'ti
                     break;
                 case 'hangman':
                     xpAmount = 0; // Pas d'égalité au pendu
+                    break;
+                case 'blackjack':
+                    xpAmount = XP_REWARDS.blackjackEgaliteVsIA;
                     break;
             }
         }

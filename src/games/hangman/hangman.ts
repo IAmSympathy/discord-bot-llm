@@ -16,6 +16,7 @@ interface GameState {
     isCompleted: boolean;
     selectedLetter?: string;
     originalUserId?: string; // Celui qui a lancé /games
+    originalInteraction?: any; // Pour éditer les messages en contexte UserApp
 }
 
 const activeGames = new Map<string, GameState>();
@@ -126,7 +127,8 @@ async function startGame(interaction: any, playerId: string, gameId: string) {
         currentStreak: 0,
         highestStreak: 0,
         isCompleted: false,
-        selectedLetter: undefined
+        selectedLetter: undefined,
+        originalInteraction: interaction // Stocker pour les timeouts
     };
 
     activeGames.set(gameId, gameState);
@@ -341,22 +343,15 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
         if (reason === "time" && !gameState.isCompleted) {
             activeGames.delete(gameId);
 
-            const timeoutEmbed = new EmbedBuilder()
-                .setColor(0xED4245)
-                .setTitle("🎮 Bonhomme Pendu")
-                .setDescription(`⏱️ Temps écoulé ! La partie est annulée.\n\n**Le mot était:** \`${gameState.word}\`` + getStatsDescription(gameState))
-                .setTimestamp();
-
-            const footerText = getStatsFooter(gameState);
-            if (footerText) {
-                timeoutEmbed.setFooter({text: footerText});
-            }
-
             try {
-                await message.edit({embeds: [timeoutEmbed], components: []});
+                // Utiliser originalInteraction.editReply pour supporter UserApp
+                if (gameState.originalInteraction) {
+                    await gameState.originalInteraction.editReply({components: []});
+                } else {
+                    await message.edit({components: []});
+                }
             } catch (error: any) {
-                console.log("[Hangman] Cannot edit timeout message, sending new one. Error:", error.code);
-                await message.channel.send({embeds: [timeoutEmbed], components: []});
+                console.log("[Hangman] Cannot edit timeout message. Error:", error.code);
             }
         }
     });
@@ -537,27 +532,6 @@ function setupRestartCollector(message: any, gameState: GameState) {
             }
         } catch (error) {
             console.error("[Hangman] Error handling restart:", error);
-        }
-    });
-
-    collector.on("end", async (_collected: any, reason: string) => {
-        if (reason === "time") {
-            const embed = new EmbedBuilder()
-                .setColor(0xED4245)
-                .setTitle("🎮 Bonhomme Pendu")
-                .setDescription("⏱️ Le temps pour recommencer est écoulé." + getStatsDescription(gameState))
-                .setTimestamp();
-
-            const footerText = getStatsFooter(gameState);
-            if (footerText) {
-                embed.setFooter({text: footerText});
-            }
-
-            try {
-                await message.edit({embeds: [embed], components: []});
-            } catch (error: any) {
-                console.log("[Hangman] Cannot edit restart timeout message. Error:", error.code);
-            }
         }
     });
 }
