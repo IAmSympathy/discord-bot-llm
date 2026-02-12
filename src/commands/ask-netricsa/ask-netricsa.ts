@@ -189,6 +189,7 @@ module.exports = {
                 skipMemory: true, // Pas de mémoire pour ask-netricsa
                 progressMessage: progressMessage, // Passer le message d'animation
                 animationInterval: animationInterval, // Passer l'interval pour qu'il soit arrêté
+                skipTypingIndicator: true, // Désactiver le typing indicator (UserApp/DM)
                 sendMessage: true
             });
 

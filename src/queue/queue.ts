@@ -47,6 +47,7 @@ interface DirectLLMRequest {
     interaction?: ChatInputCommandInteraction; // Interaction optionnelle pour les messages éphémères
     progressMessage?: Message;
     animationInterval?: NodeJS.Timeout;
+    skipTypingIndicator?: boolean; // Flag pour désactiver le typing indicator (UserApps, DMs)
 }
 
 // Configuration mémoire persistante
@@ -98,7 +99,7 @@ export function cleanupImageAnalysis(channelKey: string): void {
 
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest): Promise<string | void> {
-    const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext, skipImageAnalysis = false, preAnalyzedImages = [], originalUserMessage, preStartedAnimation, skipMemory = false, returnResponse = false, interaction, progressMessage, animationInterval} = request;
+    const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext, skipImageAnalysis = false, preAnalyzedImages = [], originalUserMessage, preStartedAnimation, skipMemory = false, returnResponse = false, interaction, progressMessage, animationInterval, skipTypingIndicator = false} = request;
 
     // Vérifier si l'utilisateur est déjà dans la queue
     if (isUserInQueue(userId)) {
@@ -322,20 +323,25 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         await setStatus(client, BotStatus.WRITING);
 
         // Démarrer l'indicateur "est en train d'écrire" de Discord
+        // SAUF si skipTypingIndicator est activé (UserApps, DMs sans accès)
         let typingInterval: NodeJS.Timeout | null = null;
-        try {
-            // Envoyer l'indicateur immédiatement
-            await channel.sendTyping();
-            // Renouveler toutes les 5 secondes (l'indicateur expire après 10 secondes)
-            typingInterval = setInterval(async () => {
-                try {
-                    await channel.sendTyping();
-                } catch (error) {
-                    // Ignorer les erreurs (canal supprimé, etc.)
-                }
-            }, 5000);
-        } catch (error) {
-            logger.warn("Could not send typing indicator:", error);
+        if (!skipTypingIndicator) {
+            try {
+                // Envoyer l'indicateur immédiatement
+                await channel.sendTyping();
+                // Renouveler toutes les 5 secondes (l'indicateur expire après 10 secondes)
+                typingInterval = setInterval(async () => {
+                    try {
+                        await channel.sendTyping();
+                    } catch (error) {
+                        // Ignorer les erreurs (canal supprimé, etc.)
+                    }
+                }, 5000);
+            } catch (error) {
+                logger.warn("Could not send typing indicator:", error);
+            }
+        } else {
+            logger.info("Typing indicator skipped (skipTypingIndicator = true)");
         }
 
         logger.info(`Sending request to Ollama`);
