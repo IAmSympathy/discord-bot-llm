@@ -173,43 +173,119 @@ Donne une analyse CONSTRUCTIVE qui pourra aider l'artiste.`;
     }
 
     try {
-        const response = await fetch(`${OLLAMA_API_URL}/api/chat`, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                model: OLLAMA_VISION_MODEL,
-                messages: [
-                    {role: "system", content: visionSystemPrompt},
-                    {role: "user", content: userPrompt, images: [imageBase64]},
-                ],
-                stream: false,
-                options: {
-                    temperature: context === 'creation' ? 0.4 : 0.2, // Plus de créativité pour les créations
-                    num_predict: context === 'creation' ? 800 : 500, // Plus de tokens pour analyses détaillées
-                },
-            }),
-        });
+        // Créer un AbortController pour gérer le timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 secondes (2 minutes)
 
+        try {
+            const response = await fetch(`${OLLAMA_API_URL}/api/chat`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    model: OLLAMA_VISION_MODEL,
+                    messages: [
+                        {role: "system", content: visionSystemPrompt},
+                        {role: "user", content: userPrompt, images: [imageBase64]},
+                    ],
+                    stream: false,
+                    options: {
+                        temperature: context === 'creation' ? 0.4 : 0.2, // Plus de créativité pour les créations
+                        num_predict: context === 'creation' ? 800 : 500, // Plus de tokens pour analyses détaillées
+                    },
+                }),
+                signal: controller.signal,
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                console.error(`[ImageService] Error: ${response.status} ${response.statusText}`);
+
+                await logError("Erreur de génération de description d'image", undefined, [
+                    {name: "Status", value: `${response.status} ${response.statusText}`, inline: true},
+                    {name: "Modèle", value: OLLAMA_VISION_MODEL, inline: true}
+                ]);
+
+                return null;
+            }
+
+            const result = await response.json();
+            const description = result.message?.content || null;
+            const tokens = (result.prompt_eval_count || 0) + (result.eval_count || 0);
+
+            console.log(`[ImageService] Generated description (${description?.length || 0} chars, ${tokens} tokens)${context ? ` [context: ${context}]` : ''}`);
+            return description ? {description, tokens} : null;
+        } catch (fetchError: any) {
+            clearTimeout(timeoutId);
+
+            // Gérer spécifiquement l'erreur d'abort (timeout)
+            if (fetchError.name === 'AbortError') {
+                console.error(`[ImageService] Timeout après 120 secondes lors de l'analyse d'image`);
+                await logError("Timeout lors de l'analyse d'image", undefined, [
+                    {name: "Durée", value: "120 secondes", inline: true},
+                    {name: "Modèle", value: OLLAMA_VISION_MODEL, inline: true}
+                ]);
+                return null;
+            }
+
+            // Erreur de connexion ou autre
+            throw fetchError;
+        }
+    } catch (error: any) {
+        console.error(`[ImageService] Error generating description:`, error);
+
+        // Logger les détails de l'erreur pour le debugging
+        await logError("Erreur critique lors de l'analyse d'image", undefined, [
+            {name: "Type d'erreur", value: error.name || "Unknown", inline: true},
+            {name: "Message", value: error.message || "No message", inline: false},
+            {name: "Cause", value: error.cause?.message || "No cause", inline: false}
+        ]);
+
+        return null;
+    }
+}
+
+/**
+ * Vérifie si le modèle vision est disponible sur le serveur Ollama
+ * À appeler au démarrage pour diagnostiquer les problèmes
+ */
+export async function checkVisionModelAvailability(): Promise<boolean> {
+    try {
+        console.log(`[ImageService] Checking if vision model ${OLLAMA_VISION_MODEL} is available...`);
+
+        const response = await fetch(`${OLLAMA_API_URL}/api/tags`);
         if (!response.ok) {
-            console.error(`[ImageService] Error: ${response.status} ${response.statusText}`);
-
-            await logError("Erreur de génération de description d'image", undefined, [
-                {name: "Status", value: `${response.status} ${response.statusText}`, inline: true},
-                {name: "Modèle", value: OLLAMA_VISION_MODEL, inline: true}
-            ]);
-
-            return null;
+            console.error(`[ImageService] Failed to fetch Ollama models: ${response.status}`);
+            return false;
         }
 
-        const result = await response.json();
-        const description = result.message?.content || null;
-        const tokens = (result.prompt_eval_count || 0) + (result.eval_count || 0);
+        const data = await response.json();
+        const models = data.models || [];
+        const modelNames = models.map((m: any) => m.name);
 
-        console.log(`[ImageService] Generated description (${description?.length || 0} chars, ${tokens} tokens)${context ? ` [context: ${context}]` : ''}`);
-        return description ? {description, tokens} : null;
+        console.log(`[ImageService] Available models: ${modelNames.join(', ')}`);
+
+        const isAvailable = modelNames.some((name: string) =>
+            name === OLLAMA_VISION_MODEL || name.startsWith(OLLAMA_VISION_MODEL.split(':')[0])
+        );
+
+        if (isAvailable) {
+            console.log(`[ImageService] ✅ Vision model ${OLLAMA_VISION_MODEL} is available`);
+        } else {
+            console.error(`[ImageService] ❌ Vision model ${OLLAMA_VISION_MODEL} is NOT available`);
+            console.error(`[ImageService] Please run: ollama pull ${OLLAMA_VISION_MODEL}`);
+
+            await logError("Modèle vision non disponible", undefined, [
+                {name: "Modèle requis", value: OLLAMA_VISION_MODEL, inline: true},
+                {name: "Modèles disponibles", value: modelNames.join(', ') || "Aucun", inline: false},
+                {name: "Solution", value: `Exécuter: ollama pull ${OLLAMA_VISION_MODEL}`, inline: false}
+            ]);
+        }
+
+        return isAvailable;
     } catch (error) {
-        console.error(`[ImageService] Error generating description:`, error);
-        return null;
+        console.error(`[ImageService] Error checking model availability:`, error);
+        return false;
     }
 }
 

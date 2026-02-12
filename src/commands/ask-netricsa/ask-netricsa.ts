@@ -19,10 +19,10 @@ module.exports = {
                 .setDescription("Ta question pour Netricsa")
                 .setRequired(true)
         )
-        .addStringOption((option) =>
+        .addAttachmentOption((option) =>
             option
                 .setName("image")
-                .setDescription("URL d'une image à analyser (facultatif)")
+                .setDescription("Image à analyser (facultatif)")
                 .setRequired(false)
         )
         .addStringOption((option) =>
@@ -64,13 +64,13 @@ module.exports = {
 
         try {
             const question = interaction.options.getString("question", true);
-            const imageUrl = interaction.options.getString("image", false);
+            const imageAttachment = interaction.options.getAttachment("image", false);
             const replyToId = interaction.options.getString("reply-to", false);
 
             // Déférer la réponse car le traitement peut prendre du temps
             await interaction.deferReply();
 
-            logger.info(`Processing /ask-netricsa from ${interaction.user.displayName}: ${question}${imageUrl ? ' [with image]' : ''}${replyToId ? ' [replying to message]' : ''}`);
+            logger.info(`Processing /ask-netricsa from ${interaction.user.displayName}: ${question}${imageAttachment ? ' [with image]' : ''}${replyToId ? ' [replying to message]' : ''}`);
 
             // Récupérer le message référencé si un ID est fourni
             let referencedMessage = null;
@@ -89,16 +89,15 @@ module.exports = {
 
             // Construire la liste des URLs d'images
             const imageUrls: string[] = [];
-            if (imageUrl) {
-                // Valider que c'est une URL valide
-                try {
-                    new URL(imageUrl);
-                    imageUrls.push(imageUrl);
-                    logger.info(`Image URL added: ${imageUrl}`);
-                } catch (error) {
-                    logger.warn(`Invalid image URL provided: ${imageUrl}`);
+            if (imageAttachment) {
+                // Vérifier que c'est bien une image
+                if (imageAttachment.contentType?.startsWith('image/')) {
+                    imageUrls.push(imageAttachment.url);
+                    logger.info(`Image attachment added: ${imageAttachment.url}`);
+                } else {
+                    logger.warn(`Invalid attachment type provided: ${imageAttachment.contentType}`);
                     await interaction.editReply({
-                        content: `❌ L'URL de l'image fournie n'est pas valide : \`${imageUrl}\`\n\nAssure-toi de fournir une URL complète (commençant par http:// ou https://).`
+                        content: `❌ Le fichier fourni n'est pas une image valide. Types acceptés : PNG, JPG, JPEG, GIF, WEBP.`
                     });
                     return;
                 }

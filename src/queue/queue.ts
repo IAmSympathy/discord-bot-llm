@@ -234,7 +234,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
         // Changer le statut selon l'activité
         if (imageUrls && imageUrls.length > 0 && !skipImageAnalysis) {
-            await setStatus(client, imageUrls.length === 1 ? BotStatus.ANALYZING_IMAGE : BotStatus.ANALYZING_IMAGES(imageUrls.length));
+            await setStatus(client, imageUrls.length === 1 ? BotStatus.ANALYZING_IMAGE : BotStatus.ANALYZING_IMAGES(imageUrls.length), 60000); // Statut spécifique pour l'analyse d'images, durée plus longue
         }
 
         // Gérer l'animation d'analyse d'image (seulement si pas déjà analysée et pas skip)
@@ -249,25 +249,35 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         let imageDescriptions: string[] = [];
 
         if (imageUrls && imageUrls.length > 0) {
-            // Si les images sont déjà analysées (depuis forumThreadHandler), utiliser les résultats
-            if (skipImageAnalysis && preAnalyzedImages && preAnalyzedImages.length > 0) {
-                logger.info(`Using pre-analyzed images (${preAnalyzedImages.length})`);
-                imageResults = preAnalyzedImages;
-                imageDescriptions = imageResults.map(r => r.description);
-                // Ne pas logger ici, déjà loggé dans forumThreadHandler
-            } else if (skipImageAnalysis) {
-                // Skip complètement l'analyse d'images si le flag est true (ex: !s dans le message)
-                logger.info(`Skipping image analysis for ${imageUrls.length} image(s) (!s flag)`);
-                imageDescriptions = imageUrls.map((url, index) => `[Image ${index + 1} - analyse désactivée par l'utilisateur]`);
-            } else {
-                // Sinon, analyser les images normalement
-                imageResults = await processImagesWithMetadata(imageUrls);
-                imageDescriptions = imageResults.map(r => r.description);
+            try {
+                // Si les images sont déjà analysées (depuis forumThreadHandler), utiliser les résultats
+                if (skipImageAnalysis && preAnalyzedImages && preAnalyzedImages.length > 0) {
+                    logger.info(`Using pre-analyzed images (${preAnalyzedImages.length})`);
+                    imageResults = preAnalyzedImages;
+                    imageDescriptions = imageResults.map(r => r.description);
+                    // Ne pas logger ici, déjà loggé dans forumThreadHandler
+                } else if (skipImageAnalysis) {
+                    // Skip complètement l'analyse d'images si le flag est true (ex: !s dans le message)
+                    logger.info(`Skipping image analysis for ${imageUrls.length} image(s) (!s flag)`);
+                    imageDescriptions = imageUrls.map((url, index) => `[Image ${index + 1} - analyse désactivée par l'utilisateur]`);
+                } else {
+                    // Sinon, analyser les images normalement
+                    imageResults = await processImagesWithMetadata(imageUrls);
+                    imageDescriptions = imageResults.map(r => r.description);
 
-                // Logger l'analyse d'images avec toutes les métadonnées
-                if (imageResults.length > 0) {
-                    await logBotImageAnalysis(userName, imageResults);
+                    // Logger l'analyse d'images avec toutes les métadonnées
+                    if (imageResults.length > 0) {
+                        await logBotImageAnalysis(userName, imageResults);
+                    }
                 }
+            } catch (imageError) {
+                logger.error("Error during image analysis:", imageError);
+                // En cas d'erreur (timeout, etc.), créer des descriptions fallback
+                imageDescriptions = imageUrls.map((url, index) => `[Image ${index + 1} - erreur lors de l'analyse]`);
+            } finally {
+                // Arrêter l'animation d'analyse d'image dans tous les cas (succès ou erreur)
+                await analysisAnimation.stop();
+                logger.info("Image analysis animation stopped");
             }
         }
 
@@ -403,7 +413,16 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
             // Gestionnaires
             const messageManager = new DiscordMessageManager(channel, replyToMessage, interaction);
-            messageManager.setAnalysisAnimation(analysisAnimation);
+            // Ne pas passer l'animation au messageManager si elle a déjà été arrêtée
+            // (elle est arrêtée après l'analyse d'images)
+            // Le messageManager n'a besoin de l'animation que si elle n'a pas encore été utilisée
+            if (imageUrls && imageUrls.length > 0) {
+                // L'animation a déjà été arrêtée après l'analyse, ne pas la passer
+                logger.debug("Image analysis animation already stopped, not passing to messageManager");
+            } else {
+                // Pas d'images, l'animation n'a pas été utilisée
+                messageManager.setAnalysisAnimation(analysisAnimation);
+            }
 
             // Configurer le callback pour arrêter le typing indicator dès le premier message envoyé
             messageManager.setOnFirstMessageSent(() => {

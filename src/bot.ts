@@ -122,6 +122,10 @@ client.once(Events.ClientReady, async () => {
     logger.info("Bot is online!");
     initializeDiscordLogger(client);
 
+    // Vérifier la disponibilité du modèle vision
+    const {checkVisionModelAvailability} = require("./services/imageService");
+    await checkVisionModelAvailability();
+
     // Initialiser la couleur Netricsa depuis le rôle Discord
     const {initializeNetricsaColor} = require("./utils/colorHelper");
     await initializeNetricsaColor(client);

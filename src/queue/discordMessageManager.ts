@@ -18,7 +18,7 @@ export class ImageAnalysisAnimation {
             if (replyToMessage) {
                 this.message = await replyToMessage.reply("Analyse de l'image.");
             } else if (channel) {
-                this.message = await channel.send("Analyse de l'image.");
+                this.message = await channel.send("\`Analyse de l'image.\`");
             }
 
             if (this.message) {
@@ -26,7 +26,7 @@ export class ImageAnalysisAnimation {
                     if (this.message) {
                         this.dotCount = (this.dotCount % 3) + 1;
                         const dots = ".".repeat(this.dotCount);
-                        await this.message.edit(`Analyse de l'image${dots}`).catch(() => {
+                        await this.message.edit(`\`Analyse de l'image${dots}\``).catch(() => {
                         });
                     }
                 }, TYPING_ANIMATION_INTERVAL);
