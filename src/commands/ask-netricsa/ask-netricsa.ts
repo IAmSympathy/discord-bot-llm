@@ -80,7 +80,7 @@ module.exports = {
             return;
         }
 
-        let progressMessage: Message | null = null;
+        let progressMessage: any = null;
         let animationInterval: NodeJS.Timeout | null = null;
 
         try {
@@ -165,19 +165,19 @@ module.exports = {
 
             // Message de progression avec animation de points
             progressMessage = await interaction.reply({
-                content: `\`${animationText}.\``,
-                fetchReply: true
-            }) as Message;
+                content: `\`${animationText}.\``
+            });
 
             // Animation des points
             let dotCount = 1;
             animationInterval = setInterval(async () => {
-                if (progressMessage) {
-                    dotCount = (dotCount % 3) + 1;
-                    const dots = ".".repeat(dotCount);
-                    await progressMessage.edit(`\`${animationText}${dots}\``).catch(() => {
+                dotCount = (dotCount % 3) + 1;
+                const dots = ".".repeat(dotCount);
+
+                await progressMessage
+                    .edit(`\`${animationText}${dots}\``)
+                    .catch(() => {
                     });
-                }
             }, TYPING_ANIMATION_INTERVAL);
 
             // Ajouter l'utilisateur à la queue globale
@@ -314,7 +314,7 @@ module.exports = {
 
             // Éditer le message avec la réponse finale (comme /imagine)
             try {
-                await progressMessage.edit({content: result});
+                await progressMessage.edit(result);
             } catch (editError: any) {
                 logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
                 await interaction.followUp({content: result});
@@ -389,7 +389,7 @@ module.exports = {
 
                 if (progressMessage) {
                     try {
-                        await progressMessage.edit({content: errorMessage});
+                        await progressMessage.edit(errorMessage);
                     } catch (editError) {
                         await interaction.followUp({content: errorMessage, flags: MessageFlags.Ephemeral});
                     }
