@@ -280,7 +280,11 @@ module.exports = {
 
                     // Éditer le message pour indiquer l'annulation
                     if (progressMessage) {
-                        await progressMessage.edit("🛑 Réflexion annulée.");
+                        try {
+                            await progressMessage.edit("🛑 Réflexion annulée.");
+                        } catch (editError) {
+                            await interaction.followUp({content: "🛑 Réflexion annulée.", flags: MessageFlags.Ephemeral});
+                        }
                     }
 
                     return;
@@ -323,7 +327,12 @@ module.exports = {
 
             // Éditer le message avec la réponse finale
             if (progressMessage) {
-                await progressMessage.edit({content: cleanedText});
+                try {
+                    await progressMessage.edit({content: cleanedText});
+                } catch (editError: any) {
+                    logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
+                    await interaction.followUp({content: cleanedText});
+                }
             }
 
             // Logger la réponse
@@ -394,7 +403,11 @@ module.exports = {
                 const errorMessage = "Une erreur s'est produite lors du traitement de ta question. Réessaye plus tard !";
 
                 if (progressMessage) {
-                    await progressMessage.edit({content: errorMessage});
+                    try {
+                        await progressMessage.edit({content: errorMessage});
+                    } catch (editError) {
+                        await interaction.followUp({content: errorMessage, flags: MessageFlags.Ephemeral});
+                    }
                 } else if (interaction.deferred) {
                     await interaction.editReply({content: errorMessage});
                 } else if (!interaction.replied) {
