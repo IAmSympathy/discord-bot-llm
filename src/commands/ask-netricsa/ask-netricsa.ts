@@ -1,4 +1,4 @@
-import {ChatInputCommandInteraction, GuildMember, InteractionContextType, Message, MessageFlags, SlashCommandBuilder, TextChannel} from "discord.js";
+import {ChatInputCommandInteraction, GuildMember, InteractionContextType, Message, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {createLogger} from "../../utils/logger";
 import {recordAIConversationStats} from "../../services/statsRecorder";
 import {setBotPresence} from "../../bot";
@@ -8,8 +8,12 @@ import {isStandbyMode} from "../../services/standbyModeService";
 import {TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
 import {UserProfileService} from "../../services/userProfileService";
 import {NETRICSA_USER_ID, NETRICSA_USERNAME} from "../../services/userStatsService";
-import {processLLMRequest} from "../../queue/queue";
-import {getUserQueueOperation, isUserInQueue} from "../../queue/globalQueue";
+import {addUserToQueue, getUserQueueOperation, isOperationAborted, isUserInQueue, registerActiveOperation, removeUserFromQueue, unregisterActiveOperation} from "../../queue/globalQueue";
+import {OllamaService} from "../../services/ollamaService";
+import {processImagesWithMetadata} from "../../services/imageService";
+import {logBotImageAnalysis, logBotResponse} from "../../utils/discordLogger";
+import {getWebContext} from "../../services/searchService";
+import {buildCurrentUserBlock, buildHistoryBlock, buildWebContextBlock} from "../../queue/promptBuilder";
 
 const logger = createLogger("AskNetricsaCmd");
 
@@ -176,28 +180,161 @@ module.exports = {
                 }
             }, TYPING_ANIMATION_INTERVAL);
 
-            // Utiliser processLLMRequest pour passer par la queue globale
-            await processLLMRequest({
-                prompt: question,
-                userId: interaction.user.id,
-                userName: interaction.user.displayName,
-                channel: interaction.channel as TextChannel,
-                client: interaction.client,
-                referencedMessage: referencedMessage || undefined,
-                imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
-                originalUserMessage: question,
-                skipMemory: true, // Pas de mémoire pour ask-netricsa
-                progressMessage: progressMessage, // Passer le message d'animation
-                animationInterval: animationInterval, // Passer l'interval pour qu'il soit arrêté
-                skipTypingIndicator: true, // Désactiver le typing indicator (UserApp/DM)
-                sendMessage: true
-            });
+            // Ajouter l'utilisateur à la queue globale
+            addUserToQueue(interaction.user.id, 'ask-netricsa');
 
-            // Arrêter l'animation après le traitement
-            if (animationInterval) {
-                clearInterval(animationInterval);
-                animationInterval = null;
+            // Créer un ID unique pour cette opération
+            const operationId = `ask-netricsa-${interaction.user.id}-${Date.now()}`;
+            registerActiveOperation(operationId, 'ask-netricsa', interaction.user.id, interaction.channelId);
+
+            // === TRAITEMENT DES IMAGES ===
+            let imageDescriptions: string[] = [];
+            if (hasImages) {
+                try {
+                    logger.info(`Analyzing ${imageUrls.length} image(s)...`);
+                    const imageResults = await processImagesWithMetadata(imageUrls);
+                    imageDescriptions = imageResults.map(r => r.description);
+
+                    if (imageResults.length > 0) {
+                        await logBotImageAnalysis(interaction.user.displayName, imageResults);
+                    }
+                    logger.info(`Image analysis complete`);
+                } catch (imageError) {
+                    logger.error("Error during image analysis:", imageError);
+                    imageDescriptions = imageUrls.map((url, index) => `[Image ${index + 1} - erreur lors de l'analyse]`);
+                }
             }
+
+            // Vérifier si annulé après l'analyse d'images
+            if (isOperationAborted(operationId)) {
+                logger.info("Ask-netricsa cancelled by user");
+                clearInterval(animationInterval);
+                unregisterActiveOperation(operationId);
+                removeUserFromQueue(interaction.user.id);
+
+                await progressMessage.edit("🛑 Réflexion annulée.");
+                return;
+            }
+
+            // === PRÉPARATION DU PROMPT ===
+            const ollamaService = new OllamaService();
+            const isDM = interaction.channel?.type === 1; // Type 1 = DM
+            const {finalPrompt: systemPrompt} = ollamaService.loadSystemPrompts(interaction.channelId || "", isDM);
+
+            // Pas de mémoire pour ask-netricsa
+            const recentTurns: any[] = [];
+
+            // Obtenir le contexte web si nécessaire
+            const webContext = await getWebContext(question);
+            if (webContext) {
+                logger.info(`Web context added to prompt`);
+            }
+
+            // Récupérer le profil de l'utilisateur
+            const userProfileSummary = UserProfileService.getProfileSummary(interaction.user.id);
+            let userProfileBlock = "";
+            if (userProfileSummary) {
+                userProfileBlock = `\n\n═══ PROFIL DE L'UTILISATEUR ACTUEL: ${interaction.user.displayName.toUpperCase()} (UID Discord: ${interaction.user.id}) ═══\n⚠️ Ce profil appartient à la personne qui t'envoie le message actuel.\n${userProfileSummary}\n═══ FIN DU PROFIL DE ${interaction.user.displayName.toUpperCase()} ═══`;
+                logger.info(`Profile loaded for ${interaction.user.displayName}`);
+            }
+
+            // Construire les blocs de prompt
+            const historyBlock = buildHistoryBlock(recentTurns, interaction.channelId || "");
+            const webBlock = buildWebContextBlock(webContext);
+            const currentUserBlock = buildCurrentUserBlock(
+                interaction.user.id,
+                interaction.user.displayName,
+                question,
+                imageDescriptions,
+                recentTurns
+            );
+
+            const messages = [
+                {
+                    role: "system" as const,
+                    content: `${systemPrompt}${userProfileBlock}\n\n${webBlock}${historyBlock.length > 0 ? `\n\n${historyBlock}` : ""}`,
+                },
+                {
+                    role: "user" as const,
+                    content: currentUserBlock,
+                },
+            ];
+
+            // === GÉNÉRATION DE LA RÉPONSE ===
+            logger.info(`Sending request to Ollama...`);
+            const startTime = Date.now();
+            const response = await ollamaService.chat(messages, {}, true, undefined);
+            const reader = response.body?.getReader();
+            const decoder = new TextDecoder();
+            let result = "";
+
+            // Lire le stream
+            let done = false;
+            while (!done) {
+                // Vérifier si annulé
+                if (isOperationAborted(operationId)) {
+                    logger.info("Ask-netricsa cancelled during generation");
+                    clearInterval(animationInterval);
+                    unregisterActiveOperation(operationId);
+                    removeUserFromQueue(interaction.user.id);
+
+                    await progressMessage.edit("🛑 Réflexion annulée.");
+                    return;
+                }
+
+                const {value, done: doneReading} = await reader!.read();
+                done = doneReading;
+
+                if (value) {
+                    const chunk = decoder.decode(value, {stream: true});
+                    const lines = chunk.split("\n");
+
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+
+                        try {
+                            const decodedChunk = JSON.parse(line);
+                            const text = decodedChunk.message?.content || decodedChunk.message?.delta || "";
+                            result += text;
+                        } catch (parseError) {
+                            // Ignorer les erreurs de parsing
+                        }
+                    }
+                }
+            }
+
+            // Arrêter l'animation
+            clearInterval(animationInterval);
+
+            // Désenregistrer
+            unregisterActiveOperation(operationId);
+            removeUserFromQueue(interaction.user.id);
+
+            const responseTime = Date.now() - startTime;
+
+            // Éditer le message avec la réponse finale (comme /imagine)
+            try {
+                await progressMessage.edit({content: result});
+            } catch (editError: any) {
+                logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
+                await interaction.followUp({content: result});
+            }
+
+            // Logger la réponse
+            const channelName = isDM ? `DM avec ${interaction.user.displayName}` : `ask-netricsa`;
+            await logBotResponse(
+                interaction.user.displayName,
+                interaction.user.id,
+                channelName,
+                question,
+                result,
+                0,
+                hasImages,
+                webContext !== null,
+                undefined,
+                responseTime,
+                false // pas de mémoire
+            );
 
             // Enregistrer les statistiques
             recordAIConversationStats(interaction.user.id, interaction.user.displayName);
@@ -239,6 +376,8 @@ module.exports = {
         } catch (error) {
             logger.error("Error in /ask-netricsa command:", error);
 
+            // Désenregistrer de la queue globale en cas d'erreur
+            removeUserFromQueue(interaction.user.id);
 
             // Arrêter l'animation en cas d'erreur
             if (animationInterval) {
