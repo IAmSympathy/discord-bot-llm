@@ -165,7 +165,7 @@ export function cleanupImageAnalysis(channelKey: string): void {
 
 // Fonction pour traiter une requête LLM directement (sans thread, pour le watch de channel)
 export async function processLLMRequest(request: DirectLLMRequest): Promise<string | void> {
-    const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext, skipImageAnalysis = false, preAnalyzedImages = [], originalUserMessage, preStartedAnimation, skipMemory = false, returnResponse = false, interaction} = request;
+    const {prompt, userId, userName, channel, client, replyToMessage, imageUrls, sendMessage = true, threadStarterContext, skipImageAnalysis = false, preAnalyzedImages = [], originalUserMessage, preStartedAnimation, skipMemory = false, returnResponse = false, interaction, progressMessage} = request;
 
     // Vérifier si l'utilisateur est déjà dans la queue
     if (usersInQueue.has(userId)) {
@@ -239,10 +239,23 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         }
 
         // Gérer l'animation d'analyse d'image (seulement si pas déjà analysée et pas skip)
+        // Si un progressMessage est fourni (ex: /ask-netricsa), le réutiliser
         // Si une animation a déjà été démarrée (par forumThreadHandler), la réutiliser
-        const analysisAnimation = preStartedAnimation || new ImageAnalysisAnimation();
-        if (imageUrls && imageUrls.length > 0 && !skipImageAnalysis && !preStartedAnimation) {
-            await analysisAnimation.start(replyToMessage, channel, interaction);
+        let analysisAnimation: ImageAnalysisAnimation;
+
+        if (progressMessage) {
+            // /ask-netricsa ou autre commande a déjà créé le message d'animation
+            analysisAnimation = new ImageAnalysisAnimation();
+            // Simuler qu'on a déjà un message pour le réutiliser
+            (analysisAnimation as any).message = progressMessage;
+            logger.info("Using provided progressMessage for animation");
+        } else if (preStartedAnimation) {
+            analysisAnimation = preStartedAnimation;
+        } else {
+            analysisAnimation = new ImageAnalysisAnimation();
+            if (imageUrls && imageUrls.length > 0 && !skipImageAnalysis) {
+                await analysisAnimation.start(replyToMessage, channel, interaction);
+            }
         }
 
         // Traiter les images avec métadonnées complètes

@@ -7,8 +7,8 @@ import * as path from "path";
 
 const logger = createLogger("HarvestCmd");
 
-// Cooldown de 6 heures (en millisecondes)
-const HARVEST_COOLDOWN = 6 * 60 * 60 * 1000;
+// Cooldown de 8 heures (en millisecondes)
+const HARVEST_COOLDOWN = 7 * 60 * 60 * 1000;
 
 // Fichier de sauvegarde des cooldowns
 const COOLDOWN_FILE = path.join(process.cwd(), "data", "harvest_cooldowns.json");
@@ -109,7 +109,7 @@ function getSeasonalResource(): {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("harvest")
-        .setDescription("⛏️ Récolte une ressource de saison (cooldown: 6h)"),
+        .setDescription("⛏️ Récolte une ressource de saison (cooldown: 7h)"),
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {

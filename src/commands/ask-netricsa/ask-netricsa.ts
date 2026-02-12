@@ -1,23 +1,16 @@
-import {ChatInputCommandInteraction, GuildMember, InteractionContextType, Message, MessageFlags, SlashCommandBuilder} from "discord.js";
+import {ChatInputCommandInteraction, GuildMember, InteractionContextType, Message, MessageFlags, SlashCommandBuilder, TextChannel} from "discord.js";
 import {createLogger} from "../../utils/logger";
-import {processImagesWithMetadata} from "../../services/imageService";
 import {recordAIConversationStats} from "../../services/statsRecorder";
 import {setBotPresence} from "../../bot";
 import {isLowPowerMode} from "../../services/botStateService";
-import {createErrorEmbed, createLowPowerEmbed, createStandbyEmbed} from "../../utils/embedBuilder";
+import {createLowPowerEmbed, createStandbyEmbed} from "../../utils/embedBuilder";
 import {isStandbyMode} from "../../services/standbyModeService";
 import {TYPING_ANIMATION_INTERVAL} from "../../utils/constants";
-import {OllamaService} from "../../services/ollamaService";
 import {UserProfileService} from "../../services/userProfileService";
-import {buildCurrentUserBlock, buildHistoryBlock, buildWebContextBlock} from "../../queue/promptBuilder";
-import {getWebContext} from "../../services/searchService";
-import {logBotImageAnalysis, logBotResponse} from "../../utils/discordLogger";
 import {NETRICSA_USER_ID, NETRICSA_USERNAME} from "../../services/userStatsService";
-import {EmojiReactionHandler} from "../../queue/emojiReactionHandler";
-import {hasActiveRequest, registerAskNetricsaRequest, unregisterAskNetricsaRequest} from "../../services/askNetricsaTracker";
+import {processLLMRequest} from "../../queue/queue";
 
 const logger = createLogger("AskNetricsaCmd");
-const wait = require("node:timers/promises").setTimeout;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -48,16 +41,6 @@ module.exports = {
         // Vérifier que l'utilisateur est membre du serveur requis
         const {checkServerMembershipOrReply} = require("../../utils/serverMembershipCheck");
         if (!await checkServerMembershipOrReply(interaction)) {
-            return;
-        }
-
-        // Vérifier si l'utilisateur a déjà une requête en cours
-        if (hasActiveRequest(interaction.user.id)) {
-            const errorEmbed = createErrorEmbed(
-                "⏳ Requête en Cours",
-                "Tu as déjà une requête ask-netricsa en cours. Attends qu'elle soit terminée avant d'en lancer une nouvelle, ou utilise `/stop` pour l'annuler."
-            );
-            await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
             return;
         }
 
@@ -164,12 +147,11 @@ module.exports = {
             const hasImages = imageUrls.length > 0;
             const animationText = hasImages ? "Analyse de l'image" : "Netricsa réfléchit";
 
-            await interaction.reply({
-                content: `\`${animationText}.\``
-            });
-
-            // Récupérer le message via fetchReply
-            progressMessage = await interaction.fetchReply() as Message;
+            // Message de progression avec animation de points
+            progressMessage = await interaction.reply({
+                content: `\`${animationText}.\``,
+                fetchReply: true
+            }) as Message;
 
             // Animation des points
             let dotCount = 1;
@@ -182,176 +164,26 @@ module.exports = {
                 }
             }, TYPING_ANIMATION_INTERVAL);
 
-            // Créer un AbortController pour gérer l'annulation
-            const abortController = new AbortController();
+            // Utiliser processLLMRequest pour passer par la queue globale
+            await processLLMRequest({
+                prompt: question,
+                userId: interaction.user.id,
+                userName: interaction.user.displayName,
+                channel: interaction.channel as TextChannel,
+                client: interaction.client,
+                referencedMessage: referencedMessage || undefined,
+                imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+                originalUserMessage: question,
+                skipMemory: true, // Pas de mémoire pour ask-netricsa
+                progressMessage: progressMessage, // Passer le message d'animation
+                sendMessage: true
+            });
 
-            // Enregistrer la requête dans le tracker
-            registerAskNetricsaRequest(
-                interaction.user.id,
-                interaction.channelId || "",
-                abortController,
-                animationInterval
-            );
-
-            // === TRAITEMENT DES IMAGES ===
-            let imageDescriptions: string[] = [];
-            if (hasImages) {
-                try {
-                    logger.info(`Analyzing ${imageUrls.length} image(s)...`);
-                    const imageResults = await processImagesWithMetadata(imageUrls);
-                    imageDescriptions = imageResults.map(r => r.description);
-
-                    if (imageResults.length > 0) {
-                        await logBotImageAnalysis(interaction.user.displayName, imageResults);
-                    }
-                    logger.info(`Image analysis complete`);
-                } catch (imageError) {
-                    logger.error("Error during image analysis:", imageError);
-                    imageDescriptions = imageUrls.map((url, index) => `[Image ${index + 1} - erreur lors de l'analyse]`);
-                }
-            }
-
-            // === PRÉPARATION DU PROMPT ===
-            const ollamaService = new OllamaService();
-            const isDM = interaction.channel?.type === 1; // Type 1 = DM
-            const {finalPrompt: systemPrompt} = ollamaService.loadSystemPrompts(interaction.channelId || "", isDM);
-
-            // Pas de mémoire pour ask-netricsa
-            const recentTurns: any[] = [];
-
-            // Obtenir le contexte web si nécessaire
-            const webContext = await getWebContext(question);
-            if (webContext) {
-                logger.info(`Web context added to prompt`);
-            }
-
-            // Récupérer le profil de l'utilisateur
-            const userProfileSummary = UserProfileService.getProfileSummary(interaction.user.id);
-            let userProfileBlock = "";
-            if (userProfileSummary) {
-                userProfileBlock = `\n\n═══ PROFIL DE L'UTILISATEUR ACTUEL: ${interaction.user.displayName.toUpperCase()} (UID Discord: ${interaction.user.id}) ═══\n⚠️ Ce profil appartient à la personne qui t'envoie le message actuel.\n${userProfileSummary}\n═══ FIN DU PROFIL DE ${interaction.user.displayName.toUpperCase()} ═══`;
-                logger.info(`Profile loaded for ${interaction.user.displayName}`);
-            }
-
-            // Construire les blocs de prompt
-            const historyBlock = buildHistoryBlock(recentTurns, interaction.channelId || "");
-            const webBlock = buildWebContextBlock(webContext);
-            const currentUserBlock = buildCurrentUserBlock(
-                interaction.user.id,
-                interaction.user.displayName,
-                question,
-                imageDescriptions,
-                recentTurns
-            );
-
-            const messages = [
-                {
-                    role: "system" as const,
-                    content: `${systemPrompt}${userProfileBlock}\n\n${webBlock}${historyBlock.length > 0 ? `\n\n${historyBlock}` : ""}`,
-                },
-                {
-                    role: "user" as const,
-                    content: currentUserBlock,
-                },
-            ];
-
-            // === GÉNÉRATION DE LA RÉPONSE ===
-            logger.info(`Sending request to Ollama...`);
-            const response = await ollamaService.chat(messages, {}, true, undefined);
-            const reader = response.body?.getReader();
-            const decoder = new TextDecoder();
-            let result = "";
-
-            const emojiHandler = new EmojiReactionHandler(undefined);
-
-            // Lire le stream
-            let done = false;
-            while (!done) {
-                // Vérifier si la requête a été annulée
-                if (abortController.signal.aborted) {
-                    logger.info("Ask-netricsa request aborted by user");
-
-                    // Arrêter l'animation
-                    if (animationInterval) {
-                        clearInterval(animationInterval);
-                        animationInterval = null;
-                    }
-
-                    // Désenregistrer
-                    unregisterAskNetricsaRequest(interaction.user.id);
-
-                    // Éditer le message pour indiquer l'annulation
-                    if (progressMessage) {
-                        try {
-                            await progressMessage.edit("🛑 Réflexion annulée.");
-                        } catch (editError) {
-                            await interaction.followUp({content: "🛑 Réflexion annulée.", flags: MessageFlags.Ephemeral});
-                        }
-                    }
-
-                    return;
-                }
-
-                const {value, done: doneReading} = await reader!.read();
-                done = doneReading;
-
-                if (value) {
-                    const chunk = decoder.decode(value, {stream: true});
-                    const lines = chunk.split("\n");
-
-                    for (const line of lines) {
-                        if (!line.trim()) continue;
-
-                        try {
-                            const decodedChunk = JSON.parse(line);
-                            const text = decodedChunk.message?.content || decodedChunk.message?.delta || "";
-                            result += text;
-                        } catch (parseError) {
-                            // Ignorer les erreurs de parsing
-                        }
-                    }
-                }
-            }
-
-            // Arrêter l'animation
+            // Arrêter l'animation après le traitement
             if (animationInterval) {
                 clearInterval(animationInterval);
                 animationInterval = null;
             }
-
-            // Désenregistrer la requête terminée
-            unregisterAskNetricsaRequest(interaction.user.id);
-
-            await wait(500);
-
-            // Nettoyer le résultat
-            const cleanedText = await emojiHandler.extractAndApply(result);
-
-            // Éditer le message avec la réponse finale
-            if (progressMessage) {
-                try {
-                    await progressMessage.edit({content: cleanedText});
-                } catch (editError: any) {
-                    logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
-                    await interaction.followUp({content: cleanedText});
-                }
-            }
-
-            // Logger la réponse
-            const channelName = isDM ? `DM avec ${interaction.user.displayName}` : `ask-netricsa`;
-            await logBotResponse(
-                interaction.user.displayName,
-                interaction.user.id,
-                channelName,
-                question,
-                cleanedText,
-                0, // tokens (non disponible ici)
-                hasImages,
-                webContext !== null,
-                undefined,
-                Date.now(),
-                false // pas de mémoire
-            );
 
             // Enregistrer les statistiques
             recordAIConversationStats(interaction.user.id, interaction.user.displayName);
@@ -393,8 +225,6 @@ module.exports = {
         } catch (error) {
             logger.error("Error in /ask-netricsa command:", error);
 
-            // Désenregistrer en cas d'erreur
-            unregisterAskNetricsaRequest(interaction.user.id);
 
             // Arrêter l'animation en cas d'erreur
             if (animationInterval) {
