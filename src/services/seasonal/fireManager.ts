@@ -902,7 +902,7 @@ async function createFireEmbed(fireData: any, client: Client): Promise<EmbedBuil
     } else if (currentBurnRate > 1.0) {
         description += `Les bûches brûlent **${currentBurnRate.toFixed(1)}× plus vite**\n`;
     } else {
-        description += `Vitesse normale (12h par bûche)\n`;
+        description += `Vitesse normale (8h par bûche)\n`;
     }
     description += `\n`;
 

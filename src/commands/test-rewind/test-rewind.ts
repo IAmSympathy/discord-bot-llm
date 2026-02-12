@@ -70,7 +70,7 @@ module.exports = {
         } catch (error) {
             logger.error("Error in test-rewind command:", error);
             const errorEmbed = createErrorEmbed(
-                "❌ Erreur",
+                "Erreur",
                 `Impossible de publier le rewind : ${error instanceof Error ? error.message : "Erreur inconnue"}`
             );
 

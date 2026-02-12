@@ -7,8 +7,8 @@ import * as path from "path";
 
 const logger = createLogger("HarvestCmd");
 
-// Cooldown de 4 heures (en millisecondes)
-const HARVEST_COOLDOWN = 4 * 60 * 60 * 1000;
+// Cooldown de 6 heures (en millisecondes)
+const HARVEST_COOLDOWN = 6 * 60 * 60 * 1000;
 
 // Fichier de sauvegarde des cooldowns
 const COOLDOWN_FILE = path.join(process.cwd(), "data", "harvest_cooldowns.json");

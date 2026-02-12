@@ -105,7 +105,7 @@ export async function handleInteractionError(
     try {
         await replyWithError(
             interaction,
-            "❌ Erreur",
+            "Erreur",
             "Une erreur s'est produite lors de l'exécution de la commande.",
             true
         );
