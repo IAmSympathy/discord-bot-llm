@@ -2,7 +2,7 @@ import {Client, GuildMember, PartialGuildMember, TextChannel} from "discord.js";
 import {UserProfileService} from "./userProfileService";
 import {EnvConfig} from "../utils/envConfig";
 import {createLogger} from "../utils/logger";
-import {DEFAULT_MEMBER_ROLE, LEVEL_ROLES} from "../utils/constants";
+import {DEFAULT_MEMBER_ROLE} from "../utils/constants";
 import {FileMemory} from "../memory/fileMemory";
 
 const logger = createLogger("WelcomeService");
@@ -49,13 +49,25 @@ function getRandomVariant<T>(variants: T[]): T {
  */
 export async function sendWelcomeMessage(member: GuildMember, client: Client): Promise<void> {
     try {
-        // Attribuer le rôle Beheaded au nouveau membre (sauf si c'est un bot)
+        // Attribuer le rôle Beheaded et le rôle de niveau approprié au nouveau membre (sauf si c'est un bot)
         if (!member.user.bot && DEFAULT_MEMBER_ROLE) {
             try {
                 await member.roles.add(DEFAULT_MEMBER_ROLE);
                 logger.info(`✅ Assigned Beheaded role to ${member.user.username}`);
-                await member.roles.add(LEVEL_ROLES.HATCHLING);
-                logger.info(`✅ Assigned Hatchling role to ${member.user.username}`);
+
+                // Importer le système XP pour obtenir le niveau actuel de l'utilisateur
+                const {getUserLevel} = require("./xpSystem");
+                const userLevel = getUserLevel(member.user.id);
+
+                // Importer le service de rôles de niveau pour attribuer le bon rôle
+                const {updateUserLevelRoles} = require("./levelRoleService");
+                const roleResult = await updateUserLevelRoles(member.guild, member.user.id, userLevel);
+
+                if (roleResult.changed && roleResult.newRole) {
+                    logger.info(`✅ Assigned level role ${roleResult.newRole} (level ${userLevel}) to ${member.user.username}`);
+                } else {
+                    logger.info(`✅ User ${member.user.username} already has appropriate level role for level ${userLevel}`);
+                }
             } catch (error) {
                 logger.error(`Error assigning welcome roles to ${member.user.username}:`, error);
 

@@ -148,6 +148,14 @@ export function getUserXP(userId: string): UserXP | null {
 }
 
 /**
+ * Récupère le niveau d'un utilisateur
+ */
+export function getUserLevel(userId: string): number {
+    const xpData = loadXP();
+    return xpData[userId]?.level || 0;
+}
+
+/**
  * Enregistre l'XP gagné dans toutes les périodes temporelles
  * (quotidien, hebdomadaire, mensuel, annuel)
  */
@@ -241,16 +249,16 @@ export async function addXP(
     if (levelUp) {
         logger.info(`${username} level up! ${oldLevel} → ${newLevel} (${xpData[userId].totalXP} XP)`);
 
-        // Envoyer une notification seulement si c'est un humain et qu'un canal est fourni
-        if (!isBot && channel) {
-            await sendLevelUpMessage(channel, userId, username, newLevel);
+        // Envoyer une notification seulement si c'est un humain
+        if (!isBot) {
+            await sendLevelUpNotification(userId, username, newLevel, channel);
         }
     } else if (levelDown) {
         logger.warn(`${username} level down! ${oldLevel} → ${newLevel} (${oldTotalXP} → ${xpData[userId].totalXP} XP, penalty: ${amount})`);
 
         // Envoyer une notification de descente de niveau
-        if (!isBot && channel) {
-            await sendLevelDownMessage(channel, userId, username, oldLevel, newLevel, Math.abs(amount));
+        if (!isBot) {
+            await sendLevelDownNotification(userId, username, oldLevel, newLevel, Math.abs(amount), channel);
         }
     }
 
@@ -267,6 +275,328 @@ export async function addXP(
         newLevel,
         totalXP: xpData[userId].totalXP
     };
+}
+
+/**
+ * Envoie une notification de level up intelligente
+ * Gère TOUS les cas : avec channel, sans channel, avec guild, sans guild
+ * Détecte automatiquement les Role Up même sans guild
+ */
+async function sendLevelUpNotification(userId: string, username: string, newLevel: number, channel?: TextChannel | VoiceChannel): Promise<void> {
+    try {
+        const client = (global as any).discordClient;
+        if (!client) {
+            logger.error(`Cannot send level up notification: Discord client not available`);
+            return;
+        }
+
+        // Récupérer le guild si un channel est fourni
+        const guild = channel?.guild;
+        let member = null;
+        let roleResult: { changed: boolean; newRole?: string; oldRole?: string; skipped?: 'bot' | 'left' } = {changed: false};
+
+        // Si on a un guild, récupérer le member et mettre à jour les rôles
+        if (guild) {
+            member = await guild.members.fetch(userId).catch(() => null);
+            if (member && !member.user.bot) {
+                roleResult = await updateUserLevelRoles(guild, userId, newLevel);
+            }
+        }
+
+        // Récupérer les données XP pour la progression
+        const xpData = loadXP();
+        const userXP = xpData[userId];
+        const currentXP = userXP?.totalXP || 0;
+        const currentLevelXP = getXPForLevel(newLevel);
+        const nextLevelXP = getXPForNextLevel(newLevel);
+        const xpInCurrentLevel = currentXP - currentLevelXP;
+        const xpNeededForNext = nextLevelXP - currentLevelXP;
+        const progressPercent = Math.min(100, Math.round((xpInCurrentLevel / xpNeededForNext) * 100));
+
+        // Créer une barre de progression
+        const barLength = 10;
+        const filledBars = Math.round((progressPercent / 100) * barLength);
+        const emptyBars = barLength - filledBars;
+        const progressBar = "█".repeat(filledBars) + "░".repeat(emptyBars);
+
+        // Récupérer les informations du rôle de niveau
+        const levelRoleInfo = await import("./levelRoleService").then(m => m.getLevelRoleForLevel(newLevel));
+        const currentRoleName = levelRoleInfo?.roleName || "Hatchling";
+        const currentRoleKey = levelRoleInfo?.roleKey || "HATCHLING";
+        const nextRole = getNextLevelRole(newLevel);
+
+        // Récupérer la couleur du rôle (si on a un guild)
+        let embedColor = 0xFFD700; // Gold par défaut
+        if (guild && levelRoleInfo) {
+            const LEVEL_ROLES = await import("../utils/constants").then(m => m.LEVEL_ROLES);
+            const levelRoleId = LEVEL_ROLES[levelRoleInfo.roleKey as keyof typeof LEVEL_ROLES];
+            const levelRole = guild.roles.cache.get(levelRoleId);
+            if (levelRole && levelRole.color !== 0) {
+                embedColor = levelRole.color;
+            }
+        }
+
+        // Déterminer si c'est un Role Up
+        const isRoleUp = roleResult.changed && roleResult.newRole;
+
+        // Construire la description
+        let embedTitle = isRoleUp ? "🎖️ Nouveau Rôle !" : "🎉 Niveau Gagné !";
+        let description = `### Félicitations !\n\n`;
+        description += `Tu as atteint le **niveau ${newLevel}** !\n`;
+
+        if (isRoleUp) {
+            description += `Tu es maintenant **${roleResult.newRole}** !\n`;
+        } else {
+            description += `**Rang actuel :** ${currentRoleName}\n`;
+        }
+
+        // Section progression XP
+        description += `\n### 📊 Progression\n`;
+        description += `\`\`\`${progressBar} ${progressPercent}%\`\`\`\n`;
+        description += `💫 ${xpInCurrentLevel.toLocaleString()} XP / ${xpNeededForNext.toLocaleString()} XP\n`;
+
+        // Section prochain rôle
+        if (nextRole) {
+            description += `\n### 🎯 Prochain Objectif\n`;
+            description += `Plus que **${nextRole.levelsNeeded} niveau${nextRole.levelsNeeded > 1 ? 'x' : ''}** avant **${nextRole.roleName}** !`;
+        } else {
+            description += `\n### 👑 Rang Maximum\n`;
+            description += `Tu as atteint le rang suprême !`;
+        }
+
+        // Créer l'embed
+        const embed = new EmbedBuilder()
+            .setColor(embedColor)
+            .setTitle(embedTitle)
+            .setDescription(description)
+            .addFields(
+                {name: "💫 XP Total", value: `${currentXP.toLocaleString()} XP`, inline: true},
+                {name: "⭐ Niveau", value: `${newLevel}`, inline: true},
+                {name: "🏆 Rang", value: currentRoleName, inline: true}
+            )
+            .setFooter({text: "Continue à être actif pour gagner plus d'XP !"})
+            .setTimestamp();
+
+        // Récupérer l'image du rôle
+        const imageAttachment = getRoleUpImage(currentRoleKey);
+        if (imageAttachment) {
+            embed.setThumbnail(`attachment://${imageAttachment.name}`);
+        }
+
+        // Préparer le message
+        const messageOptions: any = {embeds: [embed]};
+        if (imageAttachment) {
+            messageOptions.files = [imageAttachment];
+        }
+
+        // Décider où envoyer la notification
+        let notificationSent = false;
+
+        if (channel) {
+            // CAS 1 : Channel fourni - Envoyer dans le channel
+            const EnvConfig = await import("../utils/envConfig").then(m => m.EnvConfig);
+            const COUNTER_CHANNEL_ID = EnvConfig.COUNTER_CHANNEL_ID;
+            const isCounterChannel = COUNTER_CHANNEL_ID && channel.id === COUNTER_CHANNEL_ID;
+
+            messageOptions.content = `<@${userId}>`;
+            messageOptions.allowedMentions = {users: [userId]};
+
+            try {
+                if (isCounterChannel) {
+                    const msg = await channel.send(messageOptions);
+                    setTimeout(async () => {
+                        try {
+                            await msg.delete();
+                        } catch (error) {
+                            // Ignore
+                        }
+                    }, 10000);
+                    logger.info(`${isRoleUp ? 'Role up' : 'Level up'} sent (ephemeral) for ${username} in counter channel`);
+                } else {
+                    await channel.send(messageOptions);
+                    const channelType = channel.isVoiceBased() ? 'voice chat' : 'channel';
+                    logger.info(`${isRoleUp ? 'Role up' : 'Level up'} sent for ${username} in ${channelType} ${channel.name}`);
+                }
+                notificationSent = true;
+            } catch (channelError) {
+                logger.warn(`Failed to send in channel for ${username}, will try DM:`, channelError);
+            }
+        }
+
+        // CAS 2 : Pas de channel OU erreur d'envoi - Fallback DM
+        if (!notificationSent) {
+            // Retirer la mention pour le DM
+            delete messageOptions.content;
+
+            try {
+                const user = await client.users.fetch(userId).catch(() => null);
+                if (!user) {
+                    logger.error(`Cannot send level up DM to ${username}: User not found`);
+                    return;
+                }
+
+                await user.send(messageOptions);
+                logger.info(`${isRoleUp ? 'Role up' : 'Level up'} DM sent to ${username} (Level ${newLevel}${isRoleUp ? `, Role: ${roleResult.newRole}` : ''})`);
+                notificationSent = true;
+            } catch (dmError) {
+                logger.error(`Failed to send level up notification to ${username}:`, dmError);
+            }
+        }
+
+        // Log Discord si notification envoyée avec succès
+        if (notificationSent && guild) {
+            const {logCommand} = require("../utils/discordLogger");
+            const fields: any[] = [
+                {name: "👤 Utilisateur", value: username, inline: true},
+                {name: "⭐ Niveau", value: `${newLevel}`, inline: true},
+                {name: "🎯 XP Total", value: `${currentXP} XP`, inline: true}
+            ];
+
+            if (isRoleUp) {
+                fields.push({name: "🎖️ Nouveau Rôle", value: roleResult.newRole!, inline: true});
+            }
+
+            if (nextRole) {
+                fields.push({name: "⬆️ Prochain Rôle", value: `${nextRole.levelsNeeded} niveau${nextRole.levelsNeeded > 1 ? 'x' : ''}`, inline: true});
+            }
+
+            await logCommand(isRoleUp ? "🎖️ Role Up" : "⭐ Level Up", undefined, fields);
+        }
+
+    } catch (error) {
+        logger.error(`Error sending level up notification for ${username}:`, error);
+    }
+}
+
+/**
+ * Envoie une notification de level down intelligente (version unifiée)
+ */
+async function sendLevelDownNotification(userId: string, username: string, oldLevel: number, newLevel: number, xpLost: number, channel?: TextChannel | VoiceChannel): Promise<void> {
+    try {
+        const client = (global as any).discordClient;
+        if (!client) {
+            logger.error(`Cannot send level down notification: Discord client not available`);
+            return;
+        }
+
+        // Récupérer le guild si disponible
+        const guild = channel?.guild;
+
+        // Mettre à jour les rôles si on a un guild
+        if (guild) {
+            const member = await guild.members.fetch(userId).catch(() => null);
+            if (member && !member.user.bot) {
+                await updateUserLevelRoles(guild, userId, newLevel);
+            }
+        }
+
+        // Récupérer les données XP
+        const xpData = loadXP();
+        const userXP = xpData[userId];
+        const currentXP = userXP?.totalXP || 0;
+        const currentLevelXP = getXPForLevel(newLevel);
+        const nextLevelXP = getXPForNextLevel(newLevel);
+        const xpInCurrentLevel = currentXP - currentLevelXP;
+        const xpNeededForNext = nextLevelXP - currentLevelXP;
+        const progressPercent = Math.min(100, Math.round((xpInCurrentLevel / xpNeededForNext) * 100));
+
+        // Barre de progression
+        const barLength = 10;
+        const filledBars = Math.round((progressPercent / 100) * barLength);
+        const emptyBars = barLength - filledBars;
+        const progressBar = "█".repeat(filledBars) + "░".repeat(emptyBars);
+
+        // Récupérer les informations du rôle
+        const levelRoleInfo = await import("./levelRoleService").then(m => m.getLevelRoleForLevel(newLevel));
+        const currentRoleName = levelRoleInfo?.roleName || "Hatchling";
+        const currentRoleKey = levelRoleInfo?.roleKey || "HATCHLING";
+
+        const description = `### ⚠️ Pénalité de niveau\n\n` +
+            `Tu es descendu du **niveau ${oldLevel}** au **niveau ${newLevel}** suite à une pénalité de **${xpLost} XP**.\n\n` +
+            `### 📊 Progression Actuelle\n` +
+            `\`\`\`${progressBar} ${progressPercent}%\`\`\`\n` +
+            `💫 ${xpInCurrentLevel.toLocaleString()} XP / ${xpNeededForNext.toLocaleString()} XP\n\n` +
+            `### 💪 Récupération\n` +
+            `Il te faut **${xpNeededForNext - xpInCurrentLevel} XP** pour retrouver le niveau ${newLevel + 1} !`;
+
+        const embed = new EmbedBuilder()
+            .setColor(0xED4245)
+            .setTitle("📉 Niveau Perdu")
+            .setDescription(description)
+            .addFields(
+                {name: "💫 XP Total", value: `${currentXP.toLocaleString()} XP`, inline: true},
+                {name: "⭐ Niveau", value: `${newLevel}`, inline: true},
+                {name: "🏆 Rang", value: currentRoleName, inline: true}
+            )
+            .setFooter({text: "Sois plus prudent la prochaine fois !"})
+            .setTimestamp();
+
+        // Récupérer l'image
+        const imageAttachment = getRoleUpImage(currentRoleKey);
+        if (imageAttachment) {
+            embed.setThumbnail(`attachment://${imageAttachment.name}`);
+        }
+
+        // Préparer le message
+        const messageOptions: any = {embeds: [embed]};
+        if (imageAttachment) {
+            messageOptions.files = [imageAttachment];
+        }
+
+        // Décider où envoyer
+        let notificationSent = false;
+
+        if (channel) {
+            // Envoyer dans le channel
+            const EnvConfig = await import("../utils/envConfig").then(m => m.EnvConfig);
+            const COUNTER_CHANNEL_ID = EnvConfig.COUNTER_CHANNEL_ID;
+            const isCounterChannel = COUNTER_CHANNEL_ID && channel.id === COUNTER_CHANNEL_ID;
+
+            messageOptions.content = `<@${userId}>`;
+            messageOptions.allowedMentions = {users: [userId]};
+
+            try {
+                if (isCounterChannel) {
+                    const msg = await channel.send(messageOptions);
+                    setTimeout(async () => {
+                        try {
+                            await msg.delete();
+                        } catch (error) {
+                            // Ignore
+                        }
+                    }, 10000);
+                    logger.info(`Level down sent (ephemeral) for ${username} in counter channel`);
+                } else {
+                    await channel.send(messageOptions);
+                    const channelType = channel.isVoiceBased() ? 'voice chat' : 'channel';
+                    logger.info(`Level down sent for ${username} in ${channelType} ${channel.name}`);
+                }
+                notificationSent = true;
+            } catch (channelError) {
+                logger.warn(`Failed to send level down in channel for ${username}, will try DM:`, channelError);
+            }
+        }
+
+        // Fallback DM
+        if (!notificationSent) {
+            delete messageOptions.content;
+            try {
+                const user = await client.users.fetch(userId).catch(() => null);
+                if (!user) {
+                    logger.error(`Cannot send level down DM to ${username}: User not found`);
+                    return;
+                }
+
+                await user.send(messageOptions);
+                logger.info(`Level down DM sent to ${username} (${oldLevel} → ${newLevel})`);
+            } catch (dmError) {
+                logger.error(`Failed to send level down notification to ${username}:`, dmError);
+            }
+        }
+
+    } catch (error) {
+        logger.error(`Error sending level down notification for ${username}:`, error);
+    }
 }
 
 /**

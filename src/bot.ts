@@ -70,6 +70,9 @@ const client = new Client({
     ],
 });
 
+// Rendre le client accessible globalement pour les notifications DM
+(global as any).discordClient = client;
+
 client.commands = new Collection();
 
 // Load commands
