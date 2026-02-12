@@ -524,10 +524,6 @@ export function registerWatchedChannelResponder(client: Client) {
                 }
             }
 
-            if (mustReact) {
-                contextPrompt = `[Note: Ajoute obligatoirement un emoji au début de ton message pour donner ton avis]\n${contextPrompt}`;
-            }
-
             // Ajouter le contexte des utilisateurs mentionnés (avec leurs UIDs)
             const mentionContext = extractMentionContext(message, client);
             if (mentionContext) {

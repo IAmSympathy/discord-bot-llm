@@ -13,12 +13,16 @@ export class ImageAnalysisAnimation {
     private interval: NodeJS.Timeout | null = null;
     private dotCount = 1;
 
-    async start(replyToMessage?: Message, channel?: TextChannel | ThreadChannel | DMChannel): Promise<void> {
+    async start(replyToMessage?: Message, channel?: TextChannel | ThreadChannel | DMChannel, interaction?: ChatInputCommandInteraction): Promise<void> {
         try {
-            if (replyToMessage) {
-                this.message = await replyToMessage.reply("\`Analyse de l'image.\`");
+            // Si c'est une interaction, utiliser editReply() comme /imagine
+            if (interaction) {
+                // Utiliser editReply sur l'interaction déférée
+                this.message = await interaction.editReply({content: "`Analyse de l'image.`"}) as Message;
+            } else if (replyToMessage) {
+                this.message = await replyToMessage.reply("`Analyse de l'image.`");
             } else if (channel) {
-                this.message = await channel.send("\`Analyse de l'image.\`");
+                this.message = await channel.send("`Analyse de l'image.`");
             }
 
             if (this.message) {
@@ -26,6 +30,7 @@ export class ImageAnalysisAnimation {
                     if (this.message) {
                         this.dotCount = (this.dotCount % 3) + 1;
                         const dots = ".".repeat(this.dotCount);
+                        // Utiliser .edit() directement sur le message (marche pour interactions et messages normaux)
                         await this.message.edit(`\`Analyse de l'image${dots}\``).catch(() => {
                         });
                     }
@@ -110,27 +115,26 @@ export class DiscordMessageManager {
 
             const currentContent = cleanDiscordText(rawContent);
 
-            // Si c'est une interaction, utiliser editReply pour le premier message (qui était déféré)
-            if (this.interaction) {
+            // Vérifier si on a un message d'analyse à réutiliser (pour interactions ET messages normaux)
+            const analysisMessage = this.analysisAnimation?.getMessage();
+            if (analysisMessage) {
+                // Arrêter l'animation et réutiliser le message
+                await this.analysisAnimation!.stop();
+                await analysisMessage.edit(currentContent);
+                this.messages.push(analysisMessage);
+                this.analysisAnimation!.clearMessage();
+            } else if (this.interaction) {
+                // Pas d'animation, utiliser editReply pour les interactions
                 const message = await this.interaction.editReply({content: currentContent});
                 this.messages.push(message as Message);
             } else {
-                // Vérifier si on a un message d'analyse à réutiliser
-                const analysisMessage = this.analysisAnimation?.getMessage();
-                if (analysisMessage) {
-                    await this.analysisAnimation!.stop();
-                    await analysisMessage.edit(currentContent);
-                    this.messages.push(analysisMessage);
-                    this.analysisAnimation!.clearMessage();
+                // Créer un nouveau message pour les messages normaux
+                if (this.replyToMessage) {
+                    const message = await this.replyToMessage.reply({content: currentContent, allowedMentions: {repliedUser: true}});
+                    this.messages.push(message);
                 } else {
-                    // Créer un nouveau message
-                    if (this.replyToMessage) {
-                        const message = await this.replyToMessage.reply({content: currentContent, allowedMentions: {repliedUser: true}});
-                        this.messages.push(message);
-                    } else {
-                        const message = await this.channel.send(currentContent);
-                        this.messages.push(message);
-                    }
+                    const message = await this.channel.send(currentContent);
+                    this.messages.push(message);
                 }
             }
 

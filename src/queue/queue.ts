@@ -241,7 +241,7 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
         // Si une animation a déjà été démarrée (par forumThreadHandler), la réutiliser
         const analysisAnimation = preStartedAnimation || new ImageAnalysisAnimation();
         if (imageUrls && imageUrls.length > 0 && !skipImageAnalysis && !preStartedAnimation) {
-            await analysisAnimation.start(replyToMessage, channel);
+            await analysisAnimation.start(replyToMessage, channel, interaction);
         }
 
         // Traiter les images avec métadonnées complètes
@@ -277,19 +277,8 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             } finally {
                 // Arrêter l'animation d'analyse d'image dans tous les cas (succès ou erreur)
                 await analysisAnimation.stop();
-
-                // Supprimer le message d'animation s'il existe
-                const animationMessage = analysisAnimation.getMessage();
-                if (animationMessage) {
-                    try {
-                        await animationMessage.delete();
-                        logger.info("Image analysis animation message deleted");
-                    } catch (deleteError) {
-                        logger.warn("Could not delete animation message:", deleteError);
-                    }
-                } else {
-                    logger.info("Image analysis animation stopped (no message to delete)");
-                }
+                logger.info("Image analysis animation stopped");
+                // NE PAS supprimer le message - il sera réutilisé par le messageManager
             }
         }
 
@@ -425,16 +414,10 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
             // Gestionnaires
             const messageManager = new DiscordMessageManager(channel, replyToMessage, interaction);
-            // Ne pas passer l'animation au messageManager si elle a déjà été arrêtée
-            // (elle est arrêtée après l'analyse d'images)
-            // Le messageManager n'a besoin de l'animation que si elle n'a pas encore été utilisée
-            if (imageUrls && imageUrls.length > 0) {
-                // L'animation a déjà été arrêtée après l'analyse, ne pas la passer
-                logger.debug("Image analysis animation already stopped, not passing to messageManager");
-            } else {
-                // Pas d'images, l'animation n'a pas été utilisée
-                messageManager.setAnalysisAnimation(analysisAnimation);
-            }
+            // Toujours passer l'animation au messageManager
+            // - Si l'animation a été utilisée pour l'analyse d'images, elle sera réutilisée pour le premier message
+            // - Si c'est une interaction, l'animation n'a pas été créée (skip) donc pas de réutilisation
+            messageManager.setAnalysisAnimation(analysisAnimation);
 
             // Configurer le callback pour arrêter le typing indicator dès le premier message envoyé
             messageManager.setOnFirstMessageSent(() => {
