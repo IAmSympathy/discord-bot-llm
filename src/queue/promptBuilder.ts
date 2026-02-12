@@ -79,15 +79,23 @@ ${formattedParts.join("\n")}
  * Construit le bloc de contexte du thread starter (message d'origine du thread)
  */
 export function buildThreadStarterBlock(starterContext: { content: string; author: string; imageUrls: string[] }, imageDescriptions: string[]): string {
-    const imageContext = imageDescriptions.length > 0 ? `\n[Médias dans le message d'origine, description générée automatiquement]:\n- ${imageDescriptions.join("\n- ")}` : "";
+    const imageContext = imageDescriptions.length > 0 ? `\n[📎 Médias dans le message d'origine] :\n${imageDescriptions.map((desc, i) => `  ${i + 1}. ${desc}`).join("\n")}` : "";
 
-    return `=== MESSAGE D'ORIGINE DU THREAD ===
-[IMPORTANT: Ceci est le MESSAGE QUI A DÉMARRÉ CE THREAD. C'est le sujet principal de cette conversation.]
+    return `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧵 MESSAGE D'ORIGINE DU THREAD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Auteur: ${starterContext.author}
-Message:
+⚠️ CONTEXTE IMPORTANT : Ceci est le message qui a DÉMARRÉ ce thread.
+   → C'est le SUJET PRINCIPAL de cette conversation
+
+👤 Auteur : ${starterContext.author}
+
+📝 Message :
 ${starterContext.content}${imageContext}
-=== FIN MESSAGE D'ORIGINE DU THREAD ===
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧵 FIN DU MESSAGE D'ORIGINE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 `;
 }
@@ -180,7 +188,7 @@ function buildMentionedProfilesContext(prompt: string, recentTurns: MemoryTurn[]
                 const summary = UserProfileService.getProfileSummary(profile.userId);
                 if (summary) {
                     logger.info(`[ProfileDetection] ✓ Found profile: ${profile.username}`);
-                    profilesMap.set(profile.userId, `═══ PROFIL DE ${profile.username.toUpperCase()} (UID Discord: ${profile.userId}) ═══\n${summary}\n═══ FIN PROFIL DE ${profile.username.toUpperCase()} ═══`);
+                    profilesMap.set(profile.userId, `━━━ PROFIL DE ${profile.username.toUpperCase()} (UID Discord: ${profile.userId}) ━━━\n${summary}\n━━━ FIN PROFIL DE ${profile.username.toUpperCase()} ━━━`);
                 }
             }
         }
@@ -193,9 +201,16 @@ function buildMentionedProfilesContext(prompt: string, recentTurns: MemoryTurn[]
 
     logger.info(`[ProfileDetection] Total: ${profilesMap.size} profile(s) added to context`);
     const profiles = Array.from(profilesMap.values());
-    return `\n\n=== PROFILS DES PERSONNES MENTIONNÉES ===
+    return `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PROFILS DES PERSONNES MENTIONNÉES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 ${profiles.join("\n\n")}
-=== FIN PROFILS ===\n`;
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 FIN DES PROFILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
 }
 
 /**
