@@ -67,6 +67,16 @@ module.exports = {
                 else if (results.includes(1)) emoji = "💀"; // Critique échec
             }
 
+            // Message d'animation
+            if (numberOfDice > 1) {
+                await interaction.reply(`<a:zznDice:1471941139287375882> *Lance les dés...*`);
+            } else {
+                await interaction.reply(`<a:zznDice:1471941139287375882> *Lance le dé...*`);
+            }
+
+            // Attendre un peu pour l'effet d'animation
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
             // Créer l'embed de résultat
             const embed = new EmbedBuilder()
                 .setColor(0xea596e)

@@ -124,6 +124,13 @@ module.exports = {
             // Déterminer la ressource saisonnière
             const resource = getSeasonalResource();
 
+            // Message d'animation
+            await interaction.reply({content: `<a:zznHarvest:1471951869025714226> *Recherche de ressources...*`, flags: MessageFlags.Ephemeral});
+
+            // Attendre un peu pour l'effet d'animation
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+
             // Vérifier le cooldown
             const lastHarvest = cooldowns[userId];
             if (lastHarvest) {
@@ -140,10 +147,10 @@ module.exports = {
                             `Tu as déjà récolté une ressource récemment !\n\n` +
                             `Prochaine récolte disponible <t:${nextHarvestTime}:R>`
                         )
-                        .setFooter({text: "Tu peux récolter une ressource toutes les 6 heures"})
+                        .setFooter({text: "Tu peux récolter une ressource toutes les 7 heures"})
                         .setTimestamp();
 
-                    await interaction.reply({embeds: [cooldownEmbed], flags: MessageFlags.Ephemeral});
+                    await interaction.editReply({embeds: [cooldownEmbed]});
                     return;
                 }
             }
@@ -164,7 +171,7 @@ module.exports = {
                     .setDescription("Une erreur est survenue lors de l'ajout de la ressource à ton inventaire.")
                     .setTimestamp();
 
-                await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+                await interaction.editReply({embeds: [errorEmbed]});
                 return;
             }
 
@@ -183,6 +190,7 @@ module.exports = {
                 );
             }
 
+
             const successEmbed = new EmbedBuilder()
                 .setColor(0x5D6A74)
                 .setTitle("⛏️ Ressource récoltée !")
@@ -197,7 +205,7 @@ module.exports = {
                 .setFooter({text: "Vérifie ton inventaire avec /profile → 🎒 Inventaire"})
                 .setTimestamp();
 
-            await interaction.reply({embeds: [successEmbed], flags: MessageFlags.Ephemeral});
+            await interaction.editReply({embeds: [successEmbed]});
 
             // Logger la commande
             const channelName = getChannelNameFromInteraction(interaction);

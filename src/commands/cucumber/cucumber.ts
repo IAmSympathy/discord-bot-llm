@@ -40,6 +40,12 @@ module.exports = {
                 comment = "EXCEPTIONNEL ! Bien au-dessus de la moyenne ! 🤯";
             }
 
+            // Message d'animation
+            await interaction.reply(`<a:zznMeasure:1471953097776435281> *Mesure du concombre...*`);
+
+            // Attendre un peu pour l'effet d'animation
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
             const embed = new EmbedBuilder()
                 .setColor(0x71aa51)
                 .setTitle("🥒 Mesure du Concombre")

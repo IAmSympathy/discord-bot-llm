@@ -44,6 +44,13 @@ module.exports = {
             // Choisir une option aléatoire
             const chosenOption = options[Math.floor(Math.random() * options.length)];
 
+
+            // Message d'animation
+            await interaction.reply(`<a:zznColorWheel:1471953860531716169> *La roue tourne...*`);
+
+            // Attendre un peu pour l'effet d'animation
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
             // Créer l'embed de résultat
             const embed = new EmbedBuilder()
                 .setColor(0xdd2e44)

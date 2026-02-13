@@ -162,6 +162,14 @@ module.exports = {
             const shipName = person1Name.substring(0, Math.ceil(person1Name.length / 2)) +
                 person2Name.substring(Math.floor(person2Name.length / 2));
 
+
+            // Message d'animation
+            await interaction.reply(`<a:zznShip:1471948960980664405> *Calcul de la compatibilité...*`);
+
+            // Attendre un peu pour l'effet d'animation
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+
             // Créer l'embed
             const embed = new EmbedBuilder()
                 .setColor(color)
@@ -191,7 +199,7 @@ module.exports = {
                 .setFooter({text: `Demandé par ${interaction.user.displayName}`})
                 .setTimestamp();
 
-            await interaction.reply({embeds: [embed]});
+            await interaction.editReply({embeds: [embed]});
 
             // Logger la commande
             const channelName = getChannelNameFromInteraction(interaction);

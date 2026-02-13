@@ -49,6 +49,14 @@ module.exports = {
                 return;
             }
 
+
+            // Message d'animation
+            await interaction.reply(`<a:namaste_coudasaille:1133160371612569650> *Création de l'art ASCII...*`);
+
+            // Attendre un peu pour l'effet d'animation
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+
             // Répondre immédiatement pour éviter le timeout
             await interaction.deferReply();
 

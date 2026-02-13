@@ -48,7 +48,7 @@ module.exports = {
             }
 
             // Message d'animation
-            await interaction.reply("🌀  *Lance la pièce...*");
+            await interaction.reply(`<a:zznCoinFlip:1471941010635358218> *Lance la pièce...*`);
 
             // Attendre un peu pour l'effet d'animation
             await new Promise(resolve => setTimeout(resolve, 1500));

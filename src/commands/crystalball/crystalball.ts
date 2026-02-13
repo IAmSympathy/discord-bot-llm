@@ -47,6 +47,12 @@ module.exports = {
             // Choisir une réponse aléatoire
             const randomResponse = responses[Math.floor(Math.random() * responses.length)];
 
+            // Message d'animation
+            await interaction.reply(`<:zznMagicBall:1471947304989753508> *La boule de crystal réfléchit...*`);
+
+            // Attendre un peu pour l'effet d'animation
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
             // Créer l'embed de résultat
             const embed = new EmbedBuilder()
                 .setColor(0xA589D2)
@@ -69,7 +75,7 @@ module.exports = {
             embed.setFooter({text: `Demandé par ${interaction.user.displayName}`})
                 .setTimestamp();
 
-            await interaction.reply({embeds: [embed]});
+            await interaction.editReply({embeds: [embed]});
 
             // Logger la commande
             const channelName = getChannelNameFromInteraction(interaction);
