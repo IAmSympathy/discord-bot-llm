@@ -6,6 +6,7 @@ import {getMonthlyXP} from "../../services/monthlyXPService";
 import {getDailyXP, getWeeklyXP} from "../../services/dailyWeeklyXPService";
 import {getCurrentDate} from "../../services/dailyStatsService";
 import {getCurrentWeek, getWeeklyStatsForWeek} from "../../services/weeklyStatsService";
+import {getCurrentMonth, getMonthlyStatsForMonth} from "../../services/monthlyStatsService";
 import {getNetricsaColorCached} from "../../utils/colorHelper";
 
 type LeaderboardCategory = "xp" | "messages" | "vocal" | "images" | "jeux";
@@ -336,8 +337,20 @@ async function createLeaderboardEmbed(
                     }))
                     .filter(d => d.messagesEnvoyes > 0);
                 allUserIds = sortedStats.map(d => d.userId);
+            } else if (mode === "monthly") {
+                // Messages mensuels - utiliser monthly_stats.json
+                const month = getCurrentMonth();
+                const monthlyData = getMonthlyStatsForMonth(month);
+                sortedStats = Object.entries(monthlyData)
+                    .map(([userId, data]: [string, any]) => ({
+                        userId,
+                        username: data.username,
+                        messagesEnvoyes: data.messagesEnvoyes || 0
+                    }))
+                    .filter(d => d.messagesEnvoyes > 0);
+                allUserIds = sortedStats.map(d => d.userId);
             } else {
-                // Messages all-time ou monthly - utiliser getAllStats
+                // Messages all-time - utiliser getAllStats
                 const allStats = getAllStats();
                 sortedStats = Object.values(allStats).map((s: any) => ({
                     userId: s.userId,
@@ -402,8 +415,20 @@ async function createLeaderboardEmbed(
                     .filter(d => d.voiceMinutes > 0)
                     .sort((a, b) => b.voiceMinutes - a.voiceMinutes);
                 allUserIds = sortedStats.map(d => d.userId);
+            } else if (mode === "monthly") {
+                // Vocal mensuel - utiliser monthly_stats.json
+                const month = getCurrentMonth();
+                const monthlyData = getMonthlyStatsForMonth(month);
+                sortedStats = Object.entries(monthlyData)
+                    .map(([userId, data]: [string, any]) => ({
+                        userId,
+                        username: data.username,
+                        voiceMinutes: data.tempsVocalMinutes || 0
+                    }))
+                    .filter(d => d.voiceMinutes > 0);
+                allUserIds = sortedStats.map(d => d.userId);
             } else {
-                // Vocal all-time ou monthly - utiliser getAllStats
+                // Vocal all-time - utiliser getAllStats
                 const allStats = getAllStats();
                 sortedStats = Object.values(allStats)
                     .map((s: any) => ({
@@ -467,12 +492,24 @@ async function createLeaderboardEmbed(
                     .map(([userId, data]: [string, any]) => ({
                         userId,
                         username: data.username,
-                        totalImages: data.imagesGenerees || 0
+                        totalImages: (data.imagesGenerees || 0) + (data.imagesReimaginee || 0)
+                    }))
+                    .filter(d => d.totalImages > 0);
+                allUserIds = sortedStats.map(d => d.userId);
+            } else if (mode === "monthly") {
+                // Images mensuelles - utiliser monthly_stats.json
+                const month = getCurrentMonth();
+                const monthlyData = getMonthlyStatsForMonth(month);
+                sortedStats = Object.entries(monthlyData)
+                    .map(([userId, data]: [string, any]) => ({
+                        userId,
+                        username: data.username,
+                        totalImages: (data.imagesGenerees || 0) + (data.imagesReimaginee || 0)
                     }))
                     .filter(d => d.totalImages > 0);
                 allUserIds = sortedStats.map(d => d.userId);
             } else {
-                // Images all-time ou monthly - utiliser getAllStats
+                // Images all-time - utiliser getAllStats
                 const allStats = getAllStats();
                 sortedStats = Object.values(allStats)
                     .map((s: any) => ({
@@ -540,8 +577,21 @@ async function createLeaderboardEmbed(
                     }))
                     .filter(d => d.gamesPlayed > 0);
                 allUserIds = sortedStats.map(d => d.userId);
+            } else if (mode === "monthly") {
+                // Jeux mensuels - utiliser monthly_stats.json
+                const month = getCurrentMonth();
+                const monthlyData = getMonthlyStatsForMonth(month);
+                sortedStats = Object.entries(monthlyData)
+                    .map(([userId, data]: [string, any]) => ({
+                        userId,
+                        username: data.username,
+                        gamesPlayed: data.gamesPlayed || 0,
+                        gamesWon: data.gamesWon || 0
+                    }))
+                    .filter(d => d.gamesPlayed > 0);
+                allUserIds = sortedStats.map(d => d.userId);
             } else {
-                // Jeux all-time ou monthly - utiliser getGlobalLeaderboard
+                // Jeux all-time - utiliser getGlobalLeaderboard
                 let leaderboard = getGlobalLeaderboard(50);
                 sortedStats = leaderboard.map(e => ({
                     userId: e.userId,

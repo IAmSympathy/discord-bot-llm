@@ -19,8 +19,12 @@ export interface WeeklyUserStats {
     hangmanPlayed: number;
     hangmanWon: number;
     imagesGenerees: number;
+    imagesReimaginee: number;
+    imagesUpscalee: number;
     counterContributions: number;
     conversationsIA: number;
+    memesRecherches: number;
+    promptsCrees: number;
     commandesUtilisees: number;
 }
 
@@ -87,8 +91,12 @@ function initWeeklyUserStats(username: string): WeeklyUserStats {
         hangmanPlayed: 0,
         hangmanWon: 0,
         imagesGenerees: 0,
+        imagesReimaginee: 0,
+        imagesUpscalee: 0,
         counterContributions: 0,
         conversationsIA: 0,
+        memesRecherches: 0,
+        promptsCrees: 0,
         commandesUtilisees: 0
     };
 }
@@ -203,6 +211,120 @@ export function recordWeeklyImageGenerated(userId: string, username: string): vo
     }
 
     data[week][userId].imagesGenerees++;
+    data[week][userId].username = username;
+    saveWeeklyStats(data);
+}
+
+/**
+ * Enregistre une image réimaginée cette semaine
+ */
+export function recordWeeklyImageReimagined(userId: string, username: string): void {
+    const data = loadWeeklyStats();
+    const week = getCurrentWeek();
+
+    if (!data[week]) {
+        data[week] = {};
+    }
+    if (!data[week][userId]) {
+        data[week][userId] = initWeeklyUserStats(username);
+    }
+
+    data[week][userId].imagesReimaginee++;
+    data[week][userId].username = username;
+    saveWeeklyStats(data);
+}
+
+/**
+ * Enregistre une image upscalée cette semaine
+ */
+export function recordWeeklyImageUpscaled(userId: string, username: string): void {
+    const data = loadWeeklyStats();
+    const week = getCurrentWeek();
+
+    if (!data[week]) {
+        data[week] = {};
+    }
+    if (!data[week][userId]) {
+        data[week][userId] = initWeeklyUserStats(username);
+    }
+
+    data[week][userId].imagesUpscalee++;
+    data[week][userId].username = username;
+    saveWeeklyStats(data);
+}
+
+/**
+ * Enregistre une conversation IA cette semaine
+ */
+export function recordWeeklyAIConversation(userId: string, username: string): void {
+    const data = loadWeeklyStats();
+    const week = getCurrentWeek();
+
+    if (!data[week]) {
+        data[week] = {};
+    }
+    if (!data[week][userId]) {
+        data[week][userId] = initWeeklyUserStats(username);
+    }
+
+    data[week][userId].conversationsIA++;
+    data[week][userId].username = username;
+    saveWeeklyStats(data);
+}
+
+/**
+ * Enregistre une recherche de meme cette semaine
+ */
+export function recordWeeklyMemeSearched(userId: string, username: string): void {
+    const data = loadWeeklyStats();
+    const week = getCurrentWeek();
+
+    if (!data[week]) {
+        data[week] = {};
+    }
+    if (!data[week][userId]) {
+        data[week][userId] = initWeeklyUserStats(username);
+    }
+
+    data[week][userId].memesRecherches++;
+    data[week][userId].username = username;
+    saveWeeklyStats(data);
+}
+
+/**
+ * Enregistre un prompt créé cette semaine
+ */
+export function recordWeeklyPromptCreated(userId: string, username: string): void {
+    const data = loadWeeklyStats();
+    const week = getCurrentWeek();
+
+    if (!data[week]) {
+        data[week] = {};
+    }
+    if (!data[week][userId]) {
+        data[week][userId] = initWeeklyUserStats(username);
+    }
+
+    data[week][userId].promptsCrees++;
+    data[week][userId].username = username;
+    saveWeeklyStats(data);
+}
+
+/**
+ * Enregistre une commande utilisée cette semaine
+ */
+export function recordWeeklyCommand(userId: string, username: string): void {
+    const data = loadWeeklyStats();
+    const week = getCurrentWeek();
+
+    if (!data[week]) {
+        data[week] = {};
+    }
+    if (!data[week][userId]) {
+        data[week][userId] = initWeeklyUserStats(username);
+    }
+
+    data[week][userId].commandesUtilisees++;
     data[week][userId].username = username;
     saveWeeklyStats(data);
 }

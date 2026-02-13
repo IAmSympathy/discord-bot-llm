@@ -202,6 +202,25 @@ export function recordDailyImageGenerated(userId: string, username: string): voi
 }
 
 /**
+ * Enregistre une image réimaginée aujourd'hui
+ */
+export function recordDailyImageReimagined(userId: string, username: string): void {
+    const data = loadDailyStats();
+    const date = getCurrentDate();
+
+    if (!data[date]) {
+        data[date] = {};
+    }
+    if (!data[date][userId]) {
+        data[date][userId] = initDailyUserStats(username);
+    }
+
+    data[date][userId].imagesReimaginee++;
+    data[date][userId].username = username;
+    saveDailyStats(data);
+}
+
+/**
  * Enregistre une contribution au compteur aujourd'hui
  */
 export function recordDailyCounterContribution(userId: string, username: string): void {

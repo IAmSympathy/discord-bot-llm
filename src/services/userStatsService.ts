@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as path from "path";
 import {createLogger} from "../utils/logger";
 import {DATA_DIR} from "../utils/constants";
-import {recordYearlyAIConversation, recordYearlyCommandUsed, recordYearlyImageGenerated, recordYearlyImageReimagined, recordYearlyImageUpscaled, recordYearlyMemeSearched, recordYearlyMentionReceived, recordYearlyMessageSent, recordYearlyNetricsaWebSearch, recordYearlyPromptCreated, recordYearlyReactionAdded, recordYearlyReactionReceived, recordYearlyReplyReceived, recordYearlyVoiceTime} from "./yearlyStatsService";
 
 const logger = createLogger("UserStats");
 const STATS_FILE = path.join(DATA_DIR, "user_stats.json");
@@ -172,9 +171,6 @@ export function recordMessageSent(userId: string, username: string): void {
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
 
-    // Enregistrer aussi dans les stats annuelles
-    recordYearlyMessageSent(userId, username);
-
     // Note: XP est ajouté avec notification dans watchChannel.ts
 }
 
@@ -191,9 +187,6 @@ export function recordReactionAdded(userId: string, username: string): void {
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
 
-    // Enregistrer aussi dans les stats annuelles
-    recordYearlyReactionAdded(userId, username);
-
     // Note: XP avec notification est ajouté dans bot.ts lors de l'événement reactionAdd
 }
 
@@ -209,7 +202,6 @@ export function recordReactionReceived(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-    recordYearlyReactionReceived(userId, username);
 }
 
 /**
@@ -224,7 +216,6 @@ export function recordCommandUsed(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-    recordYearlyCommandUsed(userId, username);
 }
 
 /**
@@ -239,7 +230,6 @@ export function recordMentionReceived(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-    recordYearlyMentionReceived(userId, username);
 }
 
 /**
@@ -254,7 +244,6 @@ export function recordReplyReceived(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-    recordYearlyReplyReceived(userId, username);
 }
 
 /**
@@ -269,7 +258,6 @@ export function recordVoiceTime(userId: string, username: string, minutes: numbe
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-    recordYearlyVoiceTime(userId, username, minutes);
 }
 
 // === FONCTIONS D'INCRÉMENTATION NETRICSA ===
@@ -286,7 +274,6 @@ export function recordImageGenerated(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-    recordYearlyImageGenerated(userId, username);
 }
 
 /**
@@ -301,7 +288,6 @@ export function recordImageReimagined(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-    recordYearlyImageReimagined(userId, username);
 }
 
 /**
@@ -316,7 +302,6 @@ export function recordImageUpscaled(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-    recordYearlyImageUpscaled(userId, username);
 }
 
 /**
@@ -331,7 +316,6 @@ export function recordAIConversation(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-    recordYearlyAIConversation(userId, username);
 }
 
 /**
@@ -346,7 +330,6 @@ export function recordMemeSearched(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-    recordYearlyMemeSearched(userId, username);
 }
 
 /**
@@ -361,7 +344,6 @@ export function recordPromptCreated(userId: string, username: string): void {
     stats[userId].username = username;
     stats[userId].lastUpdate = Date.now();
     saveStats(stats);
-    recordYearlyPromptCreated(userId, username);
 }
 
 /**
@@ -381,7 +363,6 @@ export function recordNetricsaWebSearch(): void {
     stats[NETRICSA_USER_ID].netricsa.recherchesWebNetricsa!++;
     stats[NETRICSA_USER_ID].lastUpdate = Date.now();
     saveStats(stats);
-    recordYearlyNetricsaWebSearch();
 }
 
 /**

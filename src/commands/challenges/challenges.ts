@@ -750,7 +750,7 @@ module.exports = {
                 name: `━━━━━━━━━━━━━━━━━━━━━━\n${voiceStatusIcon} 🎤 XP Vocal Accumulé`,
                 value:
                     `${xpProgressBar}\n` +
-                    `${voiceXPPerMinute} XP/min (${currentVoiceTier.label}) • 💫 **${totalVoiceXP} XP** gagné\n`,
+                    `💫 **${totalVoiceXP} XP** gagné\n`,
                 inline: false
             });
 
