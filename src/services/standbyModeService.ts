@@ -264,8 +264,27 @@ export async function initializeStandbyMode(client: Client): Promise<void> {
 
 /**
  * Retourne l'état actuel du mode Standby
+ * Si en mode Standby, déclenche une vérification opportuniste pour tenter de sortir du mode veille
  */
-export function isStandbyMode(): boolean {
+export function isStandbyMode(client?: Client): boolean {
+    // Si en mode Standby et qu'un client est fourni, tenter une vérification opportuniste
+    if (standbyState.enabled && client) {
+        // Vérification opportuniste asynchrone (non-bloquante)
+        // On ne vérifie que si la dernière vérification date de plus de 5 secondes
+        const now = Date.now();
+        const lastCheckTime = standbyState.lastCheck?.getTime() || 0;
+        const timeSinceLastCheck = now - lastCheckTime;
+
+        if (timeSinceLastCheck > 5000) { // 5 secondes
+            logger.debug("🔍 Opportunistic connectivity check triggered by isStandbyMode()");
+
+            // Vérification asynchrone sans bloquer
+            performConnectivityCheck(client).catch(error => {
+                logger.error("Error during opportunistic connectivity check:", error);
+            });
+        }
+    }
+
     return standbyState.enabled;
 }
 

@@ -14,7 +14,7 @@ module.exports = {
             await interaction.deferReply({flags: MessageFlags.Ephemeral});
 
             const stats = getStandbyStats();
-            const isStandby = isStandbyMode();
+            const isStandby = isStandbyMode(interaction.client);
 
             // Forcer une vérification immédiate
             const status = await forceConnectivityCheck(interaction.client);

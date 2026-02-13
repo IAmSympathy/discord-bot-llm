@@ -126,7 +126,7 @@ module.exports = {
 
             // Vérifier le mode standby
             const {isStandbyMode} = require('../../services/standbyModeService');
-            if (isStandbyMode()) {
+            if (isStandbyMode(interaction.client)) {
                 const errorEmbed = createStandbyEmbed(
                     "Mode Veille",
                     "Netricsa est en mode veille, car elle ne peut se connecter à l'ordinateur de son créateur. L'upscaling d'images n'est pas disponible pour le moment."
@@ -157,7 +157,7 @@ module.exports = {
 
             // Message de progression avec animation de points
             progressMessage = await interaction.reply({
-                content: `\`Upscaling de l'image avec la méthode **${modelName} (x${scale})**.\``
+                content: `\`Upscaling de l'image avec la méthode ${modelName} (x${scale}).\``
             });
 
             // Animation des points
@@ -165,7 +165,7 @@ module.exports = {
             const animationInterval = setInterval(async () => {
                 dotCount = (dotCount % 3) + 1;
                 const dots = ".".repeat(dotCount);
-                await progressMessage.edit(`\`Upscaling de l'image avec la méthode **${modelName} (x${scale})**${dots}\``).catch(() => {
+                await progressMessage.edit(`\`Upscaling de l'image avec la méthode ${modelName} (x${scale})${dots}\``).catch(() => {
                 });
             }, TYPING_ANIMATION_INTERVAL);
 

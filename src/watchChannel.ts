@@ -32,7 +32,7 @@ async function handleBotModes(message: Message, client: Client, watchedChannelId
     const isDM = message.channel.type === ChannelType.DM;
 
     // Vérifier si en Standby Mode (prioritaire)
-    if (isStandbyMode()) {
+    if (isStandbyMode(client)) {
         // En DM, toujours répondre. En serveur, vérifier mention ou canal surveillé
         const shouldRespond = isDM ||
             (message.mentions.has(client.user!.id) && !message.mentions.everyone) ||

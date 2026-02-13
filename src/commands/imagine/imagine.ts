@@ -77,7 +77,7 @@ module.exports = {
 
         // Vérifier le mode standby
         const {isStandbyMode} = require('../../services/standbyModeService');
-        if (isStandbyMode()) {
+        if (isStandbyMode(interaction.client)) {
             const errorEmbed = createStandbyEmbed(
                 "Mode Veille",
                 "Netricsa est en mode veille, car elle ne peut se connecter à l'ordinateur de son créateur. La génération d'images n'est pas disponible pour le moment."

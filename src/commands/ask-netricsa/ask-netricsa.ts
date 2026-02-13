@@ -71,7 +71,7 @@ module.exports = {
         }
 
         // Vérifier le mode standby
-        if (isStandbyMode()) {
+        if (isStandbyMode(interaction.client)) {
             const errorEmbed = createStandbyEmbed(
                 "Mode Veille",
                 "Netricsa est en mode veille, car elle ne peut se connecter à l'ordinateur de son créateur. La conversation intelligente et l'analyse d'images ne sont pas disponible pour le moment."

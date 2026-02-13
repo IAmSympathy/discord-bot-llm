@@ -22,7 +22,7 @@ export async function checkOwnerActivity(client: Client): Promise<void> {
 
     // Ne pas changer le statut si le bot est en Standby Mode (priorité absolue)
     const {isStandbyMode} = require('./standbyModeService');
-    if (isStandbyMode()) {
+    if (isStandbyMode(client)) {
         return;
     }
 
@@ -121,7 +121,7 @@ export function initializeActivityMonitor(client: Client): void {
 
             // Vérifier si le bot est en Standby Mode (prioritaire)
             const {isStandbyMode} = require('./standbyModeService');
-            if (isStandbyMode()) {
+            if (isStandbyMode(client)) {
                 logger.info("🌙 Bot is in Standby Mode, skipping activity monitor status change");
                 return;
             }
@@ -138,7 +138,7 @@ export function initializeActivityMonitor(client: Client): void {
 
             // Vérifier le Standby Mode avant d'appliquer le statut normal par défaut
             const {isStandbyMode} = require('./standbyModeService');
-            if (!isStandbyMode()) {
+            if (!isStandbyMode(client)) {
                 await setNormalStatus(client);
             }
         }
