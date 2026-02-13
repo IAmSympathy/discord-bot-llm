@@ -244,7 +244,8 @@ module.exports = {
                     scale,
                     formatTime(parseFloat(processingTime)),
                     imageUrl,
-                    channelName
+                    channelName,
+                    interaction.user.displayAvatarURL()
                 );
             } catch (editError: any) {
                 logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
@@ -263,7 +264,8 @@ module.exports = {
                     scale,
                     formatTime(parseFloat(processingTime)),
                     imageUrl,
-                    channelName
+                    channelName,
+                    interaction.user.displayAvatarURL()
                 );
             }
 

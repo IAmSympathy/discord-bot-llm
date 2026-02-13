@@ -196,7 +196,7 @@ module.exports = {
                     imageDescriptions = imageResults.map(r => r.description);
 
                     if (imageResults.length > 0) {
-                        await logBotImageAnalysis(interaction.user.displayName, imageResults);
+                        await logBotImageAnalysis(interaction.user.displayName, imageResults, interaction.user.displayAvatarURL());
                     }
                     logger.info(`Image analysis complete`);
                 } catch (imageError) {

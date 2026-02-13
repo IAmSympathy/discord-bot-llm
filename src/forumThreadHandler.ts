@@ -97,7 +97,7 @@ export function registerForumThreadHandler(client: Client) {
 
                 // Logger l'analyse d'images
                 if (imageResults.length > 0) {
-                    await logBotImageAnalysis(username, imageResults);
+                    await logBotImageAnalysis(username, imageResults, starterMessage.author.displayAvatarURL());
                 }
 
                 // Nettoyer l'enregistrement de l'animation (elle sera gérée par processLLMRequest maintenant)

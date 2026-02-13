@@ -227,7 +227,8 @@ client.on(Events.GuildMemberAdd, async (member) => {
         await logServerMemberJoin(
             member.user.username,
             member.user.id,
-            member.guild.memberCount
+            member.guild.memberCount,
+            member.user.displayAvatarURL()
         );
         console.log(`[Server Event] ${member.user.username} joined the server`);
 
@@ -245,7 +246,8 @@ client.on(Events.GuildMemberRemove, async (member) => {
         await logServerMemberLeave(
             member.user.username,
             member.user.id,
-            member.guild.memberCount
+            member.guild.memberCount,
+            member.user.displayAvatarURL()
         );
         console.log(`[Server Event] ${member.user.username} left the server`);
 
@@ -272,7 +274,8 @@ client.on(Events.GuildBanAdd, async (ban) => {
             ban.user.username,
             ban.user.id,
             moderator,
-            reason
+            reason,
+            ban.user.displayAvatarURL()
         );
         if (moderator) {
             logger.info(`${ban.user.username} was banned by ${moderator}`);
@@ -281,7 +284,7 @@ client.on(Events.GuildBanAdd, async (ban) => {
         }
         console.log(`[Server Event] ${ban.user.username} was banned by ${moderator || "Unknown"}`);
     } catch (error) {
-        await logServerBan(ban.user.username, ban.user.id);
+        await logServerBan(ban.user.username, ban.user.id, undefined, undefined, ban.user.displayAvatarURL());
         logger.error(`Error processing GuildBanAdd event for ${ban.user.username}: ${error}`);
     }
 });
@@ -300,7 +303,8 @@ client.on(Events.GuildBanRemove, async (ban) => {
         await logServerUnban(
             ban.user.username,
             ban.user.id,
-            moderator
+            moderator,
+            ban.user.displayAvatarURL()
         );
         if (moderator) {
             logger.info(`${ban.user.username} was unbanned by ${moderator}`);
@@ -309,7 +313,7 @@ client.on(Events.GuildBanRemove, async (ban) => {
         }
         console.log(`[Server Event] ${ban.user.username} was unbanned by ${moderator || "Unknown"}`);
     } catch (error) {
-        await logServerUnban(ban.user.username, ban.user.id);
+        await logServerUnban(ban.user.username, ban.user.id, undefined, ban.user.displayAvatarURL());
         logger.error(`Error processing GuildBanRemove event for ${ban.user.username}: ${error}`);
     }
 });
@@ -329,7 +333,8 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
                 newMember.user.username,
                 newMember.user.id,
                 addedRoles,
-                removedRoles
+                removedRoles,
+                newMember.user.displayAvatarURL()
             );
             logger.info(`Roles updated for ${newMember.user.username}`);
             console.log(`[Server Event] Roles updated for ${newMember.user.username}`);
@@ -359,10 +364,11 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
                         newMember.user.id,
                         durationStr,
                         moderator,
-                        reason || undefined
+                        reason || undefined,
+                        newMember.user.displayAvatarURL()
                     );
                 } catch (error) {
-                    await logServerMemberTimeout(newMember.user.username, newMember.user.id, durationStr);
+                    await logServerMemberTimeout(newMember.user.username, newMember.user.id, durationStr, undefined, undefined, newMember.user.displayAvatarURL());
                 }
                 logger.info(`${newMember.user.username} timed out for ${durationStr}`);
                 console.log(`[Server Event] ${newMember.user.username} timed out for ${durationStr}`);
@@ -379,10 +385,11 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
                     await logServerMemberTimeoutRemove(
                         newMember.user.username,
                         newMember.user.id,
-                        moderator
+                        moderator,
+                        newMember.user.displayAvatarURL()
                     );
                 } catch (error) {
-                    await logServerMemberTimeoutRemove(newMember.user.username, newMember.user.id);
+                    await logServerMemberTimeoutRemove(newMember.user.username, newMember.user.id, undefined, newMember.user.displayAvatarURL());
                 }
                 logger.info(`${newMember.user.username} timeout removed`);
                 console.log(`[Server Event] ${newMember.user.username} timeout removed`);
@@ -395,7 +402,8 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
                 newMember.user.username,
                 newMember.user.id,
                 oldMember.nickname,
-                newMember.nickname
+                newMember.nickname,
+                newMember.user.displayAvatarURL()
             );
             logger.info(`Nickname changed for ${newMember.user.username}`);
             console.log(`[Server Event] Nickname changed for ${newMember.user.username}`);
@@ -417,6 +425,7 @@ client.on(Events.ChannelCreate, async (channel) => {
             else if (channel.type === ChannelType.GuildForum) channelType = "Forum";
 
             let createdBy: string | undefined;
+            let creatorAvatarUrl: string | undefined;
 
             // Tenter de récupérer qui a créé le salon
             try {
@@ -431,6 +440,7 @@ client.on(Events.ChannelCreate, async (channel) => {
                     // Vérifier que le log est récent (moins de 5 secondes)
                     if (timeDiff < 5000) {
                         createdBy = createLog.executor?.username ?? undefined;
+                        creatorAvatarUrl = createLog.executor?.displayAvatarURL();
                     }
                 }
             } catch (error) {
@@ -441,7 +451,8 @@ client.on(Events.ChannelCreate, async (channel) => {
                 channel.name || "Sans nom",
                 channelType,
                 channel.id,
-                createdBy
+                createdBy,
+                creatorAvatarUrl
             );
             logger.info(`Channel created: ${channel.name}${createdBy ? ` by ${createdBy}` : ''}`);
             console.log(`[Server Event] Channel created: ${channel.name}${createdBy ? ` by ${createdBy}` : ''}`);
@@ -463,6 +474,7 @@ client.on(Events.ChannelDelete, async (channel) => {
             else if (channel.type === ChannelType.GuildForum) channelType = "Forum";
 
             let deletedBy: string | undefined;
+            let deleterAvatarUrl: string | undefined;
 
             // Tenter de récupérer qui a supprimé le salon
             try {
@@ -477,6 +489,7 @@ client.on(Events.ChannelDelete, async (channel) => {
                     // Vérifier que le log est récent (moins de 5 secondes)
                     if (timeDiff < 5000) {
                         deletedBy = deleteLog.executor?.username ?? undefined;
+                        deleterAvatarUrl = deleteLog.executor?.displayAvatarURL();
                     }
                 }
             } catch (error) {
@@ -487,7 +500,8 @@ client.on(Events.ChannelDelete, async (channel) => {
                 channel.name || "Sans nom",
                 channelType,
                 channel.id,
-                deletedBy
+                deletedBy,
+                deleterAvatarUrl
             );
             logger.info(`Channel deleted: ${channel.name}${deletedBy ? ` by ${deletedBy}` : ''}`);
             console.log(`[Server Event] Channel deleted: ${channel.name}${deletedBy ? ` by ${deletedBy}` : ''}`);
@@ -538,7 +552,8 @@ client.on(Events.MessageDelete, async (message) => {
                 message.channel.isDMBased() ? "DM" : (message.channel.name || "Salon inconnu"),
                 message.content || "(pas de contenu texte)",
                 message.attachments.size,
-                deletedBy
+                deletedBy,
+                message.author?.displayAvatarURL()
             );
             logger.info(`Message deleted from ${message.author?.username || "Unknown"}${deletedBy ? ` by ${deletedBy}` : ''}`);
             console.log(`[Server Event] Message deleted from ${message.author?.username || "Unknown"}${deletedBy ? ` by ${deletedBy}` : ''}`);
@@ -565,7 +580,8 @@ client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
             oldMessage.content || "(pas de contenu texte)",
             newMessage.content || "(pas de contenu texte)",
             newMessage.attachments.size,
-            newMessage.author?.username // L'auteur est celui qui édite son propre message
+            newMessage.author?.username, // L'auteur est celui qui édite son propre message
+            newMessage.author?.displayAvatarURL()
         );
         logger.info(`Message edited by ${newMessage.author?.username || "Unknown"}`);
         console.log(`[Server Event] Message edited by ${newMessage.author?.username || "Unknown"}`);
@@ -600,7 +616,8 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                         member.user.id,
                         oldState.channel.name,
                         newState.channel.name,
-                        moderator
+                        moderator,
+                        member.user.displayAvatarURL()
                     );
                     logger.info(`${member.user.username} moved from ${oldState.channel.name} to ${newState.channel.name} by ${moderator}`);
                     console.log(`[Server Event] ${member.user.username} moved from ${oldState.channel.name} to ${newState.channel.name} by ${moderator}`);
@@ -636,7 +653,8 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                     member.user.id,
                     isMuted,
                     false,
-                    moderator
+                    moderator,
+                    member.user.displayAvatarURL()
                 );
                 logger.info(`${member.user.username} ${isMuted ? 'muted' : 'unmuted'} by server (by ${moderator})`);
                 console.log(`[Server Event] ${member.user.username} ${isMuted ? 'muted' : 'unmuted'} by server (by ${moderator})`);
@@ -671,7 +689,8 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
                     member.user.id,
                     isDeafened,
                     false,
-                    moderator
+                    moderator,
+                    member.user.displayAvatarURL()
                 );
                 logger.info(`${member.user.username} ${isDeafened ? 'deafened' : 'undeafened'} by server (by ${moderator})`);
                 console.log(`[Server Event] ${member.user.username} ${isDeafened ? 'deafened' : 'undeafened'} by server (by ${moderator})`);

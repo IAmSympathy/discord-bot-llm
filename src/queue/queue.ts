@@ -227,7 +227,9 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
 
                     // Logger l'analyse d'images avec toutes les métadonnées
                     if (imageResults.length > 0) {
-                        await logBotImageAnalysis(userName, imageResults);
+                        const user = await client.users.fetch(userId).catch(() => null);
+                        const avatarUrl = user?.displayAvatarURL();
+                        await logBotImageAnalysis(userName, imageResults, avatarUrl);
                     }
                 }
             } catch (imageError) {
@@ -250,7 +252,10 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             threadStarterImageDescriptions = threadImageResults.map(r => r.description);
 
             if (threadImageResults.length > 0) {
-                await logBotImageAnalysis(`${userName} (thread starter)`, threadImageResults);
+                // Récupérer l'avatar de l'utilisateur
+                const user = await client.users.fetch(userId).catch(() => null);
+                const avatarUrl = user?.displayAvatarURL();
+                await logBotImageAnalysis(`${userName} (thread starter)`, threadImageResults, avatarUrl);
             }
         }
 
@@ -297,7 +302,9 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
             logger.info(`Web context added to prompt (${webSearchTime}ms)`);
 
             // Logger la recherche web avec le temps
-            await logBotWebSearch(userName, prompt, webContext.facts?.length || 0, webSearchTime);
+            const user = await client.users.fetch(userId).catch(() => null);
+            const avatarUrl = user?.displayAvatarURL();
+            await logBotWebSearch(userName, prompt, webContext.facts?.length || 0, webSearchTime, avatarUrl);
 
             // Enregistrer la recherche web uniquement pour Netricsa elle-même
             recordNetricsaWebSearch();
@@ -547,6 +554,8 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                     const willSaveInMemory = true;
 
                                     // Logger la réponse de Netricsa avec l'info de mémoire
+                                    const user = await client.users.fetch(userId).catch(() => null);
+                                    const avatarUrl = user?.displayAvatarURL();
                                     await logBotResponse(
                                         userName,
                                         userId,
@@ -558,9 +567,9 @@ export async function processLLMRequest(request: DirectLLMRequest): Promise<stri
                                         webContext !== null,
                                         reactionEmoji,
                                         responseTime,
-                                        willSaveInMemory
+                                        willSaveInMemory,
+                                        avatarUrl
                                     );
-
                                     if (willSaveInMemory && !skipMemory) {
                                         // Utiliser le message original pour l'analyse du type
                                         const messageToAnalyze = originalUserMessage || prompt;

@@ -6,7 +6,7 @@ import {createErrorEmbed, createLowPowerEmbed, createStandbyEmbed} from "../../u
 import {isLowPowerMode} from "../../services/botStateService";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {recordPromptCreatedStats} from "../../services/statsRecorder";
-import {logBotCommand} from "../../utils/discordLogger";
+import {logCommand} from "../../utils/discordLogger";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
 import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
@@ -443,16 +443,30 @@ module.exports = {
                 });
             }
 
-            // Logger la commande
+            // Logger la commande avec le résultat généré
             const channelName = getChannelNameFromInteraction(interaction);
 
-            const optionsText = `Type: ${isImg2Img ? "img2img (reimagine)" : "text2img (imagine)"}\nDescription: ${description.substring(0, 100)}${description.length > 100 ? "..." : ""}`;
+            const fields = [
+                {name: "👤 Utilisateur", value: `**${interaction.user.username}**`, inline: true},
+                {name: "🎨 Type", value: `\`${isImg2Img ? "img2img (reimagine)" : "text2img (imagine)"}\``, inline: true},
+                {name: "📏 Longueur", value: `**${result.prompt.length}** caractères`, inline: true},
+                {name: "📝 Description Originale", value: `\`\`\`\n${description.length > 200 ? description.substring(0, 200) + "..." : description}\n\`\`\``, inline: false},
+                {name: "✨ Prompt Généré", value: `\`\`\`\n${result.prompt.length > 500 ? result.prompt.substring(0, 500) + "..." : result.prompt}\n\`\`\``, inline: false},
+                {name: "🚫 Negative Prompt", value: `\`\`\`\n${result.negative.length > 300 ? result.negative.substring(0, 300) + "..." : result.negative}\n\`\`\``, inline: false}
+            ];
 
-            await logBotCommand(
-                interaction.user.username,
-                "prompt-maker",
+            // Ajouter le strength uniquement pour img2img
+            if (isImg2Img) {
+                fields.push({name: "💪 Strength", value: `\`${result.strength}\``, inline: true});
+            }
+
+            await logCommand(
+                "✨ Prompt Maker",
+                undefined,
+                fields,
+                undefined,
                 channelName,
-                optionsText
+                interaction.user.displayAvatarURL()
             );
 
             // Enregistrer dans les statistiques utilisateur

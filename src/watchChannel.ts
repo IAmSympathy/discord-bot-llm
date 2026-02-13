@@ -469,7 +469,8 @@ export function registerWatchedChannelResponder(client: Client) {
                     channelName,
                     message.content,
                     reactionEmoji,
-                    false
+                    false,
+                    message.author.displayAvatarURL()
                 );
 
                 return; // Ne pas répondre avec du texte, juste la réaction

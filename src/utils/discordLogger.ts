@@ -175,7 +175,7 @@ export async function logToDiscord(options: LogOptions) {
                 embed.setColor(0x9b59b6); // Violet
                 break;
             case LogLevel.PROFILE:
-                embed.setColor(0x1abc9c); // Turquoise
+                embed.setColor(0x397d86); // Turquoise
                 break;
             case LogLevel.COMMAND:
                 // Utiliser la couleur spécifique de la commande
@@ -207,7 +207,7 @@ export async function logToDiscord(options: LogOptions) {
                 embed.setColor(0xf04747); // Rouge Discord
                 break;
             case LogLevel.SERVER_MESSAGE_DELETE:
-                embed.setColor(0xfaa61a); // Jaune Discord
+                embed.setColor(0xf04747); // Jaune Discord
                 break;
             case LogLevel.SERVER_MESSAGE_EDIT:
                 embed.setColor(0xf26522); // Orange
@@ -241,16 +241,16 @@ export async function logToDiscord(options: LogOptions) {
                 embed.setColor(0xeb459e); // Rose
                 break;
             case LogLevel.BOT_WEB_SEARCH:
-                embed.setColor(0xfee75c); // Jaune
+                embed.setColor(0x3498db); // Jaune
                 break;
             case LogLevel.BOT_COMMAND:
-                embed.setColor(0x5865f2); // Blurple Discord
+                embed.setColor(0x397d86); // Blurple Discord
                 break;
             case LogLevel.BOT_IMAGE_GENERATION:
-                embed.setColor(0x9b59b6); // Violet
+                embed.setColor(0xd99e82); // Violet
                 break;
             case LogLevel.BOT_IMAGE_REIMAGINE:
-                embed.setColor(0x3498db); // Cyan/Bleu
+                embed.setColor(0x4fa0dd); // Cyan/Bleu
                 break;
             case LogLevel.BOT_IMAGE_UPSCALE:
                 embed.setColor(0xe67e22); // Orange
@@ -333,8 +333,8 @@ export async function logCommand(
     let enhancedFields = fields ? [...fields] : [];
     if (channelName) {
         enhancedFields.push({
-            name: isDM ? "📧 DM" : (isGroupDM ? "👥 Groupe DM" : (isExternalServer ? "🌐 Serveur externe" : "📺 Salon")),
-            value: isDM || isGroupDM ? channelName : `${channelName}`,
+            name: isDM ? "📍 Localisation" : (isGroupDM ? "📍 Localisation" : (isExternalServer ? "📍 Localisation" : "📍 Localisation")),
+            value: isDM ? `💬 ${channelName}` : (isGroupDM ? `👥 ${channelName}` : (isExternalServer ? `🌐 ${channelName}` : `#${channelName}`)),
             inline: true
         });
     }
@@ -344,7 +344,7 @@ export async function logCommand(
 
     await logToDiscord({
         level: LogLevel.COMMAND,
-        title,
+        title: `${title}`,
         description,
         fields: enhancedFields,
         imageUrl,
@@ -354,331 +354,346 @@ export async function logCommand(
 }
 
 // Fonctions helper pour les événements serveur Discord
-export async function logServerMemberJoin(username: string, userId: string, memberCount: number) {
+export async function logServerMemberJoin(username: string, userId: string, memberCount: number, avatarUrl?: string) {
     await logToDiscord({
         level: LogLevel.SERVER_MEMBER_JOIN,
-        title: "👋 Nouveau membre",
+        title: "✨ Nouveau membre",
         fields: [
-            {name: "👤 Utilisateur", value: `${username}`, inline: true},
-            {name: "🆔 ID", value: userId, inline: true},
-            {name: "👥 Total membres", value: `${memberCount}`, inline: true}
-        ]
+            {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+            {name: "👥 Membres Totaux", value: `**${memberCount}**`, inline: true}
+        ],
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerMemberLeave(username: string, userId: string, memberCount: number) {
+export async function logServerMemberLeave(username: string, userId: string, memberCount: number, avatarUrl?: string) {
     await logToDiscord({
         level: LogLevel.SERVER_MEMBER_LEAVE,
-        title: "👋 Membre parti",
+        title: "👋 Départ d'un Membre",
         fields: [
-            {name: "👤 Utilisateur", value: `${username}`, inline: true},
-            {name: "🆔 ID", value: userId, inline: true},
-            {name: "👥 Membres restants", value: `${memberCount}`, inline: true}
-        ]
+            {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+            {name: "🆔 User ID", value: `\`${userId}\``, inline: true},
+            {name: "👥 Membres Restants", value: `**${memberCount}**`, inline: true}
+        ],
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerBan(username: string, userId: string, moderator?: string, reason?: string) {
+export async function logServerBan(username: string, userId: string, moderator?: string, reason?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: `${username}`, inline: true},
-        {name: "🆔 ID", value: userId, inline: true}
+        {name: "👤 Utilisateur Banni", value: `**${username}**`, inline: true},
+        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
     ];
 
     if (moderator) {
-        fields.push({name: "👮 Modérateur", value: moderator, inline: true});
+        fields.push({name: "👮 Modérateur", value: `**${moderator}**`, inline: true});
     }
 
     if (reason) {
-        fields.push({name: "📝 Raison", value: reason, inline: false});
+        fields.push({name: "📝 Raison", value: `> ${reason}`, inline: false});
     }
 
     await logToDiscord({
         level: LogLevel.SERVER_BAN,
-        title: "🔨 Membre banni",
-        fields
+        title: "🔨 Bannissement",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerUnban(username: string, userId: string, moderator?: string) {
+export async function logServerUnban(username: string, userId: string, moderator?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: `${username}`, inline: true},
-        {name: "🆔 ID", value: userId, inline: true}
+        {name: "👤 Utilisateur Débanni", value: `**${username}**`, inline: true},
+        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
     ];
 
     if (moderator) {
-        fields.push({name: "👮 Modérateur", value: moderator, inline: true});
+        fields.push({name: "👮 Modérateur", value: `**${moderator}**`, inline: true});
     }
 
     await logToDiscord({
         level: LogLevel.SERVER_UNBAN,
-        title: "✅ Membre débanni",
-        fields
+        title: "✅ Débannissement",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerKick(username: string, userId: string, moderator?: string, reason?: string) {
+export async function logServerKick(username: string, userId: string, moderator?: string, reason?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: `${username}`, inline: true},
-        {name: "🆔 ID", value: userId, inline: true}
+        {name: "👤 Utilisateur Expulsé", value: `**${username}**`, inline: true},
+        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
     ];
 
     if (moderator) {
-        fields.push({name: "👮 Modérateur", value: moderator, inline: true});
+        fields.push({name: "👮 Modérateur", value: `**${moderator}**`, inline: true});
     }
 
     if (reason) {
-        fields.push({name: "📝 Raison", value: reason, inline: false});
+        fields.push({name: "📝 Raison", value: `> ${reason}`, inline: false});
     }
 
     await logToDiscord({
         level: LogLevel.SERVER_KICK,
-        title: "👢 Membre expulsé",
-        fields
+        title: "👢 Expulsion",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerRoleUpdate(username: string, userId: string, addedRoles: string[], removedRoles: string[]) {
+export async function logServerRoleUpdate(username: string, userId: string, addedRoles: string[], removedRoles: string[], avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: `${username}`, inline: true},
-        {name: "🆔 ID", value: userId, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
     ];
 
     if (addedRoles.length > 0) {
-        fields.push({name: "➕ Rôles ajoutés", value: addedRoles.join(", "), inline: false});
+        fields.push({name: "✅ Rôles Ajoutés", value: addedRoles.map(r => `• ${r}`).join('\n'), inline: false});
     }
 
     if (removedRoles.length > 0) {
-        fields.push({name: "➖ Rôles retirés", value: removedRoles.join(", "), inline: false});
+        fields.push({name: "❌ Rôles Retirés", value: removedRoles.map(r => `• ${r}`).join('\n'), inline: false});
     }
 
     await logToDiscord({
         level: LogLevel.SERVER_ROLE_UPDATE,
-        title: "🎭 Rôles modifiés",
-        fields
+        title: "🎭 Modification de Rôles",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerChannelCreate(channelName: string, channelType: string, channelId: string, createdBy?: string) {
+export async function logServerChannelCreate(channelName: string, channelType: string, channelId: string, createdBy?: string, avatarUrl?: string) {
     const fields = [
-        {name: "📝 Nom", value: channelName, inline: true},
-        {name: "📋 Type", value: channelType, inline: true},
-        {name: "🆔 ID", value: channelId, inline: true}
+        {name: "📝 Nom du Salon", value: `**#${channelName}**`, inline: true},
+        {name: "📋 Type", value: `\`${channelType}\``, inline: true},
+        {name: "🆔 Channel ID", value: `\`${channelId}\``, inline: false}
     ];
 
     if (createdBy) {
-        fields.push({name: "👤 Créé par", value: createdBy, inline: true});
+        fields.push({name: "👤 Créé par", value: `**${createdBy}**`, inline: true});
     }
 
     await logToDiscord({
         level: LogLevel.SERVER_CHANNEL_CREATE,
-        title: "➕ Salon créé",
-        fields
+        title: "➕ Salon Créé",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerChannelDelete(channelName: string, channelType: string, channelId: string, deletedBy?: string) {
+export async function logServerChannelDelete(channelName: string, channelType: string, channelId: string, deletedBy?: string, avatarUrl?: string) {
     const fields = [
-        {name: "📝 Nom", value: channelName, inline: true},
-        {name: "📋 Type", value: channelType, inline: true},
-        {name: "🆔 ID", value: channelId, inline: true}
+        {name: "📝 Nom du Salon", value: `**#${channelName}**`, inline: true},
+        {name: "📋 Type", value: `\`${channelType}\``, inline: true},
+        {name: "🆔 Channel ID", value: `\`${channelId}\``, inline: false}
     ];
 
     if (deletedBy) {
-        fields.push({name: "🗑️ Supprimé par", value: deletedBy, inline: true});
+        fields.push({name: "👤 Supprimé par", value: `**${deletedBy}**`, inline: true});
     }
 
     await logToDiscord({
         level: LogLevel.SERVER_CHANNEL_DELETE,
-        title: "🗑️ Salon supprimé",
-        fields
+        title: "🗑️ Salon Supprimé",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerMessageDelete(username: string, channelName: string, messageContent: string, attachments: number, deletedBy?: string) {
+export async function logServerMessageDelete(username: string, channelName: string, messageContent: string, attachments: number, deletedBy?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true},
-        {name: "📺 Salon", value: `#${channelName}`, inline: true}
+        {name: "👤 Auteur", value: `**${username}**`, inline: true},
+        {name: "📺 Salon", value: `**#${channelName}**`, inline: true}
     ];
 
     if (deletedBy) {
-        fields.push({name: "🗑️ Supprimé par", value: deletedBy, inline: true});
+        fields.push({name: "🗑️ Supprimé par", value: `**${deletedBy}**`, inline: true});
     }
 
     if (attachments > 0) {
-        fields.push({name: "📎 Pièces jointes", value: `${attachments}`, inline: true});
+        fields.push({name: "📎 Pièces jointes", value: `**${attachments}** fichier${attachments > 1 ? 's' : ''}`, inline: true});
     }
 
     if (messageContent && messageContent.length > 0) {
         const content = messageContent.length > 1000 ? messageContent.substring(0, 1000) + "..." : messageContent;
-        fields.push({name: "💬 Contenu", value: content, inline: false});
+        fields.push({name: "💬 Contenu du message", value: `\`\`\`\n${content}\n\`\`\``, inline: false});
     }
 
     await logToDiscord({
         level: LogLevel.SERVER_MESSAGE_DELETE,
-        title: "🗑️ Message supprimé",
-        fields
+        title: "🗑️ Message Supprimé",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerMessageEdit(username: string, channelName: string, oldContent: string, newContent: string, attachments: number, editedBy?: string) {
+export async function logServerMessageEdit(username: string, channelName: string, oldContent: string, newContent: string, attachments: number, editedBy?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true},
-        {name: "📺 Salon", value: `#${channelName}`, inline: true}
+        {name: "👤 Auteur", value: `**${username}**`, inline: true},
+        {name: "📺 Salon", value: `**#${channelName}**`, inline: true}
     ];
 
     if (editedBy && editedBy !== username) {
-        fields.push({name: "✏️ Édité par", value: editedBy, inline: true});
+        fields.push({name: "✏️ Édité par", value: `**${editedBy}**`, inline: true});
     }
 
     if (attachments > 0) {
-        fields.push({name: "📎 Pièces jointes", value: `${attachments}`, inline: true});
+        fields.push({name: "📎 Pièces jointes", value: `**${attachments}** fichier${attachments > 1 ? 's' : ''}`, inline: true});
     }
 
     if (oldContent && oldContent.length > 0) {
         const content = oldContent.length > 500 ? oldContent.substring(0, 500) + "..." : oldContent;
-        fields.push({name: "📝 Ancien contenu", value: content, inline: false});
+        fields.push({name: "📝 Ancien contenu", value: `\`\`\`\n${content}\n\`\`\``, inline: false});
     }
 
     if (newContent && newContent.length > 0) {
         const content = newContent.length > 500 ? newContent.substring(0, 500) + "..." : newContent;
-        fields.push({name: "✏️ Nouveau contenu", value: content, inline: false});
+        fields.push({name: "✏️ Nouveau contenu", value: `\`\`\`\n${content}\n\`\`\``, inline: false});
     }
 
     await logToDiscord({
         level: LogLevel.SERVER_MESSAGE_EDIT,
-        title: "✏️ Message édité",
-        fields
+        title: "✏️ Message Édité",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerMemberTimeout(username: string, userId: string, duration: string, moderator?: string, reason?: string) {
+export async function logServerMemberTimeout(username: string, userId: string, duration: string, moderator?: string, reason?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true},
-        {name: "🆔 ID", value: userId, inline: true},
-        {name: "⏰ Durée", value: duration, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "🆔 User ID", value: `\`${userId}\``, inline: true},
+        {name: "⏰ Durée", value: `**${duration}**`, inline: true}
     ];
 
     if (moderator) {
-        fields.push({name: "👮 Modérateur", value: moderator, inline: true});
+        fields.push({name: "👮 Modérateur", value: `**${moderator}**`, inline: true});
     }
 
     if (reason) {
-        fields.push({name: "📝 Raison", value: reason, inline: false});
+        fields.push({name: "📝 Raison", value: `> ${reason}`, inline: false});
     }
 
     await logToDiscord({
         level: LogLevel.SERVER_MEMBER_TIMEOUT,
-        title: "⏸️ Membre en timeout",
-        fields
+        title: "⏸️ Membre en Timeout",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerMemberTimeoutRemove(username: string, userId: string, moderator?: string) {
+export async function logServerMemberTimeoutRemove(username: string, userId: string, moderator?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true},
-        {name: "🆔 ID", value: userId, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
     ];
 
     if (moderator) {
-        fields.push({name: "👮 Modérateur", value: moderator, inline: true});
+        fields.push({name: "👮 Modérateur", value: `**${moderator}**`, inline: true});
     }
 
     await logToDiscord({
         level: LogLevel.SERVER_MEMBER_TIMEOUT_REMOVE,
-        title: "▶️ Timeout retiré",
-        fields
+        title: "▶️ Timeout Retiré",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerNicknameChange(username: string, userId: string, oldNickname: string | null, newNickname: string | null) {
+export async function logServerNicknameChange(username: string, userId: string, oldNickname: string | null, newNickname: string | null, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true},
-        {name: "🆔 ID", value: userId, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
     ];
 
-    fields.push({name: "📝 Ancien surnom", value: oldNickname || "(aucun)", inline: true});
-    fields.push({name: "✏️ Nouveau surnom", value: newNickname || "(aucun)", inline: true});
+    fields.push({name: "📝 Ancien surnom", value: oldNickname ? `**${oldNickname}**` : "*Aucun*", inline: true});
+    fields.push({name: "✏️ Nouveau surnom", value: newNickname ? `**${newNickname}**` : "*Aucun*", inline: true});
 
     await logToDiscord({
         level: LogLevel.SERVER_NICKNAME_CHANGE,
-        title: "✏️ Surnom modifié",
-        fields
+        title: "✏️ Surnom Modifié",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerVoiceMove(username: string, userId: string, oldChannel: string, newChannel: string, moderator?: string) {
+export async function logServerVoiceMove(username: string, userId: string, oldChannel: string, newChannel: string, moderator?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true},
-        {name: "🔊 De", value: oldChannel, inline: true},
-        {name: "🔊 Vers", value: newChannel, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "🔊 De", value: `**${oldChannel}**`, inline: true},
+        {name: "🔊 Vers", value: `**${newChannel}**`, inline: true}
     ];
 
     if (moderator) {
-        fields.push({name: "👮 Déplacé par", value: moderator, inline: true});
+        fields.push({name: "👮 Déplacé par", value: `**${moderator}**`, inline: true});
     }
 
     await logToDiscord({
         level: LogLevel.SERVER_VOICE_MOVE,
-        title: "🔀 Vocal - Déplacement forcé",
-        fields
+        title: "🔀 Vocal - Déplacement Forcé",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerVoiceMute(username: string, userId: string, isMuted: boolean, isSelfMuted: boolean, moderator?: string) {
+export async function logServerVoiceMute(username: string, userId: string, isMuted: boolean, isSelfMuted: boolean, moderator?: string, avatarUrl?: string) {
     // Ne pas logger si c'est un self-mute
     if (isSelfMuted) {
         return;
     }
 
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
     ];
 
     if (moderator) {
-        fields.push({name: "👮 Par", value: moderator, inline: true});
+        fields.push({name: "👮 Par", value: `**${moderator}**`, inline: true});
     }
 
     await logToDiscord({
         level: LogLevel.SERVER_VOICE_MUTE,
-        title: isMuted ? "🔇 Vocal - Muté par serveur" : "🔊 Vocal - Démuté par serveur",
-        fields
+        title: isMuted ? "🔇 Vocal - Muté par Serveur" : "🔊 Vocal - Démuté par Serveur",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logServerVoiceDeaf(username: string, userId: string, isDeafened: boolean, isSelfDeafened: boolean, moderator?: string) {
+export async function logServerVoiceDeaf(username: string, userId: string, isDeafened: boolean, isSelfDeafened: boolean, moderator?: string, avatarUrl?: string) {
     // Ne pas logger si c'est un self-deaf
     if (isSelfDeafened) {
         return;
     }
 
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
     ];
 
     if (moderator) {
-        fields.push({name: "👮 Par", value: moderator, inline: true});
+        fields.push({name: "👮 Par", value: `**${moderator}**`, inline: true});
     }
 
     await logToDiscord({
         level: LogLevel.SERVER_VOICE_DEAF,
-        title: isDeafened ? "🔇 Vocal - Rendu sourd par serveur" : "🔊 Vocal - Entend à nouveau",
-        fields
+        title: isDeafened ? "🔇 Vocal - Rendu Sourd par Serveur" : "🔊 Vocal - Entend à Nouveau",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
 // Logs de Netricsa (IA)
-export async function logBotResponse(username: string, userId: string, channelName: string, prompt: string, response: string, tokensUsed: number, hasImages: boolean, hasWebSearch: boolean, reaction?: string, responseTime?: number, savedInMemory?: boolean) {
+export async function logBotResponse(username: string, userId: string, channelName: string, prompt: string, response: string, tokensUsed: number, hasImages: boolean, hasWebSearch: boolean, reaction?: string, responseTime?: number, savedInMemory?: boolean, avatarUrl?: string) {
     // Détecter si c'est un DM (commence par "DM avec ")
     const isDM = channelName.startsWith("DM avec ");
 
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true},
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
         {
             name: isDM ? "📧 DM" : "📺 Salon",
-            value: isDM ? channelName : `#${channelName}`,
+            value: isDM ? `💬 ${channelName}` : `#${channelName}`,
             inline: true
         },
-        {name: "🎯 Tokens", value: `${tokensUsed}`, inline: true}
+        {name: "🎯 Tokens", value: `\`${tokensUsed}\``, inline: true}
     ];
 
     // Réaction dans un champ séparé si présente
@@ -688,7 +703,7 @@ export async function logBotResponse(username: string, userId: string, channelNa
 
     // Temps de réponse si fourni
     if (responseTime !== undefined) {
-        fields.push({name: "⏱️ Temps", value: formatTimeFromMs(responseTime), inline: true});
+        fields.push({name: "⏱️ Temps", value: `**${formatTimeFromMs(responseTime)}**`, inline: true});
     }
 
     // Statut de la mémoire
@@ -705,62 +720,65 @@ export async function logBotResponse(username: string, userId: string, channelNa
     }
 
     const promptPreview = prompt.length > 200 ? prompt.substring(0, 200) + "..." : prompt;
-    fields.push({name: "💬 Prompt utilisateur", value: promptPreview, inline: false});
+    fields.push({name: "💬 Prompt Utilisateur", value: `\`\`\`\n${promptPreview}\n\`\`\``, inline: false});
 
     const responsePreview = response.length > 300 ? response.substring(0, 300) + "..." : response;
-    fields.push({name: "💭 Réponse générée", value: responsePreview, inline: false});
+    fields.push({name: "💭 Réponse Générée", value: `\`\`\`\n${responsePreview}\n\`\`\``, inline: false});
 
     await logToDiscord({
         level: LogLevel.BOT_RESPONSE,
         title: "<:zzzRole_NetricsaModule:1466997072564584631> Réponse de Netricsa",
-        fields
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logBotImageAnalysis(username: string, imageResults: any[]) {
+export async function logBotImageAnalysis(username: string, imageResults: any[], avatarUrl?: string) {
     for (const result of imageResults) {
         const sizeKB = (result.size / 1024).toFixed(2);
         const sizeMB = result.size > 1024 * 1024 ? ` (${(result.size / 1024 / 1024).toFixed(2)} MB)` : '';
 
         const fields = [
-            {name: "👤 Utilisateur", value: username, inline: true},
-            {name: "📐 Résolution", value: `${result.width}x${result.height}`, inline: true},
-            {name: "📦 Taille", value: `${sizeKB} KB${sizeMB}`, inline: true},
-            {name: "🎨 Format", value: result.format.toUpperCase(), inline: true},
-            {name: "🎯 Tokens", value: `${result.tokens}`, inline: true},
-            {name: "⏱️ Temps", value: formatTimeFromMs(result.processingTime), inline: true},
-            {name: "📝 Description générée", value: result.description.length > 500 ? result.description.substring(0, 500) + "..." : result.description, inline: false}
+            {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+            {name: "📐 Résolution", value: `\`${result.width}x${result.height}\``, inline: true},
+            {name: "📦 Taille", value: `**${sizeKB} KB**${sizeMB}`, inline: true},
+            {name: "🎨 Format", value: `\`${result.format.toUpperCase()}\``, inline: true},
+            {name: "🎯 Tokens", value: `\`${result.tokens}\``, inline: true},
+            {name: "⏱️ Temps", value: `**${formatTimeFromMs(result.processingTime)}**`, inline: true},
+            {name: "📝 Description Générée", value: `\`\`\`\n${result.description.length > 500 ? result.description.substring(0, 500) + "..." : result.description}\n\`\`\``, inline: false}
         ];
 
         await logToDiscord({
             level: LogLevel.BOT_IMAGE_ANALYSIS,
-            title: "🖼️ Analyse d'image",
+            title: "🖼️ Analyse d'Image",
             fields,
-            imageUrl: result.url
+            imageUrl: result.url,
+            thumbnailUrl: avatarUrl
         });
     }
 }
 
-export async function logBotWebSearch(username: string, query: string, resultsCount: number, searchTime?: number) {
+export async function logBotWebSearch(username: string, query: string, resultsCount: number, searchTime?: number, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true},
-        {name: "📊 Résultats", value: `${resultsCount}`, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "📊 Résultats", value: `**${resultsCount}**`, inline: true}
     ];
 
     if (searchTime !== undefined) {
-        fields.push({name: "⏱️ Temps", value: formatTimeFromMs(searchTime), inline: true});
+        fields.push({name: "⏱️ Temps", value: `**${formatTimeFromMs(searchTime)}**`, inline: true});
     }
 
-    fields.push({name: "🔍 Requête", value: query.length > 100 ? query.substring(0, 100) + "..." : query, inline: false});
+    fields.push({name: "🔍 Requête", value: `\`\`\`\n${query.length > 100 ? query.substring(0, 100) + "..." : query}\n\`\`\``, inline: false});
 
     await logToDiscord({
         level: LogLevel.BOT_WEB_SEARCH,
-        title: "🌐 Recherche web",
-        fields
+        title: "🌐 Recherche Web",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logBotImageGeneration(username: string, prompt: string, generationTime: string, imageUrls?: string[], channelName?: string) {
+export async function logBotImageGeneration(username: string, prompt: string, generationTime: string, imageUrls?: string[], channelName?: string, avatarUrl?: string) {
     const imageCount = imageUrls?.length || 1;
 
     // Détecter si c'est un DM ou un Groupe DM
@@ -769,22 +787,21 @@ export async function logBotImageGeneration(username: string, prompt: string, ge
     const isExternalServer = channelName?.includes("(Serveur externe:");
 
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true},
-        {name: "🎨 Mode", value: "txt2img", inline: true},
-        {name: "⏱️ Temps", value: generationTime, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "🎨 Mode", value: `\`txt2img\``, inline: true},
+        {name: "⏱️ Temps", value: `**${generationTime}**`, inline: true}
     ];
 
     // Ajouter le champ de localisation si channelName est fourni
     if (channelName) {
         fields.push({
-            name: isDM ? "📧 DM" : (isGroupDM ? "👥 Groupe DM" : (isExternalServer ? "🌐 Serveur externe" : "📺 Salon")),
-            value: isDM || isGroupDM ? channelName : `#${channelName}`,
+            name: "📍 Localisation",
+            value: isDM ? `💬 ${channelName}` : (isGroupDM ? `👥 ${channelName}` : (isExternalServer ? `🌐 ${channelName}` : `#${channelName}`)),
             inline: true
         });
     }
 
-    fields.push({name: "🖼️ Images", value: `${imageCount} image${imageCount > 1 ? 's' : ''}`, inline: true});
-    fields.push({name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1024) + "..." : prompt, inline: false});
+    fields.push({name: "📝 Prompt", value: `\`\`\`\n${prompt.length > 1024 ? prompt.substring(0, 1024) + "..." : prompt}\n\`\`\``, inline: false});
 
     // Si plusieurs images, créer un message avec toutes les URLs
     let description = undefined;
@@ -794,14 +811,15 @@ export async function logBotImageGeneration(username: string, prompt: string, ge
 
     await logToDiscord({
         level: LogLevel.BOT_IMAGE_GENERATION,
-        title: "🎨 Images générées",
+        title: "🎨 Images Générées",
         description,
         fields,
-        imageUrl: imageUrls?.[0] // Afficher la première image comme preview
+        imageUrl: imageUrls?.[0], // Afficher la première image comme preview
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logBotImageReimagine(username: string, prompt: string, generationTime: string, imageUrls?: string[], channelName?: string) {
+export async function logBotImageReimagine(username: string, prompt: string, generationTime: string, imageUrls?: string[], channelName?: string, avatarUrl?: string) {
     const imageCount = imageUrls?.length || 1;
 
     // Détecter si c'est un DM ou un Groupe DM
@@ -810,22 +828,21 @@ export async function logBotImageReimagine(username: string, prompt: string, gen
     const isExternalServer = channelName?.includes("(Serveur externe:");
 
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true},
-        {name: "🎨 Mode", value: "img2img", inline: true},
-        {name: "⏱️ Temps", value: generationTime, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "🎨 Mode", value: `\`img2img\``, inline: true},
+        {name: "⏱️ Temps", value: `**${generationTime}**`, inline: true}
     ];
 
     // Ajouter le champ de localisation si channelName est fourni
     if (channelName) {
         fields.push({
-            name: isDM ? "📧 DM" : (isGroupDM ? "👥 Groupe DM" : (isExternalServer ? "🌐 Serveur externe" : "📺 Salon")),
-            value: isDM || isGroupDM ? channelName : `#${channelName}`,
+            name: "📍 Localisation",
+            value: isDM ? `💬 ${channelName}` : (isGroupDM ? `👥 ${channelName}` : (isExternalServer ? `🌐 ${channelName}` : `#${channelName}`)),
             inline: true
         });
     }
 
-    fields.push({name: "🖼️ Images", value: `${imageCount} image${imageCount > 1 ? 's' : ''}`, inline: true});
-    fields.push({name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1024) + "..." : prompt, inline: false});
+    fields.push({name: "📝 Prompt", value: `\`\`\`\n${prompt.length > 1024 ? prompt.substring(0, 1024) + "..." : prompt}\n\`\`\``, inline: false});
 
     // Si plusieurs images, créer un message avec toutes les URLs
     let description = undefined;
@@ -835,73 +852,76 @@ export async function logBotImageReimagine(username: string, prompt: string, gen
 
     await logToDiscord({
         level: LogLevel.BOT_IMAGE_REIMAGINE,
-        title: "🎨 Images réimaginées",
+        title: "🎨 Images Réimaginées",
         description,
         fields,
-        imageUrl: imageUrls?.[0] // Afficher la première image comme preview
+        imageUrl: imageUrls?.[0], // Afficher la première image comme preview
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logBotImageUpscale(username: string, method: string, scale: number, generationTime: string, imageUrl?: string, channelName?: string) {
+export async function logBotImageUpscale(username: string, method: string, scale: number, generationTime: string, imageUrl?: string, channelName?: string, avatarUrl?: string) {
     // Détecter si c'est un DM ou un Groupe DM
     const isDM = channelName?.startsWith("DM avec ");
     const isGroupDM = channelName?.startsWith("Groupe DM");
     const isExternalServer = channelName?.includes("(Serveur externe:");
 
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true},
-        {name: "🔍 Méthode", value: method.toUpperCase(), inline: true},
-        {name: "📏 Échelle", value: `x${scale}`, inline: true},
-        {name: "⏱️ Temps", value: generationTime, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "🔍 Méthode", value: `\`${method.toUpperCase()}\``, inline: true},
+        {name: "📏 Échelle", value: `**x${scale}**`, inline: true},
+        {name: "⏱️ Temps", value: `**${generationTime}**`, inline: true}
     ];
 
     // Ajouter le champ de localisation si channelName est fourni
     if (channelName) {
         fields.push({
-            name: isDM ? "📧 DM" : (isGroupDM ? "👥 Groupe DM" : (isExternalServer ? "🌐 Serveur externe" : "📺 Salon")),
-            value: isDM || isGroupDM ? channelName : `#${channelName}`,
+            name: "📍 Localisation",
+            value: isDM ? `💬 ${channelName}` : (isGroupDM ? `👥 ${channelName}` : (isExternalServer ? `🌐 ${channelName}` : `#${channelName}`)),
             inline: true
         });
     }
 
     await logToDiscord({
         level: LogLevel.BOT_IMAGE_UPSCALE,
-        title: "🔍 Image upscalée",
+        title: "🔍 Image Upscalée",
         fields,
-        imageUrl
+        imageUrl,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logBotCommand(username: string, commandName: string, channelName: string, options?: string) {
+export async function logBotCommand(username: string, commandName: string, channelName: string, options?: string, avatarUrl?: string) {
     // Détecter si c'est un DM ou un Groupe DM
     const isDM = channelName.startsWith("DM avec ");
     const isGroupDM = channelName.startsWith("Groupe DM");
     const isExternalServer = channelName.includes("(Serveur externe:");
 
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true},
-        {name: "⚡ Commande", value: `/${commandName}`, inline: true},
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "⚡ Commande", value: `\`/${commandName}\``, inline: true},
         {
-            name: isDM ? "📧 DM" : (isGroupDM ? "👥 Groupe DM" : (isExternalServer ? "🌐 Serveur externe" : "📺 Salon")),
-            value: isDM || isGroupDM ? channelName : `#${channelName}`,
+            name: "📍 Localisation",
+            value: isDM ? `💬 ${channelName}` : (isGroupDM ? `👥 ${channelName}` : (isExternalServer ? `🌐 ${channelName}` : `#${channelName}`)),
             inline: true
         }
     ];
 
     if (options) {
-        fields.push({name: "📋 Options", value: options, inline: false});
+        fields.push({name: "📋 Options", value: `\`\`\`\n${options}\n\`\`\``, inline: false});
     }
 
     await logToDiscord({
         level: LogLevel.BOT_COMMAND,
-        title: "⚡ Commande exécutée",
-        fields
+        title: "⚡ Commande Exécutée",
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
-export async function logBotReaction(username: string, channelName: string, messageContent: string, reaction: string, savedInMemory?: boolean) {
+export async function logBotReaction(username: string, channelName: string, messageContent: string, reaction: string, savedInMemory?: boolean, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: username, inline: true},
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
         {name: "📺 Salon", value: `#${channelName}`, inline: true},
         {name: "👍 Réaction", value: reaction, inline: true}
     ];
@@ -912,12 +932,13 @@ export async function logBotReaction(username: string, channelName: string, mess
     }
 
     const contentPreview = messageContent.length > 200 ? messageContent.substring(0, 200) + "..." : messageContent;
-    fields.push({name: "💬 Message original", value: contentPreview, inline: false});
+    fields.push({name: "💬 Message original", value: `\`\`\`\n${contentPreview}\n\`\`\``, inline: false});
 
     await logToDiscord({
         level: LogLevel.BOT_RESPONSE,
         title: "👍 Réaction de Netricsa (sans réponse)",
-        fields
+        fields,
+        thumbnailUrl: avatarUrl
     });
 }
 
