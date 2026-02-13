@@ -203,7 +203,7 @@ module.exports = {
             let currentGameType = "global";
 
             // Créer l'embed initial du profil
-            const profileEmbed = createProfileEmbed(targetUser);
+            const profileEmbed = createProfileEmbed(targetUser, interaction.guild);
 
             // Boutons principaux du profil
             const profileButtonsArray = [
@@ -257,7 +257,7 @@ module.exports = {
                     if (customId.startsWith("view_stats_")) {
                         currentView = "stats";
                         currentStatsCategory = "discord";
-                        const embed = createDiscordStatsEmbed(targetUser);
+                        const embed = createDiscordStatsEmbed(targetUser, i.guild);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()
@@ -293,16 +293,27 @@ module.exports = {
                             : [...navButtons, backButton];
 
                         await i.update({embeds: [embed], components});
+                    } else if (customId.startsWith("view_inventory_")) {
+                        currentView = "stats"; // Réutiliser le type stats
+                        const {createInventoryEmbed} = require("../../utils/statsEmbedBuilder");
+                        const embed = createInventoryEmbed(targetUser, i.guild);
+                        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`back_to_profile_${targetUser.id}`)
+                                .setLabel("◀️ Retour au profil")
+                                .setStyle(ButtonStyle.Danger)
+                        );
+                        await i.update({embeds: [embed], components: [backButton]});
                     } else if (customId.startsWith("back_to_profile_")) {
                         currentView = "profile";
-                        const embed = createProfileEmbed(targetUser);
+                        const embed = createProfileEmbed(targetUser, i.guild);
                         await i.update({embeds: [embed], components: [profileButtons]});
                     }
 
                     // === NAVIGATION STATS ===
                     else if (customId === "stats_discord") {
                         currentStatsCategory = "discord";
-                        const embed = createDiscordStatsEmbed(targetUser);
+                        const embed = createDiscordStatsEmbed(targetUser, i.guild);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()
@@ -313,7 +324,7 @@ module.exports = {
                         await i.update({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId === "stats_netricsa") {
                         currentStatsCategory = "netricsa";
-                        const embed = createNetricsaStatsEmbed(targetUser);
+                        const embed = createNetricsaStatsEmbed(targetUser, i.guild);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()
@@ -325,7 +336,7 @@ module.exports = {
                     } else if (customId === "stats_jeux") {
                         currentStatsCategory = "jeux";
                         currentGameType = "global";
-                        const embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
+                        const embed = createDetailedGameStatsEmbed(targetUser, currentGameType, i.guild);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
                         const gameMenu = createGameSelectMenu();
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -338,7 +349,7 @@ module.exports = {
                     } else if (customId === "stats_fun") {
                         currentStatsCategory = "fun";
                         const {createFunStatsEmbed} = require("../../utils/statsEmbedBuilder");
-                        const embed = createFunStatsEmbed(targetUser);
+                        const embed = createFunStatsEmbed(targetUser, i.guild);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()
@@ -372,7 +383,7 @@ module.exports = {
                         await i.update({embeds: [embed], components: [...navButtons, backButton]});
                     } else if (customId === "stats_game_select" && i.isStringSelectMenu()) {
                         currentGameType = i.values[0];
-                        const embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
+                        const embed = createDetailedGameStatsEmbed(targetUser, currentGameType, i.guild);
                         await i.update({embeds: [embed]});
                     }
 

@@ -207,7 +207,7 @@ module.exports = {
             let currentGameType = "global";
 
             // Créer l'embed initial du profil
-            const profileEmbed = createProfileEmbed(targetUser);
+            const profileEmbed = createProfileEmbed(targetUser, interaction.guild);
 
             // Boutons principaux du profil (identiques au context menu)
             const profileButtonsArray = [
@@ -262,7 +262,7 @@ module.exports = {
                         await i.deferUpdate();
                         currentView = "stats";
                         currentStatsCategory = "discord";
-                        const embed = createDiscordStatsEmbed(targetUser);
+                        const embed = createDiscordStatsEmbed(targetUser, i.guild);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()
@@ -301,7 +301,7 @@ module.exports = {
                         await i.deferUpdate();
                         currentView = "stats"; // Réutiliser le type stats
                         const {createInventoryEmbed} = require("../../utils/statsEmbedBuilder");
-                        const embed = createInventoryEmbed(targetUser);
+                        const embed = createInventoryEmbed(targetUser, i.guild);
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()
                                 .setCustomId(`back_to_profile_${targetUser.id}`)
@@ -312,7 +312,7 @@ module.exports = {
                     } else if (customId.startsWith("back_to_profile_")) {
                         await i.deferUpdate();
                         currentView = "profile";
-                        const embed = createProfileEmbed(targetUser);
+                        const embed = createProfileEmbed(targetUser, i.guild);
                         await interaction.editReply({embeds: [embed], components: [profileButtons]});
                     }
 
@@ -320,7 +320,7 @@ module.exports = {
                     else if (customId === "stats_discord") {
                         await i.deferUpdate();
                         currentStatsCategory = "discord";
-                        const embed = createDiscordStatsEmbed(targetUser);
+                        const embed = createDiscordStatsEmbed(targetUser, i.guild);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()
@@ -332,7 +332,7 @@ module.exports = {
                     } else if (customId === "stats_netricsa") {
                         await i.deferUpdate();
                         currentStatsCategory = "netricsa";
-                        const embed = createNetricsaStatsEmbed(targetUser);
+                        const embed = createNetricsaStatsEmbed(targetUser, i.guild);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()
@@ -345,7 +345,7 @@ module.exports = {
                         await i.deferUpdate();
                         currentStatsCategory = "jeux";
                         currentGameType = "global";
-                        const embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
+                        const embed = createDetailedGameStatsEmbed(targetUser, currentGameType, i.guild);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
                         const gameMenu = createGameSelectMenu();
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -358,7 +358,7 @@ module.exports = {
                     } else if (customId === "stats_fun") {
                         await i.deferUpdate();
                         currentStatsCategory = "fun";
-                        const embed = createFunStatsEmbed(targetUser);
+                        const embed = createFunStatsEmbed(targetUser, i.guild);
                         const navButtons = createStatsNavigationButtons(currentStatsCategory);
                         const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
                             new ButtonBuilder()
@@ -395,7 +395,7 @@ module.exports = {
                     } else if (customId === "stats_game_select" && i.isStringSelectMenu()) {
                         await i.deferUpdate();
                         currentGameType = i.values[0];
-                        const embed = createDetailedGameStatsEmbed(targetUser, currentGameType);
+                        const embed = createDetailedGameStatsEmbed(targetUser, currentGameType, i.guild);
                         await interaction.editReply({embeds: [embed]});
                     }
 

@@ -63,7 +63,7 @@ export function createXPBar(currentXP: number, level: number): string {
 /**
  * Crée le texte d'affichage du niveau et de l'XP
  */
-export function getLevelText(userId: string): string {
+export function getLevelText(userId: string, guild?: any): string {
     const xpData = getUserXP(userId);
 
     if (xpData) {
@@ -78,9 +78,15 @@ export function getLevelText(userId: string): string {
         let roleDisplay = "Aucun";
 
         if (roleInfo) {
-            // Récupérer l'ID du rôle depuis LEVEL_ROLES
             const roleId = LEVEL_ROLES[roleInfo.roleKey as keyof typeof LEVEL_ROLES];
-            roleDisplay = `<@&${roleId}>`;
+            const REQUIRED_GUILD_ID = process.env.GUILD_ID || "827364829567647774";
+
+            // Si on est dans le serveur principal, utiliser la mention, sinon le nom
+            if (guild && guild.id === REQUIRED_GUILD_ID) {
+                roleDisplay = `<@&${roleId}>`;
+            } else {
+                roleDisplay = roleInfo.roleName;
+            }
         }
 
         return `⭐ **Niveau ${xpData.level}**\u00A0\u00A0\u00A0\u00A0🏆 **Rang** ${roleDisplay}\n\`\`\`\n${progressBar}\n\`\`\`💫 ${xpInLevel.toLocaleString()} XP / ${xpNeededInLevel.toLocaleString()} XP \n\n━━━━━━━━━━━━━━━━━━━━\n\n`;
@@ -109,10 +115,10 @@ export function formatVoiceTime(minutes?: number): string {
 /**
  * Crée l'embed pour les statistiques Discord
  */
-export function createDiscordStatsEmbed(targetUser: User): EmbedBuilder {
+export function createDiscordStatsEmbed(targetUser: User, guild?: any): EmbedBuilder {
     const userStats = getUserStats(targetUser.id);
 
-    let description = getLevelText(targetUser.id);
+    let description = getLevelText(targetUser.id, guild);
 
     // Afficher le daily streak
     const dailyData = getDailyStreak(targetUser.id);
@@ -152,11 +158,11 @@ export function createDiscordStatsEmbed(targetUser: User): EmbedBuilder {
 /**
  * Crée l'embed pour les statistiques Netricsa
  */
-export function createNetricsaStatsEmbed(targetUser: User): EmbedBuilder {
+export function createNetricsaStatsEmbed(targetUser: User, guild?: any): EmbedBuilder {
     const userStats = getUserStats(targetUser.id);
     const isBot = targetUser.bot;
 
-    let description = getLevelText(targetUser.id);
+    let description = getLevelText(targetUser.id, guild);
 
     if (!userStats) {
         description += "Aucune statistique disponible pour le moment.";
@@ -189,12 +195,12 @@ export function createNetricsaStatsEmbed(targetUser: User): EmbedBuilder {
 /**
  * Crée l'embed pour les statistiques de jeux
  */
-export function createGameStatsEmbed(targetUser: User): EmbedBuilder {
+export function createGameStatsEmbed(targetUser: User, guild?: any): EmbedBuilder {
     const isBot = targetUser.bot;
     const gameStats = isBot ? getPlayerStats("NETRICSA_BOT") : getPlayerStats(targetUser.id);
     const userStats = getUserStats(targetUser.id);
 
-    let description = getLevelText(targetUser.id);
+    let description = getLevelText(targetUser.id, guild);
 
     if (!gameStats) {
         description += "Aucune partie jouée pour le moment.";
@@ -281,9 +287,9 @@ export type StatsCategory = "discord" | "netricsa" | "jeux" | "serveur" | "seaso
 /**
  * Crée l'embed pour les statistiques des commandes fun
  */
-export function createFunStatsEmbed(targetUser: User): EmbedBuilder {
+export function createFunStatsEmbed(targetUser: User, guild?: any): EmbedBuilder {
     const FUN_STATS_FILE = path.join(process.cwd(), "data", "fun_command_stats.json");
-    let description = getLevelText(targetUser.id);
+    let description = getLevelText(targetUser.id, guild);
 
     const userStats = getUserStats(targetUser.id);
 
@@ -305,15 +311,15 @@ export function createFunStatsEmbed(targetUser: User): EmbedBuilder {
 
         // Trier les commandes par utilisation
         const commands = [
-            {name: "🎰 Slots", count: funStats.slots || 0, emoji: "🎰"},
-            {name: "❤️ Ship", count: funStats.ship || 0, emoji: "❤️"},
-            {name: "🎲 Dés", count: funStats.dice || 0, emoji: "🎲"},
-            {name: "🪙 Pièce", count: funStats.coinflip || 0, emoji: "🪙"},
-            {name: "🔮 Boule de Cristal", count: funStats.crystalball || 0, emoji: "🔮"},
-            {name: "🤔 Choix", count: funStats.choose || 0, emoji: "🤔"},
-            {name: "📝 ASCII", count: funStats.ascii || 0, emoji: "📝"},
-            {name: "🥒 Concombre", count: funStats.cucumber || 0, emoji: "🥒"},
-            {name: "🎭 Memes trouvés", count: userStats?.netricsa?.memesRecherches || 0, emoji: "🎭"}
+            {name: "Slots", count: funStats.slots || 0, emoji: "🎰"},
+            {name: "Ship", count: funStats.ship || 0, emoji: "❤️"},
+            {name: "Dés", count: funStats.dice || 0, emoji: "🎲"},
+            {name: "Pièce", count: funStats.coinflip || 0, emoji: "🪙"},
+            {name: "Boule de Cristal", count: funStats.crystalball || 0, emoji: "🔮"},
+            {name: "Choix", count: funStats.choose || 0, emoji: "🤔"},
+            {name: "ASCII", count: funStats.ascii || 0, emoji: "📝"},
+            {name: "Concombre", count: funStats.cucumber || 0, emoji: "🥒"},
+            {name: "Memes trouvés", count: userStats?.netricsa?.memesRecherches || 0, emoji: "🎭"}
         ].sort((a, b) => b.count - a.count);
 
         // Afficher les statistiques triées
@@ -345,24 +351,24 @@ export function createFunStatsEmbed(targetUser: User): EmbedBuilder {
 export async function createStatsEmbed(targetUser: User, category: StatsCategory, guild?: any, client?: any): Promise<EmbedBuilder> {
     switch (category) {
         case "discord":
-            return createDiscordStatsEmbed(targetUser);
+            return createDiscordStatsEmbed(targetUser, guild);
         case "netricsa":
-            return createNetricsaStatsEmbed(targetUser);
+            return createNetricsaStatsEmbed(targetUser, guild);
         case "jeux":
-            return createGameStatsEmbed(targetUser);
+            return createGameStatsEmbed(targetUser, guild);
         case "fun":
-            return createFunStatsEmbed(targetUser);
+            return createFunStatsEmbed(targetUser, guild);
         case "serveur":
             return await createServerStatsEmbed(guild, client);
         default:
-            return createDiscordStatsEmbed(targetUser);
+            return createDiscordStatsEmbed(targetUser, guild);
     }
 }
 
 /**
  * Crée l'embed de profil pour l'utilisateur
  */
-export function createProfileEmbed(targetUser: User): EmbedBuilder {
+export function createProfileEmbed(targetUser: User, guild?: any): EmbedBuilder {
     const profile = UserProfileService.getProfile(targetUser.id);
 
     const embed = new EmbedBuilder()
@@ -456,7 +462,7 @@ export function createProfileEmbed(targetUser: User): EmbedBuilder {
 /**
  * Crée une version détaillée de l'embed de stats de jeux avec sélection par type de jeu
  */
-export function createDetailedGameStatsEmbed(targetUser: User, gameType: string): EmbedBuilder {
+export function createDetailedGameStatsEmbed(targetUser: User, gameType: string, guild?: any): EmbedBuilder {
     const isBot = targetUser.bot;
     const stats = isBot ? getPlayerStats("NETRICSA_BOT") : getPlayerStats(targetUser.id);
 
@@ -465,7 +471,7 @@ export function createDetailedGameStatsEmbed(targetUser: User, gameType: string)
 
     // Ajouter le niveau en haut (sauf pour Netricsa)
     if (!isBot) {
-        description += getLevelText(targetUser.id);
+        description += getLevelText(targetUser.id, guild);
     }
 
     if (gameType === "global") {
@@ -652,12 +658,12 @@ export function createGameSelectMenu(): import("discord.js").ActionRowBuilder<im
 /**
  * Crée l'embed pour l'inventaire de l'utilisateur
  */
-export function createInventoryEmbed(targetUser: User): EmbedBuilder {
+export function createInventoryEmbed(targetUser: User, guild?: any): EmbedBuilder {
     const {getUserInventory, ITEM_CATALOG, getCurrentSeason, Season} = require("../services/userInventoryService");
     const inventory = getUserInventory(targetUser.id, targetUser.username);
     const currentSeason = getCurrentSeason();
 
-    let description = getLevelText(targetUser.id);
+    let description = getLevelText(targetUser.id, guild);
 
     const itemCount = Object.keys(inventory.items).length;
 
