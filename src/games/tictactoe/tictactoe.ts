@@ -337,28 +337,33 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
 
                 // IA joue après un court délai
                 setTimeout(async () => {
-                    const aiMove = getAIMove(gameState);
-                    if (aiMove !== -1) {
-                        gameState.board[aiMove] = gameState.player2Symbol;
+                    try {
+                        const aiMove = getAIMove(gameState);
+                        if (aiMove !== -1) {
+                            gameState.board[aiMove] = gameState.player2Symbol;
 
-                        const winner = checkWinner(gameState);
-                        if (winner || gameState.board.every(cell => cell !== null)) {
-                            collector.stop("completed");
-                            await displayResult(message, gameState, winner);
-                            activeGames.delete(gameId);
-                            return;
+                            const winner = checkWinner(gameState);
+                            if (winner || gameState.board.every(cell => cell !== null)) {
+                                collector.stop("completed");
+                                await displayResult(message, gameState, winner);
+                                activeGames.delete(gameId);
+                                return;
+                            }
+
+                            gameState.currentTurn = gameState.player1;
+                            const embed = createGameEmbed(gameState);
+                            const buttons = createBoardButtons(gameState, gameId);
+
+                            try {
+                                await message.edit({embeds: [embed], components: buttons});
+                            } catch (error: any) {
+                                console.log("[TicTacToe] Cannot edit message after AI move. Error:", error.code);
+                                // En contexte UserApp, on ne peut pas envoyer de nouveau message
+                                // Le jeu s'arrête malheureusement
+                            }
                         }
-
-                        gameState.currentTurn = gameState.player1;
-                        const embed = createGameEmbed(gameState);
-                        const buttons = createBoardButtons(gameState, gameId);
-
-                        try {
-                            await message.edit({embeds: [embed], components: buttons});
-                        } catch (error: any) {
-                            console.log("[TicTacToe] Cannot edit message, sending new one. Error:", error.code);
-                            await message.channel.send({embeds: [embed], components: buttons});
-                        }
+                    } catch (error) {
+                        console.error("[TicTacToe] Error in AI move timeout:", error);
                     }
                 }, 800);
             } else {
@@ -591,8 +596,9 @@ async function displayResult(message: any, gameState: GameState, winner: string 
     try {
         await message.edit({embeds: [embed], components: [row]});
     } catch (error: any) {
-        console.log("[TicTacToe] Cannot edit result message, sending new one. Error:", error.code);
-        await message.channel.send({embeds: [embed], components: [row]});
+        console.log("[TicTacToe] Cannot edit result message. Error:", error.code);
+        // En contexte UserApp, on ne peut pas envoyer de nouveau message
+        // Le joueur ne verra pas le résultat final, mais les stats seront enregistrées
     }
 
     gameState.player1WantsRematch = false;

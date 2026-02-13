@@ -446,8 +446,9 @@ async function displayResult(message: any, gameState: GameState, isWon: boolean,
     try {
         await message.edit({embeds: [embed], components: [row]});
     } catch (error: any) {
-        console.log("[Hangman] Cannot edit result message, sending new one. Error:", error.code);
-        await message.channel.send({embeds: [embed], components: [row]});
+        console.log("[Hangman] Cannot edit result message. Error:", error.code);
+        // En contexte UserApp, on ne peut pas envoyer de nouveau message
+        // Le joueur ne verra pas le résultat final, mais les stats seront enregistrées
     }
 
     setupRestartCollector(message, gameState);

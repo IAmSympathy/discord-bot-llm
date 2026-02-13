@@ -576,9 +576,9 @@ async function displayResult(message: any, gameState: GameState, lastInteraction
             await message.edit({embeds: [embed], components: [row]});
         }
     } catch (error: any) {
-        // Fallback : envoyer un nouveau message si l'édition échoue
-        console.log("[RPS] Cannot edit message, sending new one instead. Error:", error.code);
-        await message.channel.send({embeds: [embed], components: [row]});
+        console.log("[RPS] Cannot edit result message. Error:", error.code);
+        // En contexte UserApp, on ne peut pas envoyer de nouveau message
+        // Le joueur ne verra pas le résultat final, mais les stats seront enregistrées
     }
 
     // Réinitialiser les états de rematch
