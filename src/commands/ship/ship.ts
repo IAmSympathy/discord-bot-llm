@@ -199,7 +199,7 @@ module.exports = {
                 .setFooter({text: `Demandé par ${interaction.user.displayName}`})
                 .setTimestamp();
 
-            await interaction.editReply({embeds: [embed]});
+            await interaction.editReply({content: "", embeds: [embed]});
 
             // Logger la commande
             const channelName = getChannelNameFromInteraction(interaction);
@@ -242,9 +242,8 @@ module.exports = {
 
         } catch (error) {
             console.error("Error executing ship command:", error);
-            await interaction.reply({
-                content: "❌ Une erreur s'est produite lors du calcul de la compatibilité.",
-                ephemeral: true
+            await interaction.editReply({
+                content: "❌ Une erreur s'est produite lors du calcul de la compatibilité."
             });
         }
     },

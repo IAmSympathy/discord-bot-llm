@@ -75,7 +75,7 @@ module.exports = {
             embed.setFooter({text: `Demandé par ${interaction.user.displayName}`})
                 .setTimestamp();
 
-            await interaction.editReply({embeds: [embed]});
+            await interaction.editReply({content: "", embeds: [embed]});
 
             // Logger la commande
             const channelName = getChannelNameFromInteraction(interaction);
@@ -117,9 +117,8 @@ module.exports = {
 
         } catch (error) {
             console.error("Error in crystalball command:", error);
-            await interaction.reply({
-                content: "Une erreur s'est produite lors de la consultation du destin.",
-                ephemeral: true
+            await interaction.editReply({
+                content: "Une erreur s'est produite lors de la consultation du destin."
             });
         }
     },

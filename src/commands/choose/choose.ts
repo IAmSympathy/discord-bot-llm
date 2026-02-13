@@ -69,7 +69,7 @@ module.exports = {
                 )
                 .setTimestamp();
 
-            await interaction.reply({embeds: [embed]});
+            await interaction.editReply({content: "", embeds: [embed]});
 
             // Logger la commande
             const channelName = getChannelNameFromInteraction(interaction);
@@ -111,9 +111,8 @@ module.exports = {
 
         } catch (error) {
             console.error("Error in choose command:", error);
-            await interaction.reply({
-                content: "Une erreur s'est produite lors du choix.",
-                ephemeral: true
+            await interaction.editReply({
+                content: "Une erreur s'est produite lors du choix."
             });
         }
     },

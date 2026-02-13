@@ -150,7 +150,7 @@ module.exports = {
                         .setFooter({text: "Tu peux récolter une ressource toutes les 7 heures"})
                         .setTimestamp();
 
-                    await interaction.editReply({embeds: [cooldownEmbed]});
+                    await interaction.editReply({content: "", embeds: [cooldownEmbed]});
                     return;
                 }
             }
@@ -171,7 +171,7 @@ module.exports = {
                     .setDescription("Une erreur est survenue lors de l'ajout de la ressource à ton inventaire.")
                     .setTimestamp();
 
-                await interaction.editReply({embeds: [errorEmbed]});
+                await interaction.editReply({content: "", embeds: [errorEmbed]});
                 return;
             }
 
@@ -205,7 +205,7 @@ module.exports = {
                 .setFooter({text: "Vérifie ton inventaire avec /profile → 🎒 Inventaire"})
                 .setTimestamp();
 
-            await interaction.editReply({embeds: [successEmbed]});
+            await interaction.editReply({content: "", embeds: [successEmbed]});
 
             // Logger la commande
             const channelName = getChannelNameFromInteraction(interaction);

@@ -114,7 +114,7 @@ module.exports = {
             embed.setFooter({text: `Lancé par ${interaction.user.displayName}`})
                 .setTimestamp();
 
-            await interaction.reply({embeds: [embed]});
+            await interaction.editReply({content: "", embeds: [embed]});
 
             // Logger la commande
             const channelName = getChannelNameFromInteraction(interaction);

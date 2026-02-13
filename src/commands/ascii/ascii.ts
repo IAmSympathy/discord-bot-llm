@@ -57,10 +57,6 @@ module.exports = {
             // Attendre un peu pour l'effet d'animation
             await new Promise(resolve => setTimeout(resolve, 1500));
 
-
-            // Répondre immédiatement pour éviter le timeout
-            await interaction.deferReply();
-
             // Générer l'art ASCII
             figlet.text(
                 text,
