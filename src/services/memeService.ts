@@ -67,10 +67,11 @@ function saveMemeHistory(history: PostedMeme[]): void {
  */
 async function fetchSubredditPosts(subreddit: string): Promise<RedditPost[]> {
     try {
-        // Récupérer les posts les plus upvotés de la journée (top daily)
-        const response = await fetch(`https://www.reddit.com/r/${subreddit}/top.json?t=day&limit=100`, {
+        // Utilisation de old.reddit.com avec un User-Agent détaillé pour éviter les erreurs 403
+        // Reddit bloque maintenant les User-Agents génériques
+        const response = await fetch(`https://old.reddit.com/r/${subreddit}/top.json?t=day&limit=100`, {
             headers: {
-                "User-Agent": "DiscordBot/1.0"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             }
         });
 
