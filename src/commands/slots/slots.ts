@@ -24,27 +24,33 @@ const SYMBOL_WEIGHTS = {
     "7️⃣": 1   // Ultra rare
 };
 
-// Gains/pertes selon les combinaisons
-const PAYOUTS: { [key: string]: number } = {
-    // 🔥 JACKPOTS LÉGENDAIRES
-    "7️⃣7️⃣7️⃣": 1000,  // ULTIME
-    "⭐⭐⭐": 600,      // ÉNORME
-    "💎💎💎": 300,      // GROS
-    "🍇🍇🍇": 150,      // SOLIDE
-    "🍊🍊🍊": 100,      // BON
-    "🍋🍋🍋": 75,       // PETIT
-    "🍒🍒🍒": 50,       // MINI
+// Configuration centralisée des gains et messages
+interface PayoutConfig {
+    xp: number;
+    message: string;
+}
 
-    // Gains moyens
-    "7️⃣7️⃣": 100,
-    "⭐⭐": 75,
-    "💎💎": 50,
-    "🍇🍇": 25,
-    "🍊🍊": 15,
-    "🍋🍋": 10,
-    "🍒🍒": 5,
+const PAYOUT_CONFIG: { [key: string]: PayoutConfig } = {
+    // 🔥 JACKPOTS LÉGENDAIRES (3 symboles identiques)
+    "7️⃣7️⃣7️⃣": {xp: 1000, message: "🎰💥 **JACKPOT ULTIME ! TU VIENS DE CASSER LE JEU !** 💥🎰"},
+    "⭐⭐⭐": {xp: 600, message: "✨🌟 **IMMENSE GAIN ! LA FOULE T'ACCLAME !** 🌟✨"},
+    "💎💎💎": {xp: 300, message: "💎💰 **GROS GAIN ! TU ES RICHE !** 💰💎"},
+    "🍇🍇🍇": {xp: 150, message: "🍇🎉 **Belle victoire !** 🎉🍇"},
+    "🍊🍊🍊": {xp: 100, message: "🍊🎊 **Beau gain !** 🎊🍊"},
+    "🍋🍋🍋": {xp: 75, message: "🍋✨ **Bon gain !** ✨🍋"},
+    "🍒🍒🍒": {xp: 50, message: "🍒🎉 **Petit gain !** 🎉🍒"},
 
-    "default": -25
+    // Gains moyens (2 symboles identiques)
+    "7️⃣7️⃣": {xp: 100, message: "✅ **Excellent ! Deux 7 !**"},
+    "⭐⭐": {xp: 75, message: "✅ **Super ! Deux étoiles !**"},
+    "💎💎": {xp: 50, message: "✅ **Bien joué ! Deux diamants !**"},
+    "🍇🍇": {xp: 25, message: "✅ **Bon gain ! Continue comme ça !**"},
+    "🍊🍊": {xp: 15, message: "✅ **Pas mal ! Deux oranges !**"},
+    "🍋🍋": {xp: 10, message: "✅ **Petit gain ! Deux citrons !**"},
+    "🍒🍒": {xp: 5, message: "✅ **Mini gain ! Deux cerises !**"},
+
+    // Défaut (aucune combinaison)
+    "default": {xp: -25, message: "❌ **Pas de chance, tu as perdu !** ❌"}
 };
 
 
@@ -82,37 +88,30 @@ function getWeightedRandomSymbol(): string {
 function calculatePayout(symbols: string[]): { xp: number; message: string } {
     const [s1, s2, s3] = symbols;
 
+    // Cas 1 : Trois symboles identiques (JACKPOT !)
     if (s1 === s2 && s2 === s3) {
         const key = `${s1}${s2}${s3}`;
-        const xp = PAYOUTS[key] || 10;
-
-        if (s1 === "7️⃣") {
-            return {xp, message: "🎰💥 **JACKPOT ULTIME ! TU VIENS DE CASSER LE JEU !** 💥🎰"};
-        } else if (s1 === "⭐") {
-            return {xp, message: "✨🌟 **IMMENSE GAIN ! LA FOULE T'ACCLAME !** 🌟✨"};
-        } else if (s1 === "💎") {
-            return {xp, message: "💎💰 **GROS GAIN ! TU ES RICHE !** 💰💎"};
-        } else if (s1 === "🍇") {
-            return {xp, message: "🍇🎉 **Belle victoire !** 🎉🍇"};
-        } else {
-            return {xp, message: "🎉 Tu repars gagnant !** 🎉"};
-        }
+        return PAYOUT_CONFIG[key] || PAYOUT_CONFIG["default"];
     }
 
-    if (s1 === s2 || s2 === s3) {
-        const matchSymbol = s1 === s2 ? s1 : s2;
-        const key = `${matchSymbol}${matchSymbol}`;
-        const xp = PAYOUTS[key] || 5;
-        return {xp, message: "✅ **Bon gain ! Continue comme ça !**"};
+    // Cas 2 : Deux symboles identiques (gain moyen)
+    // Vérifier s1 === s2, s2 === s3, ou s1 === s3
+    let matchKey: string | null = null;
+
+    if (s1 === s2) {
+        matchKey = `${s1}${s2}`;
+    } else if (s2 === s3) {
+        matchKey = `${s2}${s3}`;
+    } else if (s1 === s3) {
+        matchKey = `${s1}${s3}`;
     }
 
-    if (s1 === s3) {
-        const key = `${s1}${s3}`;
-        const xp = PAYOUTS[key] || 5;
-        return {xp, message: "✅ **Petit gain !**"};
+    if (matchKey && PAYOUT_CONFIG[matchKey]) {
+        return PAYOUT_CONFIG[matchKey];
     }
 
-    return {xp: PAYOUTS.default, message: "❌ **Pas de chance, tu as perdu** ❌"};
+    // Cas 3 : Aucune combinaison (perte)
+    return PAYOUT_CONFIG["default"];
 }
 
 module.exports = {
@@ -138,7 +137,7 @@ module.exports = {
                 .setTitle("🎰 Machine à Sous")
                 .setDescription(
                     `<@${userId}> lance sa machine !\n\n` +
-                    `🎰 [ <a:znSlots:1471942669394509975> | <a:znSlots:1471942669394509975> | <a:znSlots:1471942669394509975> ]`
+                    `[ <a:znSlots:1471942669394509975> | <a:znSlots:1471942669394509975> | <a:znSlots:1471942669394509975> ]`
                 )
                 .setTimestamp();
 
@@ -148,7 +147,7 @@ module.exports = {
             await new Promise(resolve => setTimeout(resolve, 800));
             animationEmbed.setDescription(
                 `<@${userId}> lance sa machine !\n\n` +
-                `🎰 [ ${finalSymbols[0]} | <a:znSlots:1471942669394509975> | <a:znSlots:1471942669394509975> ]`
+                `[ ${finalSymbols[0]} | <a:znSlots:1471942669394509975> | <a:znSlots:1471942669394509975> ]`
             );
             await interaction.editReply({embeds: [animationEmbed]});
 
@@ -156,7 +155,7 @@ module.exports = {
             await new Promise(resolve => setTimeout(resolve, 800));
             animationEmbed.setDescription(
                 `<@${userId}> lance sa machine !\n\n` +
-                `🎰 [ ${finalSymbols[0]} | ${finalSymbols[1]} | <a:znSlots:1471942669394509975> ]`
+                `[ ${finalSymbols[0]} | ${finalSymbols[1]} | <a:znSlots:1471942669394509975> ]`
             );
             await interaction.editReply({embeds: [animationEmbed]});
 
