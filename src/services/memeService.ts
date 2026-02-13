@@ -63,15 +63,20 @@ function saveMemeHistory(history: PostedMeme[]): void {
 }
 
 /**
- * Récupère les posts d'un subreddit (top posts de la journée)
+ * Récupère les posts d'un subreddit (hot posts actuels)
  */
 async function fetchSubredditPosts(subreddit: string): Promise<RedditPost[]> {
     try {
-        // Utilisation de old.reddit.com avec un User-Agent détaillé pour éviter les erreurs 403
-        // Reddit bloque maintenant les User-Agents génériques
-        const response = await fetch(`https://old.reddit.com/r/${subreddit}/top.json?t=day&limit=100`, {
+        // Utilisation de old.reddit.com avec /hot au lieu de /top (moins restrictif)
+        // Reddit bloque /top pour les requêtes non authentifiées
+        const response = await fetch(`https://old.reddit.com/r/${subreddit}/hot.json?limit=100`, {
             headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Referer": `https://old.reddit.com/r/${subreddit}/`,
+                "Cache-Control": "no-cache"
             }
         });
 
@@ -93,10 +98,18 @@ async function fetchSubredditPosts(subreddit: string): Promise<RedditPost[]> {
  */
 export async function fetchMemesFromReddit(): Promise<RedditPost[]> {
     try {
-        // Fetch de tous les subreddits en parallèle
-        const allPostsArrays = await Promise.all(
-            SUBREDDITS.map(subreddit => fetchSubredditPosts(subreddit))
-        );
+        // Fetch des subreddits avec un délai entre chaque pour éviter le rate limiting
+        const allPostsArrays: RedditPost[][] = [];
+
+        for (const subreddit of SUBREDDITS) {
+            const posts = await fetchSubredditPosts(subreddit);
+            allPostsArrays.push(posts);
+
+            // Délai de 500ms entre chaque subreddit pour éviter le rate limiting
+            if (SUBREDDITS.indexOf(subreddit) < SUBREDDITS.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
 
         // Combiner tous les posts
         const allPosts = allPostsArrays.flat();
