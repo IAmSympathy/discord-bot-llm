@@ -13,7 +13,7 @@ module.exports = {
             await showGameMenu(interaction);
             const userId = interaction.user.id;
             const channelName = getChannelNameFromInteraction(interaction);
-            await logCommand("🎮 Session de jeu démarré", undefined, [
+            await logCommand("🎮 Games", undefined, [
                 {name: "👤 Utilisateur", value: interaction.user.username, inline: true}
             ], undefined, channelName, interaction.user.displayAvatarURL());
         } catch (error: any) {
