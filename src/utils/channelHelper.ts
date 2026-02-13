@@ -11,8 +11,8 @@ export function getChannelNameFromInteraction(interaction: ChatInputCommandInter
         return "canal-inconnu";
     }
 
-    const REQUIRED_GUILD_ID = process.env.REQUIRED_GUILD_ID;
-    const isExternalServer = interaction.guild && interaction.guildId !== REQUIRED_GUILD_ID;
+    const GUILD_ID = process.env.GUILD_ID;
+    const isExternalServer = interaction.guild && interaction.guildId !== GUILD_ID;
     const isDM = channel.type === ChannelType.DM;
     const isGroupDM = channel.type === 1; // GroupDM
 

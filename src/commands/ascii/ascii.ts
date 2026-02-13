@@ -3,6 +3,7 @@ import {logCommand} from "../../utils/discordLogger";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import figlet from "figlet";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
+import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -109,6 +110,7 @@ module.exports = {
                     });
 
                     // Logger la commande
+                    const channelName = getChannelNameFromInteraction(interaction);
                     await logCommand(
                         "🎨 ASCII Art",
                         undefined,
@@ -116,7 +118,9 @@ module.exports = {
                             {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
                             {name: "📝 Texte", value: text, inline: true},
                             {name: "🎨 Style", value: style, inline: true}
-                        ]
+                        ],
+                        undefined,
+                        channelName
                     );
 
                     // Ajouter XP
