@@ -25,8 +25,8 @@ export const XP_REWARDS = {
     minuteVocale: 1,                // Réduit de 2 à 1 (-50%)
 
     // Stats Netricsa
-    imageGeneree: 35,               // Réduit de 50 à 35 (-30%)
-    imageReimaginee: 28,            // Réduit de 40 à 28 (-30%)
+    imageGeneree: 28,               // Réduit de 50 à 35 (-30%)
+    imageReimaginee: 35,            // Réduit de 40 à 28 (-30%)
     imageUpscalee: 21,              // Réduit de 30 à 21 (-30%)
     conversationIA: 8,              // Réduit de 12 à 8 (-33%)
     memeRecherche: 11,              // Réduit de 15 à 11 (-27%)

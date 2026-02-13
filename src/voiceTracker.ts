@@ -87,17 +87,35 @@ const VOICE_XP_DIMINISHING_RETURNS = [
 ];
 
 /**
- * Obtient le multiplicateur XP basé sur le temps vocal quotidien
+ * Obtient ou crée les données de temps vocal pour un utilisateur aujourd'hui
+ * Reset automatiquement si c'est un nouveau jour
  */
-function getVoiceXPMultiplier(userId: string): number {
+function getTodayVoiceTime(userId: string): DailyVoiceTime {
     const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
     let dailyTime = dailyVoiceTime.get(userId);
 
-    // Reset si c'est un nouveau jour
+    // Reset si c'est un nouveau jour ou si pas de données
     if (!dailyTime || dailyTime.lastReset !== today) {
+        const wasReset = dailyTime && dailyTime.lastReset !== today;
+        const oldMinutes = dailyTime?.totalMinutes || 0;
+
         dailyTime = {totalMinutes: 0, lastReset: today};
         dailyVoiceTime.set(userId, dailyTime);
+
+        if (wasReset) {
+            logger.info(`🔄 Reset daily voice time for user ${userId} (was ${oldMinutes} min on ${dailyTime.lastReset}, now 0 min on ${today})`);
+            saveDailyVoiceTime(); // Sauvegarder le reset
+        }
     }
+
+    return dailyTime;
+}
+
+/**
+ * Obtient le multiplicateur XP basé sur le temps vocal quotidien
+ */
+function getVoiceXPMultiplier(userId: string): number {
+    const dailyTime = getTodayVoiceTime(userId);
 
     // Trouver le palier approprié
     for (const tier of VOICE_XP_DIMINISHING_RETURNS) {
@@ -113,15 +131,8 @@ function getVoiceXPMultiplier(userId: string): number {
  * Incrémente le temps vocal quotidien d'un utilisateur
  */
 function incrementDailyVoiceTime(userId: string, minutes: number): void {
-    const today = new Date().toISOString().split('T')[0];
-    let dailyTime = dailyVoiceTime.get(userId);
-
-    if (!dailyTime || dailyTime.lastReset !== today) {
-        dailyTime = {totalMinutes: 0, lastReset: today};
-    }
-
+    const dailyTime = getTodayVoiceTime(userId);
     dailyTime.totalMinutes += minutes;
-    dailyVoiceTime.set(userId, dailyTime);
 
     // Sauvegarder après chaque mise à jour
     saveDailyVoiceTime();
@@ -261,6 +272,14 @@ export function registerVoiceTracker(client: Client): void {
     // Charger les données de temps vocal quotidien
     loadDailyVoiceTime();
 
+    // Nettoyer les anciennes données immédiatement au démarrage
+    cleanupOldVoiceData();
+
+    // Nettoyer les anciennes données toutes les heures
+    setInterval(() => {
+        cleanupOldVoiceData();
+    }, 60 * 60 * 1000); // Toutes les heures
+
     // Initialiser les sessions pour les utilisateurs déjà en vocal au démarrage
     client.once(Events.ClientReady, () => {
         logger.info("Checking for users already in voice channels...");
@@ -318,17 +337,32 @@ export function registerVoiceTracker(client: Client): void {
 }
 
 /**
+ * Nettoie les anciennes données de temps vocal (pas du jour actuel)
+ * À appeler périodiquement pour éviter l'accumulation de données obsolètes
+ */
+function cleanupOldVoiceData(): void {
+    const today = new Date().toISOString().split('T')[0];
+    let cleanedCount = 0;
+
+    for (const [userId, voiceTime] of dailyVoiceTime.entries()) {
+        if (voiceTime.lastReset !== today) {
+            dailyVoiceTime.delete(userId);
+            cleanedCount++;
+        }
+    }
+
+    if (cleanedCount > 0) {
+        logger.info(`Cleaned up ${cleanedCount} old voice time entries`);
+        saveDailyVoiceTime();
+    }
+}
+
+/**
  * Obtient le temps vocal quotidien d'un utilisateur (en minutes)
  * Utilisé pour la commande /voicestatus
  */
 export function getDailyVoiceTime(userId: string): number {
-    const today = new Date().toISOString().split('T')[0];
-    const dailyTime = dailyVoiceTime.get(userId);
-
-    if (!dailyTime || dailyTime.lastReset !== today) {
-        return 0; // Pas de temps vocal aujourd'hui ou reset nécessaire
-    }
-
+    const dailyTime = getTodayVoiceTime(userId);
     return dailyTime.totalMinutes;
 }
 
