@@ -48,7 +48,7 @@ module.exports = {
             const randomResponse = responses[Math.floor(Math.random() * responses.length)];
 
             // Message d'animation
-            await interaction.reply(`<:zznMagicBall:1471947304989753508> *La boule de crystal réfléchit...*`);
+            await interaction.reply(`<:znMagicBall:1471947304989753508> *La boule de crystal réfléchit...*`);
 
             // Attendre un peu pour l'effet d'animation
             await new Promise(resolve => setTimeout(resolve, 1500));

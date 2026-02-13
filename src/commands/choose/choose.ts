@@ -46,7 +46,7 @@ module.exports = {
 
 
             // Message d'animation
-            await interaction.reply(`<a:zznColorWheel:1471953860531716169> *La roue tourne...*`);
+            await interaction.reply(`<a:znColorWheel:1471953860531716169> *La roue tourne...*`);
 
             // Attendre un peu pour l'effet d'animation
             await new Promise(resolve => setTimeout(resolve, 1500));

@@ -125,7 +125,7 @@ module.exports = {
             const resource = getSeasonalResource();
 
             // Message d'animation
-            await interaction.reply({content: `<a:zznHarvest:1471951869025714226> *Recherche de ressources...*`, flags: MessageFlags.Ephemeral});
+            await interaction.reply({content: `<a:znHarvest:1471951869025714226> *Recherche de ressources...*`, flags: MessageFlags.Ephemeral});
 
             // Attendre un peu pour l'effet d'animation
             await new Promise(resolve => setTimeout(resolve, 1500));

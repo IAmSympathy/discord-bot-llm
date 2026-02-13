@@ -164,7 +164,7 @@ module.exports = {
 
 
             // Message d'animation
-            await interaction.reply(`<a:zznShip:1471948960980664405> *Calcul de la compatibilité...*`);
+            await interaction.reply(`<a:znShip:1471948960980664405> *Calcul de la compatibilité...*`);
 
             // Attendre un peu pour l'effet d'animation
             await new Promise(resolve => setTimeout(resolve, 1500));

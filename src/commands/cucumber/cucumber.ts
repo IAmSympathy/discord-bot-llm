@@ -41,7 +41,7 @@ module.exports = {
             }
 
             // Message d'animation
-            await interaction.reply(`<a:zznMeasure:1471953097776435281> *Mesure du concombre...*`);
+            await interaction.reply(`<a:znMeasure:1471953097776435281> *Mesure du concombre...*`);
 
             // Attendre un peu pour l'effet d'animation
             await new Promise(resolve => setTimeout(resolve, 1500));
