@@ -299,6 +299,9 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
 
             // Vérifier que c'est le tour du joueur
             if (clickerId !== gameState.currentTurn) {
+                // Toujours répondre à l'interaction pour éviter l'expiration
+                await i.deferUpdate().catch(() => {
+                });
                 return;
             }
 
@@ -308,7 +311,8 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
 
             // Vérifier que la case est vide
             if (gameState.board[moveIndex] !== null) {
-                await i.deferUpdate();
+                await i.deferUpdate().catch(() => {
+                });
                 return;
             }
 
@@ -334,8 +338,22 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                 // Mettre à jour l'affichage et stocker l'interaction
                 const embed = createGameEmbed(gameState);
                 const buttons = createBoardButtons(gameState, gameId);
-                await i.update({embeds: [embed], components: buttons});
-                gameState.lastInteraction = i; // Stocker pour les mises à jour suivantes
+
+                try {
+                    await i.update({embeds: [embed], components: buttons});
+                    gameState.lastInteraction = i; // Stocker pour les mises à jour suivantes
+                } catch (error: any) {
+                    console.log("[TicTacToe] Cannot update after player move. Error:", error.code);
+                    // Essayer avec message.edit en fallback
+                    try {
+                        await message.edit({embeds: [embed], components: buttons});
+                    } catch {
+                        console.log("[TicTacToe] Cannot edit message, stopping game");
+                        collector.stop("error");
+                        activeGames.delete(gameId);
+                        return;
+                    }
+                }
 
                 // IA joue après un court délai
                 setTimeout(async () => {
@@ -357,7 +375,7 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                             const buttons = createBoardButtons(gameState, gameId);
 
                             try {
-                                // Utiliser editReply au lieu de message.edit pour UserApp
+                                // Essayer editReply d'abord si lastInteraction existe
                                 if (gameState.lastInteraction) {
                                     await gameState.lastInteraction.editReply({embeds: [embed], components: buttons});
                                 } else {
@@ -365,8 +383,11 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                                 }
                             } catch (error: any) {
                                 console.log("[TicTacToe] Cannot edit message after AI move. Error:", error.code);
-                                // En contexte UserApp, on ne peut pas envoyer de nouveau message
-                                // Le jeu s'arrête malheureusement
+                                // Essayer avec message.edit en dernier recours
+                                try {
+                                    await message.edit({embeds: [embed], components: buttons});
+                                } catch {
+                                }
                             }
                         }
                     } catch (error) {
@@ -379,8 +400,22 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
 
                 const embed = createGameEmbed(gameState);
                 const buttons = createBoardButtons(gameState, gameId);
-                await i.update({embeds: [embed], components: buttons});
-                gameState.lastInteraction = i; // Stocker pour les mises à jour suivantes
+
+                try {
+                    await i.update({embeds: [embed], components: buttons});
+                    gameState.lastInteraction = i; // Stocker pour les mises à jour suivantes
+                } catch (error: any) {
+                    console.log("[TicTacToe] Cannot update in PvP. Error:", error.code);
+                    // Essayer avec message.edit en fallback
+                    try {
+                        await message.edit({embeds: [embed], components: buttons});
+                    } catch {
+                        console.log("[TicTacToe] Cannot edit message, stopping game");
+                        collector.stop("error");
+                        activeGames.delete(gameId);
+                        return;
+                    }
+                }
             }
         } catch (error) {
             console.error("[TicTacToe] Error handling move:", error);
@@ -602,9 +637,15 @@ async function displayResult(message: any, gameState: GameState, winner: string 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton, backButton);
 
     try {
-        // Utiliser l'interaction si disponible pour UserApp
+        // Essayer d'abord avec l'interaction si disponible pour UserApp
         if (gameState.lastInteraction) {
-            await gameState.lastInteraction.editReply({embeds: [embed], components: [row]});
+            try {
+                await gameState.lastInteraction.editReply({embeds: [embed], components: [row]});
+            } catch (interactionError: any) {
+                console.log("[TicTacToe] Cannot use lastInteraction in displayResult. Error:", interactionError.code);
+                // Fallback vers message.edit
+                await message.edit({embeds: [embed], components: [row]});
+            }
         } else {
             await message.edit({embeds: [embed], components: [row]});
         }
@@ -668,7 +709,16 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
                 const embed = createGameEmbed(gameState);
                 const buttons = createBoardButtons(gameState, newGameId);
 
-                await i.update({embeds: [embed], components: buttons});
+                try {
+                    await i.update({embeds: [embed], components: buttons});
+                    gameState.lastInteraction = i;
+                } catch (error: any) {
+                    console.log("[TicTacToe] Cannot update rematch. Error:", error.code);
+                    try {
+                        await message.edit({embeds: [embed], components: buttons});
+                    } catch {
+                    }
+                }
                 setupGameCollector(message, gameState, newGameId);
                 return;
             }
@@ -684,7 +734,16 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
                 const newGameId = i.customId.split("_")[2] + "_" + Date.now();
                 const buttons = createBoardButtons(gameState, newGameId);
 
-                await i.update({embeds: [embed], components: buttons});
+                try {
+                    await i.update({embeds: [embed], components: buttons});
+                    gameState.lastInteraction = i;
+                } catch (error: any) {
+                    console.log("[TicTacToe] Cannot update rematch PvP. Error:", error.code);
+                    try {
+                        await message.edit({embeds: [embed], components: buttons});
+                    } catch {
+                    }
+                }
                 setupGameCollector(message, gameState, newGameId);
             } else {
                 const updatedEmbed = EmbedBuilder.from(originalEmbed);
@@ -713,7 +772,15 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
 
                 const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton);
 
-                await i.update({embeds: [updatedEmbed], components: [row]});
+                try {
+                    await i.update({embeds: [updatedEmbed], components: [row]});
+                } catch (error: any) {
+                    console.log("[TicTacToe] Cannot update rematch status. Error:", error.code);
+                    try {
+                        await message.edit({embeds: [updatedEmbed], components: [row]});
+                    } catch {
+                    }
+                }
             }
         } catch (error) {
             console.error("[TicTacToe] Error handling rematch:", error);

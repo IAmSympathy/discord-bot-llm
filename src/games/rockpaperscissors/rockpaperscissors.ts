@@ -374,11 +374,13 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
 
             // Vérifier si le joueur a déjà fait son choix (sans envoyer de message)
             if (clickerId === gameState.player1 && gameState.player1Choice) {
-                await i.deferUpdate();
+                await i.deferUpdate().catch(() => {
+                });
                 return;
             }
             if (clickerId === gameState.player2 && gameState.player2Choice) {
-                await i.deferUpdate();
+                await i.deferUpdate().catch(() => {
+                });
                 return;
             }
 
@@ -396,10 +398,23 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
             }
 
             // Si les deux joueurs ont fait leur choix, afficher le résultat directement
-            // (utiliser l'interaction pour update)
             if (gameState.player1Choice && gameState.player2Choice) {
                 collector.stop("completed");
-                await displayResult(message, gameState, i);
+
+                // Utiliser update() au lieu de deferUpdate() pour pouvoir utiliser editReply() après
+                try {
+                    await i.update({embeds: message.embeds, components: message.components});
+                    gameState.lastInteraction = i;
+                    await displayResult(message, gameState, i);
+                } catch (error: any) {
+                    console.log("[RPS] Cannot update before result. Error:", error.code);
+                    // Fallback vers message.edit
+                    try {
+                        await message.edit({embeds: message.embeds, components: []});
+                        await displayResult(message, gameState, null);
+                    } catch {
+                    }
+                }
                 activeGames.delete(gameId);
                 return;
             }
@@ -429,12 +444,19 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                     .setDescription(baseDesc + choiceStatus)
                     .setTimestamp();
 
-                await i.update({embeds: [updatedEmbed], components: message.components});
-                gameState.lastInteraction = i; // Stocker pour les mises à jour suivantes
+                try {
+                    await i.update({embeds: [updatedEmbed], components: message.components});
+                    gameState.lastInteraction = i; // Stocker pour les mises à jour suivantes
+                } catch (error: any) {
+                    console.log("[RPS] Cannot update choice status. Error:", error.code);
+                    try {
+                        await message.edit({embeds: [updatedEmbed], components: message.components});
+                    } catch {
+                    }
+                }
             } else {
-                // En mode IA, juste defer l'update (pas besoin d'afficher les choix)
-                await i.deferUpdate();
-                gameState.lastInteraction = i; // Stocker pour les mises à jour suivantes
+                // En mode IA, ne pas faire de deferUpdate car on va utiliser update() juste après
+                // On ne fait rien ici, l'interaction sera gérée par le bloc précédent
             }
         } catch (error) {
             console.error("[RPS] Error handling choice:", error);
@@ -574,10 +596,22 @@ async function displayResult(message: any, gameState: GameState, lastInteraction
     // Toujours utiliser l'interaction si disponible (meilleure compatibilité DM)
     try {
         if (lastInteraction) {
-            // Utiliser editReply car l'interaction a déjà été defer/update
-            await lastInteraction.editReply({embeds: [embed], components: [row]});
+            // Utiliser editReply car l'interaction a déjà été update
+            try {
+                await lastInteraction.editReply({embeds: [embed], components: [row]});
+            } catch (interactionError: any) {
+                console.log("[RPS] Cannot use lastInteraction in displayResult. Error:", interactionError.code);
+                // Fallback vers message.edit
+                await message.edit({embeds: [embed], components: [row]});
+            }
         } else if (gameState.lastInteraction) {
-            await gameState.lastInteraction.editReply({embeds: [embed], components: [row]});
+            try {
+                await gameState.lastInteraction.editReply({embeds: [embed], components: [row]});
+            } catch (interactionError: any) {
+                console.log("[RPS] Cannot use gameState.lastInteraction in displayResult. Error:", interactionError.code);
+                // Fallback vers message.edit
+                await message.edit({embeds: [embed], components: [row]});
+            }
         } else {
             await message.edit({embeds: [embed], components: [row]});
         }
@@ -648,10 +682,20 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
                     .setDescription("🔄 **Nouvelle partie !**\n\nFais ton choix !")
                     .setTimestamp();
 
-                const buttons = createChoiceButtons(i.customId.split("_")[2] + "_" + Date.now(), gameState.player1);
+                const newGameId = i.customId.split("_")[2] + "_" + Date.now();
+                const buttons = createChoiceButtons(newGameId, gameState.player1);
 
-                await i.update({embeds: [embed], components: [buttons]});
-                setupGameCollector(message, gameState, i.customId.split("_")[2] + "_" + Date.now());
+                try {
+                    await i.update({embeds: [embed], components: [buttons]});
+                    gameState.lastInteraction = i;
+                } catch (error: any) {
+                    console.log("[RPS] Cannot update rematch AI. Error:", error.code);
+                    try {
+                        await message.edit({embeds: [embed], components: [buttons]});
+                    } catch {
+                    }
+                }
+                setupGameCollector(message, gameState, newGameId);
                 return;
             }
 
@@ -673,8 +717,16 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
                 const newGameId = i.customId.split("_")[2] + "_" + Date.now();
                 const buttons = createChoiceButtons(newGameId, "both"); // Utiliser "both" pour PvP
 
-                await i.update({embeds: [embed], components: [buttons]});
-
+                try {
+                    await i.update({embeds: [embed], components: [buttons]});
+                    gameState.lastInteraction = i;
+                } catch (error: any) {
+                    console.log("[RPS] Cannot update rematch PvP. Error:", error.code);
+                    try {
+                        await message.edit({embeds: [embed], components: [buttons]});
+                    } catch {
+                    }
+                }
                 setupGameCollector(message, gameState, newGameId);
             } else {
                 // Un joueur a accepté, mettre à jour l'embed pour afficher qui attend
@@ -705,7 +757,15 @@ function setupRematchCollector(message: any, gameState: GameState, originalEmbed
 
                 const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton);
 
-                await i.update({embeds: [updatedEmbed], components: [row]});
+                try {
+                    await i.update({embeds: [updatedEmbed], components: [row]});
+                } catch (error: any) {
+                    console.log("[RPS] Cannot update rematch status. Error:", error.code);
+                    try {
+                        await message.edit({embeds: [updatedEmbed], components: [row]});
+                    } catch {
+                    }
+                }
             }
         } catch (error) {
             console.error("[RPS] Error handling rematch:", error);

@@ -325,11 +325,16 @@ async function sendLevelUpNotification(userId: string, username: string, newLeve
         const currentRoleKey = levelRoleInfo?.roleKey || "HATCHLING";
         const nextRole = getNextLevelRole(newLevel);
 
-        // Récupérer la couleur du rôle (si on a un guild)
+        // Récupérer la couleur du rôle et l'ID (si on a un guild)
         let embedColor = 0xFFD700; // Gold par défaut
+        let currentRoleId: string | null = null;
+        const GUILD_ID = process.env.GUILD_ID;
+        const isMainServer = guild && guild.id === GUILD_ID;
+
         if (guild && levelRoleInfo) {
             const LEVEL_ROLES = await import("../utils/constants").then(m => m.LEVEL_ROLES);
             const levelRoleId = LEVEL_ROLES[levelRoleInfo.roleKey as keyof typeof LEVEL_ROLES];
+            currentRoleId = levelRoleId;
             const levelRole = guild.roles.cache.get(levelRoleId);
             if (levelRole && levelRole.color !== 0) {
                 embedColor = levelRole.color;
@@ -339,15 +344,19 @@ async function sendLevelUpNotification(userId: string, username: string, newLeve
         // Déterminer si c'est un Role Up
         const isRoleUp = roleResult.changed && roleResult.newRole;
 
+        // Formater le rôle : ping si serveur principal, nom sinon
+        const roleDisplay = (isMainServer && currentRoleId) ? `<@&${currentRoleId}>` : currentRoleName;
+        const newRoleDisplay = (isMainServer && roleResult.newRole) ? roleResult.newRole : roleResult.newRole;
+
         // Construire la description
         let embedTitle = isRoleUp ? "🎖️ Nouveau Rôle !" : "🎉 Niveau Gagné !";
         let description = `### Félicitations !\n\n`;
         description += `Tu as atteint le **niveau ${newLevel}** !\n`;
 
         if (isRoleUp) {
-            description += `Tu es maintenant **${roleResult.newRole}** !\n`;
+            description += `Tu es maintenant **${newRoleDisplay}** !\n`;
         } else {
-            description += `**Rang actuel :** ${currentRoleName}\n`;
+            description += `**Rang actuel :** ${roleDisplay}\n`;
         }
 
         // Section progression XP
@@ -372,7 +381,7 @@ async function sendLevelUpNotification(userId: string, username: string, newLeve
             .addFields(
                 {name: "💫 XP Total", value: `${currentXP.toLocaleString()} XP`, inline: true},
                 {name: "⭐ Niveau", value: `${newLevel}`, inline: true},
-                {name: "🏆 Rang", value: currentRoleName, inline: true}
+                {name: "🏆 Rang", value: roleDisplay, inline: true}
             )
             .setFooter({text: "Continue à être actif pour gagner plus d'XP !"})
             .setTimestamp();
@@ -393,7 +402,6 @@ async function sendLevelUpNotification(userId: string, username: string, newLeve
         let notificationSent = false;
 
         // Vérifier si on est dans un contexte externe (DM, Groupe DM, ou Serveur externe)
-        const GUILD_ID = process.env.GUILD_ID;
         const isExternalContext = channel && (!channel.guild || channel.guildId !== GUILD_ID);
 
         if (channel && !isExternalContext) {
@@ -524,6 +532,20 @@ async function sendLevelDownNotification(userId: string, username: string, oldLe
         const currentRoleName = levelRoleInfo?.roleName || "Hatchling";
         const currentRoleKey = levelRoleInfo?.roleKey || "HATCHLING";
 
+        // Récupérer l'ID du rôle et déterminer si on est dans le serveur principal
+        let currentRoleId: string | null = null;
+        const GUILD_ID = process.env.GUILD_ID;
+        const isMainServer = guild && guild.id === GUILD_ID;
+
+        if (guild && levelRoleInfo) {
+            const LEVEL_ROLES = await import("../utils/constants").then(m => m.LEVEL_ROLES);
+            const levelRoleId = LEVEL_ROLES[levelRoleInfo.roleKey as keyof typeof LEVEL_ROLES];
+            currentRoleId = levelRoleId;
+        }
+
+        // Formater le rôle : ping si serveur principal, nom sinon
+        const roleDisplay = (isMainServer && currentRoleId) ? `<@&${currentRoleId}>` : currentRoleName;
+
         const description = `### ⚠️ Pénalité de niveau\n\n` +
             `Tu es descendu du **niveau ${oldLevel}** au **niveau ${newLevel}** suite à une pénalité de **${xpLost} XP**.\n\n` +
             `### 📊 Progression Actuelle\n` +
@@ -539,7 +561,7 @@ async function sendLevelDownNotification(userId: string, username: string, oldLe
             .addFields(
                 {name: "💫 XP Total", value: `${currentXP.toLocaleString()} XP`, inline: true},
                 {name: "⭐ Niveau", value: `${newLevel}`, inline: true},
-                {name: "🏆 Rang", value: currentRoleName, inline: true}
+                {name: "🏆 Rang", value: roleDisplay, inline: true}
             )
             .setFooter({text: "Sois plus prudent la prochaine fois !"})
             .setTimestamp();

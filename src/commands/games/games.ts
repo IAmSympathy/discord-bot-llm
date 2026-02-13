@@ -14,8 +14,7 @@ module.exports = {
             const userId = interaction.user.id;
             const channelName = getChannelNameFromInteraction(interaction);
             await logCommand("🎮 Session de jeu démarré", undefined, [
-                {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
-                {name: "🆔 User ID", value: userId, inline: true}
+                {name: "👤 Utilisateur", value: interaction.user.username, inline: true}
             ], undefined, channelName);
         } catch (error: any) {
             await handleInteractionError(interaction, error, "Games");
