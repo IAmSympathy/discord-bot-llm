@@ -76,7 +76,8 @@ module.exports = {
                     {name: "💬 Commentaire", value: comment, inline: false}
                 ],
                 undefined,
-                channelName
+                channelName,
+                interaction.user.displayAvatarURL()
             );
 
             // Ajouter XP

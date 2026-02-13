@@ -394,7 +394,7 @@ module.exports = {
 
             // Créer l'embed de réponse
             const embed = new EmbedBuilder()
-                .setColor(0x00ff88)
+                .setColor(0xccd6dd)
                 .setTitle("✨ Prompt Optimisé")
                 .setDescription(`Voici le prompt optimisé pour **${isImg2Img ? "/reimagine" : "/imagine"}** :`)
                 .addFields(

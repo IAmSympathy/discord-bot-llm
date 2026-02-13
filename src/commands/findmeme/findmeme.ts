@@ -123,7 +123,7 @@ module.exports = {
             await logCommand("🎭 Meme posté", undefined, [
                 {name: "👤 Demandé par", value: interaction.user.username, inline: true},
                 {name: "📺 Salon", value: `<#${MEME_CHANNEL_ID}>`, inline: true}
-            ], undefined, channelName);
+            ], undefined, channelName, interaction.user.displayAvatarURL());
         } catch (error: any) {
             await handleInteractionError(interaction, error, "FindMeme");
         }

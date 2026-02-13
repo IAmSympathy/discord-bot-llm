@@ -5,6 +5,74 @@ import {formatTimeFromMs} from "./timeFormat";
 
 let clientInstance: Client | null = null;
 
+// Map des couleurs pour chaque commande
+const COMMAND_COLORS: { [key: string]: number } = {
+    // Commandes fun
+    "cucumber": 0x71aa51,
+    "coinflip": 0xffcc4d,
+    "choose": 0xdd2e44,
+    "crystalball": 0xA589D2,
+    "rollthedice": 0xea596e,
+    "slots": 0x30363c,
+    "ship": 0xFFC0CB,
+    "ascii": 0x357bb0,
+
+    // Commandes de jeu
+    "games": 0x14171A,
+
+    // Commandes d'image
+    "imagine": 0xd99e82,
+    "reimagine": 0x4fa0dd,
+    "upscale": 0xff9800,
+    "prompt-maker": 0xccd6dd,
+
+    // Commandes Netricsa
+    "ask-netricsa": 0x5865f2,
+    "repondre": 0xdd2e44,
+
+    // Commandes système/admin
+    "reset": 0xdd2e44,
+    "reset-dm": 0xf39c12,
+    "reset-counter": 0xdd2e44,
+    "stop": 0xdd2e44,
+    "stop-event": 0xdd2e44,
+    "lowpower": 0xdd2e44,
+    "auto-lowpower": 0xdd2e44,
+    "standby-status": 0x7f8c8d,
+    "set-status": 0x1abc9c,
+
+    // Commandes profil/stats
+    "profile": 0x397d86,
+    "leaderboard": 0x397d86,
+    "challenges": 0x397d86,
+    "daily": 0x397d86,
+
+    // Commandes notes/anniversaire
+    "add-note": 0x397d86,
+    "remove-note": 0x397d86,
+    "set-birthday": 0x397d86,
+    "remove-birthday": 0x397d86,
+
+    // Commandes diverses
+    "harvest": 0x66757f,
+    "findmeme": 0x2fb62f,
+    "blacklist-game": 0xdd2e44,
+
+    // Commandes de test
+    "test-event": 0xdd2e44,
+    "test-mission": 0xdd2e44,
+    "test-rewind": 0xdd2e44,
+};
+
+/**
+ * Obtenir la couleur d'une commande
+ */
+function getCommandColor(commandName?: string): number {
+    if (!commandName) return 0x397d86; // Netricsa par défaut
+    const normalized = commandName.toLowerCase().replace(/^\//, '');
+    return COMMAND_COLORS[normalized] || 0x397d86;
+}
+
 export enum LogLevel {
     INFO = "INFO",
     WARNING = "WARNING",
@@ -48,6 +116,8 @@ export interface LogOptions {
     fields?: { name: string; value: string; inline?: boolean }[];
     footer?: string;
     imageUrl?: string;
+    thumbnailUrl?: string;
+    commandName?: string; // Nom de la commande pour les logs de commandes
 }
 
 export function initializeDiscordLogger(client: Client) {
@@ -108,7 +178,8 @@ export async function logToDiscord(options: LogOptions) {
                 embed.setColor(0x1abc9c); // Turquoise
                 break;
             case LogLevel.COMMAND:
-                embed.setColor(0x34495e); // Gris foncé
+                // Utiliser la couleur spécifique de la commande
+                embed.setColor(getCommandColor(options.commandName));
                 break;
             // Événements serveur - couleurs différentes et plus vives
             case LogLevel.SERVER_MEMBER_JOIN:
@@ -194,8 +265,12 @@ export async function logToDiscord(options: LogOptions) {
             embed.addFields(options.fields);
         }
 
+        if (options.thumbnailUrl) {
+            embed.setThumbnail(options.thumbnailUrl);
+        }
+
         if (options.imageUrl) {
-            embed.setThumbnail(options.imageUrl);
+            embed.setImage(options.imageUrl);
         }
 
         if (options.footer) {
@@ -241,7 +316,14 @@ export async function logProfile(title: string, description?: string, fields?: {
     await logToDiscord({level: LogLevel.PROFILE, title, description, fields});
 }
 
-export async function logCommand(title: string, description?: string, fields?: { name: string; value: string; inline?: boolean }[], imageUrl?: string, channelName?: string) {
+export async function logCommand(
+    title: string,
+    description?: string,
+    fields?: { name: string; value: string; inline?: boolean }[],
+    imageUrl?: string,
+    channelName?: string,
+    avatarUrl?: string
+) {
     // Détecter si c'est un DM ou un Groupe DM
     const isDM = channelName?.startsWith("DM avec ");
     const isGroupDM = channelName?.startsWith("Groupe DM");
@@ -252,12 +334,23 @@ export async function logCommand(title: string, description?: string, fields?: {
     if (channelName) {
         enhancedFields.push({
             name: isDM ? "📧 DM" : (isGroupDM ? "👥 Groupe DM" : (isExternalServer ? "🌐 Serveur externe" : "📺 Salon")),
-            value: isDM || isGroupDM ? channelName : `#${channelName}`,
+            value: isDM || isGroupDM ? channelName : `${channelName}`,
             inline: true
         });
     }
 
-    await logToDiscord({level: LogLevel.BOT_COMMAND, title, description, fields: enhancedFields, imageUrl});
+    // Extraire le nom de la commande du titre (format: "🥒 Cucumber" -> "cucumber")
+    const commandName = title.replace(/^[^\s]+\s+/, '').toLowerCase();
+
+    await logToDiscord({
+        level: LogLevel.COMMAND,
+        title,
+        description,
+        fields: enhancedFields,
+        imageUrl,
+        thumbnailUrl: avatarUrl,
+        commandName
+    });
 }
 
 // Fonctions helper pour les événements serveur Discord

@@ -130,7 +130,7 @@ export function registerRoleReactionHandler(client: Client) {
                 {name: "👤 Membre", value: user.username || user.id, inline: true},
                 {name: "📝 Rôle", value: `<@&${ROLE_TO_GIVE_ID}>`, inline: true},
                 {name: "💬 Message", value: ROLE_REACTION_MESSAGE_ID, inline: true}
-            ], undefined, channelName);
+            ], undefined, channelName, user.displayAvatarURL());
 
         } catch (error) {
             logger.error("Error handling reaction add:", error);
@@ -195,7 +195,7 @@ export function registerRoleReactionHandler(client: Client) {
                 {name: "👤 Membre", value: user.username || user.id, inline: true},
                 {name: "📝 Rôle", value: `<@&${ROLE_TO_GIVE_ID}>`, inline: true},
                 {name: "💬 Message", value: ROLE_REACTION_MESSAGE_ID, inline: true}
-            ], undefined, channelName);
+            ], undefined, channelName, user.displayAvatarURL());
 
         } catch (error) {
             logger.error("Error handling reaction remove:", error);

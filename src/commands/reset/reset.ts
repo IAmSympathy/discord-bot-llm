@@ -71,7 +71,7 @@ module.exports = {
                     const channelName = getChannelNameFromInteraction(interaction);
                     await logCommand("🗑️ Mémoire effacée", undefined, [
                         {name: "👤 Par", value: interaction.user.displayName, inline: true},
-                    ], undefined, channelName);
+                    ], undefined, channelName, interaction.user.displayAvatarURL());
 
                     // Mettre à jour le message éphémère
                     const successEmbed = createSuccessEmbed(

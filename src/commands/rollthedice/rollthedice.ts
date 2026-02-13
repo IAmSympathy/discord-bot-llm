@@ -127,7 +127,8 @@ module.exports = {
                     {name: "📊 Résultat", value: numberOfDice > 1 ? `Total: ${total}` : `${results[0]}`, inline: true}
                 ],
                 undefined,
-                channelName
+                channelName,
+                interaction.user.displayAvatarURL()
             );
 
             // Ajouter XP

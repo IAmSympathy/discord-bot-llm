@@ -101,7 +101,7 @@ module.exports = {
                     {name: "👥 Utilisateur", value: username, inline: true},
                     {name: "🏷️ Type", value: typeLabel, inline: true},
                     {name: "📄 Contenu", value: content.length > 100 ? content.substring(0, 100) + "..." : content, inline: false}
-                ], undefined, channelName);
+                ], undefined, channelName, interaction.user.displayAvatarURL());
             }
         } catch (error) {
             console.error("[Remove Command] Error:", error);

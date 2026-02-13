@@ -37,11 +37,14 @@ module.exports = {
             // Log la commande
             const channelName = getChannelNameFromInteraction(interaction);
             await logCommand(
-                interaction.user.username,
-                "/test-rewind",
+                "⏪ Test Rewind",
                 undefined,
+                [
+                    {name: "👤 Par", value: interaction.user.username, inline: true}
+                ],
                 undefined,
-                channelName
+                channelName,
+                interaction.user.displayAvatarURL()
             );
 
             // Sauvegarder l'état actuel

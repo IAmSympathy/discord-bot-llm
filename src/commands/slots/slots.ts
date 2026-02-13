@@ -212,7 +212,8 @@ module.exports = {
                     {name: "💫 XP", value: `${xp > 0 ? '+' : ''}${xp}`, inline: true}
                 ],
                 undefined,
-                channelName
+                channelName,
+                interaction.user.displayAvatarURL()
             );
 
             logger.info(`${username} played slots: ${finalSymbols.join("")} = ${xp} XP`);

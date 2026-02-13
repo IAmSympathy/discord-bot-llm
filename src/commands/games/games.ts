@@ -15,7 +15,7 @@ module.exports = {
             const channelName = getChannelNameFromInteraction(interaction);
             await logCommand("🎮 Session de jeu démarré", undefined, [
                 {name: "👤 Utilisateur", value: interaction.user.username, inline: true}
-            ], undefined, channelName);
+            ], undefined, channelName, interaction.user.displayAvatarURL());
         } catch (error: any) {
             await handleInteractionError(interaction, error, "Games");
         }

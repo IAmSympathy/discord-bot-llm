@@ -20,7 +20,7 @@ module.exports = {
             const channelName = getChannelNameFromInteraction(interaction);
             await logCommand("🔄 Compteur réinitialisé", undefined, [
                 {name: "Administrateur", value: interaction.user.username, inline: true}
-            ], undefined, channelName);
+            ], undefined, channelName, interaction.user.displayAvatarURL());
 
             // Vérifier qu'on est bien dans un serveur
             if (!interaction.guild) {

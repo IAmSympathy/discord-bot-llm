@@ -88,7 +88,8 @@ module.exports = {
                     {name: "💬 Réponse", value: randomResponse.answer, inline: true}
                 ],
                 undefined,
-                channelName
+                channelName,
+                interaction.user.displayAvatarURL()
             );
 
             // Ajouter XP

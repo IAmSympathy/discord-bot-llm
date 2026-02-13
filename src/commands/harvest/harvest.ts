@@ -218,7 +218,8 @@ module.exports = {
                     {name: "🌍 Saison", value: resource.seasonName, inline: true}
                 ],
                 undefined,
-                channelName
+                channelName,
+                interaction.user.displayAvatarURL()
             );
 
         } catch (error) {

@@ -138,7 +138,8 @@ module.exports = {
                     {name: "💫 Résultat", value: resultText, inline: true}
                 ],
                 undefined,
-                channelName
+                channelName,
+                interaction.user.displayAvatarURL()
             );
 
             // Ajouter XP

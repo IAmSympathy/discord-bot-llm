@@ -212,7 +212,8 @@ module.exports = {
                     {name: "💯 Résultat", value: `${compatibility}%`, inline: true}
                 ],
                 undefined,
-                channelName
+                channelName,
+                interaction.user.displayAvatarURL()
             );
 
             // Donner de l'XP

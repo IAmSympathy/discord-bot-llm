@@ -1854,7 +1854,7 @@ async function sendAchievementNotification(
                 {name: "🎁 XP", value: `+${achievement.xpReward} XP`, inline: true},
                 {name: "📋 Type", value: achievementType, inline: true},
                 {name: "📨 Notification", value: notificationType, inline: true}
-            ], undefined, channelName);
+            ], undefined, channelName, user.displayAvatarURL());
 
             const {addXP} = require("./xpSystem");
             const member = await client.guilds.cache.first()?.members.fetch(userId);

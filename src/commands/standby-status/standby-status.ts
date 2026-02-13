@@ -66,7 +66,7 @@ module.exports = {
                 {name: "📊 État", value: isStandby ? "Veille" : "Normal", inline: true},
                 {name: "🔍 Ollama", value: status.ollama ? "✅" : "❌", inline: true},
                 {name: "🎨 Python API", value: status.pythonAPI ? "✅" : "❌", inline: true}
-            ], undefined, channelName);
+            ], undefined, channelName, interaction.user.displayAvatarURL());
 
         } catch (error: any) {
             await handleInteractionError(interaction, error, "StandbyStatus");

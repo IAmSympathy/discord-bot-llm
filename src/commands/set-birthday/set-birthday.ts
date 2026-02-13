@@ -92,7 +92,7 @@ module.exports = {
                 {name: "👤 Utilisateur", value: username, inline: true},
                 {name: "📅 Date", value: dateStr, inline: true},
                 {name: "🔔 Notifications", value: notify ? "Activées" : "Désactivées", inline: true}
-            ], undefined, channelName);
+            ], undefined, channelName, interaction.user.displayAvatarURL());
         } catch (error) {
             console.error("[SetBirthday] Error executing command:", error);
             const errorEmbed = createErrorEmbed(

@@ -72,7 +72,7 @@ module.exports = {
                     {name: "👤 Par", value: interaction.user.displayName, inline: true},
                     {name: "⚙️ Action", value: logActions.join(" + "), inline: true},
                     {name: "✅ Statut", value: "Succès", inline: true}
-                ], undefined, channelName);
+                ], undefined, channelName, interaction.user.displayAvatarURL());
             } else {
                 // Créer un embed éphémère quand il n'y a rien à arrêter
                 const embed = createInfoEmbed(

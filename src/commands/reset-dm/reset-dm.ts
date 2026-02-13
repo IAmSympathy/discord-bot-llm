@@ -29,7 +29,7 @@ module.exports = {
             await logCommand("🔄 Mémoire DM réinitialisée", undefined, [
                 {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
                 {name: "🆔 User ID", value: userId, inline: true}
-            ], undefined, channelName);
+            ], undefined, channelName, interaction.user.displayAvatarURL());
 
         } catch (error: any) {
             await handleInteractionError(interaction, error, "ResetDM");

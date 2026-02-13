@@ -481,7 +481,18 @@ async function sendLevelUpNotification(userId: string, username: string, newLeve
                 channelName = `DM avec ${username}`;
             }
 
-            await logCommand(isRoleUp ? "🎖️ Role Up" : "⭐ Level Up", undefined, fields, undefined, channelName);
+            // Récupérer l'avatar de l'utilisateur si possible
+            let avatarUrl: string | undefined;
+            try {
+                const user = await client.users.fetch(userId).catch(() => null);
+                if (user) {
+                    avatarUrl = user.displayAvatarURL();
+                }
+            } catch (error) {
+                // Ignorer si on ne peut pas récupérer l'avatar
+            }
+
+            await logCommand(isRoleUp ? "🎖️ Role Up" : "⭐ Level Up", undefined, fields, undefined, channelName, avatarUrl);
         }
 
     } catch (error) {

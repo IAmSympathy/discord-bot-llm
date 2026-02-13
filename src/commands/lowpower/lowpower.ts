@@ -41,7 +41,7 @@ module.exports = {
             const channelName = getChannelNameFromInteraction(interaction);
             await logCommand(newState ? "🔋 Low Power Mode activé" : "⚡ Low Power Mode désactivé", undefined, [
                 {name: "👤 Par", value: interaction.user.username, inline: true}
-            ], undefined, channelName);
+            ], undefined, channelName, interaction.user.displayAvatarURL());
 
         } catch (error: any) {
             await handleInteractionError(interaction, error, "LowPower");

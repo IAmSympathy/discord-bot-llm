@@ -123,7 +123,8 @@ module.exports = {
                     {name: "💬 Texte", value: text, inline: false}
                 ],
                 undefined,
-                channelName
+                channelName,
+                interaction.user.displayAvatarURL()
             );
 
         } catch (error) {

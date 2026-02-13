@@ -29,7 +29,7 @@ module.exports = {
                 const channelName = getChannelNameFromInteraction(interaction);
                 await logCommand("🎂 Anniversaire supprimé", undefined, [
                     {name: "👤 Utilisateur", value: username, inline: true}
-                ], undefined, channelName);
+                ], undefined, channelName, interaction.user.displayAvatarURL());
             } else {
                 const errorEmbed = createErrorEmbed(
                     "Aucun anniversaire",

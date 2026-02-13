@@ -238,7 +238,8 @@ module.exports = {
                     {name: "🔥 Série", value: `${newStreak} jours`, inline: true}
                 ],
                 undefined,
-                channelName
+                channelName,
+                interaction.user.displayAvatarURL()
             );
 
         } catch (error) {
