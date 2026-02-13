@@ -12,6 +12,49 @@ import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 
 const logger = createLogger("PromptMakerCmd");
 
+const OLLAMA_TIMEOUT_MS = 120000; // Timeout de 120 secondes pour les requêtes Ollama
+const MAX_RETRIES = 3; // Nombre maximum de tentatives
+const INITIAL_RETRY_DELAY = 1000; // Délai initial entre les tentatives (1 seconde)
+
+/**
+ * Fonction utilitaire pour retry avec backoff exponentiel
+ */
+async function retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    retries: number = MAX_RETRIES,
+    delay: number = INITIAL_RETRY_DELAY,
+    operationName: string = "operation"
+): Promise<T> {
+    try {
+        return await fn();
+    } catch (error) {
+        if (retries === 0) {
+            logger.error(`[Retry] ${operationName} failed after ${MAX_RETRIES} attempts`);
+            throw error;
+        }
+
+        const isRetryableError = error instanceof Error && (
+            error.name === 'AbortError' ||
+            error.message.includes('ECONNREFUSED') ||
+            error.message.includes('ETIMEDOUT') ||
+            error.message.includes('ECONNRESET') ||
+            error.message.includes('fetch failed')
+        );
+
+        if (!isRetryableError) {
+            logger.debug(`[Retry] ${operationName} - Non-retryable error, throwing immediately`);
+            throw error;
+        }
+
+        const attempt = MAX_RETRIES - retries + 1;
+        logger.warn(`[Retry] ${operationName} failed (attempt ${attempt}/${MAX_RETRIES}), retrying in ${delay}ms...`);
+
+        await new Promise(resolve => setTimeout(resolve, delay));
+
+        return retryWithBackoff(fn, retries - 1, delay * 2, operationName);
+    }
+}
+
 // Prompt système pour text2img (génération de nouvelles images)
 const PROMPT_MAKER_TEXT2IMG = `Tu es un expert en génération de prompts pour Stable Diffusion XL (text2img). Ton rôle est de transformer des demandes simples en prompts détaillés et optimisés pour créer de nouvelles images.
 
@@ -166,57 +209,90 @@ async function generateOptimizedPrompt(userRequest: string, isImg2Img: boolean):
         ? `Demande de transformation d'image: "${userRequest}"`
         : `Demande de génération d'image: "${userRequest}"`;
 
-    const response = await fetch(`${OLLAMA_API_URL}/api/chat`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            model: OLLAMA_TEXT_MODEL,
-            messages: [
-                {role: "system", content: systemPrompt},
-                {role: "user", content: userMessage}
-            ],
-            stream: false,
-            options: {
-                temperature: 0.8,
-                num_predict: 500
+    // Utiliser le système de retry avec backoff exponentiel
+    return await retryWithBackoff(async () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS);
+
+        try {
+            const response = await fetch(`${OLLAMA_API_URL}/api/chat`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "User-Agent": "Netricsa-Bot/1.0",
+                    "Connection": "close" // Désactiver keep-alive pour éviter les connexions stales
+                },
+                body: JSON.stringify({
+                    model: OLLAMA_TEXT_MODEL,
+                    messages: [
+                        {role: "system", content: systemPrompt},
+                        {role: "user", content: userMessage}
+                    ],
+                    stream: false,
+                    options: {
+                        temperature: 0.8,
+                        num_predict: 500
+                    }
+                }),
+                signal: controller.signal,
+                // @ts-ignore - undici-specific options
+                keepAlive: false
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`LLM API error: ${response.status} ${response.statusText}`);
             }
-        }),
-    });
 
-    if (!response.ok) {
-        throw new Error(`LLM API error: ${response.status} ${response.statusText}`);
-    }
+            const data = await response.json();
+            const content = data.message.content.trim();
 
-    const data = await response.json();
-    const content = data.message.content.trim();
+            logger.info(`LLM raw response: ${content}`);
 
-    logger.info(`LLM raw response: ${content}`);
+            // Vérifier si le LLM a refusé de répondre
+            if (content.toLowerCase().includes("je ne peux pas") ||
+                content.toLowerCase().includes("i cannot") ||
+                content.toLowerCase().includes("i can't") ||
+                !content.includes("{")) {
+                throw new Error("Le LLM a refusé de générer le prompt. Essaie de reformuler ta demande de manière plus neutre.");
+            }
 
-    // Vérifier si le LLM a refusé de répondre
-    if (content.toLowerCase().includes("je ne peux pas") ||
-        content.toLowerCase().includes("i cannot") ||
-        content.toLowerCase().includes("i can't") ||
-        !content.includes("{")) {
-        throw new Error("Le LLM a refusé de générer le prompt. Essaie de reformuler ta demande de manière plus neutre.");
-    }
+            // Extraire le JSON de la réponse (au cas où il y a du texte avant/après)
+            const jsonMatch = content.match(/\{[\s\S]*}/);
+            if (!jsonMatch) {
+                throw new Error("Le LLM n'a pas retourné un JSON valide. Réponse reçue : " + content.substring(0, 100));
+            }
 
-    // Extraire le JSON de la réponse (au cas où il y a du texte avant/après)
-    const jsonMatch = content.match(/\{[\s\S]*}/);
-    if (!jsonMatch) {
-        throw new Error("Le LLM n'a pas retourné un JSON valide. Réponse reçue : " + content.substring(0, 100));
-    }
+            const parsed = JSON.parse(jsonMatch[0]) as PromptMakerResponse;
 
-    const parsed = JSON.parse(jsonMatch[0]) as PromptMakerResponse;
+            // Validation
+            if (!parsed.prompt || !parsed.negative || parsed.strength === undefined || parsed.strength === null) {
+                throw new Error("Format de réponse invalide du LLM");
+            }
 
-    // Validation
-    if (!parsed.prompt || !parsed.negative || parsed.strength === undefined || parsed.strength === null) {
-        throw new Error("Format de réponse invalide du LLM");
-    }
+            // Limiter strength entre 0 et 1
+            parsed.strength = Math.max(0, Math.min(1, parsed.strength));
 
-    // Limiter strength entre 0 et 1
-    parsed.strength = Math.max(0, Math.min(1, parsed.strength));
+            return parsed;
+        } catch (error) {
+            clearTimeout(timeoutId);
 
-    return parsed;
+            if (error instanceof Error) {
+                logger.error(`Failed to generate optimized prompt: ${error.name} - ${error.message}`);
+
+                // Si c'est une erreur d'abort, c'est un timeout
+                if (error.name === 'AbortError') {
+                    throw new Error(`Timeout: Le LLM n'a pas répondu dans les ${OLLAMA_TIMEOUT_MS / 1000} secondes`);
+                }
+
+                throw error;
+            } else {
+                logger.error(`Failed to generate optimized prompt: ${String(error)}`);
+                throw new Error("Erreur inconnue lors de la génération du prompt");
+            }
+        }
+    }, MAX_RETRIES, INITIAL_RETRY_DELAY, "Prompt generation");
 }
 
 module.exports = {
