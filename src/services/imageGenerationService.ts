@@ -71,84 +71,151 @@ export async function generateImage(options: GenerationOptions): Promise<{ path:
             payload.strength = options.strength || 0.75;
         }
 
-        try {
-            // Timeout de 10 minutes pour les générations très longues (img2img peut prendre 5-6 minutes)
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes
+        // Retry jusqu'à 2 fois en cas d'erreur de connexion
+        let lastError: Error | null = null;
+        const maxRetries = 2;
 
-            const response = await fetch(`${IMAGE_API_URL}/generate`, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(payload),
-                signal: controller.signal,
-                // @ts-ignore - undici-specific options
-                headersTimeout: 600000, // 10 minutes pour les headers (undici timeout)
-                bodyTimeout: 600000 // 10 minutes pour le body (undici timeout)
-            });
-
-            clearTimeout(timeoutId);
-
-            logger.info(`API response status: ${response.status}`);
-
-            if (!response.ok) {
-                const error = await response.text();
-
-                // Code 499 = annulation volontaire, pas une erreur
-                if (response.status === 499) {
-                    throw new Error("CANCELLED");
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                if (attempt > 1) {
+                    logger.info(`🔄 Retry attempt ${attempt}/${maxRetries} after connection error`);
+                    // Attendre un peu avant de réessayer (2 secondes)
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 }
 
-                throw new Error(`Image API error: ${response.status} - ${error}`);
-            }
+                // Vérifier d'abord si l'API est accessible
+                const {isStandbyMode} = require('./standbyModeService');
+                if (isStandbyMode()) {
+                    throw new Error("STANDBY_MODE: L'API de génération d'images est actuellement inaccessible.");
+                }
 
-            // Parser la réponse JSON
-            logger.info("Parsing response JSON...");
-            const data = await response.json();
-            logger.info("Response parsed successfully");
+                // Timeout de 10 minutes pour les générations très longues (img2img peut prendre 5-6 minutes)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes
 
-            if (!data.success || !data.image) {
-                throw new Error("No image generated");
-            }
+                const response = await fetch(`${IMAGE_API_URL}/generate`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Connection": "close", // Désactiver keep-alive pour éviter les connexions stales
+                        "User-Agent": "Netricsa-Bot/1.0"
+                    },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal,
+                    // @ts-ignore - undici-specific options
+                    headersTimeout: 600000, // 10 minutes pour les headers (undici timeout)
+                    bodyTimeout: 600000, // 10 minutes pour le body (undici timeout)
+                    keepAlive: false // Forcer une nouvelle connexion à chaque requête
+                });
 
-            logger.info(`Image base64 size: ${data.image.length} chars`);
+                clearTimeout(timeoutId);
 
-            // Décoder le base64 et sauvegarder
-            const imageBuffer = Buffer.from(data.image, "base64");
-            const outputFilename = `gen_${mode}_${Date.now()}.png`;
-            const outputPath = path.join(OUTPUT_DIR, outputFilename);
-            fs.writeFileSync(outputPath, imageBuffer);
+                logger.info(`API response status: ${response.status}`);
 
-            logger.info(`✅ Image generated: ${outputFilename} (${data.info.width}x${data.info.height}, mode: ${data.info.mode})`);
+                if (!response.ok) {
+                    const error = await response.text();
 
-            // Créer l'attachment Discord
-            const attachment = new AttachmentBuilder(imageBuffer, {name: outputFilename});
+                    // Code 499 = annulation volontaire, pas une erreur
+                    if (response.status === 499) {
+                        throw new Error("CANCELLED");
+                    }
 
-            return {
-                path: outputPath,
-                attachment,
-                jobId: data.job_id // Retourner le job_id pour le tracker
-            };
-        } catch (error) {
-            if (error instanceof Error) {
-                // Log détaillé de l'erreur
-                logger.error(`Image generation error: ${error.message}`);
-                logger.error(`Error name: ${error.name}`);
-                logger.error(`Error stack: ${error.stack}`);
+                    throw new Error(`Image API error: ${response.status} - ${error}`);
+                }
 
-                // Erreur de connexion à l'API
-                if (error.message.includes("fetch failed") ||
+                // Parser la réponse JSON
+                logger.info("Parsing response JSON...");
+                const data = await response.json();
+                logger.info("Response parsed successfully");
+
+                if (!data.success || !data.image) {
+                    throw new Error("No image generated");
+                }
+
+                logger.info(`Image base64 size: ${data.image.length} chars`);
+
+                // Décoder le base64 et sauvegarder
+                const imageBuffer = Buffer.from(data.image, "base64");
+                const outputFilename = `gen_${mode}_${Date.now()}.png`;
+                const outputPath = path.join(OUTPUT_DIR, outputFilename);
+                fs.writeFileSync(outputPath, imageBuffer);
+
+                logger.info(`✅ Image generated: ${outputFilename} (${data.info.width}x${data.info.height}, mode: ${data.info.mode})`);
+
+                // Créer l'attachment Discord
+                const attachment = new AttachmentBuilder(imageBuffer, {name: outputFilename});
+
+                return {
+                    path: outputPath,
+                    attachment,
+                    jobId: data.job_id // Retourner le job_id pour le tracker
+                };
+            } catch (error) {
+                lastError = error as Error;
+
+                // Si c'est une annulation ou un mode Standby, ne pas réessayer
+                if (error instanceof Error &&
+                    (error.message.includes("CANCELLED") || error.message.includes("STANDBY_MODE"))) {
+                    throw error;
+                }
+
+                // Si c'est la dernière tentative, sortir de la boucle
+                if (attempt === maxRetries) {
+                    break;
+                }
+
+                // Vérifier si c'est une erreur de connexion qui justifie un retry
+                const isConnectionError = error instanceof Error && (
+                    error.message.includes("fetch failed") ||
                     error.name === "AbortError" ||
                     error.message.includes("ECONNREFUSED") ||
-                    error.message.includes("ETIMEDOUT")) {
-                    throw new Error(`CONNECTION_ERROR: ${error.message}`);
+                    error.message.includes("ETIMEDOUT") ||
+                    error.message.includes("EAI_AGAIN") ||
+                    error.message.includes("ECONNRESET") ||
+                    error.message.includes("socket hang up")
+                );
+
+                if (!isConnectionError) {
+                    // Pas une erreur de connexion, ne pas réessayer
+                    throw error;
+                }
+
+                logger.warn(`⚠️ Connection error on attempt ${attempt}, will retry...`);
+            }
+        }
+
+        // Si on arrive ici, toutes les tentatives ont échoué
+        if (lastError) {
+            if (lastError instanceof Error) {
+                // Log détaillé de l'erreur
+                logger.error(`Image generation error after ${maxRetries} attempts: ${lastError.message}`);
+                logger.error(`Error name: ${lastError.name}`);
+                logger.error(`Error stack: ${lastError.stack}`);
+
+                // Mode Standby
+                if (lastError.message.includes("STANDBY_MODE")) {
+                    throw new Error("STANDBY_MODE: L'API de génération d'images est en mode veille.");
+                }
+
+                // Erreur de connexion à l'API
+                if (lastError.message.includes("fetch failed") ||
+                    lastError.name === "AbortError" ||
+                    lastError.message.includes("ECONNREFUSED") ||
+                    lastError.message.includes("ETIMEDOUT") ||
+                    lastError.message.includes("EAI_AGAIN") ||
+                    lastError.message.includes("ECONNRESET") ||
+                    lastError.message.includes("socket hang up")) {
+                    throw new Error(`CONNECTION_ERROR: L'API de génération d'images n'est pas accessible après ${maxRetries} tentatives. Le serveur est peut-être hors ligne ou surchargé.`);
                 }
                 // Erreur de parsing JSON
-                if (error.message.includes("JSON") || error.message.includes("parse")) {
+                if (lastError.message.includes("JSON") || lastError.message.includes("parse")) {
                     throw new Error("Erreur de parsing de la réponse. L'image est peut-être trop grande.");
                 }
             }
-            throw error;
+            throw lastError;
         }
+
+        throw new Error("Unknown error during image generation");
     });
 }
 
@@ -161,84 +228,152 @@ export async function upscaleImage(options: UpscaleOptions): Promise<{ path: str
         const modelType = options.model || "general";
         logger.info(`Upscaling image with Real-ESRGAN ${modelType}: ${path.basename(options.imagePath)}`);
 
-        try {
-            const imageBuffer = fs.readFileSync(options.imagePath);
-            const imageBase64 = imageBuffer.toString("base64");
+        const imageBuffer = fs.readFileSync(options.imagePath);
+        const imageBase64 = imageBuffer.toString("base64");
 
-            const payload = {
-                image: imageBase64,
-                scale: options.scale || 4,
-                model: modelType
-            };
+        const payload = {
+            image: imageBase64,
+            scale: options.scale || 4,
+            model: modelType
+        };
 
-            logger.info("Starting upscale request...");
+        // Retry jusqu'à 2 fois en cas d'erreur de connexion
+        let lastError: Error | null = null;
+        const maxRetries = 2;
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 900000); // 15 minutes
-
-            const response = await fetch(`${IMAGE_API_URL}/upscale`, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(payload),
-                signal: controller.signal,
-                // @ts-ignore - undici-specific options
-                timeout: 900000,
-                headersTimeout: 120000,
-                bodyTimeout: 900000,
-                keepAliveTimeout: 900000
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                const error = await response.text();
-
-                // Code 499 = annulation volontaire
-                if (response.status === 499) {
-                    throw new Error("CANCELLED");
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                if (attempt > 1) {
+                    logger.info(`🔄 Retry attempt ${attempt}/${maxRetries} after connection error`);
+                    // Attendre un peu avant de réessayer (2 secondes)
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                 }
 
-                throw new Error(`Upscale API error: ${response.status} - ${error}`);
+                // Vérifier d'abord si l'API est accessible
+                const {isStandbyMode} = require('./standbyModeService');
+                if (isStandbyMode()) {
+                    throw new Error("STANDBY_MODE: L'API de génération d'images est actuellement inaccessible.");
+                }
+
+                logger.info("Starting upscale request...");
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 900000); // 15 minutes
+
+                const response = await fetch(`${IMAGE_API_URL}/upscale`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Connection": "close", // Désactiver keep-alive pour éviter les connexions stales
+                        "User-Agent": "Netricsa-Bot/1.0"
+                    },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal,
+                    // @ts-ignore - undici-specific options
+                    timeout: 900000,
+                    headersTimeout: 120000,
+                    bodyTimeout: 900000,
+                    keepAlive: false // Forcer une nouvelle connexion à chaque requête
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    const error = await response.text();
+
+                    // Code 499 = annulation volontaire
+                    if (response.status === 499) {
+                        throw new Error("CANCELLED");
+                    }
+
+                    throw new Error(`Upscale API error: ${response.status} - ${error}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.success || !data.image) {
+                    throw new Error("No upscaled image returned");
+                }
+
+                // Sauvegarder l'image upscalée
+                const upscaledBuffer = Buffer.from(data.image, "base64");
+                const filename = `upscaled_x${options.scale || 4}_${Date.now()}.png`;
+                const filepath = path.join(OUTPUT_DIR, filename);
+
+                fs.writeFileSync(filepath, upscaledBuffer);
+                logger.info(`✅ Image upscaled: ${filename} (${data.info.output_size})`);
+
+                // Créer l'attachment Discord
+                const attachment = new AttachmentBuilder(upscaledBuffer, {name: filename});
+
+                return {
+                    path: filepath,
+                    attachment,
+                    jobId: data.job_id
+                };
+
+            } catch (error) {
+                lastError = error as Error;
+
+                // Si c'est une annulation ou un mode Standby, ne pas réessayer
+                if (error instanceof Error &&
+                    (error.message.includes("CANCELLED") || error.message.includes("STANDBY_MODE"))) {
+                    throw error;
+                }
+
+                // Si c'est la dernière tentative, sortir de la boucle
+                if (attempt === maxRetries) {
+                    break;
+                }
+
+                // Vérifier si c'est une erreur de connexion qui justifie un retry
+                const isConnectionError = error instanceof Error && (
+                    error.message.includes("fetch failed") ||
+                    error.name === "AbortError" ||
+                    error.message.includes("ECONNREFUSED") ||
+                    error.message.includes("ETIMEDOUT") ||
+                    error.message.includes("EAI_AGAIN") ||
+                    error.message.includes("ECONNRESET") ||
+                    error.message.includes("socket hang up")
+                );
+
+                if (!isConnectionError) {
+                    // Pas une erreur de connexion, ne pas réessayer
+                    throw error;
+                }
+
+                logger.warn(`⚠️ Connection error on attempt ${attempt}, will retry...`);
             }
+        }
 
-            const data = await response.json();
-
-            if (!data.success || !data.image) {
-                throw new Error("No upscaled image returned");
-            }
-
-            // Sauvegarder l'image upscalée
-            const upscaledBuffer = Buffer.from(data.image, "base64");
-            const filename = `upscaled_x${options.scale || 4}_${Date.now()}.png`;
-            const filepath = path.join(OUTPUT_DIR, filename);
-
-            fs.writeFileSync(filepath, upscaledBuffer);
-            logger.info(`✅ Image upscaled: ${filename} (${data.info.output_size})`);
-
-            // Créer l'attachment Discord
-            const attachment = new AttachmentBuilder(upscaledBuffer, {name: filename});
-
-            return {
-                path: filepath,
-                attachment,
-                jobId: data.job_id
-            };
-
-        } catch (error) {
-            if (error instanceof Error) {
+        // Si on arrive ici, toutes les tentatives ont échoué
+        if (lastError) {
+            if (lastError instanceof Error) {
                 // Log détaillé de l'erreur
-                logger.error(`Upscaling error: ${error.message}`);
-                logger.error(`Error name: ${error.name}`);
-                logger.error(`Error stack: ${error.stack}`);
+                logger.error(`Upscaling error after ${maxRetries} attempts: ${lastError.message}`);
+                logger.error(`Error name: ${lastError.name}`);
+                logger.error(`Error stack: ${lastError.stack}`);
+
+                // Mode Standby
+                if (lastError.message.includes("STANDBY_MODE")) {
+                    throw new Error("STANDBY_MODE: L'API de génération d'images est en mode veille.");
+                }
 
                 // Erreur de connexion ou timeout
-                if (error.message.includes("fetch failed") || error.name === "AbortError") {
-                    const timeoutMin = 15;
-                    throw new Error(`Connexion à l'API perdue ou timeout (${timeoutMin} min). L'upscaling prend trop de temps ou l'API a crashé.`);
+                if (lastError.message.includes("fetch failed") ||
+                    lastError.name === "AbortError" ||
+                    lastError.message.includes("ECONNREFUSED") ||
+                    lastError.message.includes("ETIMEDOUT") ||
+                    lastError.message.includes("EAI_AGAIN") ||
+                    lastError.message.includes("ECONNRESET") ||
+                    lastError.message.includes("socket hang up")) {
+                    throw new Error(`CONNECTION_ERROR: L'API de génération d'images n'est pas accessible après ${maxRetries} tentatives. Le serveur est peut-être hors ligne ou surchargé.`);
                 }
             }
-            throw error;
+            throw lastError;
         }
+
+        throw new Error("Unknown error during image upscaling");
     });
 }
 

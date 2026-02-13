@@ -84,8 +84,11 @@ async function checkPythonAPIConnection(): Promise<boolean> {
             method: "GET",
             signal: controller.signal,
             headers: {
-                'User-Agent': 'Netricsa-Bot/1.0'
-            }
+                'User-Agent': 'Netricsa-Bot/1.0',
+                'Connection': 'close' // Désactiver keep-alive pour éviter les connexions stales
+            },
+            // @ts-ignore - undici-specific options
+            keepAlive: false
         });
 
         clearTimeout(timeoutId);

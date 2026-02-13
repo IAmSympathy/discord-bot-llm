@@ -306,10 +306,27 @@ module.exports = {
             }
 
             const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
-            const errorEmbed = createErrorEmbed(
-                "Erreur de Génération",
-                `Impossible de générer l'image.\n\n**Erreur:** ${errorMessage}`
-            );
+
+            let errorTitle = "Erreur de Génération";
+            let errorDescription = `Impossible de générer l'image.\n\n**Erreur:** ${errorMessage}`;
+
+            // Personnaliser le message selon le type d'erreur
+            if (errorMessage.includes("CONNECTION_ERROR")) {
+                errorTitle = "Service Indisponible";
+                errorDescription = "❌ **L'API de génération d'images n'est pas accessible.**\n\n" +
+                    "Le serveur est peut-être hors ligne, en maintenance, ou surchargé.\n\n" +
+                    "📌 **Que faire ?**\n" +
+                    "• Réessayer dans quelques instants\n" +
+                    "• Vérifier si Netricsa est en mode veille (🌙)\n" +
+                    "• Contacter un administrateur si le problème persiste";
+            } else if (errorMessage.includes("STANDBY_MODE")) {
+                errorTitle = "Mode Veille";
+                errorDescription = "🌙 **Netricsa est en mode veille.**\n\n" +
+                    "L'API de génération d'images n'est pas accessible pour le moment.\n\n" +
+                    "Le bot vérifie régulièrement la disponibilité des services et reviendra en mode normal automatiquement.";
+            }
+
+            const errorEmbed = createErrorEmbed(errorTitle, errorDescription);
 
             // Si l'interaction a déjà été répondue, utiliser editReply, sinon reply
             if (interaction.replied || interaction.deferred) {
