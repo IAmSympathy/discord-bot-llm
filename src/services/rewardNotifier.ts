@@ -62,16 +62,25 @@ export async function notifySeasonalReward(
  * @param channel Le canal pour envoyer la notification si pas d'interaction
  * @param userId ID de l'utilisateur
  * @param username Nom de l'utilisateur
- * @param activity Type d'activité (command ou netricsa_command)
+ * @param activity Type d'activité (command, netricsa_command, message, voice, reaction, game_win)
  */
 export async function tryRewardAndNotify(
     interaction: ChatInputCommandInteraction | null,
     channel: TextChannel | null,
     userId: string,
     username: string,
-    activity: "command" | "netricsa_command"
+    activity: "command" | "netricsa_command" | "message" | "voice" | "reaction" | "game_win"
 ): Promise<void> {
     try {
+        // Bloquer les rewards dans le canal compteur (éviter le spam)
+        const {EnvConfig} = require("../utils/envConfig");
+        const COUNTER_CHANNEL_ID = EnvConfig.COUNTER_CHANNEL_ID;
+
+        if (COUNTER_CHANNEL_ID && channel && channel.id === COUNTER_CHANNEL_ID) {
+            logger.debug(`Blocked reward attempt in counter channel for ${username}`);
+            return;
+        }
+
         const {tryRandomSeasonalReward, getLastRewardedItem} = require("./rewardService");
         const rewarded = tryRandomSeasonalReward(userId, username, activity);
 
