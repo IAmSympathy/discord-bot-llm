@@ -122,14 +122,21 @@ export function isOperationAborted(operationId: string): boolean {
  * Annule une opération pour un utilisateur spécifique
  */
 export function abortUserOperation(userId: string): boolean {
+    let aborted = false;
     for (const [operationId, operation] of activeOperations.entries()) {
         if (operation.userId === userId) {
             operation.abortFlag = true;
             logger.info(`Operation ${operationId} aborted for user ${userId}`);
-            return true;
+            aborted = true;
         }
     }
-    return false;
+
+    // Retirer l'utilisateur de la queue immédiatement
+    if (aborted) {
+        removeUserFromQueue(userId);
+    }
+
+    return aborted;
 }
 
 /**
@@ -137,6 +144,7 @@ export function abortUserOperation(userId: string): boolean {
  */
 export function abortChannelOperations(channelId: string, requestingUserId?: string, isAdminOrOwner: boolean = false): boolean {
     let aborted = false;
+    const usersToRemove = new Set<string>();
 
     for (const [operationId, operation] of activeOperations.entries()) {
         if (operation.channelId === channelId) {
@@ -147,8 +155,14 @@ export function abortChannelOperations(channelId: string, requestingUserId?: str
 
             operation.abortFlag = true;
             logger.info(`Operation ${operationId} (${operation.type}) aborted in channel ${channelId}`);
+            usersToRemove.add(operation.userId);
             aborted = true;
         }
+    }
+
+    // Retirer tous les utilisateurs concernés de la queue
+    for (const userId of usersToRemove) {
+        removeUserFromQueue(userId);
     }
 
     return aborted;
