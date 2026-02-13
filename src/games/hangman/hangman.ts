@@ -17,6 +17,7 @@ interface GameState {
     selectedLetter?: string;
     originalUserId?: string; // Celui qui a lancé /games
     originalInteraction?: any; // Pour éditer les messages en contexte UserApp
+    lastInteraction?: any; // Dernière interaction utilisée pour les mises à jour
 }
 
 const activeGames = new Map<string, GameState>();
@@ -274,6 +275,7 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                 const embed = createGameEmbed(gameState);
                 const components = createLetterSelectMenu(gameState, gameId);
                 await i.update({embeds: [embed], components: components});
+                gameState.lastInteraction = i; // Stocker pour les mises à jour suivantes
                 return;
             }
 
@@ -318,6 +320,7 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                 const embed = createGameEmbed(gameState);
                 const components = createLetterSelectMenu(gameState, gameId);
                 await i.update({embeds: [embed], components: components});
+                gameState.lastInteraction = i; // Stocker pour les mises à jour suivantes
             }
 
             // Gestion du bouton Abandonner
@@ -444,7 +447,12 @@ async function displayResult(message: any, gameState: GameState, isWon: boolean,
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(playAgainButton, backButton);
 
     try {
-        await message.edit({embeds: [embed], components: [row]});
+        // Utiliser l'interaction si disponible pour UserApp
+        if (gameState.lastInteraction) {
+            await gameState.lastInteraction.editReply({embeds: [embed], components: [row]});
+        } else {
+            await message.edit({embeds: [embed], components: [row]});
+        }
     } catch (error: any) {
         console.log("[Hangman] Cannot edit result message. Error:", error.code);
         // En contexte UserApp, on ne peut pas envoyer de nouveau message

@@ -20,6 +20,7 @@ interface GameState {
     draws: number;
     originalUserId?: string; // Celui qui a lancé /games
     originalInteraction?: any; // Pour éditer les messages en contexte UserApp
+    lastInteraction?: any; // Dernière interaction utilisée pour les mises à jour
 }
 
 const activeGames = new Map<string, GameState>();
@@ -429,9 +430,11 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                     .setTimestamp();
 
                 await i.update({embeds: [updatedEmbed], components: message.components});
+                gameState.lastInteraction = i; // Stocker pour les mises à jour suivantes
             } else {
                 // En mode IA, juste defer l'update (pas besoin d'afficher les choix)
                 await i.deferUpdate();
+                gameState.lastInteraction = i; // Stocker pour les mises à jour suivantes
             }
         } catch (error) {
             console.error("[RPS] Error handling choice:", error);
@@ -571,7 +574,10 @@ async function displayResult(message: any, gameState: GameState, lastInteraction
     // Toujours utiliser l'interaction si disponible (meilleure compatibilité DM)
     try {
         if (lastInteraction) {
-            await lastInteraction.update({embeds: [embed], components: [row]});
+            // Utiliser editReply car l'interaction a déjà été defer/update
+            await lastInteraction.editReply({embeds: [embed], components: [row]});
+        } else if (gameState.lastInteraction) {
+            await gameState.lastInteraction.editReply({embeds: [embed], components: [row]});
         } else {
             await message.edit({embeds: [embed], components: [row]});
         }

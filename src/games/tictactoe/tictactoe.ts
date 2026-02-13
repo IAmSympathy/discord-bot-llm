@@ -17,6 +17,7 @@ interface GameState {
     player2WantsRematch?: boolean;
     originalUserId?: string; // Celui qui a lancé /games
     originalInteraction?: any; // Pour éditer les messages en contexte UserApp
+    lastInteraction?: any; // Dernière interaction utilisée pour les mises à jour
 }
 
 const activeGames = new Map<string, GameState>();
@@ -330,10 +331,11 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
             if (gameState.isAI) {
                 gameState.currentTurn = gameState.player2!;
 
-                // Mettre à jour l'affichage
+                // Mettre à jour l'affichage et stocker l'interaction
                 const embed = createGameEmbed(gameState);
                 const buttons = createBoardButtons(gameState, gameId);
                 await i.update({embeds: [embed], components: buttons});
+                gameState.lastInteraction = i; // Stocker pour les mises à jour suivantes
 
                 // IA joue après un court délai
                 setTimeout(async () => {
@@ -355,7 +357,12 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                             const buttons = createBoardButtons(gameState, gameId);
 
                             try {
-                                await message.edit({embeds: [embed], components: buttons});
+                                // Utiliser editReply au lieu de message.edit pour UserApp
+                                if (gameState.lastInteraction) {
+                                    await gameState.lastInteraction.editReply({embeds: [embed], components: buttons});
+                                } else {
+                                    await message.edit({embeds: [embed], components: buttons});
+                                }
                             } catch (error: any) {
                                 console.log("[TicTacToe] Cannot edit message after AI move. Error:", error.code);
                                 // En contexte UserApp, on ne peut pas envoyer de nouveau message
@@ -373,6 +380,7 @@ function setupGameCollector(message: any, gameState: GameState, gameId: string) 
                 const embed = createGameEmbed(gameState);
                 const buttons = createBoardButtons(gameState, gameId);
                 await i.update({embeds: [embed], components: buttons});
+                gameState.lastInteraction = i; // Stocker pour les mises à jour suivantes
             }
         } catch (error) {
             console.error("[TicTacToe] Error handling move:", error);
@@ -594,7 +602,12 @@ async function displayResult(message: any, gameState: GameState, winner: string 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(rematchButton, backButton);
 
     try {
-        await message.edit({embeds: [embed], components: [row]});
+        // Utiliser l'interaction si disponible pour UserApp
+        if (gameState.lastInteraction) {
+            await gameState.lastInteraction.editReply({embeds: [embed], components: [row]});
+        } else {
+            await message.edit({embeds: [embed], components: [row]});
+        }
     } catch (error: any) {
         console.log("[TicTacToe] Cannot edit result message. Error:", error.code);
         // En contexte UserApp, on ne peut pas envoyer de nouveau message
