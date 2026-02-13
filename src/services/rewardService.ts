@@ -72,8 +72,8 @@ export function tryRandomSeasonalReward(
 ): boolean {
     // Chances de récompense ajustées selon l'usage réel
     const chances: Record<string, number> = {
-        message: 0.01,           // 1% par message (1/100) - peu utilisé
-        voice: 0.003,             // 1% par tranche de temps vocal (1/100) - très utilisé
+        message: 0.03,           // 1% par message (1/100) - peu utilisé
+        voice: 0.001,             // 1% par tranche de temps vocal (1/100) - très utilisé
         reaction: 0.01,          // 1% par réaction (1/100) - peu utilisé
         command: 0.08,           // 8% par commande (1/12.5) - utilisé régulièrement
         game_win: 0.05,          // 5% par victoire (1/20) - réduit pour éviter spam de jeux
