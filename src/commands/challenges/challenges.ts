@@ -81,34 +81,6 @@ interface DailyChallengesData {
  * Liste de tous les défis possibles
  */
 const ALL_POSSIBLE_CHALLENGES: ChallengeDefinition[] = [
-    // Défis Messages (réduit de 25%)
-    {
-        id: "msg_3",
-        type: ChallengeType.MESSAGES,
-        name: "Première Discussion",
-        description: "Envoyer 3 messages",
-        emoji: "💬",
-        goal: 3,
-        xpReward: 30              // 40 → 30 (-25%)
-    },
-    {
-        id: "msg_5",
-        type: ChallengeType.MESSAGES,
-        name: "Bavardage",
-        description: "Envoyer 5 messages",
-        emoji: "💬",
-        goal: 5,
-        xpReward: 45              // 60 → 45 (-25%)
-    },
-    {
-        id: "msg_8",
-        type: ChallengeType.MESSAGES,
-        name: "Grand Bavard",
-        description: "Envoyer 8 messages",
-        emoji: "📢",
-        goal: 8,
-        xpReward: 60              // 80 → 60 (-25%)
-    },
     // Défis Vocal (réduit de 25%)
     {
         id: "vocal_15",

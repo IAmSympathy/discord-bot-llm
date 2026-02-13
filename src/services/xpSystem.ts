@@ -25,12 +25,12 @@ export const XP_REWARDS = {
     minuteVocale: 1,                // Réduit de 2 à 1 (-50%)
 
     // Stats Netricsa
-    imageGeneree: 28,               // Réduit de 50 à 35 (-30%)
-    imageReimaginee: 35,            // Réduit de 40 à 28 (-30%)
-    imageUpscalee: 21,              // Réduit de 30 à 21 (-30%)
+    imageGeneree: 15,               // Réduit de 50 à 35 (-30%)
+    imageReimaginee: 20,            // Réduit de 40 à 28 (-30%)
+    imageUpscalee: 10,              // Réduit de 30 à 21 (-30%)
     conversationIA: 8,              // Réduit de 12 à 8 (-33%)
-    memeRecherche: 11,              // Réduit de 15 à 11 (-27%)
-    promptCree: 21,                 // Réduit de 30 à 21 (-30%)
+    memeRecherche: 5,               // Réduit de 15 à 11 (-27%)
+    promptCree: 20,                 // Réduit de 30 à 21 (-30%)
 
     // Stats Création
     postCreation: 500,              // Réduit de 1000 à 500 (-50%)
@@ -44,9 +44,9 @@ export const XP_REWARDS = {
     rpsEgaliteVsIA: 4,            // +2 XP
 
 // === TIC TAC TOE ===
-    tttVictoireVsJoueur: 20,
-    tttDefaiteVsJoueur: 6,        // +4 XP
-    tttEgaliteVsJoueur: 10,
+    tttVictoireVsJoueur: 15,
+    tttDefaiteVsJoueur: 3,        // +4 XP
+    tttEgaliteVsJoueur: 7,
     tttVictoireVsIA: 10,
     tttDefaiteVsIA: 3,            // +2 XP
     tttEgaliteVsIA: 5,
@@ -60,7 +60,7 @@ export const XP_REWARDS = {
     c4EgaliteVsIA: 6,
 
 // === HANGMAN ===
-    hangmanVictoire: 20,
+    hangmanVictoire: 30,
     hangmanDefaite: 8,            // +2 XP
 
 // === BLACKJACK ===
