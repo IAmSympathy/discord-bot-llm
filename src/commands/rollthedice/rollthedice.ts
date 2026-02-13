@@ -156,10 +156,22 @@ module.exports = {
 
         } catch (error) {
             console.error("Error in rollthedice command:", error);
-            await interaction.reply({
-                content: "Une erreur s'est produite lors du lancer de dés.",
-                ephemeral: true
-            });
+
+            try {
+                if (interaction.replied || interaction.deferred) {
+                    await interaction.editReply({
+                        content: "❌ Une erreur s'est produite lors du lancer de dés.",
+                        embeds: []
+                    });
+                } else {
+                    await interaction.reply({
+                        content: "❌ Une erreur s'est produite lors du lancer de dés.",
+                        ephemeral: true
+                    });
+                }
+            } catch (replyError) {
+                console.error("Failed to send error message:", replyError);
+            }
         }
     },
 };

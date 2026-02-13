@@ -129,11 +129,15 @@ export function initializeDiscordLogger(client: Client) {
 export async function logToDiscord(options: LogOptions) {
     const isServerEvent = options.level.startsWith("SERVER_");
     const isBotLog = options.level.startsWith("BOT_");
+    const isCommand = options.level === LogLevel.COMMAND;
 
     // Choisir le bon canal selon le type de log
+    // - Événements serveur (SERVER_*) → LOG_CHANNEL_ID (server-logs)
+    // - Logs bot (BOT_*) et commandes → NETRICSA_LOG_CHANNEL_ID (netricsa-logs)
+    // - Autres (INFO, WARNING, ERROR, etc.) → LOG_CHANNEL_ID (server-logs)
     const LOG_CHANNEL_ID = isServerEvent
         ? EnvConfig.LOG_CHANNEL_ID
-        : (isBotLog ? EnvConfig.NETRICSA_LOG_CHANNEL_ID : EnvConfig.LOG_CHANNEL_ID);
+        : (isBotLog || isCommand ? EnvConfig.NETRICSA_LOG_CHANNEL_ID : EnvConfig.LOG_CHANNEL_ID);
 
     if (!LOG_CHANNEL_ID) {
         console.log("[DiscordLogger] Appropriate LOG_CHANNEL_ID not configured, skipping log");

@@ -226,10 +226,16 @@ module.exports = {
                         content: "❌ Une erreur s'est produite lors du lancement de la machine à sous.",
                         ephemeral: true
                     });
-                } else {
-                    await interaction.followUp({
+                } else if (interaction.replied) {
+                    // Si déjà replied, utiliser editReply au lieu de followUp
+                    await interaction.editReply({
                         content: "❌ Une erreur s'est produite lors du lancement de la machine à sous.",
-                        ephemeral: true
+                        embeds: []
+                    });
+                } else {
+                    // Si deferred mais pas replied
+                    await interaction.editReply({
+                        content: "❌ Une erreur s'est produite lors du lancement de la machine à sous."
                     });
                 }
             } catch (replyError) {

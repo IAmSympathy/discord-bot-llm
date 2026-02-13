@@ -63,7 +63,7 @@ module.exports = {
                 .setFooter({text: "Pour des raisons purement scientifiques, évidemment."})
                 .setTimestamp();
 
-            await interaction.reply({embeds: [embed]});
+            await interaction.editReply({embeds: [embed]});
 
             // Logger la commande
             const channelName = getChannelNameFromInteraction(interaction);
@@ -114,10 +114,16 @@ module.exports = {
                         content: "❌ Une erreur s'est produite lors de la mesure du concombre.",
                         ephemeral: true
                     });
-                } else {
-                    await interaction.followUp({
+                } else if (interaction.replied) {
+                    // Si déjà replied, utiliser editReply au lieu de followUp
+                    await interaction.editReply({
                         content: "❌ Une erreur s'est produite lors de la mesure du concombre.",
-                        ephemeral: true
+                        embeds: []
+                    });
+                } else {
+                    // Si deferred mais pas replied
+                    await interaction.editReply({
+                        content: "❌ Une erreur s'est produite lors de la mesure du concombre."
                     });
                 }
             } catch (replyError) {
