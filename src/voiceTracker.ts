@@ -98,14 +98,17 @@ function getTodayVoiceTime(userId: string): DailyVoiceTime {
     if (!dailyTime || dailyTime.lastReset !== today) {
         const wasReset = dailyTime && dailyTime.lastReset !== today;
         const oldMinutes = dailyTime?.totalMinutes || 0;
+        const oldDate = dailyTime?.lastReset; // Sauvegarder l'ancienne date pour le log
 
         dailyTime = {totalMinutes: 0, lastReset: today};
         dailyVoiceTime.set(userId, dailyTime);
 
         if (wasReset) {
-            logger.info(`🔄 Reset daily voice time for user ${userId} (was ${oldMinutes} min on ${dailyTime.lastReset}, now 0 min on ${today})`);
-            saveDailyVoiceTime(); // Sauvegarder le reset
+            logger.info(`🔄 Reset daily voice time for user ${userId} (was ${oldMinutes} min on ${oldDate}, now 0 min on ${today})`);
         }
+
+        // Sauvegarder les données (que ce soit un reset ou une première création)
+        saveDailyVoiceTime();
     }
 
     return dailyTime;

@@ -837,11 +837,12 @@ module.exports = {
                     undefined,
                     [
                         {name: "👤 Utilisateur", value: interaction.user.username, inline: true},
-                        {name: "✅ Complétés", value: `${newCompletions}`, inline: true},
+                        {name: "✅ Complétés", value: `${totalCompleted}/${totalChallenges}`, inline: true},
                         {name: "💫 XP gagné", value: `${totalXPEarned}`, inline: true}
                     ],
                     undefined,
-                    channelName
+                    channelName,
+                    interaction.user.displayAvatarURL()
                 );
             }
 
