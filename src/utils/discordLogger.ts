@@ -617,9 +617,8 @@ export async function logServerNicknameChange(username: string, userId: string, 
         fields.push({name: "👮 Modifié par", value: "*Lui-même*", inline: true});
     }
 
-    fields.push({name: "\u200B", value: "\u200B", inline: false}); // Saut de ligne
-    fields.push({name: "📝 Ancien", value: oldNickname ? `**${oldNickname}**` : "*Aucun surnom*", inline: true});
-    fields.push({name: "✨ Nouveau", value: newNickname ? `**${newNickname}**` : "*Aucun surnom*", inline: true});
+    fields.push({name: "📝 Ancien", value: oldNickname ? `\`${oldNickname}\`` : "*Aucun surnom*", inline: true});
+    fields.push({name: "✨ Nouveau", value: newNickname ? `\`${newNickname}\`` : "*Aucun surnom*", inline: true});
 
     await logToDiscord({
         level: LogLevel.SERVER_NICKNAME_CHANGE,
