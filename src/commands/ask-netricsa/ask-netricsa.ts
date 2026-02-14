@@ -333,7 +333,8 @@ module.exports = {
                 webContext !== null,
                 undefined,
                 responseTime,
-                false // pas de mémoire
+                false, // pas de mémoire
+                interaction.user.displayAvatarURL()
             );
 
             // Enregistrer les statistiques

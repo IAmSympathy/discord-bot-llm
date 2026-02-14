@@ -116,7 +116,8 @@ module.exports = {
                             {name: "🎨 Style", value: style, inline: true}
                         ],
                         undefined,
-                        channelName
+                        channelName,
+                        interaction.user.displayAvatarURL()
                     );
 
                     // Ajouter XP
