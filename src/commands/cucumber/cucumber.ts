@@ -63,7 +63,7 @@ module.exports = {
                 .setFooter({text: "Pour des raisons purement scientifiques, évidemment."})
                 .setTimestamp();
 
-            await interaction.editReply({embeds: [embed]});
+            await interaction.editReply({content: "", embeds: [embed]});
 
             // Logger la commande
             const channelName = getChannelNameFromInteraction(interaction);
