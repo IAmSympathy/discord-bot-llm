@@ -323,7 +323,7 @@ module.exports = {
             // Logger la réponse
             const channelName = isDM ? `DM avec ${interaction.user.displayName}` : `ask-netricsa`;
             await logBotResponse(
-                interaction.user.displayName,
+                interaction.user.username,
                 interaction.user.id,
                 channelName,
                 question,

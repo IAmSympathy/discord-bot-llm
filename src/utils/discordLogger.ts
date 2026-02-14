@@ -376,7 +376,6 @@ export async function logServerMemberLeave(username: string, userId: string, mem
         title: "👋 Départ d'un Membre",
         fields: [
             {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-            {name: "🆔 User ID", value: `\`${userId}\``, inline: true},
             {name: "👥 Membres Restants", value: `**${memberCount}**`, inline: true}
         ],
         thumbnailUrl: avatarUrl
@@ -385,8 +384,7 @@ export async function logServerMemberLeave(username: string, userId: string, mem
 
 export async function logServerBan(username: string, userId: string, moderator?: string, reason?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur Banni", value: `**${username}**`, inline: true},
-        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
     ];
 
     if (moderator) {
@@ -394,6 +392,7 @@ export async function logServerBan(username: string, userId: string, moderator?:
     }
 
     if (reason) {
+        fields.push({name: "\u200B", value: "\u200B", inline: false}); // Saut de ligne
         fields.push({name: "📝 Raison", value: `> ${reason}`, inline: false});
     }
 
@@ -407,8 +406,7 @@ export async function logServerBan(username: string, userId: string, moderator?:
 
 export async function logServerUnban(username: string, userId: string, moderator?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur Débanni", value: `**${username}**`, inline: true},
-        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
     ];
 
     if (moderator) {
@@ -425,8 +423,7 @@ export async function logServerUnban(username: string, userId: string, moderator
 
 export async function logServerKick(username: string, userId: string, moderator?: string, reason?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur Expulsé", value: `**${username}**`, inline: true},
-        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
     ];
 
     if (moderator) {
@@ -434,6 +431,7 @@ export async function logServerKick(username: string, userId: string, moderator?
     }
 
     if (reason) {
+        fields.push({name: "\u200B", value: "\u200B", inline: false}); // Saut de ligne
         fields.push({name: "📝 Raison", value: `> ${reason}`, inline: false});
     }
 
@@ -447,9 +445,13 @@ export async function logServerKick(username: string, userId: string, moderator?
 
 export async function logServerRoleUpdate(username: string, userId: string, addedRoles: string[], removedRoles: string[], avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
     ];
+
+    // Ajouter un champ vide pour compléter la ligne si nécessaire
+    if (addedRoles.length > 0 || removedRoles.length > 0) {
+        fields.push({name: "\u200B", value: "\u200B", inline: false}); // Saut de ligne
+    }
 
     if (addedRoles.length > 0) {
         fields.push({name: "✅ Rôles Ajoutés", value: addedRoles.map(r => `• ${r}`).join('\n'), inline: false});
@@ -470,8 +472,7 @@ export async function logServerRoleUpdate(username: string, userId: string, adde
 export async function logServerChannelCreate(channelName: string, channelType: string, channelId: string, createdBy?: string, avatarUrl?: string) {
     const fields = [
         {name: "📝 Nom du Salon", value: `**#${channelName}**`, inline: true},
-        {name: "📋 Type", value: `\`${channelType}\``, inline: true},
-        {name: "🆔 Channel ID", value: `\`${channelId}\``, inline: false}
+        {name: "📋 Type", value: `**${channelType}**`, inline: true}
     ];
 
     if (createdBy) {
@@ -489,8 +490,7 @@ export async function logServerChannelCreate(channelName: string, channelType: s
 export async function logServerChannelDelete(channelName: string, channelType: string, channelId: string, deletedBy?: string, avatarUrl?: string) {
     const fields = [
         {name: "📝 Nom du Salon", value: `**#${channelName}**`, inline: true},
-        {name: "📋 Type", value: `\`${channelType}\``, inline: true},
-        {name: "🆔 Channel ID", value: `\`${channelId}\``, inline: false}
+        {name: "📋 Type", value: `**${channelType}**`, inline: true}
     ];
 
     if (deletedBy) {
@@ -569,7 +569,6 @@ export async function logServerMessageEdit(username: string, channelName: string
 export async function logServerMemberTimeout(username: string, userId: string, duration: string, moderator?: string, reason?: string, avatarUrl?: string) {
     const fields = [
         {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-        {name: "🆔 User ID", value: `\`${userId}\``, inline: true},
         {name: "⏰ Durée", value: `**${duration}**`, inline: true}
     ];
 
@@ -578,6 +577,7 @@ export async function logServerMemberTimeout(username: string, userId: string, d
     }
 
     if (reason) {
+        fields.push({name: "\u200B", value: "\u200B", inline: false}); // Saut de ligne
         fields.push({name: "📝 Raison", value: `> ${reason}`, inline: false});
     }
 
@@ -591,8 +591,7 @@ export async function logServerMemberTimeout(username: string, userId: string, d
 
 export async function logServerMemberTimeoutRemove(username: string, userId: string, moderator?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
     ];
 
     if (moderator) {
@@ -609,14 +608,16 @@ export async function logServerMemberTimeoutRemove(username: string, userId: str
 
 export async function logServerNicknameChange(username: string, userId: string, oldNickname: string | null, newNickname: string | null, changedBy?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
     ];
 
     if (changedBy) {
         fields.push({name: "👮 Modifié par", value: `**${changedBy}**`, inline: true});
+    } else {
+        fields.push({name: "👮 Modifié par", value: "*Lui-même*", inline: true});
     }
 
+    fields.push({name: "\u200B", value: "\u200B", inline: false}); // Saut de ligne
     fields.push({name: "📝 Ancien", value: oldNickname ? `**${oldNickname}**` : "*Aucun surnom*", inline: true});
     fields.push({name: "✨ Nouveau", value: newNickname ? `**${newNickname}**` : "*Aucun surnom*", inline: true});
 
@@ -630,16 +631,16 @@ export async function logServerNicknameChange(username: string, userId: string, 
 
 export async function logServerVoiceMove(username: string, userId: string, oldChannel: string, newChannel: string, moderator?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur Déplacé", value: `**${username}**`, inline: true},
-        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
     ];
 
     if (moderator) {
         fields.push({name: "👮 Déplacé par", value: `**${moderator}**`, inline: true});
     }
 
-    fields.push({name: "🔊 Canal de Départ", value: `**${oldChannel}**`, inline: true});
-    fields.push({name: "🔊 Canal d'Arrivée", value: `**${newChannel}**`, inline: true});
+    fields.push({name: "\u200B", value: "\u200B", inline: false}); // Saut de ligne
+    fields.push({name: "🔊 De", value: `**${oldChannel}**`, inline: true});
+    fields.push({name: "➡️ Vers", value: `**${newChannel}**`, inline: true});
 
     await logToDiscord({
         level: LogLevel.SERVER_VOICE_MOVE,
@@ -656,8 +657,7 @@ export async function logServerVoiceMute(username: string, userId: string, isMut
     }
 
     const fields = [
-        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
     ];
 
     if (moderator) {
@@ -679,8 +679,7 @@ export async function logServerVoiceDeaf(username: string, userId: string, isDea
     }
 
     const fields = [
-        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
     ];
 
     if (moderator) {
@@ -704,15 +703,15 @@ export async function logBotResponse(username: string, userId: string, channelNa
         {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
         {
             name: isDM ? "📧 DM" : "📺 Salon",
-            value: isDM ? `💬 ${channelName}` : `#${channelName}`,
+            value: isDM ? `**${channelName}**` : `**#${channelName}**`,
             inline: true
         },
-        {name: "🎯 Tokens", value: `\`${tokensUsed}\``, inline: true}
+        {name: "🎯 Tokens", value: `**${tokensUsed}**`, inline: true}
     ];
 
     // Réaction dans un champ séparé si présente
     if (reaction) {
-        fields.push({name: "👍 Réaction", value: reaction, inline: true});
+        fields.push({name: "👍 Réaction", value: `**${reaction}**`, inline: true});
     }
 
     // Temps de réponse si fourni
@@ -722,7 +721,7 @@ export async function logBotResponse(username: string, userId: string, channelNa
 
     // Statut de la mémoire
     if (savedInMemory !== undefined) {
-        fields.push({name: "💾 Mémoire", value: savedInMemory ? "✅ Enregistré" : "⏭️ Ignoré", inline: true});
+        fields.push({name: "💾 Mémoire", value: savedInMemory ? "✅ **Enregistré**" : "⏭️ **Ignoré**", inline: true});
     }
 
     // Fonctionnalités utilisées
@@ -754,10 +753,10 @@ export async function logBotImageAnalysis(username: string, imageResults: any[],
 
         const fields = [
             {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-            {name: "📐 Résolution", value: `\`${result.width}x${result.height}\``, inline: true},
+            {name: "📐 Résolution", value: `**${result.width}x${result.height}**`, inline: true},
             {name: "📦 Taille", value: `**${sizeKB} KB**${sizeMB}`, inline: true},
-            {name: "🎨 Format", value: `\`${result.format.toUpperCase()}\``, inline: true},
-            {name: "🎯 Tokens", value: `\`${result.tokens}\``, inline: true},
+            {name: "🎨 Format", value: `**${result.format.toUpperCase()}**`, inline: true},
+            {name: "🎯 Tokens", value: `**${result.tokens}**`, inline: true},
             {name: "⏱️ Temps", value: `**${formatTimeFromMs(result.processingTime)}**`, inline: true},
             {name: "📝 Description Générée", value: `\`\`\`\n${result.description.length > 500 ? result.description.substring(0, 500) + "..." : result.description}\n\`\`\``, inline: false}
         ];
@@ -802,7 +801,7 @@ export async function logBotImageGeneration(username: string, prompt: string, ge
 
     const fields = [
         {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-        {name: "🎨 Mode", value: `\`txt2img\``, inline: true},
+        {name: "🎨 Mode", value: `**txt2img**`, inline: true},
         {name: "⏱️ Temps", value: `**${generationTime}**`, inline: true}
     ];
 
@@ -810,7 +809,7 @@ export async function logBotImageGeneration(username: string, prompt: string, ge
     if (channelName) {
         fields.push({
             name: "📍 Localisation",
-            value: isDM ? `💬 ${channelName}` : (isGroupDM ? `👥 ${channelName}` : (isExternalServer ? `🌐 ${channelName}` : `#${channelName}`)),
+            value: isDM ? `💬 **${channelName}**` : (isGroupDM ? `👥 **${channelName}**` : (isExternalServer ? `🌐 **${channelName}**` : `**#${channelName}**`)),
             inline: true
         });
     }
@@ -843,7 +842,7 @@ export async function logBotImageReimagine(username: string, prompt: string, gen
 
     const fields = [
         {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-        {name: "🎨 Mode", value: `\`img2img\``, inline: true},
+        {name: "🎨 Mode", value: `**img2img**`, inline: true},
         {name: "⏱️ Temps", value: `**${generationTime}**`, inline: true}
     ];
 
@@ -851,7 +850,7 @@ export async function logBotImageReimagine(username: string, prompt: string, gen
     if (channelName) {
         fields.push({
             name: "📍 Localisation",
-            value: isDM ? `💬 ${channelName}` : (isGroupDM ? `👥 ${channelName}` : (isExternalServer ? `🌐 ${channelName}` : `#${channelName}`)),
+            value: isDM ? `💬 **${channelName}**` : (isGroupDM ? `👥 **${channelName}**` : (isExternalServer ? `🌐 **${channelName}**` : `**#${channelName}**`)),
             inline: true
         });
     }
@@ -882,7 +881,7 @@ export async function logBotImageUpscale(username: string, method: string, scale
 
     const fields = [
         {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-        {name: "🔍 Méthode", value: `\`${method.toUpperCase()}\``, inline: true},
+        {name: "🔍 Méthode", value: `**${method.toUpperCase()}**`, inline: true},
         {name: "📏 Échelle", value: `**x${scale}**`, inline: true},
         {name: "⏱️ Temps", value: `**${generationTime}**`, inline: true}
     ];
@@ -891,7 +890,7 @@ export async function logBotImageUpscale(username: string, method: string, scale
     if (channelName) {
         fields.push({
             name: "📍 Localisation",
-            value: isDM ? `💬 ${channelName}` : (isGroupDM ? `👥 ${channelName}` : (isExternalServer ? `🌐 ${channelName}` : `#${channelName}`)),
+            value: isDM ? `💬 **${channelName}**` : (isGroupDM ? `👥 **${channelName}**` : (isExternalServer ? `🌐 **${channelName}**` : `**#${channelName}**`)),
             inline: true
         });
     }
@@ -913,10 +912,10 @@ export async function logBotCommand(username: string, commandName: string, chann
 
     const fields = [
         {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-        {name: "⚡ Commande", value: `\`/${commandName}\``, inline: true},
+        {name: "⚡ Commande", value: `**/${commandName}**`, inline: true},
         {
             name: "📍 Localisation",
-            value: isDM ? `💬 ${channelName}` : (isGroupDM ? `👥 ${channelName}` : (isExternalServer ? `🌐 ${channelName}` : `#${channelName}`)),
+            value: isDM ? `💬 **${channelName}**` : (isGroupDM ? `👥 **${channelName}**` : (isExternalServer ? `🌐 **${channelName}**` : `**#${channelName}**`)),
             inline: true
         }
     ];
@@ -936,13 +935,13 @@ export async function logBotCommand(username: string, commandName: string, chann
 export async function logBotReaction(username: string, channelName: string, messageContent: string, reaction: string, savedInMemory?: boolean, avatarUrl?: string) {
     const fields = [
         {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-        {name: "📺 Salon", value: `#${channelName}`, inline: true},
-        {name: "👍 Réaction", value: reaction, inline: true}
+        {name: "📺 Salon", value: `**#${channelName}**`, inline: true},
+        {name: "👍 Réaction", value: `**${reaction}**`, inline: true}
     ];
 
     // Statut de la mémoire
     if (savedInMemory !== undefined) {
-        fields.push({name: "💾 Mémoire", value: savedInMemory ? "✅ Enregistré" : "⏭️ Ignoré", inline: true});
+        fields.push({name: "💾 Mémoire", value: savedInMemory ? "✅ **Enregistré**" : "⏭️ **Ignoré**", inline: true});
     }
 
     const contentPreview = messageContent.length > 200 ? messageContent.substring(0, 200) + "..." : messageContent;
