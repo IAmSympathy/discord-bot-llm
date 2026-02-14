@@ -398,15 +398,35 @@ client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
 
         // Changement de surnom
         if (oldMember.nickname !== newMember.nickname) {
+            let changedBy: string | undefined;
+
+            try {
+                const auditLogs = await newMember.guild.fetchAuditLogs({
+                    type: 24, // MEMBER_UPDATE
+                    limit: 1
+                });
+                const nicknameLog = auditLogs.entries.first();
+
+                // Vérifier que c'est une action récente (dans les 2 dernières secondes)
+                if (nicknameLog &&
+                    nicknameLog.target?.id === newMember.id &&
+                    Date.now() - nicknameLog.createdTimestamp < 2000) {
+                    changedBy = nicknameLog.executor?.username ?? undefined;
+                }
+            } catch (error) {
+                logger.warn(`Could not fetch audit logs for nickname change`);
+            }
+
             await logServerNicknameChange(
                 newMember.user.username,
                 newMember.user.id,
                 oldMember.nickname,
                 newMember.nickname,
+                changedBy,
                 newMember.user.displayAvatarURL()
             );
-            logger.info(`Nickname changed for ${newMember.user.username}`);
-            console.log(`[Server Event] Nickname changed for ${newMember.user.username}`);
+            logger.info(`Nickname changed for ${newMember.user.username}${changedBy ? ` by ${changedBy}` : ''}`);
+            console.log(`[Server Event] Nickname changed for ${newMember.user.username}${changedBy ? ` by ${changedBy}` : ''}`);
         }
     } catch (error) {
         logger.error(`Error processing GuildMemberUpdate event for ${newMember.user.username}: ${error}`);

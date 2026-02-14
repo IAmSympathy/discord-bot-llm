@@ -507,12 +507,14 @@ export async function logServerChannelDelete(channelName: string, channelType: s
 
 export async function logServerMessageDelete(username: string, channelName: string, messageContent: string, attachments: number, deletedBy?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Auteur", value: `**${username}**`, inline: true},
+        {name: "👤 Auteur du Message", value: `**${username}**`, inline: true},
         {name: "📺 Salon", value: `**#${channelName}**`, inline: true}
     ];
 
     if (deletedBy) {
         fields.push({name: "🗑️ Supprimé par", value: `**${deletedBy}**`, inline: true});
+    } else {
+        fields.push({name: "🗑️ Supprimé par", value: "*L'auteur lui-même*", inline: true});
     }
 
     if (attachments > 0) {
@@ -534,7 +536,7 @@ export async function logServerMessageDelete(username: string, channelName: stri
 
 export async function logServerMessageEdit(username: string, channelName: string, oldContent: string, newContent: string, attachments: number, editedBy?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Auteur", value: `**${username}**`, inline: true},
+        {name: "👤 Auteur du Message", value: `**${username}**`, inline: true},
         {name: "📺 Salon", value: `**#${channelName}**`, inline: true}
     ];
 
@@ -605,14 +607,18 @@ export async function logServerMemberTimeoutRemove(username: string, userId: str
     });
 }
 
-export async function logServerNicknameChange(username: string, userId: string, oldNickname: string | null, newNickname: string | null, avatarUrl?: string) {
+export async function logServerNicknameChange(username: string, userId: string, oldNickname: string | null, newNickname: string | null, changedBy?: string, avatarUrl?: string) {
     const fields = [
         {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
         {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
     ];
 
-    fields.push({name: "📝 Ancien surnom", value: oldNickname ? `**${oldNickname}**` : "*Aucun*", inline: true});
-    fields.push({name: "✏️ Nouveau surnom", value: newNickname ? `**${newNickname}**` : "*Aucun*", inline: true});
+    if (changedBy) {
+        fields.push({name: "👮 Modifié par", value: `**${changedBy}**`, inline: true});
+    }
+
+    fields.push({name: "📝 Ancien", value: oldNickname ? `**${oldNickname}**` : "*Aucun surnom*", inline: true});
+    fields.push({name: "✨ Nouveau", value: newNickname ? `**${newNickname}**` : "*Aucun surnom*", inline: true});
 
     await logToDiscord({
         level: LogLevel.SERVER_NICKNAME_CHANGE,
@@ -624,14 +630,16 @@ export async function logServerNicknameChange(username: string, userId: string, 
 
 export async function logServerVoiceMove(username: string, userId: string, oldChannel: string, newChannel: string, moderator?: string, avatarUrl?: string) {
     const fields = [
-        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
-        {name: "🔊 De", value: `**${oldChannel}**`, inline: true},
-        {name: "🔊 Vers", value: `**${newChannel}**`, inline: true}
+        {name: "👤 Utilisateur Déplacé", value: `**${username}**`, inline: true},
+        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
     ];
 
     if (moderator) {
         fields.push({name: "👮 Déplacé par", value: `**${moderator}**`, inline: true});
     }
+
+    fields.push({name: "🔊 Canal de Départ", value: `**${oldChannel}**`, inline: true});
+    fields.push({name: "🔊 Canal d'Arrivée", value: `**${newChannel}**`, inline: true});
 
     await logToDiscord({
         level: LogLevel.SERVER_VOICE_MOVE,
@@ -648,11 +656,12 @@ export async function logServerVoiceMute(username: string, userId: string, isMut
     }
 
     const fields = [
-        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
     ];
 
     if (moderator) {
-        fields.push({name: "👮 Par", value: `**${moderator}**`, inline: true});
+        fields.push({name: "👮 Action par", value: `**${moderator}**`, inline: true});
     }
 
     await logToDiscord({
@@ -670,11 +679,12 @@ export async function logServerVoiceDeaf(username: string, userId: string, isDea
     }
 
     const fields = [
-        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "🆔 User ID", value: `\`${userId}\``, inline: true}
     ];
 
     if (moderator) {
-        fields.push({name: "👮 Par", value: `**${moderator}**`, inline: true});
+        fields.push({name: "👮 Action par", value: `**${moderator}**`, inline: true});
     }
 
     await logToDiscord({
