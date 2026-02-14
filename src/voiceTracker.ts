@@ -29,13 +29,22 @@ const dailyVoiceTime = new Map<string, DailyVoiceTime>();
 const DAILY_VOICE_FILE = path.join(__dirname, "../data/daily_voice_time.json");
 
 /**
+ * Obtient la date locale au format YYYY-MM-DD
+ * Utilise l'heure locale (pas UTC) pour être cohérent avec le reste du système
+ */
+function getLocalDate(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+/**
  * Charge les données de temps vocal quotidien depuis le fichier
  */
 function loadDailyVoiceTime(): void {
     try {
         if (fs.existsSync(DAILY_VOICE_FILE)) {
             const data = JSON.parse(fs.readFileSync(DAILY_VOICE_FILE, "utf-8"));
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDate();
 
             // Charger seulement les données du jour actuel
             for (const [userId, voiceTime] of Object.entries(data)) {
@@ -91,7 +100,7 @@ const VOICE_XP_DIMINISHING_RETURNS = [
  * Reset automatiquement si c'est un nouveau jour
  */
 function getTodayVoiceTime(userId: string): DailyVoiceTime {
-    const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    const today = getLocalDate(); // Utilise l'heure locale
     let dailyTime = dailyVoiceTime.get(userId);
 
     // Reset si c'est un nouveau jour ou si pas de données
@@ -344,7 +353,7 @@ export function registerVoiceTracker(client: Client): void {
  * À appeler périodiquement pour éviter l'accumulation de données obsolètes
  */
 function cleanupOldVoiceData(): void {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDate();
     let cleanedCount = 0;
 
     for (const [userId, voiceTime] of dailyVoiceTime.entries()) {
