@@ -700,15 +700,15 @@ module.exports = {
             // Barre de progression pour le temps (sur 4h = 240 min max pour visualisation)
             const maxDisplayMinutes = 240;
             const timeProgressPercent = Math.min((dailyVoiceMinutes / maxDisplayMinutes) * 100, 100);
-            const timeFilledBars = Math.floor(timeProgressPercent / 5);
-            const timeEmptyBars = 20 - timeFilledBars;
+            const timeFilledBars = Math.min(Math.max(Math.floor(timeProgressPercent / 5), 0), 20);
+            const timeEmptyBars = Math.max(20 - timeFilledBars, 0);
             const timeProgressBar = "▰".repeat(timeFilledBars) + "▱".repeat(timeEmptyBars);
 
             // Barre de progression pour l'XP (on estime un max à ~300 XP pour la visualisation)
             const maxDisplayXP = 300;
             const xpProgressPercent = Math.min((totalVoiceXP / maxDisplayXP) * 100, 100);
-            const xpFilledBars = Math.floor(xpProgressPercent / 5);
-            const xpEmptyBars = 10 - xpFilledBars;
+            const xpFilledBars = Math.min(Math.max(Math.floor(xpProgressPercent / 5), 0), 10);
+            const xpEmptyBars = Math.max(10 - xpFilledBars, 0);
             const xpProgressBar = "▰".repeat(xpFilledBars) + "▱".repeat(xpEmptyBars);
 
             const voiceXPPerMinute = Math.ceil(1 * currentVoiceTier.multiplier);
