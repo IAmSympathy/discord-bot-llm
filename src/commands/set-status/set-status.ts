@@ -43,14 +43,14 @@ module.exports = {
         .addStringOption((option) =>
             option
                 .setName("text")
-                .setDescription("Le texte du statut")
-                .setRequired(true)
+                .setDescription("Le texte du statut (laisser vide pour effacer le statut)")
+                .setRequired(false)
         )
         .addStringOption((option) =>
             option
                 .setName("type")
                 .setDescription("Le type de statut")
-                .setRequired(true)
+                .setRequired(false)
                 .addChoices(
                     {name: "🎮 Joue à", value: "PLAYING"},
                     {name: "👀 Regarde", value: "WATCHING"},
@@ -74,8 +74,44 @@ module.exports = {
                 return;
             }
 
-            const text = interaction.options.getString("text", true);
-            const type = interaction.options.getString("type", true) as StatusData["type"];
+            const text = interaction.options.getString("text") || "";
+            const type = interaction.options.getString("type") as StatusData["type"] || "PLAYING";
+
+            // Si le texte est vide, clear le statut
+            if (!text || text.trim() === "") {
+                // Sauvegarder un statut vide
+                const statusData: StatusData = {text: "", type: "PLAYING"};
+                saveDefaultStatus(statusData);
+
+                // Appliquer le statut (ce qui va clear la présence)
+                applyDefaultStatus(interaction.client);
+
+                // Créer l'embed de confirmation
+                const successEmbed = new EmbedBuilder()
+                    .setColor(0x57F287) // Vert
+                    .setTitle("✅ Statut Effacé")
+                    .setDescription("Le statut par défaut de Netricsa a été effacé avec succès !")
+                    .setFooter({text: `Effacé par ${interaction.user.displayName}`})
+                    .setTimestamp();
+
+                await interaction.reply({embeds: [successEmbed], ephemeral: true});
+
+                // Logger la commande
+                const channelName = getChannelNameFromInteraction(interaction);
+                await logCommand(
+                    "🔧 Set Status",
+                    undefined,
+                    [
+                        {name: "👤 Owner", value: interaction.user.username, inline: true},
+                        {name: "🧹 Action", value: "Statut effacé", inline: true}
+                    ],
+                    undefined,
+                    channelName,
+                    interaction.user.displayAvatarURL()
+                );
+
+                return;
+            }
 
             // Sauvegarder le statut par défaut
             const statusData: StatusData = {text, type};
