@@ -192,8 +192,11 @@ client.once(Events.ClientReady, async () => {
     initializeSeasonEndCheck(client);
 
     // Initialiser le message persistant des défis quotidiens
-    const {initializeDailyChallengesMessage} = require("./commands/challenges/challenges");
+    const {initializeDailyChallengesMessage, startDailyChallengesScheduler} = require("./commands/challenges/challenges");
     await initializeDailyChallengesMessage(client);
+
+    // Démarrer le scheduler pour mettre à jour automatiquement les défis à minuit
+    startDailyChallengesScheduler(client);
 });
 
 // === ÉVÉNEMENT : MISE À JOUR DES RÔLES ===

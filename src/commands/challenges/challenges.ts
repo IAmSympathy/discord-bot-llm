@@ -472,6 +472,67 @@ async function initializeDailyChallengesMessage(client: any): Promise<void> {
     }
 }
 
+/**
+ * Renouvelle les défis et met à jour le message persistant à minuit
+ * Note: La logique de génération des défis se fait déjà dans la commande /challenges
+ * Cette fonction met simplement à jour le message persistant automatiquement
+ */
+async function renewDailyChallenges(client: any): Promise<void> {
+    try {
+        logger.info("Auto-updating daily challenges message at midnight");
+
+        const challengesData = loadChallengesData();
+        const today = getCurrentDate();
+
+        // Si les défis ne sont pas déjà générés pour aujourd'hui, les générer
+        // (cela peut arriver si personne n'a utilisé /challenges depuis minuit)
+        if (challengesData.currentDate !== today) {
+            logger.info(`Generating new challenges for ${today}`);
+            challengesData.currentDate = today;
+            challengesData.challenges = generateDailyChallenges();
+            challengesData.users = {};
+            saveChallengesData(challengesData);
+        }
+
+        // Mettre à jour le message persistant
+        if (challengesData.challenges && challengesData.challenges.length > 0) {
+            await updatePersistentChallengesMessage(client, challengesData.challenges);
+            logger.info("✅ Daily challenges message updated successfully");
+        }
+    } catch (error) {
+        logger.error("Error renewing daily challenges:", error);
+    }
+}
+
+/**
+ * Démarre le scheduler pour renouveler les défis automatiquement à minuit
+ */
+let dailyChallengesResetInterval: NodeJS.Timeout | null = null;
+
+function startDailyChallengesScheduler(client: any): void {
+    if (dailyChallengesResetInterval) {
+        clearInterval(dailyChallengesResetInterval);
+    }
+
+    // Calculer le temps jusqu'à minuit
+    const now = new Date();
+    const midnight = new Date();
+    midnight.setHours(24, 0, 0, 0);
+    const msUntilMidnight = midnight.getTime() - now.getTime();
+
+    logger.info(`Daily challenges scheduler initialized - next update in ${Math.floor(msUntilMidnight / 1000 / 60)} minutes`);
+
+    // Premier renouvellement à minuit
+    setTimeout(() => {
+        renewDailyChallenges(client);
+
+        // Puis tous les jours à minuit
+        dailyChallengesResetInterval = setInterval(() => {
+            renewDailyChallenges(client);
+        }, 24 * 60 * 60 * 1000);
+    }, msUntilMidnight);
+}
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("challenges")
@@ -856,5 +917,6 @@ module.exports = {
     },
 
     // Export de la fonction d'initialisation pour bot.ts
-    initializeDailyChallengesMessage: initializeDailyChallengesMessage
+    initializeDailyChallengesMessage: initializeDailyChallengesMessage,
+    startDailyChallengesScheduler: startDailyChallengesScheduler
 };
