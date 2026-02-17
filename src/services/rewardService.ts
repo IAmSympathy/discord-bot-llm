@@ -64,12 +64,19 @@ export function rewardSeasonalItem(
 /**
  * Système de récompense aléatoire pour encourager l'activité
  * Retourne true si une récompense a été donnée
+ * [DÉSACTIVÉ] - Les récompenses saisonnières automatiques sont désactivées
  */
 export function tryRandomSeasonalReward(
     userId: string,
     username: string,
     activity: "message" | "voice" | "reaction" | "command" | "netricsa_command" | "game_win"
 ): boolean {
+    // [DÉSACTIVÉ] Les récompenses saisonnières automatiques sont désactivées
+    logger.debug(`Seasonal reward disabled for ${username} (${activity})`);
+    return false;
+
+    // Code original commenté pour référence future
+    /*
     // Chances de récompense ajustées selon l'usage réel
     const chances: Record<string, number> = {
         message: 0.03,           // 1% par message (1/100) - peu utilisé
@@ -91,6 +98,7 @@ export function tryRandomSeasonalReward(
     }
 
     return false;
+    */
 }
 
 // Alias pour rétrocompatibilité

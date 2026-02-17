@@ -590,14 +590,8 @@ export function createStatsNavigationButtons(currentCategory?: StatsCategory): i
             .setDisabled(currentCategory === "fun")
     );
 
-    // Deuxième ligne : Saisonnier, Serveur
+    // Deuxième ligne : Serveur (le bouton Saisonnier a été retiré car désactivé)
     const row2 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId("stats_seasonal")
-            .setLabel("Saisonnier")
-            .setEmoji("❄️")
-            .setStyle(currentCategory === "seasonal" ? ButtonStyle.Success : ButtonStyle.Secondary)
-            .setDisabled(currentCategory === "seasonal"),
         new ButtonBuilder()
             .setCustomId("stats_serveur")
             .setLabel("Serveur")

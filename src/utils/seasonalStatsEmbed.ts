@@ -1,11 +1,27 @@
 import {EmbedBuilder} from "discord.js";
-import {loadFireCooldowns, loadFireData} from "../services/seasonal/fireDataManager";
-import {FIRE_CONFIG, getFireState} from "../services/seasonal/fireData";
 
 /**
  * Crée l'embed des statistiques saisonnières (Feu de Foyer) - VERSION COMPLÈTE
+ * [DÉSACTIVÉ] - L'événement du feu de foyer est terminé
  */
 export function createSeasonalStatsEmbed(userId: string, username: string, displayAvatarURL: string): EmbedBuilder {
+    // Retourner un embed indiquant que l'événement est terminé
+    const embed = new EmbedBuilder()
+        .setColor(0x95A5A6)
+        .setTitle(`🔥 Feu de Foyer - ${username}`)
+        .setDescription(
+            `L'événement du **Feu de Foyer** est actuellement désactivé.\n\n` +
+            `Cet événement saisonnier reviendra lors d'une prochaine saison hivernale !\n\n` +
+            `Restez à l'écoute pour les prochains événements ! ❄️`
+        )
+        .setThumbnail(displayAvatarURL)
+        .setFooter({text: "Événement terminé"})
+        .setTimestamp();
+
+    return embed;
+
+    // Code original commenté pour référence future
+    /*
     const fireData = loadFireData();
     const cooldowns = loadFireCooldowns();
 
@@ -62,4 +78,5 @@ export function createSeasonalStatsEmbed(userId: string, username: string, displ
         .setTimestamp();
 
     return embed;
+    */
 }

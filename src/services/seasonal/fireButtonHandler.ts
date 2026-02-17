@@ -1,14 +1,35 @@
 import {ButtonInteraction, EmbedBuilder} from "discord.js";
 import {createLogger} from "../../utils/logger";
-import {addLog} from "./fireManager";
 import {handleUseProtectionButton} from "./fireProtectionHandler";
 
 const logger = createLogger("FireButtonHandler");
 
 /**
  * Gère l'interaction du bouton "Ajouter une bûche"
+ * [DÉSACTIVÉ] - L'événement du feu de foyer est terminé
  */
 export async function handleAddLogButton(interaction: ButtonInteraction): Promise<void> {
+    try {
+        // Répondre que l'événement est désactivé
+        const disabledEmbed = new EmbedBuilder()
+            .setColor(0x95A5A6)
+            .setTitle("🔒 Fonctionnalité désactivée")
+            .setDescription(
+                `L'événement du **Feu de Foyer** est actuellement désactivé.\n\n` +
+                `Cette fonctionnalité reviendra lors d'une prochaine saison hivernale ! ❄️`
+            )
+            .setFooter({text: "Restez à l'écoute pour les prochains événements !"})
+            .setTimestamp();
+
+        await interaction.reply({embeds: [disabledEmbed], ephemeral: true});
+
+        logger.info(`${interaction.user.username} attempted to use disabled fire button`);
+    } catch (error) {
+        logger.error("Error handling disabled add log button:", error);
+    }
+
+    // Code original commenté pour référence future
+    /*
     try {
         const userId = interaction.user.id;
         const username = interaction.user.username;
@@ -102,6 +123,7 @@ export async function handleAddLogButton(interaction: ButtonInteraction): Promis
             logger.error("Could not send error message:", replyError);
         }
     }
+    */
 }
 
 // Exporter aussi le handler de protection

@@ -1,13 +1,14 @@
-import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder, TextChannel} from "discord.js";
-import {logCommand} from "../../utils/discordLogger";
-import {addXP, XP_REWARDS} from "../../services/xpSystem";
+import {ChatInputCommandInteraction, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {createLogger} from "../../utils/logger";
-import * as fs from "fs";
-import * as path from "path";
-import {getChannelNameFromInteraction} from "../../utils/channelHelper";
+// [DÉSACTIVÉ] Imports commentés car la commande /harvest est désactivée
+// import * as fs from "fs";
+// import * as path from "path";
 
 const logger = createLogger("HarvestCmd");
 
+// [DÉSACTIVÉ] Code commenté car la fonctionnalité est désactivée
+// Pour réactiver, consulter l'historique git avant cette désactivation
+/*
 // Cooldown de 8 heures (en millisecondes)
 const HARVEST_COOLDOWN = 7 * 60 * 60 * 1000;
 
@@ -18,9 +19,7 @@ interface CooldownData {
     [userId: string]: number;
 }
 
-/**
- * Charge les cooldowns depuis le fichier JSON
- */
+// Charge les cooldowns depuis le fichier JSON
 function loadCooldowns(): CooldownData {
     try {
         if (fs.existsSync(COOLDOWN_FILE)) {
@@ -33,9 +32,7 @@ function loadCooldowns(): CooldownData {
     return {};
 }
 
-/**
- * Sauvegarde les cooldowns dans le fichier JSON
- */
+// Sauvegarde les cooldowns dans le fichier JSON
 function saveCooldowns(cooldowns: CooldownData): void {
     try {
         const dataDir = path.dirname(COOLDOWN_FILE);
@@ -48,9 +45,7 @@ function saveCooldowns(cooldowns: CooldownData): void {
     }
 }
 
-/**
- * Détermine quelle ressource donner selon la saison
- */
+// Détermine quelle ressource donner selon la saison
 function getSeasonalResource(): {
     itemType: any;
     itemName: string;
@@ -95,23 +90,43 @@ function getSeasonalResource(): {
                 itemEmoji: "🍂",
                 seasonName: "automne"
             };
-
-        default:
-            // Par défaut, donner une bûche
-            return {
-                itemType: InventoryItemType.FIREWOOD_LOG,
-                itemName: "Bûche de Bois",
-                itemEmoji: "🪵",
-                seasonName: "hiver"
-            };
     }
 }
+*/
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("harvest")
         .setDescription("⛏️ Récolte une ressource de saison (cooldown: 7h)"),
 
+    async execute(interaction: ChatInputCommandInteraction) {
+        try {
+            // [DÉSACTIVÉ] La commande /harvest est désactivée car l'événement du feu de foyer est terminé
+            const disabledEmbed = new EmbedBuilder()
+                .setColor(0x95A5A6)
+                .setTitle("🔒 Fonctionnalité désactivée")
+                .setDescription(
+                    `La commande \`/harvest\` est actuellement désactivée.\n\n` +
+                    `🔥 L'événement du **Feu de Foyer** est terminé pour cette saison.\n` +
+                    `Cette commande reviendra lors d'un prochain événement saisonnier !`
+                )
+                .setFooter({text: "Restez à l'écoute pour les prochains événements !"})
+                .setTimestamp();
+
+            await interaction.reply({embeds: [disabledEmbed], flags: MessageFlags.Ephemeral});
+
+            logger.info(`${interaction.user.username} attempted to use disabled /harvest command`);
+        } catch (error) {
+            logger.error("Error in harvest command:", error);
+            await interaction.reply({
+                content: "Une erreur s'est produite.",
+                flags: MessageFlags.Ephemeral
+            });
+        }
+    },
+
+    // Code original commenté pour référence future
+    /*
     async execute(interaction: ChatInputCommandInteraction) {
         try {
             const userId = interaction.user.id;
@@ -230,4 +245,5 @@ module.exports = {
             });
         }
     },
+    */
 };

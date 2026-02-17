@@ -183,13 +183,13 @@ client.once(Events.ClientReady, async () => {
     // Initialiser le service d'événements aléatoires
     initializeRandomEventsService(client);
 
-    // Initialiser le système de feu de foyer (événement saisonnier d'hiver)
-    const {initializeFireSystem} = require("./services/seasonal/fireManager");
-    await initializeFireSystem(client);
+    // [DÉSACTIVÉ] Initialiser le système de feu de foyer (événement saisonnier d'hiver)
+    // const {initializeFireSystem} = require("./services/seasonal/fireManager");
+    // await initializeFireSystem(client);
 
-    // Initialiser la vérification de fin de saison du feu de foyer
-    const {initializeSeasonEndCheck} = require("./services/seasonal/fireSeasonManager");
-    initializeSeasonEndCheck(client);
+    // [DÉSACTIVÉ] Initialiser la vérification de fin de saison du feu de foyer
+    // const {initializeSeasonEndCheck} = require("./services/seasonal/fireSeasonManager");
+    // initializeSeasonEndCheck(client);
 
     // Initialiser le message persistant des défis quotidiens
     const {initializeDailyChallengesMessage, startDailyChallengesScheduler} = require("./commands/challenges/challenges");
@@ -817,19 +817,19 @@ if (client.user) {
 client.on(Events.InteractionCreate, async (interaction) => {
     // Gérer les boutons
     if (interaction.isButton()) {
-        // Bouton du feu de foyer
-        if (interaction.customId === "fire_add_log") {
-            const {handleAddLogButton} = require("./services/seasonal/fireButtonHandler");
-            await handleAddLogButton(interaction);
-            return;
-        }
+        // [DÉSACTIVÉ] Bouton du feu de foyer
+        // if (interaction.customId === "fire_add_log") {
+        //     const {handleAddLogButton} = require("./services/seasonal/fireButtonHandler");
+        //     await handleAddLogButton(interaction);
+        //     return;
+        // }
 
-        // Bouton d'utilisation du stuff à feu
-        if (interaction.customId === "fire_use_protection") {
-            const {handleUseProtectionButton} = require("./services/seasonal/fireButtonHandler");
-            await handleUseProtectionButton(interaction);
-            return;
-        }
+        // [DÉSACTIVÉ] Bouton d'utilisation du stuff à feu
+        // if (interaction.customId === "fire_use_protection") {
+        //     const {handleUseProtectionButton} = require("./services/seasonal/fireButtonHandler");
+        //     await handleUseProtectionButton(interaction);
+        //     return;
+        // }
     }
 
     // Gérer les commandes slash (ChatInputCommand)

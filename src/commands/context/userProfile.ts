@@ -369,19 +369,22 @@ module.exports = {
                                 .setStyle(ButtonStyle.Danger)
                         );
                         await i.update({embeds: [embed], components: [...navButtons, backButton]});
-                    } else if (customId === "stats_seasonal") {
-                        currentStatsCategory = "seasonal";
-                        const {createSeasonalStatsEmbed} = require("../../utils/seasonalStatsEmbed");
-                        const embed = createSeasonalStatsEmbed(targetUser.id, targetUser.displayName, targetUser.displayAvatarURL({size: 128}));
-                        const navButtons = createStatsNavigationButtons(currentStatsCategory);
-                        const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
-                            new ButtonBuilder()
-                                .setCustomId(`back_to_profile_${targetUser.id}`)
-                                .setLabel("◀️ Retour au profil")
-                                .setStyle(ButtonStyle.Danger)
-                        );
-                        await i.update({embeds: [embed], components: [...navButtons, backButton]});
-                    } else if (customId === "stats_game_select" && i.isStringSelectMenu()) {
+                    }
+                        // [DÉSACTIVÉ] Bouton saisonnier retiré car événement terminé
+                        // else if (customId === "stats_seasonal") {
+                        //     currentStatsCategory = "seasonal";
+                        //     const {createSeasonalStatsEmbed} = require("../../utils/seasonalStatsEmbed");
+                        //     const embed = createSeasonalStatsEmbed(targetUser.id, targetUser.displayName, targetUser.displayAvatarURL({size: 128}));
+                        //     const navButtons = createStatsNavigationButtons(currentStatsCategory);
+                        //     const backButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                        //         new ButtonBuilder()
+                        //             .setCustomId(`back_to_profile_${targetUser.id}`)
+                        //             .setLabel("◀️ Retour au profil")
+                        //             .setStyle(ButtonStyle.Danger)
+                        //     );
+                        //     await i.update({embeds: [embed], components: [...navButtons, backButton]});
+                    // }
+                    else if (customId === "stats_game_select" && i.isStringSelectMenu()) {
                         currentGameType = i.values[0];
                         const embed = createDetailedGameStatsEmbed(targetUser, currentGameType, i.guild);
                         await i.update({embeds: [embed]});

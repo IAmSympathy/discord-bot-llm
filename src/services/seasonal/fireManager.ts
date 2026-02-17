@@ -530,7 +530,7 @@ export async function updateFireEmbed(client: Client): Promise<void> {
             textChannel = await guild.channels.create({
                 name: `${emoji}feu-de-foyer`,
                 type: ChannelType.GuildText,
-                topic: "Maintenez le feu allumé pour conserver le multiplicateur d'XP ! Utilisez /harvest toutes les 6h pour obtenir des bûches.",
+                topic: "Maintenez le feu allumé pour conserver le multiplicateur d'XP ! Utilisez /harvest toutes les 7h pour obtenir des bûches.",
                 parent: CATEGORY_ID,
                 permissionOverwrites: [
                     {

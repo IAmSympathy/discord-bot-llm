@@ -214,17 +214,18 @@ export async function addXP(
 
     let finalAmount = amount;
 
-    // Appliquer le multiplicateur saisonnier SAUF si skipMultiplier est true
-    if (!skipMultiplier || amount < 0) {
-        try {
-            const {getCurrentFireMultiplier} = require("./seasonal/fireManager");
-            const fireMultiplier = getCurrentFireMultiplier();
-            finalAmount = Math.round(amount * fireMultiplier);
-        } catch (error) {
-            // Si le système de feu n'est pas initialisé, utiliser 1.0 (pas de multiplicateur)
-            logger.debug("Fire system not initialized, using default multiplier 1.0");
-        }
-    }
+    // [DÉSACTIVÉ] Appliquer le multiplicateur saisonnier SAUF si skipMultiplier est true
+    // Le multiplicateur de feu de foyer est désactivé
+    // if (!skipMultiplier || amount < 0) {
+    //     try {
+    //         const {getCurrentFireMultiplier} = require("./seasonal/fireManager");
+    //         const fireMultiplier = getCurrentFireMultiplier();
+    //         finalAmount = Math.round(amount * fireMultiplier);
+    //     } catch (error) {
+    //         // Si le système de feu n'est pas initialisé, utiliser 1.0 (pas de multiplicateur)
+    //         logger.debug("Fire system not initialized, using default multiplier 1.0");
+    //     }
+    // }
 
     xpData[userId].totalXP += finalAmount;
 

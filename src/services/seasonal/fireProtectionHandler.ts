@@ -1,15 +1,39 @@
-import {ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ComponentType, EmbedBuilder, StringSelectMenuBuilder, StringSelectMenuInteraction} from "discord.js";
+import {ButtonInteraction, EmbedBuilder} from "discord.js";
+// [DÉSACTIVÉ] Imports commentés car l'événement du feu de foyer est terminé
+// import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, StringSelectMenuBuilder, StringSelectMenuInteraction} from "discord.js";
 import {createLogger} from "../../utils/logger";
-import {getFireProtectionItems, InventoryItemType, ITEM_CATALOG, removeItemFromInventory} from "../userInventoryService";
-import {getWeatherProtectionInfo} from "./fireDataManager";
-import {updateFireEmbed} from "./fireManager";
+// import {getFireProtectionItems, InventoryItemType, ITEM_CATALOG, removeItemFromInventory} from "../userInventoryService";
+// import {getWeatherProtectionInfo} from "./fireDataManager";
+// import {updateFireEmbed} from "./fireManager";
 
 const logger = createLogger("FireProtectionHandler");
 
 /**
  * Gère l'interaction du bouton "Utiliser Stuff à Feu"
+ * [DÉSACTIVÉ] - L'événement du feu de foyer est terminé
  */
 export async function handleUseProtectionButton(interaction: ButtonInteraction): Promise<void> {
+    try {
+        // Répondre que l'événement est désactivé
+        const disabledEmbed = new EmbedBuilder()
+            .setColor(0x95A5A6)
+            .setTitle("🔒 Fonctionnalité désactivée")
+            .setDescription(
+                `L'événement du **Feu de Foyer** est actuellement désactivé.\n\n` +
+                `Cette fonctionnalité reviendra lors d'une prochaine saison hivernale ! ❄️`
+            )
+            .setFooter({text: "Restez à l'écoute pour les prochains événements !"})
+            .setTimestamp();
+
+        await interaction.reply({embeds: [disabledEmbed], ephemeral: true});
+
+        logger.info(`${interaction.user.username} attempted to use disabled fire protection button`);
+    } catch (error) {
+        logger.error("Error handling disabled use protection button:", error);
+    }
+
+    // Code original commenté pour référence future
+    /*
     try {
         const userId = interaction.user.id;
         const username = interaction.user.username;
@@ -61,248 +85,8 @@ export async function handleUseProtectionButton(interaction: ButtonInteraction):
             await interaction.reply({embeds: [errorEmbed], ephemeral: true});
         }
     }
+    */
 }
 
-/**
- * Affiche un menu de sélection pour choisir quel objet utiliser
- */
-async function showSelectionMenu(
-    interaction: ButtonInteraction,
-    userId: string,
-    items: Array<{ type: InventoryItemType, quantity: number, info: any }>,
-    stackingInfo: string = ""
-): Promise<void> {
-    const selectMenu = new StringSelectMenuBuilder()
-        .setCustomId(`fire_protection_select_${userId}`)
-        .setPlaceholder("Choisis un objet à utiliser")
-        .addOptions(
-            items.map(item => ({
-                label: `${item.info.emoji} ${item.info.name} (×${item.quantity})`,
-                description: item.info.description,
-                value: item.type
-            }))
-        );
-
-    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
-
-    const embed = new EmbedBuilder()
-        .setColor(0x3498DB)
-        .setTitle("🛡️ Sélectionne une protection à utiliser")
-        .setDescription(
-            `\n${stackingInfo}`
-        )
-        .setTimestamp();
-
-    await interaction.reply({embeds: [embed], components: [row], ephemeral: true});
-
-    // Collecter la réponse du menu
-    const message = await interaction.fetchReply();
-    const collector = message.createMessageComponentCollector({
-        componentType: ComponentType.StringSelect,
-        time: 60000 // 1 minute
-    });
-
-    collector.on('collect', async (selectInteraction: StringSelectMenuInteraction) => {
-        if (selectInteraction.user.id !== userId) {
-            await selectInteraction.reply({
-                content: "Ce n'est pas ton menu !",
-                ephemeral: true
-            });
-            return;
-        }
-
-        const selectedType = selectInteraction.values[0] as InventoryItemType;
-        await selectInteraction.deferUpdate();
-        await showConfirmation(selectInteraction, userId, selectInteraction.user.username, selectedType);
-        collector.stop();
-    });
-
-    collector.on('end', async (collected, reason) => {
-        if (reason === 'time') {
-            const timeoutEmbed = new EmbedBuilder()
-                .setColor(0x95A5A6)
-                .setTitle("⏱️ Temps écoulé")
-                .setDescription("La sélection a expiré.")
-                .setTimestamp();
-
-            await interaction.editReply({embeds: [timeoutEmbed], components: []});
-        }
-    });
-}
-
-/**
- * Affiche une confirmation avant d'utiliser l'objet
- */
-async function showConfirmation(
-    interaction: ButtonInteraction | StringSelectMenuInteraction,
-    userId: string,
-    username: string,
-    itemType: InventoryItemType,
-    stackingInfo: string = ""
-): Promise<void> {
-    const itemInfo = ITEM_CATALOG[itemType];
-    const duration = itemInfo.duration || 0;
-    const durationMinutes = Math.floor(duration / 60000);
-
-    // Vérifier s'il y a une protection active pour calculer le temps total
-    const currentProtection = getWeatherProtectionInfo();
-    let timeInfo = `⏱️ Durée : **${durationMinutes} minutes**`;
-
-    if (currentProtection.active && currentProtection.remainingTime > 0) {
-        const currentMinutes = Math.ceil(currentProtection.remainingTime / 60000);
-        const totalMinutes = currentMinutes + durationMinutes;
-        timeInfo = `⏱️ Durée actuelle : **${currentMinutes} min**\n⏱️ Ajout : **+${durationMinutes} min**\n✨ **Total : ${totalMinutes} min**`;
-    }
-
-    const confirmButton = new ButtonBuilder()
-        .setCustomId(`fire_protection_confirm_${itemType}_${userId}`)
-        .setLabel("✅ Confirmer")
-        .setStyle(ButtonStyle.Success);
-
-    const cancelButton = new ButtonBuilder()
-        .setCustomId(`fire_protection_cancel_${userId}`)
-        .setLabel("❌ Annuler")
-        .setStyle(ButtonStyle.Danger);
-
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(confirmButton, cancelButton);
-
-    const confirmEmbed = new EmbedBuilder()
-        .setColor(0xF39C12)
-        .setTitle("🛡️ Confirmation d'utilisation")
-        .setDescription(
-            `Tu es sur le point d'utiliser :\n\n` +
-            `${itemInfo.emoji} **${itemInfo.name}**\n` +
-            `${timeInfo}\n\n` +
-            `⚡ **Effet :** Ajoute ${durationMinutes} minutes à la bûche qui brûle\n` +
-            `🪵 La bûche la plus vieille durera plus longtemps`
-        )
-        .setFooter({text: "Es-tu sûr de vouloir utiliser cet objet ?"})
-        .setTimestamp();
-
-    // Gérer le type d'interaction
-    let message;
-    if (interaction.replied || interaction.deferred) {
-        // Si l'interaction a déjà été replied ou deferred, on utilise editReply
-        message = await interaction.editReply({embeds: [confirmEmbed], components: [row]});
-    } else {
-        // Sinon, on reply normalement
-        await interaction.reply({embeds: [confirmEmbed], components: [row], ephemeral: true});
-        message = await interaction.fetchReply();
-    }
-    const collector = message.createMessageComponentCollector({
-        componentType: ComponentType.Button,
-        time: 30000 // 30 secondes
-    });
-
-    collector.on('collect', async (btnInteraction) => {
-        if (btnInteraction.user.id !== userId) {
-            await btnInteraction.reply({
-                content: "Ce n'est pas ton menu !",
-                ephemeral: true
-            });
-            return;
-        }
-
-        await btnInteraction.deferUpdate();
-
-        if (btnInteraction.customId.startsWith('fire_protection_confirm_')) {
-            // Utiliser l'objet
-            const success = removeItemFromInventory(userId, itemType, 1);
-
-            if (!success) {
-                const errorEmbed = new EmbedBuilder()
-                    .setColor(0xE74C3C)
-                    .setTitle("❌ Objet introuvable")
-                    .setDescription("Tu ne possèdes plus cet objet.")
-                    .setTimestamp();
-
-                await interaction.editReply({embeds: [errorEmbed], components: []});
-                collector.stop();
-                return;
-            }
-
-            // Activer la protection en ajoutant du temps aux bûches
-            const {activateWeatherProtection} = require('./fireDataManager');
-            activateWeatherProtection(userId, username, duration);
-
-            // Mettre à jour l'embed du feu immédiatement pour refléter la protection active
-            if (btnInteraction.client) {
-                await updateFireEmbed(btnInteraction.client).catch(err =>
-                    logger.error("Failed to update fire embed after protection activation:", err)
-                );
-            }
-
-            // Fermer le menu de confirmation (éphémère)
-            await interaction.editReply({
-                content: "✅ Protection activée !",
-                embeds: [],
-                components: []
-            });
-
-            // Envoyer un message PUBLIC dans le salon du feu qui s'auto-supprime après 2 minutes
-            try {
-                const {loadFireData} = require('./fireDataManager');
-                const fireData = loadFireData();
-
-                if (fireData.channelId) {
-                    const fireChannel = await btnInteraction.client.channels.fetch(fireData.channelId);
-                    if (fireChannel && 'send' in fireChannel) {
-                        const publicEmbed = new EmbedBuilder()
-                            .setColor(0x2ECC71)
-                            .setTitle("🛡️ Protection activée !")
-                            .setDescription(
-                                `<@${userId}> a utilisé **${itemInfo.emoji} ${itemInfo.name}** !\n\n` +
-                                `🛡️ **${durationMinutes} minutes ajoutées**\n` +
-                                `🪵 La bûche qui brûle a gagné ${durationMinutes} minutes de vie`
-                            )
-                            .setFooter({text: "Ce message sera supprimé dans 2 minutes"})
-                            .setTimestamp();
-
-                        const publicMessage = await fireChannel.send({embeds: [publicEmbed]});
-
-                        // Supprimer après 2 minutes
-                        setTimeout(async () => {
-                            try {
-                                await publicMessage.delete();
-                            } catch (error) {
-                                logger.debug("Could not delete protection message (might already be deleted)");
-                            }
-                        }, 120000);
-                    }
-                }
-            } catch (error) {
-                logger.error("Could not send public protection message:", error);
-            }
-
-            logger.info(`${username} activated ${itemInfo.name} for ${durationMinutes} minutes`);
-        } else {
-            // Annuler
-            const cancelEmbed = new EmbedBuilder()
-                .setColor(0x95A5A6)
-                .setTitle("❌ Annulé")
-                .setDescription("L'utilisation de l'objet a été annulée.")
-                .setTimestamp();
-
-            await interaction.editReply({embeds: [cancelEmbed], components: []});
-        }
-
-        collector.stop();
-    });
-
-    collector.on('end', async (collected, reason) => {
-        if (reason === 'time') {
-            const timeoutEmbed = new EmbedBuilder()
-                .setColor(0x95A5A6)
-                .setTitle("⏱️ Temps écoulé")
-                .setDescription("La confirmation a expiré.")
-                .setTimestamp();
-
-            await interaction.editReply({embeds: [timeoutEmbed], components: []});
-        }
-    });
-}
-
-
-
-
-
+// [DÉSACTIVÉ] Toutes les autres fonctions ont été supprimées car l'événement est terminé
+// Pour réactiver, consulter l'historique git avant cette désactivation
