@@ -197,6 +197,12 @@ client.once(Events.ClientReady, async () => {
 
     // Démarrer le scheduler pour mettre à jour automatiquement les défis à minuit
     startDailyChallengesScheduler(client);
+
+    // Initialiser Klodovik (bot de génération de texte par chaînes de Markov)
+    const {getKlodovikBot} = require("./services/klodovik/klodovikBot");
+    const klodovik = getKlodovikBot();
+    await klodovik.start();
+    logger.info("Klodovik bot initialized in the same process");
 });
 
 // === ÉVÉNEMENT : MISE À JOUR DES RÔLES ===
