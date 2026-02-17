@@ -54,7 +54,7 @@ export class KlodovikVoiceService {
             // Créer la ressource audio
             const audioPath = path.join(this.soundsPath, soundFile);
             const audioFilters = this.getRandomAudioFilters(); // Pour logs seulement
-            const volume = 1;
+            const volume = this.getRandomVolume()
 
             const resource = createAudioResource(audioPath, {
                 inlineVolume: true,
