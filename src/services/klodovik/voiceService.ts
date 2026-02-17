@@ -156,7 +156,7 @@ export class KlodovikVoiceService {
      */
     private getRandomVolume(): number {
         // Volume aléatoire entre 0.3 et 0.8
-        return 0.3 + Math.random() * 0.5;
+        return 0.3 + Math.random() * 0.7;
     }
 
     /**
