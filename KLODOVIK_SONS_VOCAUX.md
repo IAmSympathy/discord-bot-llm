@@ -31,16 +31,44 @@ Au lieu de se déclencher quand quelqu'un rejoint un vocal, Klodovik fonctionne 
 - **Défaut : 0.5%** (1 chance sur 200 quand quelqu'un rejoint/est dans un vocal)
 - Configurable via `KLODOVIK_VOICE_CHANCE` dans le `.env`
 
-## 🎵 Effets Aléatoires
+## 🎵 Volume Aléatoire
 
-Chaque son est modifié aléatoirement :
+Chaque apparition a un **volume différent** :
 
-- **Pitch** : 0.5x (grave/lent) à 2.0x (aigu/rapide)
-- **Speed** : 0.7x (lent) à 1.5x (rapide)
-- **Volume** : 50% à 100%
-- **Reverb** : 20% de chance d'ajouter un écho
+- **Volume** : 30% 🔉 à 100% 🔊
+- **Résultat :** Chaque apparition est unique !
 
-**Résultat :** Chaque apparition est unique et surprenante ! 😄
+**Exemples :**
+
+```
+Apparition 1 : Volume 45% → Son discret
+Apparition 2 : Volume 88% → Son fort et clair
+Apparition 3 : Volume 32% → Presque muet
+Apparition 4 : Volume 95% → Très fort !
+```
+
+### 🎨 Sons avec Effets Pré-faits
+
+Tu peux créer **plusieurs versions** de chaque son avec des effets différents :
+
+**Exemple :**
+
+```
+assets/klodovik_sounds/
+├── scream.mp3              (normal)
+├── scream_fast.mp3         (rapide, aigu)
+├── scream_slow.mp3         (lent, grave)
+├── scream_echo.mp3         (avec écho)
+├── bruh.wav                (normal)
+├── bruh_reversed.wav       (inversé)
+├── airhorn.mp3             (normal)
+├── airhorn_distorted.mp3   (distordu)
+└── ... (autant que tu veux !)
+```
+
+**Klodovik choisira aléatoirement parmi TOUS ces sons !**
+
+**Résultat :** Des centaines de combinaisons possibles ! 😄
 
 ## 📁 Ajouter des Sons
 
@@ -82,13 +110,14 @@ Le bot détectera automatiquement tous les sons disponibles.
 
 ### Déclenchement
 
-1. **Quelqu'un rejoint un salon vocal**
-2. **Tirage aléatoire** (0.5% par défaut)
-3. **Si succès :**
-    - Attente de 5-15 secondes (aléatoire)
+1. **Vérification périodique** (toutes les minutes par défaut)
+2. **Y a-t-il des gens dans un vocal ?**
+3. **Tirage aléatoire** (0.5% par défaut)
+4. **Si succès :**
+    - Attente de 5-30 secondes (aléatoire)
     - Vérification que le salon a toujours des membres
     - Sélection d'un son aléatoire
-    - Application d'effets aléatoires
+    - Volume aléatoire appliqué (30-100%)
     - Klodovik rejoint le vocal
     - Joue le son
     - Quitte automatiquement

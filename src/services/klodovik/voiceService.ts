@@ -53,18 +53,16 @@ export class KlodovikVoiceService {
 
             // Créer la ressource audio
             const audioPath = path.join(this.soundsPath, soundFile);
-            const audioFilters = this.getRandomAudioFilters(); // Pour logs seulement
-            const volume = this.getRandomVolume()
+            const volume = this.getRandomVolume();
 
             const resource = createAudioResource(audioPath, {
                 inlineVolume: true,
             });
 
-            // Définir le volume aléatoire
+            // Définir le volume aléatoire (entre 50% et 100%)
             resource.volume?.setVolume(volume);
 
-            // Log des "effets" (pour l'instant juste le volume varie)
-            console.log(`[Klodovik Voice] Effets simulés: ${audioFilters.join(", ")} | Volume: ${Math.round(volume * 100)}%`);
+            console.log(`[Klodovik Voice] Son: ${soundFile} | Volume: ${Math.round(volume * 100)}%`);
 
             // Log Discord
             await logKlodovikVoice(channel.name, soundFile, volume);
@@ -151,24 +149,13 @@ export class KlodovikVoiceService {
     }
 
     /**
-     * Génère des arguments FFmpeg pour modifier le pitch et la vitesse
-     * Note: Pour l'instant simplifié, les effets avancés nécessitent une configuration FFmpeg plus complexe
+     * Génère un volume aléatoire
+     * Volume entre 50% et 100% pour que ce soit toujours audible mais varié
      */
     private getRandomVolume(): number {
-        // Volume aléatoire entre 0.3 et 0.8
-        return 0.3 + Math.random() * 0.7;
+        return 0.5 + Math.random() * 0.7;
     }
 
-    /**
-     * Génère un facteur de vitesse aléatoire (simulé par le volume pour l'instant)
-     */
-    private getRandomAudioFilters(): string[] {
-        // Pour une implémentation future avec FFmpeg custom
-        const pitch = 0.5 + Math.random() * 1.5;
-        const speed = 0.7 + Math.random() * 0.8;
-
-        return [`pitch=${pitch.toFixed(2)}`, `speed=${speed.toFixed(2)}`];
-    }
 
     /**
      * Vérifie si Klodovik peut rejoindre ce salon
