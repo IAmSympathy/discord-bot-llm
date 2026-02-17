@@ -362,7 +362,7 @@ export class KlodovikBot {
                 await interaction.editReply(`❌ ${generated}`);
                 return;
             }
-            await interaction.editReply(`🎭 **${targetUser.username}** dit:\n\n${generated}`);
+            await interaction.editReply(`${generated}`);
 
             // Log Discord
             await logKlodovikGenerate(
