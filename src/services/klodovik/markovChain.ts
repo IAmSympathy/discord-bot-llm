@@ -186,6 +186,27 @@ export class MarkovChain {
     }
 
     /**
+     * Exporte l'état complet de la chaîne pour sauvegarde
+     */
+    public exportChain(): any {
+        const data: any = {};
+        for (const [state, transitions] of this.chain) {
+            data[state] = Object.fromEntries(transitions);
+        }
+        return data;
+    }
+
+    /**
+     * Importe un état de chaîne depuis des données sauvegardées
+     */
+    public importChain(data: any): void {
+        this.chain.clear();
+        for (const [state, transitions] of Object.entries(data)) {
+            this.chain.set(state, new Map(Object.entries(transitions as any)));
+        }
+    }
+
+    /**
      * Nettoie le texte (enlève URLs, emojis custom, etc.)
      * Adapté pour les messages informels et courts
      * [MODIFICATION] Garde maintenant les mentions d'utilisateurs pour que le bot puisse ping
@@ -289,4 +310,3 @@ export class MarkovChain {
         }
     }
 }
-

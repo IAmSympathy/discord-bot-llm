@@ -198,6 +198,7 @@ export class MessageCollector {
         const userId = message.author.id;
         if (!this.userModels.has(userId)) {
             this.userModels.set(userId, new MarkovChain(2));
+            console.log(`[Klodovik] Nouvel utilisateur tracké: ${message.author.username} (Total: ${this.userModels.size})`);
         }
         this.userModels.get(userId)!.addText(message.content);
 
@@ -239,6 +240,8 @@ export class MessageCollector {
         usersTracked: number;
     } {
         const globalStats = this.markov.getStats();
+        console.log(`[Klodovik Debug] userModels.size = ${this.userModels.size}`);
+
         return {
             messagesAnalyzed: this.messagesAnalyzed,
             globalStates: globalStats.states,
@@ -352,30 +355,28 @@ export class MessageCollector {
                 fs.mkdirSync(dataDir, {recursive: true});
             }
 
-            // Sauvegarder seulement les utilisateurs avec suffisamment de données (>100 messages)
-            const userModelsData: any = {};
-            let savedCount = 0;
+            // Sauvegarder tous les utilisateurs avec leurs chaînes complètes
+            const userModelsData: any = {
+                count: this.userModels.size,
+                lastUpdate: Date.now(),
+                users: {}
+            };
 
             for (const [userId, model] of this.userModels.entries()) {
                 const stats = model.getStats();
-                if (stats.totalTransitions >= 100) { // Seuil minimum
-                    // Sauvegarder le modèle de cet utilisateur
-                    // Note: On doit accéder à la chaîne interne (on ajoutera une méthode export)
-                    userModelsData[userId] = {
+                // Sauvegarder même les petits modèles (on garde tout)
+                userModelsData.users[userId] = {
+                    chain: model.exportChain(), // Exporter la chaîne complète
+                    stats: {
                         states: stats.states,
                         transitions: stats.totalTransitions
-                    };
-                    savedCount++;
-                }
+                    }
+                };
             }
 
-            fs.writeFileSync(this.userModelsPath, JSON.stringify({
-                count: savedCount,
-                lastUpdate: Date.now(),
-                users: Object.keys(userModelsData)
-            }, null, 2));
+            fs.writeFileSync(this.userModelsPath, JSON.stringify(userModelsData, null, 2));
 
-            console.log(`[Klodovik] ${savedCount} modèles utilisateurs sauvegardés`);
+            console.log(`[Klodovik] ${this.userModels.size} modèles utilisateurs sauvegardés`);
         } catch (error) {
             console.error("[Klodovik] Erreur lors de la sauvegarde des modèles utilisateurs:", error);
         }
@@ -388,9 +389,22 @@ export class MessageCollector {
         try {
             if (fs.existsSync(this.userModelsPath)) {
                 const data = JSON.parse(fs.readFileSync(this.userModelsPath, "utf-8"));
-                console.log(`[Klodovik] ${data.count || 0} modèles utilisateurs disponibles`);
-                // Note: Les modèles seront reconstruits au fil du temps via les nouveaux messages
-                // On pourrait implémenter un chargement complet plus tard si nécessaire
+
+                if (data.users) {
+                    // Recharger chaque modèle utilisateur
+                    for (const [userId, userData] of Object.entries(data.users)) {
+                        const model = new MarkovChain(2);
+                        const userDataTyped = userData as any;
+                        if (userDataTyped.chain) {
+                            model.importChain(userDataTyped.chain);
+                            this.userModels.set(userId, model);
+                        }
+                    }
+
+                    console.log(`[Klodovik] ${this.userModels.size} modèles utilisateurs chargés`);
+                } else {
+                    console.log("[Klodovik] Aucun modèle utilisateur trouvé");
+                }
             }
         } catch (error) {
             console.error("[Klodovik] Erreur lors du chargement des modèles utilisateurs:", error);
