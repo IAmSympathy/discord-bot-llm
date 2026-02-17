@@ -1,5 +1,6 @@
-import {Client, Events, GatewayIntentBits, GuildMember, REST, Routes} from "discord.js";
+import {Client, EmbedBuilder, Events, GatewayIntentBits, GuildMember, REST, Routes} from "discord.js";
 import {MessageCollector} from "./messageCollector";
+import {KlodovikVoiceService} from "./voiceService";
 import * as dotenv from "dotenv";
 import {hasOwnerPermission} from "../../utils/permissions";
 import {replyWithError} from "../../utils/interactionUtils";
@@ -21,6 +22,7 @@ export class KlodovikBot {
                 GatewayIntentBits.Guilds,
                 GatewayIntentBits.GuildMessages,
                 GatewayIntentBits.MessageContent,
+                GatewayIntentBits.GuildVoiceStates, // Pour détecter les salons vocaux
             ],
         });
 
@@ -178,6 +180,66 @@ export class KlodovikBot {
                 }
             }
         });
+
+        // Système de vérification périodique des salons vocaux
+        this.startVoiceChannelMonitoring();
+    }
+
+    /**
+     * Démarre la surveillance périodique des salons vocaux
+     * Vérifie à intervalle régulier s'il y a des gens dans les vocaux
+     */
+    private startVoiceChannelMonitoring(): void {
+        // Intervalle de vérification configurable (défaut: 60 secondes)
+        const CHECK_INTERVAL = parseInt(process.env.KLODOVIK_VOICE_CHECK_INTERVAL || "60000");
+
+        setInterval(async () => {
+            try {
+                // Récupérer tous les serveurs du bot
+                for (const [_, guild] of this.client.guilds.cache) {
+                    // Récupérer tous les salons vocaux avec des membres
+                    const voiceChannels = guild.channels.cache.filter(channel => {
+                        if (!channel.isVoiceBased()) return false;
+
+                        // Vérifier qu'il y a au moins 1 membre non-bot
+                        const members = channel.members.filter(m => !m.user.bot);
+                        return members.size > 0;
+                    });
+
+                    // Pour chaque salon vocal avec des membres
+                    for (const [_, channel] of voiceChannels) {
+                        // Probabilité : 0.5% par défaut (1/200 par minute)
+                        const VOICE_JOIN_CHANCE = parseFloat(process.env.KLODOVIK_VOICE_CHANCE || "0.005");
+
+                        if (Math.random() < VOICE_JOIN_CHANCE) {
+                            // Attendre un délai aléatoire (5-30 secondes)
+                            const delay = 5000 + Math.random() * 25000;
+                            await new Promise(resolve => setTimeout(resolve, delay));
+
+                            // Vérifier que le salon a toujours des membres
+                            const updatedChannel = await this.client.channels.fetch(channel.id);
+                            if (updatedChannel?.isVoiceBased()) {
+                                const voiceService = KlodovikVoiceService.getInstance();
+                                const played = await voiceService.playRandomSound(updatedChannel);
+
+                                if (played) {
+                                    console.log(`[Klodovik Voice] 🎲 Son joué dans ${updatedChannel.name}`);
+                                }
+                            }
+
+                            // Sortir de la boucle après avoir joué un son
+                            // (ne joue qu'un seul son par cycle même s'il y a plusieurs vocaux)
+                            return;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("[Klodovik Voice] Erreur lors de la vérification périodique:", error);
+            }
+        }, CHECK_INTERVAL);
+
+        const intervalMinutes = CHECK_INTERVAL / 60000;
+        console.log(`[Klodovik Voice] 🔄 Surveillance périodique activée (vérification toutes les ${intervalMinutes} minute${intervalMinutes > 1 ? 's' : ''})`);
     }
 
     /**
@@ -217,7 +279,7 @@ export class KlodovikBot {
             },
             {
                 name: "klodovik-collect",
-                description: "[TAH-UM] Lance la collecte de messages historiques",
+                description: "[TAH-UM] Collecte les messages de ce salon uniquement (max 10k)",
             },
             {
                 name: "klodovik-reset",
@@ -275,7 +337,7 @@ export class KlodovikBot {
                 await interaction.editReply(`❌ ${generated}`);
                 return;
             }
-            await interaction.editReply(`🤖 **Klodovik** génère:\n\n${generated}`);
+            await interaction.editReply(`${generated}`);
         }
     }
 
@@ -285,17 +347,23 @@ export class KlodovikBot {
     private async handleStatsCommand(interaction: any): Promise<void> {
         const stats = this.messageCollector.getStats();
 
-        const message = `📊 **Statistiques de Klodovik**\n\n` +
-            `📝 Messages analysés: **${stats.messagesAnalyzed.toLocaleString()}**\n` +
-            `🔗 États du modèle: **${stats.globalStates.toLocaleString()}**\n` +
-            `➡️ Transitions: **${stats.globalTransitions.toLocaleString()}**\n` +
-            `👥 Utilisateurs suivis: **${stats.usersTracked}**`;
+        const embed = new EmbedBuilder()
+            .setColor(0x56fd0d)
+            .setTitle("📊 Statistiques de Klodovik")
+            .setDescription(
+                `📝 **Messages analysés :** ${stats.messagesAnalyzed.toLocaleString()}\n` +
+                `🔗 **États du modèle :** ${stats.globalStates.toLocaleString()}\n` +
+                `➡️ **Transitions :** ${stats.globalTransitions.toLocaleString()}\n` +
+                `👥 **Utilisateurs suivis :** ${stats.usersTracked}`
+            )
+            .setTimestamp();
 
-        await interaction.reply({content: message, ephemeral: true});
+        await interaction.reply({embeds: [embed], ephemeral: true});
     }
 
     /**
      * Gère la commande /markov-collect
+     * Collecte uniquement le canal où la commande est lancée
      */
     private async handleCollectCommand(interaction: any): Promise<void> {
         // Vérifier les permissions admin
@@ -311,16 +379,42 @@ export class KlodovikBot {
             return;
         }
 
-        await interaction.reply({content: "🔄 Collecte de messages en cours... Cela peut prendre plusieurs minutes.", ephemeral: true});
+        const channelId = interaction.channelId;
+        const channelName = interaction.channel?.name || "ce canal";
 
-        // Lancer la collecte en arrière-plan
-        this.messageCollector.collectFromGuild(this.client, interaction.guildId, 50000)
-            .then(() => {
-                interaction.followUp({content: "✅ Collecte terminée !", ephemeral: true});
+        const startEmbed = new EmbedBuilder()
+            .setColor(0x56fd0d)
+            .setTitle("🔄 Collecte en cours")
+            .setDescription(
+                `Collecte des messages de **#${channelName}**...\n\n` +
+                `⏱️ Cela peut prendre quelques minutes selon la quantité de messages.\n` +
+                `📊 **Limite :** 10 000 messages`
+            );
+
+        await interaction.reply({embeds: [startEmbed], ephemeral: true});
+
+        // Lancer la collecte du canal actuel
+        this.messageCollector.collectFromChannel(channelId, this.client, 10000)
+            .then((count) => {
+                const successEmbed = new EmbedBuilder()
+                    .setColor(0x56fd0d)
+                    .setTitle("✅ Collecte terminée")
+                    .setDescription(
+                        `📝 **${count.toLocaleString()}** messages collectés dans **#${channelName}**`
+                    )
+                    .setTimestamp();
+
+                interaction.followUp({embeds: [successEmbed], ephemeral: true});
             })
             .catch((error) => {
                 console.error("[Klodovik] Erreur lors de la collecte:", error);
-                interaction.followUp({content: "❌ Erreur lors de la collecte.", ephemeral: true});
+
+                const errorEmbed = new EmbedBuilder()
+                    .setColor(0xFF0000)
+                    .setTitle("❌ Erreur lors de la collecte")
+                    .setDescription(`Détails : ${error.message || "Erreur inconnue"}`);
+
+                interaction.followUp({embeds: [errorEmbed], ephemeral: true});
             });
     }
 
@@ -342,7 +436,14 @@ export class KlodovikBot {
         }
 
         this.messageCollector.reset();
-        await interaction.reply({content: "✅ Modèle réinitialisé !", ephemeral: true});
+
+        const embed = new EmbedBuilder()
+            .setColor(0x56fd0d)
+            .setTitle("✅ Modèle réinitialisé")
+            .setDescription("Le modèle de Klodovik a été complètement réinitialisé.")
+            .setTimestamp();
+
+        await interaction.reply({embeds: [embed], ephemeral: true});
     }
 
     /**
@@ -385,33 +486,44 @@ export class KlodovikBot {
                 // Mettre à jour la variable d'environnement en mémoire
                 process.env.KLODOVIK_REPLY_CHANCE = (probability / 100).toString();
 
-                await interaction.reply({
-                    content: `✅ Configuration mise à jour !\n\n` +
-                        `🎲 Probabilité de réponse spontanée : **${probability}%**\n` +
-                        `📊 Environ **1 réponse toutes les ${Math.round(100 / probability)} messages**`,
-                    ephemeral: true
-                });
+                const successEmbed = new EmbedBuilder()
+                    .setColor(0x56fd0d)
+                    .setTitle("✅ Configuration mise à jour")
+                    .setDescription(
+                        `🎲 **Probabilité de réponse spontanée :** ${probability}%\n` +
+                        `📊 Environ **1 réponse toutes les ${Math.round(100 / probability)} messages**`
+                    )
+                    .setTimestamp();
+
+                await interaction.reply({embeds: [successEmbed], ephemeral: true});
 
                 console.log(`[Klodovik] Probabilité de réponse spontanée mise à jour : ${probability}%`);
             } catch (error) {
                 console.error("[Klodovik] Erreur lors de la sauvegarde de la config:", error);
-                await interaction.reply({
-                    content: "❌ Erreur lors de la sauvegarde de la configuration.",
-                    ephemeral: true
-                });
+
+                const errorEmbed = new EmbedBuilder()
+                    .setColor(0xFF0000)
+                    .setTitle("❌ Erreur")
+                    .setDescription("Erreur lors de la sauvegarde de la configuration.");
+
+                await interaction.reply({embeds: [errorEmbed], ephemeral: true});
             }
         } else {
             // Afficher la config actuelle
             const currentChance = parseFloat(process.env.KLODOVIK_REPLY_CHANCE || "0.02");
             const currentPercent = Math.round(currentChance * 100);
 
-            await interaction.reply({
-                content: `⚙️ **Configuration actuelle de Klodovik**\n\n` +
-                    `🎲 Probabilité de réponse spontanée : **${currentPercent}%**\n` +
+            const configEmbed = new EmbedBuilder()
+                .setColor(0x56fd0d)
+                .setTitle("⚙️ Configuration actuelle de Klodovik")
+                .setDescription(
+                    `🎲 **Probabilité de réponse spontanée :** ${currentPercent}%\n` +
                     `📊 Environ **1 réponse toutes les ${Math.round(100 / currentPercent)} messages**\n\n` +
-                    `💡 Pour modifier : \`/klodovik-config probabilite:<0-100>\``,
-                ephemeral: true
-            });
+                    `💡 Pour modifier : \`/klodovik-config probabilite:<0-100>\``
+                )
+                .setTimestamp();
+
+            await interaction.reply({embeds: [configEmbed], ephemeral: true});
         }
     }
 

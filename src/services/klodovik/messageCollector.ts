@@ -23,8 +23,71 @@ export class MessageCollector {
     }
 
     /**
+     * Collecte les messages d'un seul canal spécifique
+     * Utilisé quand l'utilisateur lance /klodovik-collect dans un canal
+     */
+    public async collectFromChannel(channelId: string, client: Client, maxMessages: number = 10000): Promise<number> {
+        if (this.isCollecting) {
+            console.log("[Klodovik] Collecte déjà en cours...");
+            throw new Error("Collecte déjà en cours");
+        }
+
+        this.isCollecting = true;
+        console.log("[Klodovik] Démarrage de la collecte du canal...");
+
+        try {
+            const channel = await client.channels.fetch(channelId);
+            if (!channel || !channel.isTextBased()) {
+                throw new Error("Canal non trouvé ou non textuel");
+            }
+
+            const textChannel = channel as TextChannel;
+            console.log(`[Klodovik] Collecte du salon #${textChannel.name}...`);
+
+            let lastId: string | undefined;
+            let channelMessages = 0;
+
+            while (channelMessages < maxMessages) {
+                const options: any = {limit: 100};
+                if (lastId) options.before = lastId;
+
+                // Attendre 1 seconde entre chaque requête
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const fetchedMessages: any = await textChannel.messages.fetch(options);
+                if (fetchedMessages.size === 0) break;
+
+                for (const [_, message] of fetchedMessages) {
+                    if (!message.author.bot && message.content.length > 0) {
+                        this.processMessage(message);
+                        channelMessages++;
+                    }
+                }
+
+                lastId = fetchedMessages.last()?.id;
+
+                // Log tous les 100 messages
+                if (channelMessages % 100 === 0) {
+                    console.log(`[Klodovik] ${channelMessages} messages collectés...`);
+                }
+            }
+
+            console.log(`[Klodovik] ✓ #${textChannel.name}: ${channelMessages} messages collectés`);
+            this.saveAll();
+
+            return channelMessages;
+        } catch (error: any) {
+            console.error("[Klodovik] Erreur lors de la collecte:", error);
+            throw error;
+        } finally {
+            this.isCollecting = false;
+        }
+    }
+
+    /**
      * Démarre la collecte de messages depuis l'historique du serveur
      * Implémente des délais pour respecter les rate limits Discord
+     * [OBSOLÈTE] Préférer collectFromChannel pour collecter un canal spécifique
      */
     public async collectFromGuild(client: Client, guildId: string, maxMessages: number = 10000): Promise<void> {
         if (this.isCollecting) {
