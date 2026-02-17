@@ -4,6 +4,7 @@ import {createErrorEmbed, createInfoEmbed, createLowPowerEmbed, createStandbyEmb
 import {formatTimeFromMs} from "./timeFormat";
 
 let clientInstance: Client | null = null;
+let klodovikClientInstance: Client | null = null;
 
 // Map des couleurs pour chaque commande
 const COMMAND_COLORS: { [key: string]: number } = {
@@ -106,7 +107,14 @@ export enum LogLevel {
     BOT_COMMAND = "BOT_COMMAND",
     BOT_IMAGE_GENERATION = "BOT_IMAGE_GENERATION",
     BOT_IMAGE_REIMAGINE = "BOT_IMAGE_REIMAGINE",
-    BOT_IMAGE_UPSCALE = "BOT_IMAGE_UPSCALE"
+    BOT_IMAGE_UPSCALE = "BOT_IMAGE_UPSCALE",
+    // Logs de Klodovik (Markov)
+    KLODOVIK_GENERATE = "KLODOVIK_GENERATE",
+    KLODOVIK_COLLECT = "KLODOVIK_COLLECT",
+    KLODOVIK_RESET = "KLODOVIK_RESET",
+    KLODOVIK_WHITELIST = "KLODOVIK_WHITELIST",
+    KLODOVIK_CONFIG = "KLODOVIK_CONFIG",
+    KLODOVIK_VOICE = "KLODOVIK_VOICE"
 }
 
 export interface LogOptions {
@@ -126,31 +134,40 @@ export function initializeDiscordLogger(client: Client) {
     console.log("[DiscordLogger] Initialized with LOG_CHANNEL_ID:", logChannelId || "(not set)");
 }
 
+export function initializeKlodovikLogger(client: Client) {
+    klodovikClientInstance = client;
+    console.log("[DiscordLogger] Klodovik logger initialized");
+}
+
 export async function logToDiscord(options: LogOptions) {
     const isServerEvent = options.level.startsWith("SERVER_");
     const isBotLog = options.level.startsWith("BOT_");
+    const isKlodovikLog = options.level.startsWith("KLODOVIK_");
+
+    // Choisir le bon client selon le type de log
+    const activeClient = isKlodovikLog ? (klodovikClientInstance || clientInstance) : clientInstance;
     const isCommand = options.level === LogLevel.COMMAND;
 
     // Choisir le bon canal selon le type de log
     // - Événements serveur (SERVER_*) → LOG_CHANNEL_ID (server-logs)
-    // - Logs bot (BOT_*) et commandes → NETRICSA_LOG_CHANNEL_ID (netricsa-logs)
+    // - Logs bot (BOT_*), Klodovik (KLODOVIK_*) et commandes → NETRICSA_LOG_CHANNEL_ID (netricsa-logs)
     // - Autres (INFO, WARNING, ERROR, etc.) → LOG_CHANNEL_ID (server-logs)
     const LOG_CHANNEL_ID = isServerEvent
         ? EnvConfig.LOG_CHANNEL_ID
-        : (isBotLog || isCommand ? EnvConfig.NETRICSA_LOG_CHANNEL_ID : EnvConfig.LOG_CHANNEL_ID);
+        : (isBotLog || isKlodovikLog || isCommand ? EnvConfig.NETRICSA_LOG_CHANNEL_ID : EnvConfig.LOG_CHANNEL_ID);
 
     if (!LOG_CHANNEL_ID) {
         console.log("[DiscordLogger] Appropriate LOG_CHANNEL_ID not configured, skipping log");
         return;
     }
 
-    if (!clientInstance) {
+    if (!activeClient) {
         console.log("[DiscordLogger] Client not initialized, skipping log");
         return;
     }
 
     try {
-        const channel = await clientInstance.channels.fetch(LOG_CHANNEL_ID);
+        const channel = await activeClient.channels.fetch(LOG_CHANNEL_ID);
         if (!channel || !(channel instanceof TextChannel)) {
             console.log("[DiscordLogger] Channel not found or not a text channel:", LOG_CHANNEL_ID);
             return;
@@ -258,6 +275,25 @@ export async function logToDiscord(options: LogOptions) {
                 break;
             case LogLevel.BOT_IMAGE_UPSCALE:
                 embed.setColor(0xe67e22); // Orange
+                break;
+            // Logs de Klodovik
+            case LogLevel.KLODOVIK_GENERATE:
+                embed.setColor(0x56fd0d); // Vert Klodovik
+                break;
+            case LogLevel.KLODOVIK_COLLECT:
+                embed.setColor(0x56fd0d); // Vert Klodovik
+                break;
+            case LogLevel.KLODOVIK_RESET:
+                embed.setColor(0xff6b6b); // Rouge pastel
+                break;
+            case LogLevel.KLODOVIK_WHITELIST:
+                embed.setColor(0x56fd0d); // Vert Klodovik
+                break;
+            case LogLevel.KLODOVIK_CONFIG:
+                embed.setColor(0x56fd0d); // Vert Klodovik
+                break;
+            case LogLevel.KLODOVIK_VOICE:
+                embed.setColor(0x56fd0d); // Vert Klodovik
                 break;
         }
 
@@ -951,6 +987,130 @@ export async function logBotReaction(username: string, channelName: string, mess
         title: "👍 Réaction de Netricsa (sans réponse)",
         fields,
         thumbnailUrl: avatarUrl
+    });
+}
+
+// ========================================
+// Logs de Klodovik (Bot Markov)
+// ========================================
+
+export async function logKlodovikGenerate(username: string, channelName: string, seed?: string, targetUser?: string, generatedText?: string, avatarUrl?: string) {
+    const fields = [
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "📺 Salon", value: `**#${channelName}**`, inline: true}
+    ];
+
+    if (targetUser) {
+        fields.push({name: "🎭 Cible", value: `**${targetUser}**`, inline: true});
+    }
+
+    if (seed) {
+        fields.push({name: "🌱 Mot-clé", value: `\`${seed}\``, inline: true});
+    }
+
+    if (generatedText) {
+        const textPreview = generatedText.length > 200 ? generatedText.substring(0, 200) + "..." : generatedText;
+        fields.push({name: "💬 Message Généré", value: `\`\`\`\n${textPreview}\n\`\`\``, inline: false});
+    }
+
+    await logToDiscord({
+        level: LogLevel.KLODOVIK_GENERATE,
+        title: "🎲 Génération Klodovik",
+        fields,
+        thumbnailUrl: avatarUrl
+    });
+}
+
+export async function logKlodovikCollect(username: string, channelName: string, messagesCollected: number, avatarUrl?: string) {
+    const fields = [
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "📺 Salon Collecté", value: `**#${channelName}**`, inline: true},
+        {name: "📝 Messages", value: `**${messagesCollected.toLocaleString()}**`, inline: true}
+    ];
+
+    await logToDiscord({
+        level: LogLevel.KLODOVIK_COLLECT,
+        title: "📥 Collecte de Messages",
+        fields,
+        thumbnailUrl: avatarUrl
+    });
+}
+
+export async function logKlodovikReset(username: string, avatarUrl?: string) {
+    const fields = [
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "⚠️ Action", value: "**Modèle réinitialisé**", inline: true}
+    ];
+
+    await logToDiscord({
+        level: LogLevel.KLODOVIK_RESET,
+        title: "🔄 Réinitialisation Klodovik",
+        fields,
+        thumbnailUrl: avatarUrl
+    });
+}
+
+export async function logKlodovikWhitelist(username: string, action: string, channelName?: string, whitelistSize?: number, avatarUrl?: string) {
+    const fields = [
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true}
+    ];
+
+    let actionText = "";
+    switch (action) {
+        case "add":
+            actionText = `➕ **Ajout de #${channelName}**`;
+            break;
+        case "remove":
+            actionText = `➖ **Retrait de #${channelName}**`;
+            break;
+        case "list":
+            actionText = `📋 **Consultation de la liste**`;
+            break;
+        case "clear":
+            actionText = `🗑️ **Effacement complet**`;
+            break;
+    }
+
+    fields.push({name: "🎯 Action", value: actionText, inline: true});
+
+    if (whitelistSize !== undefined) {
+        fields.push({name: "📊 Canaux", value: `**${whitelistSize}** canal(aux)`, inline: true});
+    }
+
+    await logToDiscord({
+        level: LogLevel.KLODOVIK_WHITELIST,
+        title: "📋 Whitelist Klodovik",
+        fields,
+        thumbnailUrl: avatarUrl
+    });
+}
+
+export async function logKlodovikConfig(username: string, probability: number, avatarUrl?: string) {
+    const fields = [
+        {name: "👤 Utilisateur", value: `**${username}**`, inline: true},
+        {name: "🎲 Probabilité", value: `**${probability}%**`, inline: true},
+        {name: "📊 Fréquence", value: `~**1/${Math.round(100 / probability)}** messages`, inline: true}
+    ];
+
+    await logToDiscord({
+        level: LogLevel.KLODOVIK_CONFIG,
+        title: "⚙️ Configuration Klodovik",
+        fields,
+        thumbnailUrl: avatarUrl
+    });
+}
+
+export async function logKlodovikVoice(channelName: string, soundFile: string, volume: number) {
+    const fields = [
+        {name: "🎤 Salon Vocal", value: `**${channelName}**`, inline: true},
+        {name: "🎵 Fichier", value: `\`${soundFile}\``, inline: true},
+        {name: "🔊 Volume", value: `**${Math.round(volume * 100)}%**`, inline: true}
+    ];
+
+    await logToDiscord({
+        level: LogLevel.KLODOVIK_VOICE,
+        title: "🎵 Apparition Vocale Klodovik",
+        fields
     });
 }
 

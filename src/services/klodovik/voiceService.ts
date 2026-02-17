@@ -2,6 +2,7 @@ import {AudioPlayerStatus, createAudioPlayer, createAudioResource, getVoiceConne
 import {VoiceBasedChannel} from "discord.js";
 import * as path from "path";
 import * as fs from "fs";
+import {logKlodovikVoice} from "../../utils/discordLogger";
 
 /**
  * Service pour gérer les sons vocaux aléatoires de Klodovik
@@ -64,6 +65,9 @@ export class KlodovikVoiceService {
 
             // Log des "effets" (pour l'instant juste le volume varie)
             console.log(`[Klodovik Voice] Effets simulés: ${audioFilters.join(", ")} | Volume: ${Math.round(volume * 100)}%`);
+
+            // Log Discord
+            await logKlodovikVoice(channel.name, soundFile, volume);
 
             // Jouer le son
             player.play(resource);
@@ -184,6 +188,8 @@ export class KlodovikVoiceService {
         return true;
     }
 }
+
+
 
 
 

@@ -12,14 +12,18 @@ export class MessageCollector {
     private messagesAnalyzed: number = 0;
     private readonly statsPath: string;
     private readonly userModelsPath: string;
+    private readonly whitelistPath: string;
     private isCollecting: boolean = false;
+    private channelWhitelist: Set<string> = new Set();
 
     constructor(markovOrder: number = 2) {
         this.markov = new MarkovChain(markovOrder);
         this.statsPath = path.join(process.cwd(), "data", "klodovik_stats.json");
         this.userModelsPath = path.join(process.cwd(), "data", "klodovik_user_models.json");
+        this.whitelistPath = path.join(process.cwd(), "data", "klodovik_channel_whitelist.json");
         this.loadStats();
         this.loadUserModels();
+        this.loadWhitelist();
     }
 
     /**
@@ -167,9 +171,15 @@ export class MessageCollector {
     /**
      * Traite un message et l'ajoute aux modèles
      * Adapté pour les messages courts et informels
+     * Respecte la whitelist des canaux si configurée
      */
     public processMessage(message: Message): void {
         if (message.author.bot) return;
+
+        // Vérifier la whitelist si elle est configurée
+        if (this.channelWhitelist.size > 0 && !this.channelWhitelist.has(message.channelId)) {
+            return; // Ignorer les messages des canaux non whitelistés
+        }
 
         // Accepter des messages plus courts (>=2 caractères au lieu de >=3)
         // Sur un serveur d'amis, même "ok", "mdr", "gg" sont valables
@@ -255,6 +265,45 @@ export class MessageCollector {
         this.messagesAnalyzed = 0;
         this.saveStats();
         console.log("[Klodovik] Tous les modèles réinitialisés");
+    }
+
+    /**
+     * Ajoute un canal à la whitelist
+     */
+    public addChannelToWhitelist(channelId: string): void {
+        this.channelWhitelist.add(channelId);
+        this.saveWhitelist();
+    }
+
+    /**
+     * Retire un canal de la whitelist
+     */
+    public removeChannelFromWhitelist(channelId: string): void {
+        this.channelWhitelist.delete(channelId);
+        this.saveWhitelist();
+    }
+
+    /**
+     * Vide la whitelist (accepte tous les canaux)
+     */
+    public clearWhitelist(): void {
+        this.channelWhitelist.clear();
+        this.saveWhitelist();
+    }
+
+    /**
+     * Obtient la liste des canaux whitelistés
+     */
+    public getWhitelist(): string[] {
+        return Array.from(this.channelWhitelist);
+    }
+
+    /**
+     * Vérifie si un canal est whitelisté
+     */
+    public isChannelWhitelisted(channelId: string): boolean {
+        if (this.channelWhitelist.size === 0) return true; // Pas de whitelist = tous acceptés
+        return this.channelWhitelist.has(channelId);
     }
 
     /**
@@ -345,6 +394,46 @@ export class MessageCollector {
             }
         } catch (error) {
             console.error("[Klodovik] Erreur lors du chargement des modèles utilisateurs:", error);
+        }
+    }
+
+    /**
+     * Charge la whitelist des canaux
+     */
+    private loadWhitelist(): void {
+        try {
+            if (fs.existsSync(this.whitelistPath)) {
+                const data = JSON.parse(fs.readFileSync(this.whitelistPath, "utf-8"));
+                this.channelWhitelist = new Set(data.channels || []);
+                console.log(`[Klodovik] Whitelist chargée: ${this.channelWhitelist.size} canal(aux)`);
+            } else {
+                // Pas de whitelist = tous les canaux acceptés
+                console.log("[Klodovik] Aucune whitelist configurée, tous les canaux seront analysés");
+            }
+        } catch (error) {
+            console.error("[Klodovik] Erreur lors du chargement de la whitelist:", error);
+        }
+    }
+
+    /**
+     * Sauvegarde la whitelist des canaux
+     */
+    private saveWhitelist(): void {
+        try {
+            const dataDir = path.dirname(this.whitelistPath);
+            if (!fs.existsSync(dataDir)) {
+                fs.mkdirSync(dataDir, {recursive: true});
+            }
+
+            const data = {
+                channels: Array.from(this.channelWhitelist),
+                lastUpdated: Date.now()
+            };
+
+            fs.writeFileSync(this.whitelistPath, JSON.stringify(data, null, 2));
+            console.log(`[Klodovik] Whitelist sauvegardée: ${this.channelWhitelist.size} canal(aux)`);
+        } catch (error) {
+            console.error("[Klodovik] Erreur lors de la sauvegarde de la whitelist:", error);
         }
     }
 }

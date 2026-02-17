@@ -4,6 +4,7 @@ import {KlodovikVoiceService} from "./voiceService";
 import * as dotenv from "dotenv";
 import {hasOwnerPermission} from "../../utils/permissions";
 import {replyWithError} from "../../utils/interactionUtils";
+import {initializeKlodovikLogger, logKlodovikCollect, logKlodovikConfig, logKlodovikGenerate, logKlodovikReset, logKlodovikWhitelist} from "../../utils/discordLogger";
 
 dotenv.config();
 
@@ -94,6 +95,9 @@ export class KlodovikBot {
             console.log(`[Klodovik] ✓ Bot connecté: ${c.user.tag}`);
             this.ready = true;
 
+            // Initialiser le logger Discord pour Klodovik
+            initializeKlodovikLogger(this.client);
+
             // Enregistrer les commandes slash
             await this.registerCommands();
 
@@ -169,6 +173,9 @@ export class KlodovikBot {
                         break;
                     case "klodovik-config":
                         await this.handleConfigCommand(interaction);
+                        break;
+                    case "klodovik-whitelist":
+                        await this.handleWhitelistCommand(interaction);
                         break;
                 }
             } catch (error) {
@@ -258,6 +265,8 @@ export class KlodovikBot {
             {
                 name: "klodovik",
                 description: "Génère un message aléatoire basé sur l'historique du serveur",
+                contexts: [0, 1, 2], // Disponible en serveur, DM et groupe DM
+                integration_types: [0, 1], // Guild install + User install
                 options: [
                     {
                         name: "user",
@@ -276,6 +285,8 @@ export class KlodovikBot {
             {
                 name: "klodovik-stats",
                 description: "Affiche les statistiques de Klodovik",
+                contexts: [0, 1, 2], // Disponible en serveur, DM et groupe DM
+                integration_types: [0, 1], // Guild install + User install
             },
             {
                 name: "klodovik-collect",
@@ -283,11 +294,11 @@ export class KlodovikBot {
             },
             {
                 name: "klodovik-reset",
-                description: "[TAH-UM] Réinitialise le modèle",
+                description: "[TAH-UM] Réinitialise la mémoire de Klodovik",
             },
             {
                 name: "klodovik-config",
-                description: "[TAH-UM] Configure les réponses spontanées",
+                description: "[TAH-UM] Configure le cerveau de Klodovik",
                 options: [
                     {
                         name: "probabilite",
@@ -296,6 +307,24 @@ export class KlodovikBot {
                         required: false,
                         min_value: 0,
                         max_value: 100,
+                    },
+                ],
+            },
+            {
+                name: "klodovik-whitelist",
+                description: "[TAH-UM] Gère les canaux autorisés pour l'apprentissage",
+                options: [
+                    {
+                        name: "action",
+                        description: "Action à effectuer",
+                        type: 3, // STRING
+                        required: true,
+                        choices: [
+                            {name: "Ajouter ce canal", value: "add"},
+                            {name: "Retirer ce canal", value: "remove"},
+                            {name: "Voir la liste", value: "list"},
+                            {name: "Tout effacer (accepter tous)", value: "clear"},
+                        ],
                     },
                 ],
             },
@@ -319,8 +348,11 @@ export class KlodovikBot {
     private async handleMarkovCommand(interaction: any): Promise<void> {
         await interaction.deferReply();
 
-        const targetUser = interaction.options.getUser("utilisateur");
+        const targetUser = interaction.options.getUser("user");
         const seed = interaction.options.getString("seed");
+        const username = interaction.user?.username || "Utilisateur inconnu";
+        const avatarUrl = interaction.user?.displayAvatarURL();
+        const channelName = interaction.channel?.name || "DM";
 
         let generated: string;
 
@@ -331,6 +363,16 @@ export class KlodovikBot {
                 return;
             }
             await interaction.editReply(`🎭 **${targetUser.username}** dit:\n\n${generated}`);
+
+            // Log Discord
+            await logKlodovikGenerate(
+                username,
+                channelName,
+                seed || undefined,
+                targetUser.username,
+                generated,
+                avatarUrl
+            );
         } else {
             generated = this.messageCollector.generate(100, seed || undefined);
             if (generated.includes("pas encore assez appris")) {
@@ -338,6 +380,16 @@ export class KlodovikBot {
                 return;
             }
             await interaction.editReply(`${generated}`);
+
+            // Log Discord
+            await logKlodovikGenerate(
+                username,
+                channelName,
+                seed || undefined,
+                undefined,
+                generated,
+                avatarUrl
+            );
         }
     }
 
@@ -381,6 +433,8 @@ export class KlodovikBot {
 
         const channelId = interaction.channelId;
         const channelName = interaction.channel?.name || "ce canal";
+        const username = interaction.user?.username || "Utilisateur inconnu";
+        const avatarUrl = interaction.user?.displayAvatarURL();
 
         const startEmbed = new EmbedBuilder()
             .setColor(0x56fd0d)
@@ -395,7 +449,7 @@ export class KlodovikBot {
 
         // Lancer la collecte du canal actuel
         this.messageCollector.collectFromChannel(channelId, this.client, 10000)
-            .then((count) => {
+            .then(async (count) => {
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x56fd0d)
                     .setTitle("✅ Collecte terminée")
@@ -404,7 +458,10 @@ export class KlodovikBot {
                     )
                     .setTimestamp();
 
-                interaction.followUp({embeds: [successEmbed], ephemeral: true});
+                await interaction.followUp({embeds: [successEmbed], ephemeral: true});
+
+                // Log Discord
+                await logKlodovikCollect(username, channelName, count, avatarUrl);
             })
             .catch((error) => {
                 console.error("[Klodovik] Erreur lors de la collecte:", error);
@@ -437,6 +494,9 @@ export class KlodovikBot {
 
         this.messageCollector.reset();
 
+        const username = interaction.user?.username || "Utilisateur inconnu";
+        const avatarUrl = interaction.user?.displayAvatarURL();
+
         const embed = new EmbedBuilder()
             .setColor(0x56fd0d)
             .setTitle("✅ Modèle réinitialisé")
@@ -444,6 +504,9 @@ export class KlodovikBot {
             .setTimestamp();
 
         await interaction.reply({embeds: [embed], ephemeral: true});
+
+        // Log Discord
+        await logKlodovikReset(username, avatarUrl);
     }
 
     /**
@@ -486,6 +549,9 @@ export class KlodovikBot {
                 // Mettre à jour la variable d'environnement en mémoire
                 process.env.KLODOVIK_REPLY_CHANCE = (probability / 100).toString();
 
+                const username = interaction.user?.username || "Utilisateur inconnu";
+                const avatarUrl = interaction.user?.displayAvatarURL();
+
                 const successEmbed = new EmbedBuilder()
                     .setColor(0x56fd0d)
                     .setTitle("✅ Configuration mise à jour")
@@ -496,6 +562,9 @@ export class KlodovikBot {
                     .setTimestamp();
 
                 await interaction.reply({embeds: [successEmbed], ephemeral: true});
+
+                // Log Discord
+                await logKlodovikConfig(username, probability, avatarUrl);
 
                 console.log(`[Klodovik] Probabilité de réponse spontanée mise à jour : ${probability}%`);
             } catch (error) {
@@ -515,7 +584,7 @@ export class KlodovikBot {
 
             const configEmbed = new EmbedBuilder()
                 .setColor(0x56fd0d)
-                .setTitle("⚙️ Configuration actuelle de Klodovik")
+                .setTitle("⚙️ Configuration cervicale actuelle de Klodovik")
                 .setDescription(
                     `🎲 **Probabilité de réponse spontanée :** ${currentPercent}%\n` +
                     `📊 Environ **1 réponse toutes les ${Math.round(100 / currentPercent)} messages**\n\n` +
@@ -524,6 +593,105 @@ export class KlodovikBot {
                 .setTimestamp();
 
             await interaction.reply({embeds: [configEmbed], ephemeral: true});
+        }
+    }
+
+    /**
+     * Gère la commande /klodovik-whitelist
+     */
+    private async handleWhitelistCommand(interaction: any): Promise<void> {
+        // Vérifier les permissions admin
+        const member = interaction.member instanceof GuildMember ? interaction.member : null;
+
+        if (!hasOwnerPermission(member)) {
+            await replyWithError(
+                interaction,
+                "Permission refusée",
+                "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*",
+                true
+            );
+            return;
+        }
+
+        const action = interaction.options.getString("action");
+        const channelId = interaction.channelId;
+        const channelName = interaction.channel?.name || "ce canal";
+        const username = interaction.user?.username || "Utilisateur inconnu";
+        const avatarUrl = interaction.user?.displayAvatarURL();
+
+        switch (action) {
+            case "add":
+                this.messageCollector.addChannelToWhitelist(channelId);
+                const addEmbed = new EmbedBuilder()
+                    .setColor(0x56fd0d)
+                    .setTitle("✅ Canal ajouté à la whitelist")
+                    .setDescription(
+                        `**#${channelName}** a été ajouté à la liste des canaux autorisés.\n\n` +
+                        `Klodovik apprendra maintenant des messages de ce canal en temps réel.`
+                    )
+                    .setTimestamp();
+                await interaction.reply({embeds: [addEmbed], ephemeral: true});
+
+                // Log Discord
+                await logKlodovikWhitelist(username, "add", channelName, this.messageCollector.getWhitelist().length, avatarUrl);
+                break;
+
+            case "remove":
+                this.messageCollector.removeChannelFromWhitelist(channelId);
+                const removeEmbed = new EmbedBuilder()
+                    .setColor(0x56fd0d)
+                    .setTitle("✅ Canal retiré de la whitelist")
+                    .setDescription(
+                        `**#${channelName}** a été retiré de la liste des canaux autorisés.\n\n` +
+                        `Klodovik n'apprendra plus des messages de ce canal.`
+                    )
+                    .setTimestamp();
+                await interaction.reply({embeds: [removeEmbed], ephemeral: true});
+
+                // Log Discord
+                await logKlodovikWhitelist(username, "remove", channelName, this.messageCollector.getWhitelist().length, avatarUrl);
+                break;
+
+            case "list":
+                const whitelist = this.messageCollector.getWhitelist();
+                let description: string;
+
+                if (whitelist.length === 0) {
+                    description = "🌍 **Tous les canaux sont acceptés**\n\n" +
+                        "Aucune whitelist configurée. Klodovik apprend de tous les canaux textuels du serveur.\n\n" +
+                        "💡 Utilisez `/klodovik-whitelist action:Ajouter ce canal` pour créer une whitelist.";
+                } else {
+                    const channelMentions = whitelist.map(id => `<#${id}>`).join("\n");
+                    description = `📝 **${whitelist.length} canal(aux) autorisé(s) :**\n\n${channelMentions}\n\n` +
+                        `Klodovik apprend uniquement des messages de ces canaux.`;
+                }
+
+                const listEmbed = new EmbedBuilder()
+                    .setColor(0x56fd0d)
+                    .setTitle("📋 Whitelist des Canaux")
+                    .setDescription(description)
+                    .setTimestamp();
+                await interaction.reply({embeds: [listEmbed], ephemeral: true});
+
+                // Log Discord (consultation)
+                await logKlodovikWhitelist(username, "list", undefined, whitelist.length, avatarUrl);
+                break;
+
+            case "clear":
+                this.messageCollector.clearWhitelist();
+                const clearEmbed = new EmbedBuilder()
+                    .setColor(0x56fd0d)
+                    .setTitle("✅ Whitelist effacée")
+                    .setDescription(
+                        `La whitelist a été vidée.\n\n` +
+                        `🌍 Klodovik accepte maintenant **tous les canaux** du serveur.`
+                    )
+                    .setTimestamp();
+                await interaction.reply({embeds: [clearEmbed], ephemeral: true});
+
+                // Log Discord
+                await logKlodovikWhitelist(username, "clear", undefined, 0, avatarUrl);
+                break;
         }
     }
 
