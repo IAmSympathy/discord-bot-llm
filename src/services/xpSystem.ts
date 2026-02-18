@@ -368,7 +368,9 @@ async function sendLevelUpNotification(userId: string, username: string, newLeve
         // Section prochain rôle
         if (nextRole) {
             description += `\n### 🎯 Prochain Objectif\n`;
-            description += `Plus que **${nextRole.levelsNeeded} niveau${nextRole.levelsNeeded > 1 ? 'x' : ''}** avant **${nextRole.roleName}** !`;
+            // Formater le prochain rôle : ping si serveur principal, nom sinon
+            const nextRoleDisplay = (isMainServer && nextRole.roleId) ? `<@&${nextRole.roleId}>` : nextRole.roleName;
+            description += `Plus que **${nextRole.levelsNeeded} niveau${nextRole.levelsNeeded > 1 ? 'x' : ''}** avant ${nextRoleDisplay} !`;
         } else {
             description += `\n### 👑 Rang Maximum\n`;
             description += `Tu as atteint le rang suprême !`;

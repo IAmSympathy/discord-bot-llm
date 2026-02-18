@@ -224,7 +224,7 @@ export class MessageCollector {
     public generateFromUser(userId: string, maxLength: number = 100): string {
         const userModel = this.userModels.get(userId);
         if (!userModel) {
-            return "Je n'ai pas encore assez de messages de cet utilisateur pour l'imiter ! 🤷";
+            return "AHUAAH (Je n'ai pas vu assez de messages de cette personne pour pouvoir l'imiter !)";
         }
 
         return userModel.generate(maxLength);

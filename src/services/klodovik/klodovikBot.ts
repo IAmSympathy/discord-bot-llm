@@ -359,7 +359,7 @@ export class KlodovikBot {
         if (targetUser) {
             generated = this.messageCollector.generateFromUser(targetUser.id);
             if (generated.includes("pas encore assez de messages")) {
-                await interaction.editReply(`❌ ${generated}`);
+                await interaction.editReply(`${generated}`);
                 return;
             }
             await interaction.editReply(`${generated}`);
@@ -376,7 +376,7 @@ export class KlodovikBot {
         } else {
             generated = this.messageCollector.generate(100, seed || undefined);
             if (generated.includes("pas encore assez appris")) {
-                await interaction.editReply(`❌ ${generated}`);
+                await interaction.editReply(`${generated}`);
                 return;
             }
             await interaction.editReply(`${generated}`);

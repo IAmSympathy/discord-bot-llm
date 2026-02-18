@@ -153,7 +153,7 @@ export class KlodovikVoiceService {
      * Volume entre 50% et 100% pour que ce soit toujours audible mais varié
      */
     private getRandomVolume(): number {
-        return 0.3 + Math.random() * 0.5;
+        return 0.2 + Math.random() * 0.4;
     }
 
 

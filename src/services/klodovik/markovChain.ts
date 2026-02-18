@@ -77,7 +77,7 @@ export class MarkovChain {
      */
     public generate(maxLength: number = 100, seed?: string): string {
         if (this.chain.size === 0) {
-            return "Je n'ai pas encore assez appris pour générer du texte ! 🤖";
+            return "AHUAAH (Je n'ai pas encore assez appris pour pouvoir répéter)";
         }
 
         // Choisir un état de départ
