@@ -468,7 +468,23 @@ function setupRematchCollector(message: any, gameState: GameState): void {
 
     collector.on("collect", async (i: any) => {
         try {
-            // Vérifier que c'est le bon joueur
+            // Gestion du bouton Retour au menu (vérifier en premier pour éviter la validation du joueur)
+            if (i.customId.startsWith("game_back_to_menu_")) {
+                if (gameState.originalUserId && i.user.id !== gameState.originalUserId) {
+                    await i.reply({content: "❌ Seul celui qui a lancé le menu peut y retourner !", ephemeral: true});
+                    return;
+                }
+
+                activeGames.delete(gameState.player);
+                collector.stop("menu");
+
+                // Retour au menu des jeux
+                const gamesModule = require("../../commands/games/games");
+                await gamesModule.showGameMenu(i, gameState.originalUserId || gameState.player);
+                return;
+            }
+
+            // Vérifier que c'est le bon joueur pour les autres boutons
             if (i.user.id !== gameState.player) {
                 await i.reply({
                     content: "❌ Ce n'est pas ta partie !",
@@ -490,14 +506,6 @@ function setupRematchCollector(message: any, gameState: GameState): void {
 
                 await i.update({embeds: [embed], components: [buttons]});
                 setupGameCollector(message, newGameState);
-            } else if (i.customId === "back_to_menu") {
-                activeGames.delete(gameState.player);
-                collector.stop("menu");
-
-
-                // Retour au menu des jeux
-                const gamesModule = require("../../commands/games/games");
-                await gamesModule.showGameMenu(i, gameState.originalUserId || gameState.player);
             }
         } catch (error) {
             console.error("[Blackjack] Error handling rematch:", error);
