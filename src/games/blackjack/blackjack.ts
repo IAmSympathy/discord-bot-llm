@@ -468,15 +468,16 @@ function setupRematchCollector(message: any, gameState: GameState): void {
 
     collector.on("collect", async (i: any) => {
         try {
-            if (i.customId === "blackjack_rematch") {
-                if (i.user.id !== gameState.player) {
-                    await i.reply({
-                        content: "❌ Ce n'est pas ta partie !",
-                        ephemeral: true
-                    });
-                    return;
-                }
+            // Vérifier que c'est le bon joueur
+            if (i.user.id !== gameState.player) {
+                await i.reply({
+                    content: "❌ Ce n'est pas ta partie !",
+                    ephemeral: true
+                });
+                return;
+            }
 
+            if (i.customId === "blackjack_rematch") {
                 collector.stop("rematch");
 
                 // Nouvelle partie
