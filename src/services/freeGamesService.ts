@@ -84,19 +84,24 @@ interface FreeGamesConfig {
 function loadFilterConfig(): FreeGamesConfig {
     try {
         if (fs.existsSync(CONFIG_FILE)) {
-            const data = fs.readFileSync(CONFIG_FILE, "utf-8");
-            return JSON.parse(data);
+            const data = fs.readFileSync(CONFIG_FILE, "utf-8").trim();
+            if (data) {
+                return JSON.parse(data);
+            }
         }
     } catch (error) {
         logger.error("Error loading filter config:", error);
     }
     // Configuration par défaut : jeux uniquement, à conserver, toutes plateformes
-    return {
+    const defaultConfig = {
         allowedTypes: ["game"],
         allowedChannels: ["keep"],
         minRating: 0,
         allowedStores: ["steam", "epic", "gog", "humble", "origin", "ubi", "itch", "prime", "other"]
     };
+    // Sauvegarder la config par défaut
+    saveFilterConfig(defaultConfig);
+    return defaultConfig;
 }
 
 /**
@@ -105,13 +110,18 @@ function loadFilterConfig(): FreeGamesConfig {
 function loadState(): FreeGamesState {
     try {
         if (fs.existsSync(STATE_FILE)) {
-            const data = fs.readFileSync(STATE_FILE, "utf-8");
-            return JSON.parse(data);
+            const data = fs.readFileSync(STATE_FILE, "utf-8").trim();
+            if (data) {
+                return JSON.parse(data);
+            }
         }
     } catch (error) {
         logger.error("Error loading state:", error);
     }
-    return {notifiedGames: [], lastCheck: null};
+    const defaultState = {notifiedGames: [], lastCheck: null};
+    // Sauvegarder l'état par défaut
+    saveState(defaultState);
+    return defaultState;
 }
 
 /**
@@ -122,6 +132,17 @@ function saveState(state: FreeGamesState): void {
         fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2), "utf-8");
     } catch (error) {
         logger.error("Error saving state:", error);
+    }
+}
+
+/**
+ * Sauvegarde la configuration des filtres
+ */
+function saveFilterConfig(config: FreeGamesConfig): void {
+    try {
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf-8");
+    } catch (error) {
+        logger.error("Error saving filter config:", error);
     }
 }
 

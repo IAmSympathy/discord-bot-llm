@@ -15,6 +15,8 @@ const OWNER_COMMANDS = [
     'test-event',
     'stop-event',
     'reset-counter',
+    'check-free-games',
+    'configure-free-games',
 ];
 
 /**
