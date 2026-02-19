@@ -562,28 +562,31 @@ export async function initializeFreeGamesService(client: Client): Promise<void> 
 
     logger.info("Initializing free games service...");
 
-    // Vérification de la connexion à l'API
-    const isConnected = await pingAPI();
+    // Vérifier que la clé API est configurée
+    const isConfigured = isAPIKeyConfigured();
 
-    if (!isConnected) {
-        logger.error("❌ Cannot connect to FreeStuff API. Check your API key.");
+    if (!isConfigured) {
+        logger.error("❌ FreeStuff API key not configured.");
         logger.error("   Get your API key at: https://dashboard.freestuffbot.xyz/");
+        logger.error("   Add it to .env: FREESTUFF_API_KEY=your_key_here");
         return;
     }
 
     const config = loadFilterConfig();
 
-    logger.info("✅ Free games service initialized and connected to FreeStuff API");
-    logger.info("ℹ️  FreeStuff API works via webhooks for real-time notifications");
+    logger.info("✅ Free games service initialized (API key configured)");
+    logger.info("ℹ️  FreeStuff API (free tier) works via webhooks ONLY");
     logger.info("ℹ️  Configure your webhook URL at: https://dashboard.freestuffbot.xyz/");
-    logger.info(`ℹ️  Notifications will be sent to channel: ${channelId}`);
+    logger.info(`ℹ️  Webhook URL: http://netricsa-bot.duckdns.org:3000/webhooks/freestuff`);
+    logger.info(`ℹ️  Compatibility Date: ${COMPATIBILITY_DATE}`);
+    logger.info(`ℹ️  Notifications channel: ${channelId}`);
     logger.info(`ℹ️  Active filters:`);
-    logger.info(`   - Product types: ${config.allowedTypes.join(', ')}`);
-    logger.info(`   - Offer types: ${config.allowedChannels.join(', ')}`);
-    logger.info(`   - Stores: ${config.allowedStores.length === 9 ? 'all' : config.allowedStores.join(', ')}`);
-    logger.info(`   - Min rating: ${config.minRating > 0 ? config.minRating + '/5' : 'disabled'}`);
+    logger.info(`     - Product types: ${config.allowedTypes.join(', ')}`);
+    logger.info(`     - Offer types: ${config.allowedChannels.join(', ')}`);
+    logger.info(`     - Stores: ${config.allowedStores.length === 9 ? 'all' : config.allowedStores.join(', ')}`);
+    logger.info(`     - Min rating: ${config.minRating > 0 ? config.minRating + '/5' : 'disabled'}`);
     logger.info("ℹ️  Use /configure-free-games to change filters");
-    logger.info("ℹ️  Use /check-free-games to test the connection manually");
+    logger.info("ℹ️  Use /check-free-games to verify configuration");
 
     // Nettoyer l'état des vieux jeux (garder seulement les 1000 derniers)
     const state = loadState();
