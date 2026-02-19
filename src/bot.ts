@@ -29,6 +29,8 @@ import {canExecuteCommand, getCommandRestrictionMessage} from "./utils/commandPe
 import {getAllXP} from "./services/xpSystem";
 import {initializeLevelRolesForGuild} from "./services/levelRoleService";
 import {initializeRandomEventsService} from "./services/randomEventsService";
+import {initializeFreeGamesService} from "./services/freeGamesService";
+import {setupFreeStuffWebhook} from "./services/freeStuffWebhook";
 
 
 const logger = createLogger("Bot");
@@ -182,6 +184,12 @@ client.once(Events.ClientReady, async () => {
 
     // Initialiser le service d'événements aléatoires
     initializeRandomEventsService(client);
+
+    // Initialiser le service de notifications de jeux gratuits
+    initializeFreeGamesService(client);
+
+    // Initialiser le serveur webhook pour FreeStuff
+    setupFreeStuffWebhook(client, EnvConfig.FREESTUFF_WEBHOOK_PORT);
 
     // [DÉSACTIVÉ] Initialiser le système de feu de foyer (événement saisonnier d'hiver)
     // const {initializeFireSystem} = require("./services/seasonal/fireManager");

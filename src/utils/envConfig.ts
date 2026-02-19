@@ -62,6 +62,10 @@ export class EnvConfig {
         return process.env.DAILY_CHALLENGES_CHANNEL_ID;
     }
 
+    static get FREE_GAMES_CHANNEL_ID(): string | undefined {
+        return process.env.FREE_GAMES_CHANNEL_ID;
+    }
+
     static get CITATIONS_THREAD_ID(): string | undefined {
         return process.env.CITATIONS_THREAD_ID;
     }
@@ -132,6 +136,14 @@ export class EnvConfig {
     // API Keys
     static get BRAVE_SEARCH_API_KEY(): string | undefined {
         return process.env.BRAVE_SEARCH_API_KEY;
+    }
+
+    static get FREESTUFF_API_KEY(): string | undefined {
+        return process.env.FREESTUFF_API_KEY;
+    }
+
+    static get FREESTUFF_WEBHOOK_PORT(): number {
+        return parseInt(process.env.FREESTUFF_WEBHOOK_PORT || "3000", 10);
     }
 
     // Meme Subreddits
