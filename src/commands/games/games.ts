@@ -71,19 +71,18 @@ export async function showGameMenu(interaction: any, originalUserId?: string) {
     let message;
 
     // Déterminer le type d'interaction et répondre en conséquence
-    // isButton() est une méthode qui existe sur ButtonInteraction
-    if (typeof interaction.isButton === 'function' && interaction.isButton()) {
+    if (interaction.replied || interaction.deferred) {
+        // Si l'interaction a déjà été répondue ou deferée, utiliser editReply()
+        message = await interaction.editReply({
+            embeds: [embed],
+            components: [row1, row2]
+        });
+    } else if (typeof interaction.isButton === 'function' && interaction.isButton()) {
         // Si c'est un bouton (retour au menu), utiliser update() pour remplacer le message actuel
         message = await interaction.update({
             embeds: [embed],
             components: [row1, row2],
             fetchReply: true
-        });
-    } else if (interaction.replied || interaction.deferred) {
-        // Si l'interaction a déjà été répondue, utiliser editReply()
-        message = await interaction.editReply({
-            embeds: [embed],
-            components: [row1, row2]
         });
     } else {
         // Sinon, c'est une nouvelle commande slash, utiliser reply()
