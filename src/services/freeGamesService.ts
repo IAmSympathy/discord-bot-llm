@@ -9,6 +9,7 @@ const logger = createLogger("FreeGamesService");
 const API_BASE_URL = "https://api.freestuffbot.xyz/v2";
 const COMPATIBILITY_DATE = "2025-03-01";
 const STATE_FILE = path.join(process.cwd(), "data", "free_games_state.json");
+const CONFIG_FILE = path.join(process.cwd(), "data", "free_games_config.json");
 
 /**
  * Types basés sur la documentation FreeStuff API
@@ -76,7 +77,6 @@ interface FreeGamesConfig {
     allowedStores: string[];
 }
 
-const CONFIG_FILE = path.join(process.cwd(), "data", "free_games_config.json");
 
 /**
  * Charge la configuration des filtres
