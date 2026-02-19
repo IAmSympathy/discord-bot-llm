@@ -126,29 +126,13 @@ function saveState(state: FreeGamesState): void {
 }
 
 /**
- * Vérifie la connexion à l'API FreeStuff
+ * Vérifie que la clé API est configurée
+ * Note: Le tier gratuit FreeStuff ne permet pas d'accéder à /v2/ping
+ * Le service fonctionne uniquement via webhooks sur le tier gratuit
  */
-async function pingAPI(): Promise<boolean> {
+function isAPIKeyConfigured(): boolean {
     const apiKey = EnvConfig.FREESTUFF_API_KEY;
-
-    if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
-        return false;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/ping`, {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${apiKey}`,
-                "X-Compatibility-Date": COMPATIBILITY_DATE
-            }
-        });
-
-        return response.status === 204;
-    } catch (error) {
-        logger.error("Error pinging FreeStuff API:", error);
-        return false;
-    }
+    return !!(apiKey && apiKey !== "YOUR_API_KEY_HERE");
 }
 
 /**
@@ -519,23 +503,25 @@ export async function processProductUpdate(client: Client, product: Product): Pr
 
 /**
  * Vérifie et notifie les nouveaux jeux gratuits (pour test manuel)
- * Note: L'API FreeStuff fonctionne principalement via webhooks
+ * Note: L'API FreeStuff fonctionne uniquement via webhooks sur le tier gratuit
  */
 export async function checkAndNotifyFreeGames(client: Client): Promise<void> {
     try {
-        logger.info("Manual check requested - verifying API connection...");
+        logger.info("Manual check requested - verifying API key configuration...");
 
-        const isConnected = await pingAPI();
+        const isConfigured = isAPIKeyConfigured();
 
-        if (!isConnected) {
-            logger.error("Cannot connect to FreeStuff API. Check your API key.");
+        if (!isConfigured) {
+            logger.error("❌ FreeStuff API key not configured. Check your .env file.");
+            logger.error("   Get your API key at: https://dashboard.freestuffbot.xyz/");
             return;
         }
 
-        logger.info("✅ Connected to FreeStuff API");
-        logger.info("ℹ️ Note: FreeStuff API works primarily via webhooks.");
+        logger.info("✅ FreeStuff API key is configured");
+        logger.info("ℹ️ Note: FreeStuff API (free tier) works ONLY via webhooks.");
         logger.info("ℹ️ New games will be posted automatically when webhooks are configured.");
-        logger.info("ℹ️ Configure webhooks at: https://dashboard.freestuffbot.xyz/");
+        logger.info("ℹ️ Configure your webhook URL at: https://dashboard.freestuffbot.xyz/");
+        logger.info(`ℹ️ Your webhook URL: http://netricsa-bot.duckdns.org:3000/webhooks/freestuff`);
 
     } catch (error) {
         logger.error("Error checking free games:", error);
