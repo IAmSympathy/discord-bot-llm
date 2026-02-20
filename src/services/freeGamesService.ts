@@ -328,8 +328,7 @@ function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttac
 
     const embed = new EmbedBuilder()
         .setTitle(product.title)
-        .setColor(color)
-        .setTimestamp();
+        .setColor(color);
 
     // Si on a un logo local, l'utiliser comme thumbnail
     if (logoAttachment) {
@@ -344,24 +343,57 @@ function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttac
         const shortDesc = product.description.length > 200
             ? product.description.substring(0, 197) + "..."
             : product.description;
-        description += shortDesc + "\n\n";
+        // Ajouter la quotation Discord (>) au début de la description
+        description += `> ${shortDesc}\n\n`;
     }
 
     // Prix formaté comme FreeStuff
     if (product.prices && product.prices.length > 0) {
         const price = product.prices[0];
         if (price.oldValue > 0) {
-            const oldPrice = `${(price.oldValue / 100).toFixed(2)} ${price.currency}`;
-            description += `~~${oldPrice}~~ **Gratuit** jusqu'au ${new Date(product.until * 1000).toLocaleDateString('fr-FR')}`;
+            const oldPrice = (price.oldValue / 100).toFixed(2).replace('.', ',');
+            const currency = price.currency.toUpperCase();
+            description += `~~${oldPrice} $${currency}~~ **Gratuit** until <t:${product.until}:D>`;
         }
     } else if (product.until > 0) {
-        description += `**Gratuit** jusqu'au ${new Date(product.until * 1000).toLocaleDateString('fr-FR')}`;
+        description += `**Gratuit** until <t:${product.until}:D>`;
     }
 
     // Note avec étoiles
     if (product.rating > 0) {
         const rating = product.rating.toFixed(1);
-        description += `     ${rating}/10 ★`;
+        description += `⠀⠀⠀⠀⠀${rating}/10 ★`;
+    }
+
+    // Ajouter les liens d'ouverture (navigateur et client)
+    const productUrl = getBestUrl(product);
+    if (productUrl) {
+        // Extraire l'ID/slug du jeu selon la plateforme
+        let gameIdentifier = "";
+
+        if (product.store === "steam") {
+            const steamMatch = productUrl.match(/\/app\/(\d+)/);
+            if (steamMatch) {
+                gameIdentifier = steamMatch[1];
+            }
+        } else if (product.store === "epic") {
+            const epicMatch = productUrl.match(/\/p\/([^?#]+)/);
+            if (epicMatch) {
+                gameIdentifier = epicMatch[1];
+            }
+        }
+
+        // Créer les liens formatés
+        const browserLink = `**[Ouvrir dans le navigateur ↗](${productUrl})**`;
+        let clientLink = "";
+
+        if (product.store === "steam" && gameIdentifier) {
+            clientLink = `⠀⠀⠀⠀⠀⠀**[Ouvrir dans le client Steam ↗](https://freestuffbot.xyz/ext/open-client/steam/${gameIdentifier})**`;
+        } else if (product.store === "epic" && gameIdentifier) {
+            clientLink = `⠀⠀⠀⠀⠀⠀**[Ouvrir dans le client Epic Games ↗](https://freestuffbot.xyz/ext/open-client/epic/${gameIdentifier})**`;
+        }
+
+        description += `\n\n${browserLink}${clientLink}`;
     }
 
     if (description) {
@@ -374,11 +406,6 @@ function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttac
         embed.setImage(imageUrl);
     }
 
-    // URL
-    const productUrl = getBestUrl(product);
-    if (productUrl) {
-        embed.setURL(productUrl);
-    }
 
     // Tags en badges compacts
     if (product.tags && product.tags.length > 0) {
@@ -398,7 +425,7 @@ function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttac
         const tagList = product.tags.slice(0, 4).map(tag => {
             const emoji = tagEmojis[tag.toLowerCase()] || '⚪';
             return `${emoji} ${tag.toUpperCase()}`;
-        }).join('     ');
+        }).join('⠀⠀⠀⠀⠀');
 
         embed.addFields({
             name: '\u200B',
