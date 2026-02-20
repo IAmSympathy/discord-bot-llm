@@ -468,12 +468,6 @@ export async function processAnnouncement(client: Client, announcement: Resolved
 
     try {
         for (const product of announcement.resolvedProducts) {
-            // Vérifier si ce jeu a déjà été notifié
-            if (state.notifiedGames.includes(product.id)) {
-                logger.debug(`Game already notified: ${product.title} (ID: ${product.id})`);
-                continue;
-            }
-
             // Filtrer les jeux trash ou non approuvés si souhaité
             const isTrash = product.flags & (1 << 0); // TRASH flag
             if (isTrash) {
@@ -481,11 +475,13 @@ export async function processAnnouncement(client: Client, announcement: Resolved
                 continue;
             }
 
-            // Notifier le jeu
+            // Notifier le jeu (sans vérifier s'il a déjà été notifié)
             await notifyFreeGame(client, product);
 
-            // Ajouter à la liste des jeux notifiés
-            state.notifiedGames.push(product.id);
+            // Ajouter à la liste des jeux notifiés (pour historique seulement)
+            if (!state.notifiedGames.includes(product.id)) {
+                state.notifiedGames.push(product.id);
+            }
         }
 
         // Sauvegarder l'état
