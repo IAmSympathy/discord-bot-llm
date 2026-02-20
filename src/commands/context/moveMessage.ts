@@ -165,7 +165,7 @@ module.exports = {
                                 .setTitle("🚚 Déplacer le message")
                                 .setDescription(
                                     `**Canal sélectionné:** ${targetChannel}\n\n` +
-                                    `**Message de:** ${targetMessage.author.tag}\n` +
+                                    `**Message de:** <@${targetMessage.author.id}>\n` +
                                     `**Contenu:** ${targetMessage.content ? (targetMessage.content.length > 100 ? targetMessage.content.substring(0, 100) + "..." : targetMessage.content) : "*Pas de contenu texte*"}\n\n` +
                                     `Cliquez sur **"✅ Confirmer le déplacement"** pour déplacer ce message.`
                                 )
@@ -362,21 +362,27 @@ async function moveMessage(
         if (isThread) {
             // Pour les threads, on doit obtenir le webhook du canal parent
             const parentChannel = targetChannel.parent;
-            if (!parentChannel || !parentChannel.isTextBased()) {
+            if (!parentChannel) {
                 throw new Error("Unable to get parent channel for thread");
             }
 
+            // Vérifier que le parent supporte les webhooks
+            // Les ForumChannel, TextChannel, NewsChannel supportent les webhooks
+            if (!('fetchWebhooks' in parentChannel) || !('createWebhook' in parentChannel)) {
+                throw new Error("Parent channel does not support webhooks");
+            }
+
             // Récupérer ou créer un webhook dans le canal parent
-            const webhooks = await parentChannel.fetchWebhooks();
-            webhookToUse = webhooks.find(wh => wh.name === "Déplaceur de Messages") ||
-                await parentChannel.createWebhook({
+            const webhooks = await (parentChannel as TextChannel | NewsChannel | ForumChannel).fetchWebhooks();
+            webhookToUse = webhooks.find((wh: any) => wh.name === "Déplaceur de Messages") ||
+                await (parentChannel as TextChannel | NewsChannel | ForumChannel).createWebhook({
                     name: "Déplaceur de Messages",
                     reason: "Webhook pour déplacer des messages"
                 });
         } else {
             // Pour les canaux normaux (TextChannel, NewsChannel, VoiceChannel, ForumChannel)
             const webhooks = await (targetChannel as TextChannel | NewsChannel | VoiceChannel | ForumChannel).fetchWebhooks();
-            webhookToUse = webhooks.find(wh => wh.name === "Déplaceur de Messages") ||
+            webhookToUse = webhooks.find((wh: any) => wh.name === "Déplaceur de Messages") ||
                 await (targetChannel as TextChannel | NewsChannel | VoiceChannel | ForumChannel).createWebhook({
                     name: "Déplaceur de Messages",
                     reason: "Webhook pour déplacer des messages"
@@ -389,17 +395,31 @@ async function moveMessage(
         // Récupérer les embeds, mais filtrer les embeds auto-générés par Discord
         // (Tenor, YouTube, liens riches, etc.) pour que Discord les recrée automatiquement
         const embeds = (sourceMessage.embeds || []).filter((embed: any) => {
-            // Garder uniquement les embeds créés par des bots/webhooks (pas auto-générés)
-            // Les embeds auto-générés ont un type "rich" ou "video" sans auteur
-            if (embed.type === "rich" && !embed.author && !embed.footer) {
-                // C'est probablement un embed auto-généré (Tenor, lien, etc.)
-                return false;
-            }
+            // Filtrer les embeds de type video ou gifv (auto-générés)
             if (embed.type === "video" || embed.type === "gifv") {
-                // Embeds vidéo/gif auto-générés
                 return false;
             }
-            // Garder les embeds personnalisés (avec auteur, footer, etc.)
+
+            // Pour les embeds "rich", ne garder que ceux qui sont VRAIMENT personnalisés
+            if (embed.type === "rich") {
+                // Si l'embed a une image/thumbnail et PAS de description/title personnalisé,
+                // c'est probablement un embed auto-généré (Tenor, lien riche, etc.)
+                const hasMedia = embed.image || embed.thumbnail || embed.video;
+                const hasCustomContent = embed.author || embed.footer || (embed.fields && embed.fields.length > 0);
+                const hasColorOrTitle = embed.color || (embed.title && embed.description);
+
+                // Si c'est juste une image/vidéo sans contenu personnalisé, c'est auto-généré
+                if (hasMedia && !hasCustomContent && !hasColorOrTitle) {
+                    return false;
+                }
+
+                // Si l'embed a un provider (Tenor, YouTube, etc.), c'est auto-généré
+                if (embed.provider) {
+                    return false;
+                }
+            }
+
+            // Garder les embeds personnalisés
             return true;
         });
 
