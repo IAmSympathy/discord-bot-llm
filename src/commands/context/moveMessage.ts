@@ -68,10 +68,7 @@ module.exports = {
                 .setTitle("🚚 Déplacer le message")
                 .setDescription(
                     `Sélectionnez le salon de destination pour déplacer ce message.\n\n` +
-                    `**Message de:** ${targetMessage.author.tag}\n` +
-                    `**Contenu:** ${targetMessage.content ? (targetMessage.content.length > 100 ? targetMessage.content.substring(0, 100) + "..." : targetMessage.content) : "*Pas de contenu texte*"}\n\n` +
-                    `Le message sera envoyé avec le nom et la photo de l'auteur original.\n` +
-                    `💡 *Les salons vocaux supportés incluent leur discussion textuelle.*\n\n` +
+                    `**Message:** ${targetMessage.url}\n\n` +
                     `**Note:** Si vous ne voyez pas tous les threads de forum, utilisez le bouton ci-dessous pour entrer l'ID manuellement.`
                 )
                 .setTimestamp();
@@ -164,9 +161,8 @@ module.exports = {
                                 .setColor(0x5865F2)
                                 .setTitle("🚚 Déplacer le message")
                                 .setDescription(
-                                    `**Canal sélectionné:** ${targetChannel}\n\n` +
-                                    `**Message de:** <@${targetMessage.author.id}>\n` +
-                                    `**Contenu:** ${targetMessage.content ? (targetMessage.content.length > 100 ? targetMessage.content.substring(0, 100) + "..." : targetMessage.content) : "*Pas de contenu texte*"}\n\n` +
+                                    `**Canal sélectionné:** ${targetChannel}\n` +
+                                    `**Message:** ${targetMessage.url}\n\n` +
                                     `Cliquez sur **"✅ Confirmer le déplacement"** pour déplacer ce message.`
                                 )
                                 .setTimestamp();
@@ -234,9 +230,8 @@ module.exports = {
                             .setColor(0x5865F2)
                             .setTitle("🚚 Déplacer le message")
                             .setDescription(
-                                `**Canal sélectionné:** ${targetChannel}\n\n` +
-                                `**Message de:** ${targetMessage.author.tag}\n` +
-                                `**Contenu:** ${targetMessage.content ? (targetMessage.content.length > 100 ? targetMessage.content.substring(0, 100) + "..." : targetMessage.content) : "*Pas de contenu texte*"}\n\n` +
+                                `**Canal sélectionné:** ${targetChannel}\n` +
+                                `**Message:** ${targetMessage.url}\n\n` +
                                 `Cliquez sur **"✅ Confirmer le déplacement"** pour déplacer ce message.`
                             )
                             .setTimestamp();
@@ -392,9 +387,12 @@ async function moveMessage(
         // Préparer le contenu du message
         let content = sourceMessage.content || "";
 
+        // Vérifier si le message est uniquement une URL (GIF Tenor, lien YouTube, etc.)
+        const isOnlyUrl = content.trim().match(/^https?:\/\/\S+$/);
+
         // Récupérer les embeds, mais filtrer les embeds auto-générés par Discord
-        // (Tenor, YouTube, liens riches, etc.) pour que Discord les recrée automatiquement
-        const embeds = (sourceMessage.embeds || []).filter((embed: any) => {
+        // Si le message est uniquement une URL, on supprime TOUS les embeds pour que Discord les recrée
+        const embeds = isOnlyUrl ? [] : (sourceMessage.embeds || []).filter((embed: any) => {
             // Filtrer les embeds de type video ou gifv (auto-générés)
             if (embed.type === "video" || embed.type === "gifv") {
                 return false;
@@ -471,7 +469,7 @@ async function moveMessage(
             .setColor(0x2ecc71)
             .setTitle("✅ Message déplacé avec succès")
             .setDescription(
-                `Le message de **${sourceMessage.author.username}** a été déplacé.\n\n` +
+                `Le message de <@${sourceMessage.author.id}> a été déplacé.\n\n` +
                 `**Depuis:** #${sourceChannelName}\n` +
                 `**Vers:** ${targetChannel}\n\n` +
                 `Le message original a été supprimé.`
