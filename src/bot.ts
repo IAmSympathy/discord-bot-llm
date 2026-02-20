@@ -996,6 +996,67 @@ client.on(Events.InteractionCreate, async (interaction) => {
         return;
     }
 
+    // Gérer les commandes de menu contextuel (Message Context Menu)
+    if (interaction.isMessageContextMenuCommand()) {
+        const command = interaction.client.commands.get(interaction.commandName);
+
+        if (!command) {
+            console.error(`No message context menu command matching ${interaction.commandName} was found.`);
+            return;
+        }
+
+        try {
+            // Enregistrer l'utilisation dans les statistiques
+            recordCommandStats(interaction.user.id, interaction.user.username);
+
+            // Vérifier les achievements Discord (commandes)
+            const {checkDiscordAchievements} = require("./services/discordAchievementChecker");
+            await checkDiscordAchievements(interaction.user.id, interaction.user.username, interaction.client, interaction.channelId);
+
+            // Ajouter XP pour l'utilisation de commande contextuelle
+            const {addXP, XP_REWARDS} = require("./services/xpSystem");
+            if (interaction.channel) {
+                await addXP(
+                    interaction.user.id,
+                    interaction.user.username,
+                    XP_REWARDS.commandeUtilisee,
+                    interaction.channel,
+                    false
+                );
+            }
+
+            await command.execute(interaction);
+        } catch (error: any) {
+            console.error("[Message Context Menu Command Error]", error);
+
+            if (error?.code === 10062 || error?.rawError?.code === 10062) {
+                console.warn(`[Message Context Menu] Interaction expired for ${interaction.commandName}`);
+                return;
+            }
+
+            try {
+                const errorEmbed = createErrorEmbed(
+                    "Erreur",
+                    "Une erreur s'est produite lors de l'exécution de la commande.\n\n" +
+                    "Veuillez réessayer plus tard."
+                );
+
+                if (interaction.replied || interaction.deferred) {
+                    await interaction.followUp({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+                } else {
+                    await interaction.reply({embeds: [errorEmbed], flags: MessageFlags.Ephemeral});
+                }
+            } catch (replyError: any) {
+                if (replyError?.code === 10062) {
+                    console.warn(`[Message Context Menu] Could not send error message - interaction already expired`);
+                } else {
+                    console.error("[Message Context Menu] Error sending error message:", replyError);
+                }
+            }
+        }
+        return;
+    }
+
     // Les interactions des boutons sont maintenant toutes gérées dans userProfile.ts
     // Plus besoin de logique ici pour achievements ou stats
 
