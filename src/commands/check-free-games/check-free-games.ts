@@ -54,13 +54,21 @@ module.exports = {
             );
             await safeReply(interaction, {embeds: [processingEmbed]});
 
-            // Vérifier les jeux gratuits
+            // Vérifier la configuration (ne fait PAS de polling - l'API gratuite ne le permet pas)
             await checkAndNotifyFreeGames(interaction.client);
 
-            // Mettre à jour la réponse
+            // Mettre à jour la réponse avec des explications claires
             const successEmbed = createSuccessEmbed(
-                "Vérification terminée",
-                "✅ La vérification des jeux gratuits est terminée. Si des jeux sont disponibles, une notification a été envoyée dans le salon configuré."
+                "Configuration FreeStuff",
+                "✅ **Clé API configurée et serveur webhook actif !**\n\n" +
+                "ℹ️ **Comment ça fonctionne :**\n" +
+                "• L'API FreeStuff (tier gratuit) fonctionne **uniquement via webhooks**\n" +
+                "• Cette commande ne récupère PAS de jeux (l'API ne le permet pas)\n" +
+                "• Les notifications arrivent **automatiquement** quand FreeStuff détecte un nouveau jeu\n\n" +
+                "📡 **Votre webhook :** `http://151.145.51.189:3000/webhooks/freestuff`\n" +
+                "🎮 **Salon :** <#" + (process.env.FREE_GAMES_CHANNEL_ID || "non configuré") + ">\n\n" +
+                "🔧 **Pour tester :** Utilisez le bouton \"Send Test Ping\" sur le dashboard FreeStuff\n" +
+                "🌐 **Dashboard :** https://dashboard.freestuffbot.xyz/"
             );
 
             await interaction.editReply({embeds: [successEmbed]});

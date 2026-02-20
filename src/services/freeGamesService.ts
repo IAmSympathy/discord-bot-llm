@@ -542,7 +542,7 @@ export async function checkAndNotifyFreeGames(client: Client): Promise<void> {
         logger.info("ℹ️ Note: FreeStuff API (free tier) works ONLY via webhooks.");
         logger.info("ℹ️ New games will be posted automatically when webhooks are configured.");
         logger.info("ℹ️ Configure your webhook URL at: https://dashboard.freestuffbot.xyz/");
-        logger.info(`ℹ️ Your webhook URL: http://netricsa-bot.duckdns.org:3000/webhooks/freestuff`);
+        logger.info(`ℹ️ Your webhook URL: http://151.145.51.189:3000/webhooks/freestuff`);
 
     } catch (error) {
         logger.error("Error checking free games:", error);
