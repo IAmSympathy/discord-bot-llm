@@ -1,4 +1,4 @@
-import {ActionRowBuilder, ApplicationCommandType, ChannelSelectMenuBuilder, ChannelType, ContextMenuCommandBuilder, EmbedBuilder, ForumChannel, MessageContextMenuCommandInteraction, MessageFlags, NewsChannel, PermissionFlagsBits, TextChannel, ThreadChannel, VoiceChannel} from "discord.js";
+import {ActionRowBuilder, ApplicationCommandType, ButtonBuilder, ButtonStyle, ChannelSelectMenuBuilder, ChannelType, ContextMenuCommandBuilder, EmbedBuilder, ForumChannel, MessageContextMenuCommandInteraction, MessageFlags, ModalBuilder, NewsChannel, PermissionFlagsBits, TextChannel, TextInputBuilder, TextInputStyle, ThreadChannel, VoiceChannel} from "discord.js";
 import {createLogger} from "../../utils/logger";
 
 const logger = createLogger("MoveMessage");
@@ -47,26 +47,49 @@ module.exports = {
             const row = new ActionRowBuilder<ChannelSelectMenuBuilder>()
                 .addComponents(channelSelect);
 
+            // Bouton de confirmation (désactivé au début)
+            const confirmButton = new ButtonBuilder()
+                .setCustomId(`move_confirm_${targetMessage.id}`)
+                .setLabel("✅ Confirmer le déplacement")
+                .setStyle(ButtonStyle.Success)
+                .setDisabled(true);
+
+            // Bouton pour entrer l'ID manuellement (utile pour les threads de forum non suivis)
+            const manualButton = new ButtonBuilder()
+                .setCustomId(`move_manual_${targetMessage.id}`)
+                .setLabel("📝 Entrer l'ID du canal")
+                .setStyle(ButtonStyle.Secondary);
+
+            const buttonRow = new ActionRowBuilder<ButtonBuilder>()
+                .addComponents(confirmButton, manualButton);
+
             const embed = new EmbedBuilder()
-                .setColor(0x5865F2)
-                .setTitle("📬 Déplacer le message")
+                .setColor(0xffcc4d)
+                .setTitle("🚚 Déplacer le message")
                 .setDescription(
-                    `Sélectionnez l'endroit de destination pour déplacer ce message.\n\n` +
-                    `**Message de:** <@${targetMessage.author.id}>\n` +
-                    `**Contenu:** \`\`\`${targetMessage.content ? (targetMessage.content.length > 100 ? targetMessage.content.substring(0, 100) + "..." : targetMessage.content) : "*Pas de contenu texte*"}\`\`\`\n\n`,
+                    `Sélectionnez le salon de destination pour déplacer ce message.\n\n` +
+                    `**Message de:** ${targetMessage.author.tag}\n` +
+                    `**Contenu:** ${targetMessage.content ? (targetMessage.content.length > 100 ? targetMessage.content.substring(0, 100) + "..." : targetMessage.content) : "*Pas de contenu texte*"}\n\n` +
+                    `Le message sera envoyé avec le nom et la photo de l'auteur original.\n` +
+                    `💡 *Les salons vocaux supportés incluent leur discussion textuelle.*\n\n` +
+                    `**Note:** Si vous ne voyez pas tous les threads de forum, utilisez le bouton ci-dessous pour entrer l'ID manuellement.`
                 )
                 .setTimestamp();
 
             await interaction.reply({
                 embeds: [embed],
-                components: [row],
+                components: [row, buttonRow],
                 flags: MessageFlags.Ephemeral
             });
 
-            // Créer un collector pour le sélecteur de salon
+            // Créer un collector pour le sélecteur de salon, le bouton de confirmation ET le bouton manuel
             const collector = interaction.channel?.createMessageComponentCollector({
-                filter: (i) => i.customId === `move_channel_${targetMessage.id}` && i.user.id === interaction.user.id,
-                time: 60000 // 1 minute
+                filter: (i) => (
+                    i.customId === `move_channel_${targetMessage.id}` ||
+                    i.customId === `move_confirm_${targetMessage.id}` ||
+                    i.customId === `move_manual_${targetMessage.id}`
+                ) && i.user.id === interaction.user.id,
+                time: 120000 // 2 minutes
             });
 
             if (!collector) {
@@ -74,60 +97,157 @@ module.exports = {
                 return;
             }
 
+            // Variable pour stocker le canal sélectionné
+            let selectedChannel: any = null;
+
             collector.on("collect", async (selectInteraction) => {
                 try {
-                    if (!selectInteraction.isChannelSelectMenu()) return;
+                    // Gérer le bouton "Entrer l'ID manuellement"
+                    if (selectInteraction.isButton() && selectInteraction.customId === `move_manual_${targetMessage.id}`) {
+                        const modal = new ModalBuilder()
+                            .setCustomId(`move_modal_${targetMessage.id}`)
+                            .setTitle("Entrer l'ID du canal");
 
-                    await selectInteraction.deferUpdate();
+                        const channelIdInput = new TextInputBuilder()
+                            .setCustomId("channel_id")
+                            .setLabel("ID du canal de destination")
+                            .setPlaceholder("Ex: 1234567890123456789")
+                            .setStyle(TextInputStyle.Short)
+                            .setRequired(true)
+                            .setMinLength(17)
+                            .setMaxLength(20);
 
-                    const selectedChannelId = selectInteraction.values[0];
-                    const targetChannel = await interaction.guild?.channels.fetch(selectedChannelId);
+                        const modalRow = new ActionRowBuilder<TextInputBuilder>().addComponents(channelIdInput);
+                        modal.addComponents(modalRow);
 
-                    if (!targetChannel) {
-                        await selectInteraction.followUp({
-                            content: "❌ Impossible de trouver le salon sélectionné.",
-                            flags: MessageFlags.Ephemeral
+                        await selectInteraction.showModal(modal);
+
+                        // Attendre la soumission du modal
+                        try {
+                            const modalSubmit = await selectInteraction.awaitModalSubmit({
+                                filter: (i) => i.customId === `move_modal_${targetMessage.id}` && i.user.id === interaction.user.id,
+                                time: 120000 // 2 minutes
+                            });
+
+                            await modalSubmit.deferUpdate();
+
+                            const channelId = modalSubmit.fields.getTextInputValue("channel_id").trim();
+                            const targetChannel = await interaction.guild?.channels.fetch(channelId).catch(() => null);
+
+                            if (!targetChannel) {
+                                await modalSubmit.followUp({
+                                    content: "❌ Canal introuvable. Vérifiez que l'ID est correct et que le bot a accès à ce canal.",
+                                    flags: MessageFlags.Ephemeral
+                                });
+                                return;
+                            }
+
+                            // Sauvegarder le canal et activer le bouton de confirmation
+                            selectedChannel = targetChannel;
+
+                            // Mettre à jour l'interface avec le bouton de confirmation activé
+                            const updatedConfirmButton = new ButtonBuilder()
+                                .setCustomId(`move_confirm_${targetMessage.id}`)
+                                .setLabel("✅ Confirmer le déplacement")
+                                .setStyle(ButtonStyle.Success)
+                                .setDisabled(false);
+
+                            const updatedManualButton = new ButtonBuilder()
+                                .setCustomId(`move_manual_${targetMessage.id}`)
+                                .setLabel("📝 Entrer l'ID du canal")
+                                .setStyle(ButtonStyle.Secondary);
+
+                            const updatedButtonRow = new ActionRowBuilder<ButtonBuilder>()
+                                .addComponents(updatedConfirmButton, updatedManualButton);
+
+                            const updatedEmbed = new EmbedBuilder()
+                                .setColor(0x5865F2)
+                                .setTitle("🚚 Déplacer le message")
+                                .setDescription(
+                                    `**Canal sélectionné:** ${targetChannel}\n\n` +
+                                    `**Message de:** ${targetMessage.author.tag}\n` +
+                                    `**Contenu:** ${targetMessage.content ? (targetMessage.content.length > 100 ? targetMessage.content.substring(0, 100) + "..." : targetMessage.content) : "*Pas de contenu texte*"}\n\n` +
+                                    `Cliquez sur **"✅ Confirmer le déplacement"** pour déplacer ce message.`
+                                )
+                                .setTimestamp();
+
+                            await interaction.editReply({
+                                embeds: [updatedEmbed],
+                                components: [row, updatedButtonRow]
+                            });
+                        } catch (error) {
+                            logger.error("Modal timeout or error:", error);
+                        }
+                        return;
+                    }
+
+                    // Gérer le bouton de confirmation
+                    if (selectInteraction.isButton() && selectInteraction.customId === `move_confirm_${targetMessage.id}`) {
+                        if (!selectedChannel) {
+                            await selectInteraction.reply({
+                                content: "❌ Aucun canal sélectionné.",
+                                flags: MessageFlags.Ephemeral
+                            });
+                            return;
+                        }
+
+                        await selectInteraction.deferUpdate();
+                        await handleChannelMove(selectedChannel, selectInteraction, interaction, targetMessage, collector);
+                        return;
+                    }
+
+                    // Gérer le sélecteur de canal
+                    if (selectInteraction.isChannelSelectMenu()) {
+                        await selectInteraction.deferUpdate();
+
+                        const selectedChannelId = selectInteraction.values[0];
+                        const targetChannel = await interaction.guild?.channels.fetch(selectedChannelId);
+
+                        if (!targetChannel) {
+                            await selectInteraction.followUp({
+                                content: "❌ Impossible de trouver le salon sélectionné.",
+                                flags: MessageFlags.Ephemeral
+                            });
+                            return;
+                        }
+
+                        // Sauvegarder le canal sélectionné
+                        selectedChannel = targetChannel;
+
+                        // Activer le bouton de confirmation
+                        const updatedConfirmButton = new ButtonBuilder()
+                            .setCustomId(`move_confirm_${targetMessage.id}`)
+                            .setLabel("✅ Confirmer le déplacement")
+                            .setStyle(ButtonStyle.Success)
+                            .setDisabled(false);
+
+                        const updatedManualButton = new ButtonBuilder()
+                            .setCustomId(`move_manual_${targetMessage.id}`)
+                            .setLabel("📝 Entrer l'ID du canal")
+                            .setStyle(ButtonStyle.Secondary);
+
+                        const updatedButtonRow = new ActionRowBuilder<ButtonBuilder>()
+                            .addComponents(updatedConfirmButton, updatedManualButton);
+
+                        // Mettre à jour l'embed pour montrer le canal sélectionné
+                        const updatedEmbed = new EmbedBuilder()
+                            .setColor(0x5865F2)
+                            .setTitle("🚚 Déplacer le message")
+                            .setDescription(
+                                `**Canal sélectionné:** ${targetChannel}\n\n` +
+                                `**Message de:** ${targetMessage.author.tag}\n` +
+                                `**Contenu:** ${targetMessage.content ? (targetMessage.content.length > 100 ? targetMessage.content.substring(0, 100) + "..." : targetMessage.content) : "*Pas de contenu texte*"}\n\n` +
+                                `Cliquez sur **"✅ Confirmer le déplacement"** pour déplacer ce message.`
+                            )
+                            .setTimestamp();
+
+                        await interaction.editReply({
+                            embeds: [updatedEmbed],
+                            components: [row, updatedButtonRow]
                         });
                         return;
                     }
 
-                    // Vérifier que le bot peut envoyer des messages dans ce salon
-                    if (targetChannel.isTextBased()) {
-                        const botMember = interaction.guild?.members.me;
-                        if (!botMember) return;
-
-                        const permissions = targetChannel.permissionsFor(botMember);
-                        if (!permissions?.has(PermissionFlagsBits.SendMessages)) {
-                            await selectInteraction.followUp({
-                                content: `❌ Je n'ai pas la permission d'envoyer des messages dans ${targetChannel}.`,
-                                flags: MessageFlags.Ephemeral
-                            });
-                            return;
-                        }
-
-                        // Vérifier les permissions pour les webhooks (sauf pour les threads)
-                        const isThread = targetChannel.type === ChannelType.PublicThread ||
-                            targetChannel.type === ChannelType.PrivateThread ||
-                            targetChannel.type === ChannelType.AnnouncementThread;
-
-                        if (!isThread && !permissions?.has(PermissionFlagsBits.ManageWebhooks)) {
-                            await selectInteraction.followUp({
-                                content: `❌ Je n'ai pas la permission de gérer les webhooks dans ${targetChannel}.`,
-                                flags: MessageFlags.Ephemeral
-                            });
-                            return;
-                        }
-
-                        // Déplacer le message
-                        await moveMessage(targetMessage, targetChannel as TextChannel | ThreadChannel | NewsChannel | VoiceChannel, selectInteraction);
-                    } else {
-                        await selectInteraction.followUp({
-                            content: "❌ Le salon sélectionné ne permet pas l'envoi de messages.",
-                            flags: MessageFlags.Ephemeral
-                        });
-                    }
-
-                    collector.stop();
                 } catch (error: any) {
                     logger.error("Error in channel select collector:", error);
                     try {
@@ -172,11 +292,64 @@ module.exports = {
 };
 
 /**
+ * Gère le déplacement d'un message vers un canal (appelé depuis le sélecteur ou le modal)
+ */
+async function handleChannelMove(
+    targetChannel: any,
+    selectInteraction: any,
+    interaction: MessageContextMenuCommandInteraction,
+    targetMessage: any,
+    collector: any
+) {
+    try {
+        // Vérifier que le bot peut envoyer des messages dans ce salon
+        if (targetChannel.isTextBased()) {
+            const botMember = interaction.guild?.members.me;
+            if (!botMember) return;
+
+            const permissions = targetChannel.permissionsFor(botMember);
+            if (!permissions?.has(PermissionFlagsBits.SendMessages)) {
+                await selectInteraction.followUp({
+                    content: `❌ Je n'ai pas la permission d'envoyer des messages dans ${targetChannel}.`,
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+
+            // Vérifier les permissions pour les webhooks (sauf pour les threads)
+            const isThread = targetChannel.type === ChannelType.PublicThread ||
+                targetChannel.type === ChannelType.PrivateThread ||
+                targetChannel.type === ChannelType.AnnouncementThread;
+
+            if (!isThread && !permissions?.has(PermissionFlagsBits.ManageWebhooks)) {
+                await selectInteraction.followUp({
+                    content: `❌ Je n'ai pas la permission de gérer les webhooks dans ${targetChannel}.`,
+                    flags: MessageFlags.Ephemeral
+                });
+                return;
+            }
+
+            // Déplacer le message
+            await moveMessage(targetMessage, targetChannel as TextChannel | ThreadChannel | NewsChannel | VoiceChannel | ForumChannel, selectInteraction);
+            collector.stop();
+        } else {
+            await selectInteraction.followUp({
+                content: "❌ Le salon sélectionné ne permet pas l'envoi de messages.",
+                flags: MessageFlags.Ephemeral
+            });
+        }
+    } catch (error: any) {
+        logger.error("Error in handleChannelMove:", error);
+        throw error;
+    }
+}
+
+/**
  * Déplace un message vers un autre salon en utilisant un webhook
  */
 async function moveMessage(
     sourceMessage: any,
-    targetChannel: TextChannel | ThreadChannel | NewsChannel | VoiceChannel,
+    targetChannel: TextChannel | ThreadChannel | NewsChannel | VoiceChannel | ForumChannel,
     interaction: any
 ) {
     try {
@@ -213,8 +386,22 @@ async function moveMessage(
         // Préparer le contenu du message
         let content = sourceMessage.content || "";
 
-        // Récupérer les embeds
-        const embeds = sourceMessage.embeds || [];
+        // Récupérer les embeds, mais filtrer les embeds auto-générés par Discord
+        // (Tenor, YouTube, liens riches, etc.) pour que Discord les recrée automatiquement
+        const embeds = (sourceMessage.embeds || []).filter((embed: any) => {
+            // Garder uniquement les embeds créés par des bots/webhooks (pas auto-générés)
+            // Les embeds auto-générés ont un type "rich" ou "video" sans auteur
+            if (embed.type === "rich" && !embed.author && !embed.footer) {
+                // C'est probablement un embed auto-généré (Tenor, lien, etc.)
+                return false;
+            }
+            if (embed.type === "video" || embed.type === "gifv") {
+                // Embeds vidéo/gif auto-générés
+                return false;
+            }
+            // Garder les embeds personnalisés (avec auteur, footer, etc.)
+            return true;
+        });
 
         // Récupérer les pièces jointes
         const files = sourceMessage.attachments.map((attachment: any) => attachment.url);
@@ -245,7 +432,7 @@ async function moveMessage(
         const targetChannelName = targetChannel.name;
 
         await logCommand(
-            "📬 Message déplacé",
+            "🚚 Message déplacé",
             `Message de **${sourceMessage.author.username}** déplacé`,
             [
                 {name: "👤 Auteur du message", value: sourceMessage.author.username, inline: true},

@@ -10,13 +10,18 @@ Cette fonctionnalité permet de déplacer des messages d'un salon à un autre to
 2. Sélectionnez **Applications** → **Déplacer**
 3. Un message éphémère (visible uniquement par vous) apparaîtra avec un sélecteur de salon
 4. **Choisissez le salon de destination** :
+    - Utilisez le **sélecteur** pour les canaux standard
+    - OU utilisez le bouton **"📝 Entrer l'ID du canal"** pour saisir manuellement l'ID
+        - Utile pour les threads de forum que vous ne suivez pas
+        - Pour obtenir l'ID : Clic droit sur le canal → Copier l'identifiant
+5. **Types de canaux supportés** :
     - Salons textuels
     - Salons vocaux (discussion textuelle)
     - Salons d'annonces
     - Salons forums
     - Threads publics ou privés
     - Threads d'annonces
-5. Le message sera déplacé avec :
+6. Le message sera déplacé avec :
     - Le nom et la photo de l'auteur original
     - Le contenu texte
     - Les embeds
