@@ -220,7 +220,7 @@ function getBestImage(product: Product): string | null {
 
     // Chercher une image logo ou promo en priorité
     const priorityImages = product.images
-        .filter(img => (img.flags & (1 << 5)) || (img.flags & (1 << 4))) // TP_LOGO ou TP_PROMO
+        .filter(img => (img.flags & (1 << 4)) || (img.flags & (1 << 5))) // TP_PROMO ou TP_LOGO
         .sort((a, b) => b.priority - a.priority);
 
     if (priorityImages.length > 0) {
@@ -353,16 +353,16 @@ function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttac
         if (price.oldValue > 0) {
             const oldPrice = (price.oldValue / 100).toFixed(2).replace('.', ',');
             const currency = price.currency.toUpperCase();
-            description += `~~${oldPrice} $${currency}~~ **Gratuit** until <t:${product.until}:D>`;
+            description += `~~${oldPrice} $${currency}~~ **Gratuit** jusqu'au <t:${product.until}:D>`;
         }
     } else if (product.until > 0) {
-        description += `**Gratuit** until <t:${product.until}:D>`;
+        description += `**Gratuit** jusqu'au <t:${product.until}:D>`;
     }
 
     // Note avec étoiles
     if (product.rating > 0) {
         const rating = product.rating.toFixed(1);
-        description += `⠀⠀⠀⠀⠀${rating}/10 ★`;
+        description += `⠀⠀⠀${rating}/10 ★`;
     }
 
     // Ajouter les liens d'ouverture (navigateur et client)
@@ -425,7 +425,7 @@ function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttac
         const tagList = product.tags.slice(0, 4).map(tag => {
             const emoji = tagEmojis[tag.toLowerCase()] || '⚪';
             return `${emoji} ${tag.toUpperCase()}`;
-        }).join('⠀⠀⠀⠀⠀');
+        }).join('⠀⠀⠀');
 
         embed.addFields({
             name: '\u200B',
@@ -464,7 +464,7 @@ async function notifyFreeGame(client: Client, product: Product): Promise<void> {
         const {embed, logoAttachment} = createFreeGameEmbed(product);
 
         // Message simple avec juste la mention du rôle (style FreeStuff)
-        let messageContent = "";
+        let messageContent = `<@${roleId}>`
         if (roleId) {
             messageContent = ``;
         }
