@@ -1,4 +1,4 @@
-import {Client, EmbedBuilder, TextChannel} from "discord.js";
+import {AttachmentBuilder, Client, EmbedBuilder, TextChannel} from "discord.js";
 import {EnvConfig} from "../utils/envConfig";
 import {createLogger} from "../utils/logger";
 import * as fs from "fs";
@@ -253,9 +253,44 @@ function getBestUrl(product: Product): string | null {
 }
 
 /**
- * Crée un embed pour afficher un jeu gratuit
+ * Obtient le chemin local du logo de la plateforme
  */
-function createFreeGameEmbed(product: Product): EmbedBuilder {
+function getStoreLogoPath(store: Store): string | null {
+    const storeLogos: Record<Store, string> = {
+        steam: "steam.png",
+        epic: "epic.png",
+        humble: "humble.png",
+        gog: "gog.png",
+        origin: "origin.png",
+        ubi: "ubisoft.png",
+        itch: "itch.png",
+        prime: "prime.png",
+        other: "default.png"
+    };
+
+    const logoFile = storeLogos[store] || "default.png";
+    const logoPath = path.join(process.cwd(), "assets", "store_logos", logoFile);
+
+    // Vérifier si le fichier existe
+    if (fs.existsSync(logoPath)) {
+        return logoPath;
+    }
+
+    // Fallback sur default.png
+    const defaultPath = path.join(process.cwd(), "assets", "store_logos", "default.png");
+    if (fs.existsSync(defaultPath)) {
+        return defaultPath;
+    }
+
+    // Si aucun logo n'existe, retourner null
+    return null;
+}
+
+/**
+ * Crée un embed pour afficher un jeu gratuit
+ * Retourne l'embed et l'attachment du logo (si disponible)
+ */
+function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttachment: AttachmentBuilder | null } {
     const kindEmoji: Record<ProductKind, string> = {
         game: "🎮",
         dlc: "📦",
@@ -276,25 +311,61 @@ function createFreeGameEmbed(product: Product): EmbedBuilder {
         origin: 0xf56c2d,
         ubi: 0x0080ff,
         itch: 0xfa5c5c,
-        prime: 0x00a8e1,
+        prime: 0x9146ff,
         other: 0x00ff00
     };
 
-    const emoji = kindEmoji[product.kind] || "🎮";
     const color = storeColors[product.store] || 0x00ff00;
 
+    // Créer l'attachment pour le logo local
+    let logoAttachment: AttachmentBuilder | null = null;
+    const logoPath = getStoreLogoPath(product.store);
+
+    if (logoPath) {
+        const logoFileName = `${product.store}_logo.png`;
+        logoAttachment = new AttachmentBuilder(logoPath, {name: logoFileName});
+    }
+
     const embed = new EmbedBuilder()
-        .setTitle(`${emoji} ${product.title} - GRATUIT !`)
+        .setTitle(product.title)
         .setColor(color)
-        .setFooter({text: `FreeStuff • ${getStoreName(product.store)}`})
         .setTimestamp();
 
-    // Description
+    // Si on a un logo local, l'utiliser comme thumbnail
+    if (logoAttachment) {
+        embed.setThumbnail(`attachment://${product.store}_logo.png`);
+    }
+
+
+    // Description avec prix et date
+    let description = "";
+
     if (product.description) {
-        const shortDesc = product.description.length > 300
-            ? product.description.substring(0, 297) + "..."
+        const shortDesc = product.description.length > 200
+            ? product.description.substring(0, 197) + "..."
             : product.description;
-        embed.setDescription(shortDesc);
+        description += shortDesc + "\n\n";
+    }
+
+    // Prix formaté comme FreeStuff
+    if (product.prices && product.prices.length > 0) {
+        const price = product.prices[0];
+        if (price.oldValue > 0) {
+            const oldPrice = `${(price.oldValue / 100).toFixed(2)} ${price.currency}`;
+            description += `~~${oldPrice}~~ **Gratuit** jusqu'au ${new Date(product.until * 1000).toLocaleDateString('fr-FR')}`;
+        }
+    } else if (product.until > 0) {
+        description += `**Gratuit** jusqu'au ${new Date(product.until * 1000).toLocaleDateString('fr-FR')}`;
+    }
+
+    // Note avec étoiles
+    if (product.rating > 0) {
+        const rating = product.rating.toFixed(1);
+        description += `     ${rating}/10 ★`;
+    }
+
+    if (description) {
+        embed.setDescription(description);
     }
 
     // Image
@@ -309,112 +380,38 @@ function createFreeGameEmbed(product: Product): EmbedBuilder {
         embed.setURL(productUrl);
     }
 
-    // Fields
-    const fields: { name: string; value: string; inline: boolean }[] = [];
-
-    // Type et Plateforme
-    fields.push({
-        name: "Type",
-        value: getProductKindName(product.kind),
-        inline: true
-    });
-
-    fields.push({
-        name: "Plateforme",
-        value: getStoreName(product.store),
-        inline: true
-    });
-
-    // Prix
-    if (product.prices && product.prices.length > 0) {
-        const price = product.prices[0]; // On prend le premier prix
-        if (price.oldValue > 0) {
-            const oldPrice = (price.oldValue / 100).toFixed(2);
-            const newPrice = price.newValue === 0 ? "GRATUIT" : `${(price.newValue / 100).toFixed(2)} ${price.currency}`;
-            fields.push({
-                name: "💰 Prix",
-                value: `~~${oldPrice} ${price.currency}~~ → **${newPrice}**`,
-                inline: true
-            });
-        }
-    }
-
-    // Date de fin
-    if (product.until > 0) {
-        fields.push({
-            name: "⏰ Disponible jusqu'à",
-            value: `<t:${product.until}:R> (<t:${product.until}:F>)`,
-            inline: false
-        });
-    }
-
-    // Type de canal
-    fields.push({
-        name: "📢 Type d'offre",
-        value: getChannelName(product.type),
-        inline: true
-    });
-
-    // Plateformes supportées
-    if (product.platforms && product.platforms.length > 0) {
-        const platformEmojis: Record<Platform, string> = {
-            windows: "🪟",
-            mac: "🍎",
-            linux: "🐧",
-            android: "🤖",
-            ios: "📱",
-            xbox: "🎮",
-            playstation: "🎮"
-        };
-        const platformIcons = product.platforms.map(p => platformEmojis[p] || p).join(" ");
-        fields.push({
-            name: "💻 Systèmes",
-            value: platformIcons,
-            inline: true
-        });
-    }
-
-    // Note
-    if (product.rating > 0) {
-        const stars = "⭐".repeat(Math.round(product.rating));
-        fields.push({
-            name: "Note",
-            value: stars,
-            inline: true
-        });
-    }
-
-    // Tags
+    // Tags en badges compacts
     if (product.tags && product.tags.length > 0) {
-        const tagList = product.tags.slice(0, 5).map(tag => `\`${tag}\``).join(" ");
-        fields.push({
-            name: "🏷️ Tags",
+        const tagEmojis: Record<string, string> = {
+            'action': '🟢',
+            '2d': '🔵',
+            'platformer': '🔵',
+            'indie': '🔴',
+            '2d platformer': '🔵',
+            'adventure': '🟢',
+            'arcade': '🟠',
+            'shooter': '🟢',
+            'strategy': '🟡',
+            'rpg': '🟣'
+        };
+
+        const tagList = product.tags.slice(0, 4).map(tag => {
+            const emoji = tagEmojis[tag.toLowerCase()] || '⚪';
+            return `${emoji} ${tag.toUpperCase()}`;
+        }).join('     ');
+
+        embed.addFields({
+            name: '\u200B',
             value: tagList,
             inline: false
         });
     }
 
-    // Notice spéciale
-    if (product.notice) {
-        fields.push({
-            name: "⚠️ Important",
-            value: product.notice,
-            inline: false
-        });
-    }
+    // Footer avec source
+    const footerText = `via freestuffbot.xyz     © ${product.copyright || 'TakeThemGames (Creative)'}`;
+    embed.setFooter({text: footerText});
 
-    // Staff Pick
-    if (product.staffApproved) {
-        fields.push({
-            name: "✨",
-            value: "**Recommandé par l'équipe FreeStuff**",
-            inline: false
-        });
-    }
-
-    embed.addFields(fields);
-
-    return embed;
+    return {embed, logoAttachment};
 }
 
 /**
@@ -437,29 +434,23 @@ async function notifyFreeGame(client: Client, product: Product): Promise<void> {
             return;
         }
 
-        const embed = createFreeGameEmbed(product);
+        const {embed, logoAttachment} = createFreeGameEmbed(product);
 
-        // Construire le message avec mention du rôle et URL
-        const productUrl = getBestUrl(product);
+        // Message simple avec juste la mention du rôle (style FreeStuff)
         let messageContent = "";
-
-        // Ajouter la mention du rôle si configuré
         if (roleId) {
-            messageContent = `<@&${roleId}> `;
-        }
-
-        // Ajouter le texte
-        messageContent += "**🎮 Nouveau jeu gratuit disponible !**";
-
-        // Ajouter l'URL si disponible
-        if (productUrl) {
-            messageContent += `\n${productUrl}`;
+            messageContent = `<@&${roleId}>`;
         }
 
         const message: any = {
-            embeds: [embed],
-            content: messageContent || undefined
+            content: messageContent || undefined,
+            embeds: [embed]
         };
+
+        // Ajouter le logo comme fichier attaché si disponible
+        if (logoAttachment) {
+            message.files = [logoAttachment];
+        }
 
         await channel.send(message);
 
