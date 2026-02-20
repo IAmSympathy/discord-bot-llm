@@ -315,24 +315,63 @@ function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttac
         other: 0x00ff00
     };
 
-    const color = storeColors[product.store] || 0x00ff00;
+    // Couleurs spécifiques pour chaque type de produit (non-jeux)
+    const kindColors: Record<ProductKind, number> = {
+        game: 0x00ff00, // Pas utilisé, on utilise la couleur de la plateforme
+        dlc: 0x5865F2, // Bleu Discord
+        loot: 0xffc83c, // Jaune doré
+        software: 0x0db2ff, // Bleu ciel
+        art: 0xffe2b8, // Rose/Magenta
+        ost: 0x76c2af, // Violet
+        book: 0x35495e, // Orange
+        storeitem: 0x7cabbc, // Turquoise
+        other: 0xffdc64  // Gris
+    };
 
-    // Créer l'attachment pour le logo local
+    // Chemins des icônes locales pour les différents types de produits
+    const kindIconPaths: Record<ProductKind, string> = {
+        game: "", // Vide = utilise le logo de la plateforme
+        dlc: "dlc.png",
+        loot: "loot.png",
+        software: "software.png",
+        art: "art.png",
+        ost: "ost.png",
+        book: "book.png",
+        storeitem: "storeitem.png",
+        other: "other.png"
+    };
+
+    // Déterminer la couleur selon le type de produit
+    const color = product.kind === "game"
+        ? (storeColors[product.store] || 0x00ff00)
+        : (kindColors[product.kind] || 0x95A5A6);
+
+    // Créer l'attachment pour le thumbnail
     let logoAttachment: AttachmentBuilder | null = null;
-    const logoPath = getStoreLogoPath(product.store);
-
-    if (logoPath) {
-        const logoFileName = `${product.store}_logo.png`;
-        logoAttachment = new AttachmentBuilder(logoPath, {name: logoFileName});
-    }
-
     const embed = new EmbedBuilder()
         .setTitle(product.title)
         .setColor(color);
 
-    // Si on a un logo local, l'utiliser comme thumbnail
-    if (logoAttachment) {
-        embed.setThumbnail(`attachment://${product.store}_logo.png`);
+    // Décider quel thumbnail utiliser
+    if (product.kind === "game") {
+        // Pour les jeux, utiliser le logo de la plateforme
+        const logoPath = getStoreLogoPath(product.store);
+        if (logoPath) {
+            const logoFileName = `${product.store}_logo.png`;
+            logoAttachment = new AttachmentBuilder(logoPath, {name: logoFileName});
+            embed.setThumbnail(`attachment://${product.store}_logo.png`);
+        }
+    } else {
+        // Pour les autres types, utiliser une icône de type de produit
+        const iconFileName = kindIconPaths[product.kind];
+        if (iconFileName) {
+            const iconPath = path.join(process.cwd(), "assets", "product_icons", iconFileName);
+            if (fs.existsSync(iconPath)) {
+                const attachmentName = `${product.kind}_icon.png`;
+                logoAttachment = new AttachmentBuilder(iconPath, {name: attachmentName});
+                embed.setThumbnail(`attachment://${attachmentName}`);
+            }
+        }
     }
 
 

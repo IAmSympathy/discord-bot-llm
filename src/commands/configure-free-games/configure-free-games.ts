@@ -211,7 +211,7 @@ function createComponents(config: FreeGamesConfig) {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("configure-free-games")
-        .setDescription("[ADMIN] ⚙️ Configure les filtres de notifications de jeux gratuits")
+        .setDescription("[TAH-UM] 💸 Configure les filtres de notifications de jeux gratuits")
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
     async execute(interaction: ChatInputCommandInteraction) {
@@ -317,7 +317,7 @@ module.exports = {
                     saveConfig(config);
 
                     const successEmbed = createSuccessEmbed(
-                        "✅ Configuration sauvegardée",
+                        "Configuration sauvegardée",
                         `**Types:** ${config.allowedTypes.join(", ")}\n` +
                         `**Offres:** ${config.allowedChannels.join(", ")}\n` +
                         `**Plateformes:** ${config.allowedStores.length === 9 ? "Toutes" : config.allowedStores.join(", ")}\n` +
