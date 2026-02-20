@@ -362,7 +362,7 @@ function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttac
     // Note avec étoiles
     if (product.rating > 0) {
         const rating = product.rating.toFixed(1);
-        description += `⠀⠀⠀${rating}/10 ★`;
+        description += `⠀⠀${rating}/10 ★`;
     }
 
     // Ajouter les liens d'ouverture (navigateur et client)
@@ -388,9 +388,9 @@ function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttac
         let clientLink = "";
 
         if (product.store === "steam" && gameIdentifier) {
-            clientLink = `⠀⠀⠀⠀⠀⠀**[Ouvrir dans le client Steam ↗](https://freestuffbot.xyz/ext/open-client/steam/${gameIdentifier})**`;
+            clientLink = `⠀⠀**[Ouvrir dans le client Steam ↗](https://freestuffbot.xyz/ext/open-client/steam/${gameIdentifier})**`;
         } else if (product.store === "epic" && gameIdentifier) {
-            clientLink = `⠀⠀⠀⠀⠀⠀**[Ouvrir dans le client Epic Games ↗](https://freestuffbot.xyz/ext/open-client/epic/${gameIdentifier})**`;
+            clientLink = `⠀⠀**[Ouvrir dans le client Epic Games ↗](https://freestuffbot.xyz/ext/open-client/epic/${gameIdentifier})**`;
         }
 
         description += `\n\n${browserLink}${clientLink}`;
@@ -410,22 +410,142 @@ function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttac
     // Tags en badges compacts
     if (product.tags && product.tags.length > 0) {
         const tagEmojis: Record<string, string> = {
-            'action': '🟢',
-            '2d': '🔵',
-            'platformer': '🔵',
-            'indie': '🔴',
-            '2d platformer': '🔵',
-            'adventure': '🟢',
-            'arcade': '🟠',
-            'shooter': '🟢',
-            'strategy': '🟡',
-            'rpg': '🟣'
+            // Genres principaux
+            'action': '⚔️',
+            'adventure': '🗺️',
+            'rpg': '🎭',
+            'strategy': '♟️',
+            'simulation': '🎮',
+            'shooter': '🔫',
+            'puzzle': '🧩',
+            'horror': '👻',
+            'racing': '🏎️',
+            'sports': '⚽',
+            'fighting': '🥊',
+            'platformer': '🪜',
+
+            // Styles de jeu
+            '2d': '🔲',
+            '3d': '🎲',
+            '2d platformer': '🪜',
+            '3d platformer': '🎲',
+            'indie': '💎',
+            'casual': '🎯',
+            'arcade': '🕹️',
+            'retro': '👾',
+            'pixel graphics': '🟦',
+            'minimalist': '⬜',
+            'hand-drawn': '✏️',
+
+            // Sous-genres Action
+            'action rpg': '⚔️',
+            'action-adventure': '🗡️',
+            'fps': '🎯',
+            'stealth': '🥷',
+            'swordplay': '⚔️',
+            'fast-paced': '⚡',
+
+            // RPG
+            'jrpg': '🎌',
+            'party-based rpg': '👥',
+            'dark fantasy': '🌑',
+            'fantasy': '🧙',
+            'magic': '✨',
+            'medieval': '🏰',
+            'creature collector': '🦋',
+
+            // Horror
+            'psychological horror': '🧠',
+            'survival horror': '🔦',
+            'dark': '🌙',
+
+            // Multiplayer
+            'multiplayer': '👥',
+            'co-op': '🤝',
+            'online co-op': '🌐',
+            'co-op campaign': '👫',
+            'competitive': '🏆',
+            'pvp': '⚔️',
+            'massively multiplayer': '👨‍👩‍👧‍👦',
+            'mmorpg': '🌍',
+            'team-based': '👥',
+            'social deduction': '🕵️',
+            'party': '🎉',
+            'trivia': '❓',
+
+            // Modes de jeu
+            'single player': '👤',
+            'open world': '🌍',
+            'open world survival craft': '🏕️',
+            'sandbox': '🏖️',
+            'exploration': '🧭',
+            'metroidvania': '🗺️',
+            'rogue-lite': '🎲',
+            'turn-based strategy': '♟️',
+            'rts': '🏛️',
+
+            // Story & Narrative
+            'story rich': '📖',
+            'choices matter': '🔀',
+            'visual novel': '📚',
+            'interactive fiction': '📜',
+            'noir': '🎩',
+            'investigation': '🔍',
+            'mystery': '❓',
+            'comic book': '📕',
+
+            // Thèmes
+            'sci-fi': '🚀',
+            'cyberpunk': '🤖',
+            'steampunk': '⚙️',
+            'space': '🌌',
+            'post-apocalyptic': '☢️',
+            'western': '🤠',
+            'historical': '📜',
+            'war': '💣',
+            'crime': '🔫',
+
+            // Mécaniques
+            'building': '🏗️',
+            'crafting': '🔨',
+            'resource management': '📊',
+            'trading': '💰',
+            'hacking': '💻',
+            'puzzle platformer': '🧩',
+            'hidden object': '🔍',
+            'point & click': '🖱️',
+
+            // Gameplay
+            'controller support': '🎮',
+            'first-person': '👁️',
+            'side scroller': '➡️',
+            'runner': '🏃',
+            'realistic': '🎥',
+            'relaxing': '😌',
+            'comedy': '😂',
+            'immersive sim': '🎭',
+
+            // Caractéristiques
+            'female protagonist': '👩',
+            'early access': '🚧',
+            'cross platform': '🔄',
+            'life sim': '🏡',
+
+            // Éditeurs/Franchises
+            'games workshop': '🎲',
+            'rpgmaker': '🎮',
+
+            // Environnement
+            'snow': '❄️',
+            'nature': '🌲',
+            'underwater': '🌊',
+            'desert': '🏜️'
         };
 
         const tagList = product.tags.slice(0, 4).map(tag => {
-            const emoji = tagEmojis[tag.toLowerCase()] || '⚪';
+            const emoji = tagEmojis[tag.toLowerCase()] || '🔵';
             return `${emoji} ${tag.toUpperCase()}`;
-        }).join('⠀⠀⠀');
+        }).join('⠀⠀');
 
         embed.addFields({
             name: '\u200B',
@@ -435,7 +555,7 @@ function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttac
     }
 
     // Footer avec source
-    const footerText = `via freestuffbot.xyz     © ${product.copyright || 'TakeThemGames (Creative)'}`;
+    const footerText = `via freestuffbot.xyz      © ${product.copyright || 'TakeThemGames (Creative)'}`;
     embed.setFooter({text: footerText});
 
     return {embed, logoAttachment};
@@ -464,9 +584,9 @@ async function notifyFreeGame(client: Client, product: Product): Promise<void> {
         const {embed, logoAttachment} = createFreeGameEmbed(product);
 
         // Message simple avec juste la mention du rôle (style FreeStuff)
-        let messageContent = `<@${roleId}>`
+        let messageContent = "";
         if (roleId) {
-            messageContent = ``;
+            messageContent = `<@&${roleId}>`;
         }
 
         const message: any = {
