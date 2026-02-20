@@ -11,8 +11,11 @@ Cette fonctionnalité permet de déplacer des messages d'un salon à un autre to
 3. Un message éphémère (visible uniquement par vous) apparaîtra avec un sélecteur de salon
 4. **Choisissez le salon de destination** :
     - Salons textuels
+    - Salons vocaux (discussion textuelle)
     - Salons d'annonces
+    - Salons forums
     - Threads publics ou privés
+    - Threads d'annonces
 5. Le message sera déplacé avec :
     - Le nom et la photo de l'auteur original
     - Le contenu texte
@@ -55,6 +58,10 @@ Parfait pour réorganiser des conversations qui ont dérivé vers un autre sujet
 ### Déplacer vers un salon vocal
 
 Utile pour déplacer des messages importants vers la discussion textuelle d'un salon vocal actif. Les membres dans le vocal verront le message dans leur section "Ouvrir la discussion".
+
+### Déplacer vers un forum
+
+Parfait pour créer une nouvelle discussion dans un forum en déplaçant un message. Le message apparaîtra comme un nouveau post dans le forum.
 
 ### Déplacer vers un thread
 

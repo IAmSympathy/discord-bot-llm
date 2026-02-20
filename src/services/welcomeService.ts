@@ -30,11 +30,11 @@ const WELCOME_BACK_VARIANTS = [
 ];
 
 const GOODBYE_VARIANTS = [
-    (displayName: string) => `${displayName} a quitté le serveur. Bon courage pour la suite ! 👋`,
-    (displayName: string) => `${displayName} nous quitte... Bonne chance dans tes futures aventures ! 🌟`,
-    (displayName: string) => `${displayName} vient de partir. À bientôt peut-être ! 💫`,
-    (displayName: string) => `${displayName} s'en va. Que la force soit avec toi ! ⚡`,
-    (displayName: string) => `${displayName} a pris la porte. On espère te revoir un jour ! 🚪`
+    (displayName: string) => `**${displayName}** a quitté le serveur. Bon courage pour la suite ! 👋`,
+    (displayName: string) => `**${displayName}** nous quitte... Bonne chance dans tes futures aventures ! 🌟`,
+    (displayName: string) => `**${displayName}** vient de partir. À bientôt peut-être ! 💫`,
+    (displayName: string) => `**${displayName}** s'en va. Que la force soit avec toi ! ⚡`,
+    (displayName: string) => `**${displayName}** a pris la porte. On espère te revoir un jour ! 🚪`
 ];
 
 /**

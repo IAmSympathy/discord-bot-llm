@@ -1,4 +1,4 @@
-import {ActionRowBuilder, ApplicationCommandType, ChannelSelectMenuBuilder, ChannelType, ContextMenuCommandBuilder, EmbedBuilder, MessageContextMenuCommandInteraction, MessageFlags, NewsChannel, PermissionFlagsBits, TextChannel, ThreadChannel, VoiceChannel} from "discord.js";
+import {ActionRowBuilder, ApplicationCommandType, ChannelSelectMenuBuilder, ChannelType, ContextMenuCommandBuilder, EmbedBuilder, ForumChannel, MessageContextMenuCommandInteraction, MessageFlags, NewsChannel, PermissionFlagsBits, TextChannel, ThreadChannel, VoiceChannel} from "discord.js";
 import {createLogger} from "../../utils/logger";
 
 const logger = createLogger("MoveMessage");
@@ -51,11 +51,9 @@ module.exports = {
                 .setColor(0x5865F2)
                 .setTitle("📬 Déplacer le message")
                 .setDescription(
-                    `Sélectionnez le salon de destination pour déplacer ce message.\n\n` +
-                    `**Message de:** ${targetMessage.author.tag}\n` +
-                    `**Contenu:** ${targetMessage.content ? (targetMessage.content.length > 100 ? targetMessage.content.substring(0, 100) + "..." : targetMessage.content) : "*Pas de contenu texte*"}\n\n` +
-                    `Le message sera envoyé avec le nom et la photo de l'auteur original.\n` +
-                    `💡 *Les salons vocaux supportés incluent leur discussion textuelle.*`
+                    `Sélectionnez l'endroit de destination pour déplacer ce message.\n\n` +
+                    `**Message de:** <@${targetMessage.author.id}>\n` +
+                    `**Contenu:** \`\`\`${targetMessage.content ? (targetMessage.content.length > 100 ? targetMessage.content.substring(0, 100) + "..." : targetMessage.content) : "*Pas de contenu texte*"}\`\`\`\n\n`,
                 )
                 .setTimestamp();
 
@@ -109,7 +107,8 @@ module.exports = {
 
                         // Vérifier les permissions pour les webhooks (sauf pour les threads)
                         const isThread = targetChannel.type === ChannelType.PublicThread ||
-                            targetChannel.type === ChannelType.PrivateThread;
+                            targetChannel.type === ChannelType.PrivateThread ||
+                            targetChannel.type === ChannelType.AnnouncementThread;
 
                         if (!isThread && !permissions?.has(PermissionFlagsBits.ManageWebhooks)) {
                             await selectInteraction.followUp({
@@ -182,7 +181,8 @@ async function moveMessage(
 ) {
     try {
         const isThread = targetChannel.type === ChannelType.PublicThread ||
-            targetChannel.type === ChannelType.PrivateThread;
+            targetChannel.type === ChannelType.PrivateThread ||
+            targetChannel.type === ChannelType.AnnouncementThread;
 
         let webhookToUse: any;
 
@@ -201,10 +201,10 @@ async function moveMessage(
                     reason: "Webhook pour déplacer des messages"
                 });
         } else {
-            // Pour les canaux normaux (TextChannel, NewsChannel, VoiceChannel)
-            const webhooks = await (targetChannel as TextChannel | NewsChannel | VoiceChannel).fetchWebhooks();
+            // Pour les canaux normaux (TextChannel, NewsChannel, VoiceChannel, ForumChannel)
+            const webhooks = await (targetChannel as TextChannel | NewsChannel | VoiceChannel | ForumChannel).fetchWebhooks();
             webhookToUse = webhooks.find(wh => wh.name === "Déplaceur de Messages") ||
-                await (targetChannel as TextChannel | NewsChannel | VoiceChannel).createWebhook({
+                await (targetChannel as TextChannel | NewsChannel | VoiceChannel | ForumChannel).createWebhook({
                     name: "Déplaceur de Messages",
                     reason: "Webhook pour déplacer des messages"
                 });
@@ -222,7 +222,7 @@ async function moveMessage(
         // Options pour le webhook
         const webhookOptions: any = {
             content: content,
-            username: sourceMessage.author.username,
+            username: sourceMessage.author.displayName,
             avatarURL: sourceMessage.author.displayAvatarURL(),
             embeds: embeds,
             files: files,
