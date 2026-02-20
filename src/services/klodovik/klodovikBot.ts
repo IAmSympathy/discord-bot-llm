@@ -137,6 +137,13 @@ export class KlodovikBot {
                         return;
                     }
 
+                    // Ne pas envoyer de message dans le salon compteur
+                    const COUNTER_CHANNEL_ID = process.env.COUNTER_CHANNEL_ID;
+                    if (message.channel.id === COUNTER_CHANNEL_ID) {
+                        console.log(`[Klodovik] Réponse spontanée bloquée dans le salon compteur`);
+                        return;
+                    }
+
                     // Envoyer le message
                     await message.channel.send(generated);
                     const channelName = 'name' in message.channel ? message.channel.name : 'DM';
