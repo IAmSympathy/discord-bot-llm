@@ -586,7 +586,7 @@ async function notifyFreeGame(client: Client, product: Product): Promise<void> {
         // Message simple avec juste la mention du rôle (style FreeStuff)
         let messageContent = "";
         if (roleId) {
-            messageContent = `<@&${roleId}>`;
+            messageContent = `||<@&${roleId}>||`;
         }
 
         const message: any = {
