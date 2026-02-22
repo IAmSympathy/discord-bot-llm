@@ -601,9 +601,10 @@ function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttac
 }
 
 /**
- * Envoie une notification pour un jeu gratuit
+ * Traite une nouvelle annonce de jeux gratuits
  */
-async function notifyFreeGame(client: Client, product: Product): Promise<void> {
+export async function processAnnouncement(client: Client, announcement: ResolvedAnnouncement): Promise<void> {
+    const state = loadState();
     const channelId = EnvConfig.FREE_GAMES_CHANNEL_ID;
     const roleId = EnvConfig.ROLE_REACTION_ROLE_ID;
 
@@ -620,39 +621,11 @@ async function notifyFreeGame(client: Client, product: Product): Promise<void> {
             return;
         }
 
-        const {embed, logoAttachment} = createFreeGameEmbed(product);
+        const embeds: EmbedBuilder[] = [];
+        const files: AttachmentBuilder[] = [];
+        const productIds: number[] = [];
 
-        // Message simple avec juste la mention du rôle (style FreeStuff)
-        let messageContent = "";
-        if (roleId) {
-            messageContent = `||<@&${roleId}>||`;
-        }
-
-        const message: any = {
-            content: messageContent || undefined,
-            embeds: [embed]
-        };
-
-        // Ajouter le logo comme fichier attaché si disponible
-        if (logoAttachment) {
-            message.files = [logoAttachment];
-        }
-
-        await channel.send(message);
-
-        logger.info(`Notified free game: ${product.title} (ID: ${product.id})`);
-    } catch (error) {
-        logger.error(`Error sending free game notification for ${product.title}:`, error);
-    }
-}
-
-/**
- * Traite une nouvelle annonce de jeux gratuits
- */
-export async function processAnnouncement(client: Client, announcement: ResolvedAnnouncement): Promise<void> {
-    const state = loadState();
-
-    try {
+        // Créer tous les embeds et attachments
         for (const product of announcement.resolvedProducts) {
             // Filtrer les jeux trash ou non approuvés si souhaité
             const isTrash = product.flags & (1 << 0); // TRASH flag
@@ -661,13 +634,42 @@ export async function processAnnouncement(client: Client, announcement: Resolved
                 continue;
             }
 
-            // Notifier le jeu (sans vérifier s'il a déjà été notifié)
-            await notifyFreeGame(client, product);
+            const {embed, logoAttachment} = createFreeGameEmbed(product);
+            embeds.push(embed);
+
+            if (logoAttachment) {
+                files.push(logoAttachment);
+            }
+
+            productIds.push(product.id);
 
             // Ajouter à la liste des jeux notifiés (pour historique seulement)
             if (!state.notifiedGames.includes(product.id)) {
                 state.notifiedGames.push(product.id);
             }
+        }
+
+        // Envoyer un seul message avec tous les embeds
+        if (embeds.length > 0) {
+            // Message simple avec juste la mention du rôle (style FreeStuff)
+            let messageContent = "";
+            if (roleId) {
+                messageContent = `||<@&${roleId}>||`;
+            }
+
+            const message: any = {
+                content: messageContent || undefined,
+                embeds: embeds
+            };
+
+            // Ajouter tous les fichiers attachés si disponibles
+            if (files.length > 0) {
+                message.files = files;
+            }
+
+            await channel.send(message);
+
+            logger.info(`Notified ${embeds.length} free game(s) in a single message`);
         }
 
         // Sauvegarder l'état

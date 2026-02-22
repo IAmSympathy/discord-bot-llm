@@ -5,8 +5,9 @@ const logger = createLogger("MoveMessage");
 
 module.exports = {
     data: new ContextMenuCommandBuilder()
-        .setName("Déplacer")
-        .setType(ApplicationCommandType.Message),
+        .setName("Déplacer le message")
+        .setType(ApplicationCommandType.Message)
+        .setDMPermission(false), // Désactiver en DM et User Apps
 
     async execute(interaction: MessageContextMenuCommandInteraction) {
         try {
@@ -69,7 +70,7 @@ module.exports = {
                 .setDescription(
                     `Sélectionnez le salon de destination pour déplacer ce message.\n\n` +
                     `**Message:** ${targetMessage.url}\n\n` +
-                    `**Note:** Si vous ne voyez pas tous les threads de forum, utilisez le bouton ci-dessous pour entrer l'ID manuellement.`
+                    `**Note:** Si vous ne voyez pas tous les threads de forum, utilisez le bouton pour y entrer son ID manuellement.`
                 )
                 .setTimestamp();
 

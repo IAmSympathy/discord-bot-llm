@@ -27,6 +27,7 @@ const GUILD_ONLY_COMMANDS = [
     "findmeme",
     "answer",
     "harvest",
+    "Déplacer le message", // Commande de menu contextuel
 ];
 
 const globalCommands: any[] = [];
