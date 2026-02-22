@@ -1,6 +1,6 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, ChatInputCommandInteraction, ComponentType, EmbedBuilder, MessageFlags, SlashCommandBuilder} from "discord.js";
 import {getAllXP} from "../../services/xpSystem";
-import {getAllStats} from "../../services/userStatsService";
+import {getAllStats, NETRICSA_USER_ID} from "../../services/userStatsService";
 import {getGlobalLeaderboard} from "../../games/common/globalStats";
 import {getMonthlyXP} from "../../services/monthlyXPService";
 import {getDailyXP, getWeeklyXP} from "../../services/dailyWeeklyXPService";
@@ -37,6 +37,18 @@ async function filterBots(interaction: ChatInputCommandInteraction, userIds: str
     const knownBotNames = ['netricsa', 'freestuff', 'wordle', 'mee6', 'dyno', 'carl-bot', 'pokétwo'];
 
     for (const userId of userIds) {
+        // Exclure les IDs non-numériques (NETRICSA_BOT, etc.)
+        if (!/^\d+$/.test(userId)) {
+            botIds.add(userId);
+            continue;
+        }
+
+        // Exclure l'ID connu de Netricsa
+        if (userId === NETRICSA_USER_ID) {
+            botIds.add(userId);
+            continue;
+        }
+
         try {
             const member = await interaction.guild.members.fetch(userId).catch(() => null);
             if (member) {
@@ -54,10 +66,9 @@ async function filterBots(interaction: ChatInputCommandInteraction, userIds: str
                 const username = member.user.username.toLowerCase();
                 if (knownBotNames.some(botName => username.includes(botName))) {
                     botIds.add(userId);
-
                 }
             } else {
-                // Si on ne peut pas fetch le membre, essayer de vérifier dans les stats
+                // Si on ne peut pas fetch le membre, vérifier le nom dans les stats
                 const {getUserStats} = require("../../services/userStatsService");
                 const stats = getUserStats(userId);
                 if (stats && stats.username) {
