@@ -68,6 +68,7 @@ interface ResolvedAnnouncement {
 interface FreeGamesState {
     notifiedGames: number[];
     lastCheck: string | null;
+    currentGames: Product[]; // Produits actifs complets (pour /freegames)
 }
 
 interface FreeGamesConfig {
@@ -118,7 +119,7 @@ function loadState(): FreeGamesState {
     } catch (error) {
         logger.error("Error loading state:", error);
     }
-    const defaultState = {notifiedGames: [], lastCheck: null};
+    const defaultState = {notifiedGames: [], lastCheck: null, currentGames: []};
     // Sauvegarder l'état par défaut
     saveState(defaultState);
     return defaultState;
@@ -287,10 +288,23 @@ function getStoreLogoPath(store: Store): string | null {
 }
 
 /**
+ * Retourne les jeux gratuits actuellement actifs (non expirés)
+ */
+export function getCurrentFreeGames(): { embed: EmbedBuilder; logoAttachment: AttachmentBuilder | null }[] {
+    const state = loadState();
+    if (!state.currentGames || state.currentGames.length === 0) return [];
+
+    const now = Math.floor(Date.now() / 1000);
+    const activeGames = state.currentGames.filter(p => p.until === 0 || p.until > now);
+
+    return activeGames.map(product => createFreeGameEmbed(product));
+}
+
+/**
  * Crée un embed pour afficher un jeu gratuit
  * Retourne l'embed et l'attachment du logo (si disponible)
  */
-function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttachment: AttachmentBuilder | null } {
+export function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttachment: AttachmentBuilder | null } {
     const kindEmoji: Record<ProductKind, string> = {
         game: "🎮",
         dlc: "📦",
@@ -674,6 +688,18 @@ export async function processAnnouncement(client: Client, announcement: Resolved
 
         // Sauvegarder l'état
         state.lastCheck = new Date().toISOString();
+
+        // Mettre à jour les produits actifs : purger les expirés + ajouter les nouveaux
+        if (!state.currentGames) state.currentGames = [];
+        const now = Math.floor(Date.now() / 1000);
+        state.currentGames = state.currentGames.filter(p => p.until === 0 || p.until > now);
+        for (const product of announcement.resolvedProducts) {
+            const isTrash = product.flags & (1 << 0);
+            if (!isTrash && !state.currentGames.find(p => p.id === product.id)) {
+                state.currentGames.push(product);
+            }
+        }
+
         saveState(state);
 
         logger.info(`Processed announcement ${announcement.id} with ${announcement.resolvedProducts.length} product(s)`);
