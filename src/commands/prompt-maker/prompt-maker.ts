@@ -305,8 +305,8 @@ module.exports = {
                 .setDescription("Type de génération")
                 .setRequired(true)
                 .addChoices(
-                    {name: "Imagine", value: "text2img"},
-                    {name: "Reimagine", value: "img2img"}
+                    {name: "🎨 Imagine", value: "text2img"},
+                    {name: "🌀 Reimagine", value: "img2img"}
                 )
         )
         .addStringOption((option) =>

@@ -21,20 +21,21 @@ module.exports = {
                 .setDescription("Style de l'art ASCII")
                 .setRequired(false)
                 .addChoices(
-                    {name: "Standard", value: "Standard"},
-                    {name: "Banner", value: "Banner"},
-                    {name: "Big", value: "Big"},
-                    {name: "Block", value: "Block"},
-                    {name: "Bubble", value: "Bubble"},
-                    {name: "Digital", value: "Digital"},
-                    {name: "Lean", value: "Lean"},
-                    {name: "Mini", value: "Mini"},
-                    {name: "Script", value: "Script"},
-                    {name: "Shadow", value: "Shadow"},
-                    {name: "Slant", value: "Slant"},
-                    {name: "Small", value: "Small"}
+                    {name: "📝 Standard", value: "Standard"},
+                    {name: "🎉 Banner", value: "Banner"},
+                    {name: "🏋️‍♂️ Big", value: "Big"},
+                    {name: "🧱 Block", value: "Block"},
+                    {name: "💬 Bubble", value: "Bubble"},
+                    {name: "💻 Digital", value: "Digital"},
+                    {name: "🏃 Lean", value: "Lean"},
+                    {name: "🐜 Mini", value: "Mini"},
+                    {name: "✒️ Script", value: "Script"},
+                    {name: "🌑 Shadow", value: "Shadow"},
+                    {name: "🔻 Slant", value: "Slant"},
+                    {name: "🔹 Small", value: "Small"}
                 )
         ),
+
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
