@@ -11,37 +11,23 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("blacklist-game")
         .setDescription("[TAH-UM] 🚫 Gère la blacklist des jeux qui ne déclenchent pas le Low Power Mode")
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName("add-current")
-                .setDescription("[TAH-UM] 🚫 Ajoute le jeu que tu joues actuellement à la blacklist du Low Power Mode automatique")
-        )
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName("add")
-                .setDescription("[TAH-UM] 🚫 Ajoute un jeu spécifique à la blacklist du Low Power Mode automatique")
-                .addStringOption(option =>
-                    option
-                        .setName("game")
-                        .setDescription("Nom du jeu à ajouter")
-                        .setRequired(true)
+        .addStringOption(option =>
+            option
+                .setName("action")
+                .setDescription("Action à effectuer")
+                .setRequired(true)
+                .addChoices(
+                    {name: "➕ Ajouter le jeu actuel", value: "add-current"},
+                    {name: "➕ Ajouter un jeu", value: "add"},
+                    {name: "➖ Retirer un jeu", value: "remove"},
+                    {name: "📋 Voir la liste", value: "list"}
                 )
         )
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName("remove")
-                .setDescription("[TAH-UM] 🚫 Retire un jeu de la blacklist du Low Power Mode automatique")
-                .addStringOption(option =>
-                    option
-                        .setName("game")
-                        .setDescription("Nom du jeu à retirer")
-                        .setRequired(true)
-                )
-        )
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName("list")
-                .setDescription("[TAH-UM] 🚫 Affiche la liste des jeux blacklistés du Low Power Mode automatique")
+        .addStringOption(option =>
+            option
+                .setName("game")
+                .setDescription("Nom du jeu (requis pour ajouter/retirer)")
+                .setRequired(false)
         ),
 
     async execute(interaction: ChatInputCommandInteraction) {
@@ -58,10 +44,11 @@ module.exports = {
                 return;
             }
 
-            const subcommand = interaction.options.getSubcommand();
+            const action = interaction.options.getString("action", true);
+            const gameName = interaction.options.getString("game");
             const channelName = getChannelNameFromInteraction(interaction);
 
-            switch (subcommand) {
+            switch (action) {
                 case "add-current": {
                     const currentGame = getCurrentGame();
 
@@ -69,7 +56,7 @@ module.exports = {
                         await replyWithError(
                             interaction,
                             "Aucun jeu détecté",
-                            "Tu ne sembles pas jouer à un jeu actuellement.\n\nUtilise `/blacklist-game add` pour ajouter un jeu manuellement.",
+                            "Tu ne sembles pas jouer à un jeu actuellement.\n\nUtilise l'action **Ajouter un jeu** pour ajouter un jeu manuellement.",
                             true
                         );
                         return;
@@ -102,7 +89,16 @@ module.exports = {
                 }
 
                 case "add": {
-                    const gameName = interaction.options.getString("game", true);
+                    if (!gameName) {
+                        await replyWithError(
+                            interaction,
+                            "Nom de jeu requis",
+                            "Tu dois spécifier le nom du jeu dans le champ **game**.",
+                            true
+                        );
+                        return;
+                    }
+
                     addGameToBlacklist(gameName);
 
                     // Réévaluer le statut : si on joue à ce jeu et qu'on est en mode auto, désactiver le Low Power
@@ -131,7 +127,16 @@ module.exports = {
                 }
 
                 case "remove": {
-                    const gameName = interaction.options.getString("game", true);
+                    if (!gameName) {
+                        await replyWithError(
+                            interaction,
+                            "Nom de jeu requis",
+                            "Tu dois spécifier le nom du jeu dans le champ **game**.",
+                            true
+                        );
+                        return;
+                    }
+
                     const removed = removeGameFromBlacklist(gameName);
 
                     if (removed) {

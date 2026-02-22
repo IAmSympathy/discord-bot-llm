@@ -271,7 +271,7 @@ export class KlodovikBot {
         const commands = [
             {
                 name: "klodovik",
-                description: "Génère un message aléatoire basé sur l'historique du serveur",
+                description: " 🦜 Demande à Klodovik d'imiter un message basé sur ce qu'il a appris",
                 contexts: [0, 1, 2], // Disponible en serveur, DM et groupe DM
                 integration_types: [0, 1], // Guild install + User install
                 options: [
@@ -291,21 +291,21 @@ export class KlodovikBot {
             },
             {
                 name: "klodovik-stats",
-                description: "Affiche les statistiques de Klodovik",
+                description: "📊 Affiche les statistiques d'apprentissage de Klodovik",
                 contexts: [0, 1, 2], // Disponible en serveur, DM et groupe DM
                 integration_types: [0, 1], // Guild install + User install
             },
             {
                 name: "klodovik-collect",
-                description: "[TAH-UM] Collecte les messages de ce salon uniquement (max 10k)",
+                description: "[TAH-UM] 🔄 Collecte les messages du canal actuel pour entraîner Klodovik (limité à 10 000 messages)",
             },
             {
                 name: "klodovik-reset",
-                description: "[TAH-UM] Réinitialise la mémoire de Klodovik",
+                description: "[TAH-UM] ⚠️ Réinitialise la mémoire de Klodovik",
             },
             {
                 name: "klodovik-config",
-                description: "[TAH-UM] Configure le cerveau de Klodovik",
+                description: "[TAH-UM] ⚙️ Configure le cerveau de Klodovik",
                 options: [
                     {
                         name: "probabilite",
@@ -319,7 +319,7 @@ export class KlodovikBot {
             },
             {
                 name: "klodovik-whitelist",
-                description: "[TAH-UM] Gère les canaux autorisés pour l'apprentissage",
+                description: "[TAH-UM] ✅ Gère la whitelist des canaux d'apprentissages pour Klodovik",
                 options: [
                     {
                         name: "action",
@@ -327,10 +327,10 @@ export class KlodovikBot {
                         type: 3, // STRING
                         required: true,
                         choices: [
-                            {name: "Ajouter ce canal", value: "add"},
-                            {name: "Retirer ce canal", value: "remove"},
-                            {name: "Voir la liste", value: "list"},
-                            {name: "Tout effacer (accepter tous)", value: "clear"},
+                            {name: "➕ Ajouter ce canal", value: "add"},
+                            {name: "➖ Retirer ce canal", value: "remove"},
+                            {name: "👀 Voir la liste", value: "list"},
+                            {name: "🧹 Tout effacer (accepter tous)", value: "clear"},
                         ],
                     },
                 ],
