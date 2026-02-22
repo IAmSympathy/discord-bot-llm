@@ -288,33 +288,37 @@ export function registerWatchedChannelResponder(client: Client) {
                 return;
             }
 
-            // Enregistrer le message envoyé dans les statistiques
-            recordMessageStats(message.author.id, message.author.username);
-            // Enregistrer les emojis utilisés dans le message
-            recordEmojisUsed(message.author.id, message.author.username, message.content);
+            // Ne pas enregistrer les stats pour les webhooks
+            if (!message.webhookId) {
+                // Enregistrer le message envoyé dans les statistiques
+                recordMessageStats(message.author.id, message.author.username);
+                // Enregistrer les emojis utilisés dans le message
+                recordEmojisUsed(message.author.id, message.author.username, message.content);
 
-            // Tracker la mission imposteur si l'utilisateur est un imposteur actif
-            const {trackImpostorMessage} = require("./services/events/impostorMissionTracker");
-            const mentionedUsers = message.mentions.users.filter(u => !u.bot).map(u => u.id);
-            await trackImpostorMessage(message.client, message.author.id, message.content, mentionedUsers);
+                // Tracker la mission imposteur si l'utilisateur est un imposteur actif
+                const {trackImpostorMessage} = require("./services/events/impostorMissionTracker");
+                const mentionedUsers = message.mentions.users.filter(u => !u.bot).map(u => u.id);
+                await trackImpostorMessage(message.client, message.author.id, message.content, mentionedUsers);
 
-            // Vérifier les achievements Discord (messages, emojis, spéciaux)
-            const {checkDiscordAchievements, checkTimeBasedAchievements, checkBirthdayAchievement} = require("./services/discordAchievementChecker");
-            await checkDiscordAchievements(message.author.id, message.author.username, message.client, message.channelId);
-            await checkTimeBasedAchievements(message.author.id, message.author.username, message.client, message.channelId);
-            await checkBirthdayAchievement(message.author.id, message.author.username, message.client, message.channelId);
+                // Vérifier les achievements Discord (messages, emojis, spéciaux)
+                const {checkDiscordAchievements, checkTimeBasedAchievements, checkBirthdayAchievement} = require("./services/discordAchievementChecker");
+                await checkDiscordAchievements(message.author.id, message.author.username, message.client, message.channelId);
+                await checkTimeBasedAchievements(message.author.id, message.author.username, message.client, message.channelId);
+                await checkBirthdayAchievement(message.author.id, message.author.username, message.client, message.channelId);
 
-            // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
-            await addXP(
-                message.author.id,
-                message.author.username,
-                XP_REWARDS.messageEnvoye,
-                message.channel as TextChannel,
-                message.author.bot
-            );
+                // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
+                await addXP(
+                    message.author.id,
+                    message.author.username,
+                    XP_REWARDS.messageEnvoye,
+                    message.channel as TextChannel,
+                    message.author.bot
+                );
+            }
 
             // Enregistrer les mentions dans les statistiques (exclure les bots et Netricsa)
-            if (message.mentions.users.size > 0) {
+            // Ne pas enregistrer si le message provient d'un webhook
+            if (message.mentions.users.size > 0 && !message.webhookId) {
                 message.mentions.users.forEach(async (user) => {
                     // Exclure les bots (incluant Netricsa) de l'enregistrement des mentions
                     if (!user.bot) {
@@ -334,7 +338,8 @@ export function registerWatchedChannelResponder(client: Client) {
 
             // Enregistrer les réponses (replies) dans les statistiques
             // Exclure les commandes slash et les messages des bots
-            if (message.reference?.messageId && !message.author.bot && !message.content?.startsWith('/')) {
+            // Exclure aussi les webhooks
+            if (message.reference?.messageId && !message.author.bot && !message.webhookId && !message.content?.startsWith('/')) {
                 try {
                     const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
                     if (referencedMessage) {

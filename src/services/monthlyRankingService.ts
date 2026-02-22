@@ -293,7 +293,7 @@ export async function processMonthlyRanking(client: Client): Promise<void> {
         if (winners.length > 0) {
             let top3Description = "";
             for (const winner of winners) {
-                top3Description += `${winner.position} **${winner.username}** - ${winner.xpGained.toLocaleString()} XP\n`;
+                top3Description += `${winner.position}. <@${winner.userId}> - 💫 ${winner.xpGained.toLocaleString()} XP\n`;
             }
             embed.addFields({name: "🏅 Top 3 du mois", value: top3Description, inline: false});
         }
@@ -302,7 +302,7 @@ export async function processMonthlyRanking(client: Client): Promise<void> {
         if (celestialWinner) {
             embed.addFields({
                 name: "✨ Bonus Celestial",
-                value: `Un membre chanceux reçoit le rôle **Celestial** : <@${celestialWinner.userId}> ! 🌟`,
+                value: `Un membre chanceux reçoit le rôle <@&${MONTHLY_RANKING_ROLES.CELESTIAL}>: <@${celestialWinner.userId}> ! 🌟`,
                 inline: false
             });
         }

@@ -799,7 +799,8 @@ client.on(Events.MessageReactionAdd, async (reaction, user) => {
         }
 
         // Enregistrer la réaction reçue pour l'auteur du message
-        if (reaction.message.author && reaction.message.author.username) {
+        // Ne pas enregistrer si le message provient d'un webhook
+        if (reaction.message.author && reaction.message.author.username && !reaction.message.webhookId) {
             recordReactionReceivedStats(reaction.message.author.id, reaction.message.author.username);
 
             // Ajouter XP (la fonction détecte automatiquement si c'est un bot)
