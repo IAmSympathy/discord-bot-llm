@@ -172,7 +172,7 @@ module.exports = {
             });
 
             await interaction.editReply({
-                content: `💬 *« ${quoteText.length > 100 ? quoteText.substring(0, 97) + "…" : quoteText} »*`,
+                content: ``,
                 files: [attachment],
             });
 
