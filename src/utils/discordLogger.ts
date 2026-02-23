@@ -17,6 +17,7 @@ const COMMAND_COLORS: { [key: string]: number } = {
     "slots": 0x30363c,
     "ship": 0xFFC0CB,
     "ascii": 0x357bb0,
+    "quote": 0xf1c40f,
 
     // Commandes de jeu
     "games": 0x14171A,
