@@ -28,6 +28,7 @@ const GUILD_ONLY_COMMANDS = [
     "answer",
     "harvest",
     "Déplacer le message", // Commande de menu contextuel
+    "configure-free-games" // Commande d'administration pour configurer les jeux gratuits (ex: ajouter un nouveau store)
 ];
 
 const globalCommands: any[] = [];
