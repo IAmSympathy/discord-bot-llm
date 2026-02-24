@@ -1299,6 +1299,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         xpReward: 2000      // Légendaire absolu
     },
     // === ACHIEVEMENTS DISCORD - MESSAGES ===
+    // Vrais membres : ~100-150 msgs réels / 2 semaines → ~2 500-4 000/an
     {
         id: "discord_msg_10",
         category: AchievementCategory.DISCORD,
@@ -1306,7 +1307,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Envoyer 10 messages sur le serveur",
         emoji: "💬",
         secret: false,
-        xpReward: 50
+        xpReward: 50        // Commun – quelques heures
     },
     {
         id: "discord_msg_100",
@@ -1315,7 +1316,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Envoyer 100 messages sur le serveur",
         emoji: "🗨️",
         secret: false,
-        xpReward: 100
+        xpReward: 75        // Commun – ~2 semaines pour les actifs
     },
     {
         id: "discord_msg_500",
@@ -1324,7 +1325,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Envoyer 500 messages sur le serveur",
         emoji: "💭",
         secret: false,
-        xpReward: 200
+        xpReward: 200       // Rare – ~2-3 mois pour les actifs
     },
     {
         id: "discord_msg_1000",
@@ -1333,7 +1334,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Envoyer 1000 messages sur le serveur",
         emoji: "🗣️",
         secret: false,
-        xpReward: 350
+        xpReward: 400       // Épique – ~4-6 mois pour les actifs
     },
     {
         id: "discord_msg_5000",
@@ -1342,7 +1343,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Envoyer 5000 messages sur le serveur",
         emoji: "📢",
         secret: false,
-        xpReward: 750
+        xpReward: 1200      // Légendaire – ~1.5-2 ans, vrai pilier du serveur
     },
     // === ACHIEVEMENTS DISCORD - RÉACTIONS DONNÉES ===
     {
@@ -1361,7 +1362,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Ajouter 200 réactions",
         emoji: "😄",
         secret: false,
-        xpReward: 150
+        xpReward: 200       // Rare – volume notable
     },
     {
         id: "discord_react_500",
@@ -1370,7 +1371,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Ajouter 500 réactions",
         emoji: "🎭",
         secret: false,
-        xpReward: 300
+        xpReward: 400       // Épique
     },
     // === ACHIEVEMENTS DISCORD - COMMANDES ===
     {
@@ -1465,6 +1466,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         xpReward: 2000      // Légendaire absolu – 1000h c'est énorme
     },
     // === ACHIEVEMENTS DISCORD - EMOJIS ===
+    // Vrais membres : ~50-60 emojis / 2 semaines → ~1 200-1 500/an
     {
         id: "discord_emoji_100",
         category: AchievementCategory.DISCORD,
@@ -1472,7 +1474,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser 100 emojis",
         emoji: "😊",
         secret: false,
-        xpReward: 75
+        xpReward: 75        // Commun – ~3-4 semaines pour les actifs
     },
     {
         id: "discord_emoji_500",
@@ -1481,7 +1483,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser 500 emojis",
         emoji: "😎",
         secret: false,
-        xpReward: 150
+        xpReward: 200       // Rare – ~4-5 mois pour les actifs
     },
     {
         id: "discord_emoji_1000",
@@ -1490,7 +1492,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser 1000 emojis",
         emoji: "🤩",
         secret: false,
-        xpReward: 250
+        xpReward: 400       // Épique – ~8-10 mois pour les actifs
     },
     {
         id: "discord_emoji_5000",
@@ -1499,7 +1501,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser 5000 emojis",
         emoji: "🌈",
         secret: false,
-        xpReward: 500
+        xpReward: 1200      // Légendaire – ~3-4 ans, vraie obsession
     },
     {
         id: "discord_emoji_fav",
@@ -1508,7 +1510,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser le même emoji 100 fois",
         emoji: "😄",
         secret: false,
-        xpReward: 150
+        xpReward: 200       // Rare – signature personnelle, ~2-3 mois
     },
     // === ACHIEVEMENTS DISCORD - COMBINÉS ===
     {
@@ -1518,7 +1520,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "500 messages + 200 réactions + 50h vocal",
         emoji: "🎭",
         secret: false,
-        xpReward: 400
+        xpReward: 500       // Épique – combiné exige des 3 catégories
     },
     {
         id: "discord_active",
@@ -1527,7 +1529,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "1000 messages + 500 emojis + 100 commandes",
         emoji: "💎",
         secret: false,
-        xpReward: 600
+        xpReward: 750       // Épique haut
     },
     {
         id: "discord_legend",
