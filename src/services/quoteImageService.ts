@@ -373,6 +373,7 @@ export async function createQuoteImage(options: QuoteOptions): Promise<Buffer> {
     const normalizedQuote = normalizeFancyText(quote);
     const normalizedDisplayName = normalizeFancyText(displayName);
     const normalizedUsername = normalizeFancyText(username);
+    const normalizedWatermark = normalizeFancyText(watermark);
 
     const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
     const ctx = canvas.getContext("2d");
@@ -451,10 +452,10 @@ export async function createQuoteImage(options: QuoteOptions): Promise<Buffer> {
     ctx.fillText(usernameText, usernameX, usernameY);
 
     // ── Watermark ──
-    if (showWatermark && watermark) {
+    if (showWatermark && normalizedWatermark) {
         ctx.fillStyle = "#888888";
         ctx.font = `300 ${FONT_SIZES.watermark}px 'Lora', serif`;
-        const wmText = watermark.slice(0, 32);
+        const wmText = normalizedWatermark.slice(0, 32);
         const wmWidth = ctx.measureText(wmText).width;
         const wmX = CANVAS_WIDTH - wmWidth - SPACING.watermarkPadding;
         const wmY = CANVAS_HEIGHT - SPACING.watermarkPadding;
