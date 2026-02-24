@@ -169,8 +169,8 @@ module.exports = {
                 .setTitle("🗓️ Récompense quotidienne réclamée !")
                 .setDescription(
                     `Tu as récupéré ta récompense quotidienne !\n\n` +
-                    `💫 **+${totalXP} XP** gagné ! ${bonusXP > 0 ? `(${baseXP} + ${bonusXP} bonus)` : ''}` +
-                    `🔥 Série : **${newStreak} jour${newStreak > 1 ? 's' : ''}**${milestoneMessage}` + '\n'
+                    `💫 **+${totalXP} XP** gagné ! ${bonusXP > 0 ? `(${baseXP} + ${bonusXP} bonus)` : ''}\n` +
+                    `🔥 Série : **${newStreak} jour${newStreak > 1 ? 's' : ''}**${milestoneMessage}` + '\n\n'
                 )
                 .setFooter({text: `Total réclamé : ${userData.totalClaims + 1} fois`})
                 .setTimestamp();
