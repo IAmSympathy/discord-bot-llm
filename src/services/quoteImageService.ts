@@ -157,21 +157,107 @@ const UNICODE_FANCY_MAP: Record<number, string> = (() => {
     return map;
 })();
 
+// ─── Nettoyage Markdown + filtrage des caractères indésirables ───────────────
+
+/**
+ * Supprime le formatage Markdown Discord d'un texte brut.
+ * Couvre : **bold**, *italic*, __underline__, ~~strikethrough~~,
+ *          `code`, ```bloc```, ||spoiler||, > quote, # headers
+ */
+function stripMarkdown(text: string): string {
+    return text
+        // Blocs de code multi-lignes ```...```
+        .replace(/```[\s\S]*?```/g, (m) => m.replace(/```[\w]*\n?/g, "").replace(/```/g, "").trim())
+        // Code inline `...`
+        .replace(/`([^`]+)`/g, "$1")
+        // Spoiler ||...||
+        .replace(/\|\|([^|]+)\|\|/g, "$1")
+        // Strikethrough ~~...~~
+        .replace(/~~([^~]+)~~/g, "$1")
+        // Gras+italique ***...***
+        .replace(/\*{3}([^*]+)\*{3}/g, "$1")
+        // Gras **...**
+        .replace(/\*{2}([^*]+)\*{2}/g, "$1")
+        // Italique *...* ou _..._
+        .replace(/\*([^*]+)\*/g, "$1")
+        .replace(/_([^_]+)_/g, "$1")
+        // Souligné __...__
+        .replace(/_{2}([^_]+)_{2}/g, "$1")
+        // Titres Markdown # ## ###
+        .replace(/^#{1,6}\s+/gm, "")
+        // Blockquotes >
+        .replace(/^>\s*/gm, "")
+        // Liens Markdown [text](url)
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+        // Nettoyage des espaces multiples
+        .replace(/  +/g, " ")
+        .trim();
+}
+
+/**
+ * Détermine si un code point est un caractère "sûr" à afficher sur canvas :
+ * lettres, chiffres, ponctuation courante, espaces, sauts de ligne.
+ * Supprime les emojis, symboles inconnus, caractères de contrôle, etc.
+ */
+function isSafeCodePoint(cp: number): boolean {
+    // Caractères de contrôle (sauf tabulation et saut de ligne)
+    if (cp < 0x20 && cp !== 0x09 && cp !== 0x0A) return false;
+    // DEL et C1 controls
+    if (cp >= 0x7F && cp <= 0x9F) return false;
+    // Variation selectors (U+FE00–U+FE0F, U+E0100–U+E01EF)
+    if (cp >= 0xFE00 && cp <= 0xFE0F) return false;
+    if (cp >= 0xE0100 && cp <= 0xE01EF) return false;
+    // Zero-width joiner / non-joiner / BOM / etc.
+    if ([0x200B, 0x200C, 0x200D, 0x200E, 0x200F, 0xFEFF, 0x2060].includes(cp)) return false;
+    // Emojis & pictographes (plages principales)
+    if (cp >= 0x1F300 && cp <= 0x1FAFF) return false; // Misc symbols, emojis, pictographs
+    if (cp >= 0x2600 && cp <= 0x27BF) return false;   // Misc symbols, Dingbats
+    if (cp >= 0x1F000 && cp <= 0x1F02F) return false; // Mahjong, Domino
+    if (cp >= 0x1F030 && cp <= 0x1F09F) return false; // Domino Tiles
+    if (cp >= 0x1F0A0 && cp <= 0x1F0FF) return false; // Playing Cards
+    if (cp >= 0x1F100 && cp <= 0x1F1FF) return false; // Enclosed Alphanum. Supplement
+    if (cp >= 0x1F200 && cp <= 0x1F2FF) return false; // Enclosed Ideographic Supplement
+    if (cp >= 0x1F900 && cp <= 0x1F9FF) return false; // Supplemental Symbols
+    if (cp >= 0x1FA00 && cp <= 0x1FA6F) return false; // Chess Symbols
+    if (cp >= 0x1FA70 && cp <= 0x1FAFF) return false; // Symbols & Pictographs Extended-A
+    if (cp >= 0xE000 && cp <= 0xF8FF) return false; // Zone usage privé (PUA)
+    if (cp >= 0xF0000 && cp <= 0xFFFFF) return false; // Supplementary PUA-A
+    if (cp >= 0x100000 && cp <= 0x10FFFF && cp < 0x1D000) return false; // Supplementary PUA-B (hors math)
+    // Regional Indicator Symbols (drapeaux) U+1F1E6–U+1F1FF
+    if (cp >= 0x1F1E6 && cp <= 0x1F1FF) return false;
+    // Combining Enclosing Keycap U+20E3
+    if (cp === 0x20E3) return false;
+    // Symboles divers U+2300–U+23FF (horloges, tech symbols)
+    if (cp >= 0x2300 && cp <= 0x23FF) return false;
+    // Flèches ornementales, boîtes, blocs (ne sont généralement pas dans Lora)
+    if (cp >= 0x2500 && cp <= 0x25FF) return false; // Box Drawing & Block Elements
+    if (cp >= 0x2B00 && cp <= 0x2BFF) return false; // Misc Symbols and Arrows
+    return true;
+}
+
 /**
  * Convertit les caractères Unicode fantaisie (bold, italic, script, etc.)
- * en leurs équivalents ASCII normaux pour un rendu lisible sur canvas.
+ * en leurs équivalents ASCII normaux, supprime le formatage Markdown,
+ * les emojis et les caractères inconnus pour un rendu propre sur canvas.
  */
 export function normalizeFancyText(text: string): string {
+    // 1. Supprimer le formatage Markdown
+    const stripped = stripMarkdown(text);
+
+    // 2. Convertir les caractères fantaisie + filtrer les indésirables
     const result: string[] = [];
-    for (const char of text) {           // itère sur les code points (gère les surrogates)
+    for (const char of stripped) {
         const cp = char.codePointAt(0)!;
         if (cp in UNICODE_FANCY_MAP) {
             result.push(UNICODE_FANCY_MAP[cp]);
-        } else {
+        } else if (isSafeCodePoint(cp)) {
             result.push(char);
         }
+        // sinon : caractère supprimé silencieusement
     }
-    return result.join("");
+
+    // 3. Nettoyer les espaces résiduels
+    return result.join("").replace(/  +/g, " ").trim();
 }
 
 // ─── Télécharger une image en Buffer ────────────────────────────────────────
