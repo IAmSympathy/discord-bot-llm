@@ -1,5 +1,5 @@
 import {Client, Events, Message} from "discord.js";
-import {generateCitationEmoji} from "./services/emojiService";
+import {generateBotPostedCitationEmoji, generateCitationEmoji} from "./services/emojiService";
 import {BotStatus, clearStatus, setStatus} from "./services/statusService";
 import {isLowPowerMode} from "./services/botStateService";
 import {isStandbyMode} from "./services/standbyModeService";
@@ -29,7 +29,7 @@ export function registerCitationsThreadHandler(client: Client) {
                 statusId = await setStatus(client, BotStatus.GENERATING_CITATION);
                 logger.info(`Citation postée par le bot — texte récupéré depuis le cache`);
 
-                const emoji = await generateCitationEmoji(pendingText);
+                const emoji = await generateBotPostedCitationEmoji(pendingText);
                 await message.react(emoji);
                 logger.info(`Réaction ${emoji} ajoutée`);
 

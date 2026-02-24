@@ -110,17 +110,21 @@ export async function generateEmojiReaction(context: string, promptTemplate: str
 }
 
 /**
- * Génère un emoji pour une citation
+ * Génère un emoji de réaction pour une citation
  */
 export async function generateCitationEmoji(citation: string): Promise<string> {
-    const promptTemplate = `[Contexte: Thread Citations - Citations drôles hors contexte]
-[Format des citations: "Citation\\n\\n-Personne, Date, Contexte (facultatif)"]
-[TÂCHE: Choisis UN SEUL emoji qui représente ton amusement face à cette citation. Réponds UNIQUEMENT avec l'emoji, rien d'autre.]
+    const promptTemplate = `[Contexte: Thread Citations - Citations drôles ou marquantes sorties de leur contexte]
+[TÂCHE: Choisis UN SEUL emoji qui exprime ta réaction face à cette citation. Réponds UNIQUEMENT avec l'emoji, rien d'autre.]
 
 {context}`;
 
     return generateEmojiReaction(citation, promptTemplate);
 }
+
+/**
+ * @deprecated Utiliser generateCitationEmoji à la place
+ */
+export const generateBotPostedCitationEmoji = generateCitationEmoji;
 
 /**
  * Génère un emoji pour réagir à une mention du bot
