@@ -188,11 +188,10 @@ module.exports = {
             const {ContainerBuilder, TextDisplayBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags: MF} = require("discord.js");
 
             let textContent = `### 🎨 ${amount > 1 ? `${amount} images générées` : "Image générée"}\n`;
-            textContent += `**📝 Prompt :** ${prompt.length > 900 ? prompt.substring(0, 897) + "..." : prompt}`;
+            textContent += `📝 Prompt : \`${prompt.length > 900 ? prompt.substring(0, 897) + "..." : prompt}\``;
             if (negativePrompt) {
-                textContent += `\n**🚫 Négatif :** ${negativePrompt.length > 900 ? negativePrompt.substring(0, 897) + "..." : negativePrompt}`;
+                textContent += `\n🚫 Négatif : \`${negativePrompt.length > 900 ? negativePrompt.substring(0, 897) + "..." : negativePrompt}\``;
             }
-            textContent += `\n-# ⏱️ Temps de génération : ${generationTime}s`;
 
             const gallery = new MediaGalleryBuilder();
             for (const r of results) {
@@ -202,7 +201,8 @@ module.exports = {
             const container = new ContainerBuilder()
                 .setAccentColor(0xd99e82)
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(textContent))
-                .addMediaGalleryComponents(gallery);
+                .addMediaGalleryComponents(gallery)
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ⏱️ Temps de génération : ${generationTime}s`));
 
             const sendPayload: any = {
                 content: "",
