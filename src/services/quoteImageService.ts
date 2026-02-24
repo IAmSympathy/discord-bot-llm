@@ -446,7 +446,7 @@ export async function createQuoteImage(options: QuoteOptions): Promise<Buffer> {
     ctx.fillStyle = "#888888";
     const usernameText = `@${normalizedUsername}`;
     const usernameWidth = ctx.measureText(usernameText).width;
-    const usernameX = QUOTE_AREA_X + (QUOTE_AREA_WIDTH - usernameWidth) / 2;
+    const usernameX = QUOTE_AREA_X + QUOTE_AREA_WIDTH - usernameWidth;
     const usernameY = authorY + SPACING.username + calc.usernameFontSize;
     ctx.fillText(usernameText, usernameX, usernameY);
 

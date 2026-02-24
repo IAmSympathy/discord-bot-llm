@@ -22,10 +22,10 @@ function getAuthorInfo(user: User, member?: GuildMember | null): { displayName: 
 function buildContext(interaction: MessageContextMenuCommandInteraction): string {
     const channel = interaction.channel;
 
-    // DM privé
+    // DM privé — l'auteur du message parlait en DM avec celui qui cite (interaction.user)
     if (!channel || channel.type === ChannelType.DM) {
-        const otherUser = interaction.targetMessage.author;
-        return `En DM avec ${otherUser.displayName ?? otherUser.username}`;
+        const invoker = interaction.user;
+        return `En DM avec ${invoker.displayName ?? invoker.username}`;
     }
 
     // Groupe DM
