@@ -22,9 +22,18 @@ function getAuthorInfo(user: User, member?: GuildMember | null): { displayName: 
 function buildContext(interaction: MessageContextMenuCommandInteraction): string {
     const channel = interaction.channel;
 
-    // DM privé — l'auteur du message parlait en DM avec celui qui cite (interaction.user)
+    // DM privé — afficher l'autre participant (pas l'auteur du message cité)
     if (!channel || channel.type === ChannelType.DM) {
+        const author = interaction.targetMessage.author;
         const invoker = interaction.user;
+        // Si l'auteur du message et celui qui cite sont la même personne (auto-citation),
+        // on utilise le recipient du DMChannel comme autre participant
+        if (author.id === invoker.id) {
+            const recipient = (channel as any)?.recipient as User | null;
+            const other = recipient ?? invoker;
+            return `En DM avec ${other.displayName ?? other.username}`;
+        }
+        // Sinon, celui qui cite est l'autre participant
         return `En DM avec ${invoker.displayName ?? invoker.username}`;
     }
 

@@ -50,7 +50,7 @@ const FONT_SIZES = {
 };
 
 const SPACING = {
-    authorTop: 60,
+    authorTop: 100,
     username: 10,
     gradientWidth: 400,
     watermarkPadding: 20,
