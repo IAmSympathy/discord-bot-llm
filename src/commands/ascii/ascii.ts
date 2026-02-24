@@ -1,4 +1,4 @@
-import {ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder, TextChannel} from "discord.js";
+import {ChatInputCommandInteraction, ContainerBuilder, MessageFlags, SlashCommandBuilder, TextChannel, TextDisplayBuilder} from "discord.js";
 import {logCommand} from "../../utils/discordLogger";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import figlet from "figlet";
@@ -92,18 +92,17 @@ module.exports = {
                         return;
                     }
 
-                    // Créer l'embed
-                    const embed = new EmbedBuilder()
-                        .setColor(0x357bb0)
-                        .setTitle("🔤 Art ASCII")
-                        .setDescription(`**Texte :** ${text}\n**Style :** ${style}`)
-                        .setFooter({text: `Créé par ${interaction.user.displayName}`})
-                        .setTimestamp();
+                    // Construire le Container Components v2
+                    const textContent = `### 🔤 Art ASCII\n📝 Texte : \`${text}\`⠀⠀🎨 Style : \`${style}\`\n\`\`\`\n${asciiArt}\n\`\`\`\n-# Créé par ${interaction.user.displayName}`;
 
-                    // Envoyer l'art ASCII dans un bloc de code
+                    const container = new ContainerBuilder()
+                        .setAccentColor(0x357bb0)
+                        .addTextDisplayComponents(new TextDisplayBuilder().setContent(textContent));
+
                     await interaction.editReply({
-                        embeds: [embed],
-                        content: `\`\`\`\n${asciiArt}\n\`\`\``
+                        content: "",
+                        components: [container],
+                        flags: MessageFlags.IsComponentsV2
                     });
 
                     // Logger la commande

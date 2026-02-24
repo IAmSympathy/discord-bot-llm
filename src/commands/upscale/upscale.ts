@@ -227,17 +227,30 @@ module.exports = {
             unregisterActiveOperation(operationId);
             removeUserFromQueue(interaction.user.id);
 
-            // Envoyer l'image upscalée
+            // Envoyer l'image upscalée via Components v2
+            const {ContainerBuilder, TextDisplayBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags: MF} = require("discord.js");
+
+            const textContent = `### 🔍 Image upscalée\n📐 Méthode : \`${modelName} (x${scale})\``;
+
+            const gallery = new MediaGalleryBuilder()
+                .addItems(new MediaGalleryItemBuilder().setURL(`attachment://${result.attachment.name}`));
+
+            const container = new ContainerBuilder()
+                .setAccentColor(0x57f287)
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(textContent))
+                .addMediaGalleryComponents(gallery)
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ⏱️ Temps de traitement : ${processingTime}s`));
+
+            const sendPayload: any = {
+                content: "",
+                components: [container],
+                flags: MF.IsComponentsV2,
+                files: [result.attachment]
+            };
+
             try {
-                const finalMessage = await progressMessage.edit({
-                    content: `Voici l'image que tu m'as demandé d'upscaler avec la méthode **${modelName} (x${scale})** :\n`,
-                    files: [result.attachment]
-                });
-
-                // Récupérer l'URL de l'image envoyée pour le log
+                const finalMessage = await progressMessage.edit(sendPayload);
                 const imageUrl = finalMessage.attachments.first()?.url;
-
-                // Logger la commande avec le log spécifique à l'upscaling
                 await logBotImageUpscale(
                     interaction.user.username,
                     "Real-ESRGAN",
@@ -249,15 +262,8 @@ module.exports = {
                 );
             } catch (editError: any) {
                 logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
-                const followUpMessage = await interaction.followUp({
-                    content: `Voici l'image que tu m'as demandé d'upscaler avec la méthode **${modelName} (x${scale})** :\n`,
-                    files: [result.attachment]
-                });
-
-                // Récupérer l'URL de l'image envoyée pour le log
+                const followUpMessage = await interaction.followUp(sendPayload);
                 const imageUrl = followUpMessage.attachments.first()?.url;
-
-                // Logger la commande avec le log spécifique à l'upscaling
                 await logBotImageUpscale(
                     interaction.user.username,
                     "Real-ESRGAN",
