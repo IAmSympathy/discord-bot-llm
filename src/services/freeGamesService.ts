@@ -443,18 +443,29 @@ export function createFreeGameEmbed(product: Product): { container: ContainerBui
     }
 
     // --- Assemblage des composants ---
-    const textDisplay = new TextDisplayBuilder().setContent(textContent);
-
-    const section = new SectionBuilder().addTextDisplayComponents(textDisplay);
-    if (thumbnailUrl) {
-        section.setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbnailUrl));
+    // SectionBuilder REQUIERT un accessoire (ThumbnailBuilder ou ButtonBuilder) sinon validation error.
+    // Fallback : utiliser l'image du jeu comme thumbnail si pas de logo local.
+    const imageUrl = getBestImage(product);
+    if (!thumbnailUrl && imageUrl) {
+        thumbnailUrl = imageUrl;
     }
 
-    const container = new ContainerBuilder().setAccentColor(color).addSectionComponents(section);
+    const textDisplay = new TextDisplayBuilder().setContent(textContent);
+    const container = new ContainerBuilder().setAccentColor(color);
 
-    // Grande image du jeu
-    const imageUrl = getBestImage(product);
-    if (imageUrl) {
+    if (thumbnailUrl) {
+        // Avec Section (texte + thumbnail côte à côte)
+        const section = new SectionBuilder()
+            .addTextDisplayComponents(textDisplay)
+            .setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbnailUrl));
+        container.addSectionComponents(section);
+    } else {
+        // Sans thumbnail disponible : TextDisplay simple
+        container.addTextDisplayComponents(textDisplay);
+    }
+
+    // Grande image du jeu (MediaGallery) — uniquement si l'image n'est pas déjà utilisée comme thumbnail
+    if (imageUrl && thumbnailUrl !== imageUrl) {
         const gallery = new MediaGalleryBuilder()
             .addItems(new MediaGalleryItemBuilder().setURL(imageUrl));
         container.addMediaGalleryComponents(gallery);
