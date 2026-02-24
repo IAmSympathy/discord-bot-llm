@@ -319,6 +319,7 @@ export function createFunStatsEmbed(targetUser: User, guild?: any): EmbedBuilder
             {name: "Choix", count: funStats.choose || 0, emoji: "🤔"},
             {name: "ASCII", count: funStats.ascii || 0, emoji: "📝"},
             {name: "Concombre", count: funStats.cucumber || 0, emoji: "🥒"},
+            {name: "Citations créées", count: funStats.quote || 0, emoji: "💬"},
             {name: "Memes trouvés", count: userStats?.netricsa?.memesRecherches || 0, emoji: "🎭"}
         ].sort((a, b) => b.count - a.count);
 

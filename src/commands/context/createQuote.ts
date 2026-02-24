@@ -150,9 +150,13 @@ module.exports = {
                 "command"
             );
 
-            // ── Comptabiliser comme commande fun ──────────────────────────────
+            // ── Comptabiliser comme commande fun ──────────────────────────
             const {recordFunCommandStats} = require("../../services/statsRecorder");
             recordFunCommandStats(interaction.user.id, interaction.user.username);
+
+            // ── Tracker les achievements quote ────────────────────────────
+            const {trackQuoteAchievements} = require("../../services/achievementService");
+            await trackQuoteAchievements(interaction.user.id, interaction.user.username, interaction.client, interaction.channelId, authorUser.id, authorUser.username);
 
         } catch (error) {
             logger.error("Error in 'Créer une citation' context menu:", error);

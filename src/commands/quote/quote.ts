@@ -154,6 +154,10 @@ module.exports = {
             const {recordFunCommandStats} = require("../../services/statsRecorder");
             recordFunCommandStats(interaction.user.id, interaction.user.username);
 
+            // ── Tracker les achievements quote ────────────────────────────
+            const {trackQuoteAchievements} = require("../../services/achievementService");
+            await trackQuoteAchievements(interaction.user.id, interaction.user.username, interaction.client, interaction.channelId, targetUser.id, targetUser.username);
+
         } catch (error) {
             logger.error("Error in /quote command:", error);
             if (interaction.deferred || interaction.replied) {

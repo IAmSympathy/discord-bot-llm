@@ -56,6 +56,7 @@ interface AchievementsDatabase {
  */
 export const ALL_ACHIEVEMENTS: Achievement[] = [
     // === ACHIEVEMENTS PROFIL ===
+    // Commun : action ponctuelle, passive
     {
         id: "profile_birthday_set",
         category: AchievementCategory.PROFIL,
@@ -63,7 +64,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Ajouter sa date d'anniversaire à son profil avec notification activée",
         emoji: "🎂",
         secret: false,
-        xpReward: 100
+        xpReward: 75
     },
     {
         id: "profile_nickname",
@@ -72,7 +73,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Avoir au moins 1 surnom enregistré par Netricsa",
         emoji: "🏷️",
         secret: false,
-        xpReward: 100
+        xpReward: 75
     },
     {
         id: "profile_facts_3",
@@ -93,6 +94,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         xpReward: 150
     },
     // === ACHIEVEMENTS COMPTEUR ===
+    // Progression longue → courbe Commun→Légendaire
     {
         id: "counter_10_counts",
         category: AchievementCategory.JEUX,
@@ -100,7 +102,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Faire 10 contributions au compteur",
         emoji: "🎯",
         secret: false,
-        xpReward: 100
+        xpReward: 50        // Commun
     },
     {
         id: "counter_50_counts",
@@ -109,7 +111,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Faire 50 contributions au compteur",
         emoji: "🏅",
         secret: false,
-        xpReward: 200
+        xpReward: 150       // Peu commun
     },
     {
         id: "counter_100_counts",
@@ -118,7 +120,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Faire 100 contributions au compteur",
         emoji: "👑",
         secret: false,
-        xpReward: 500
+        xpReward: 300       // Rare
     },
     {
         id: "counter_500_counts",
@@ -127,7 +129,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Faire 500 contributions au compteur",
         emoji: "💎",
         secret: false,
-        xpReward: 1000
+        xpReward: 600       // Épique
     },
     {
         id: "counter_1000_counts",
@@ -136,7 +138,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Faire 1000 contributions au compteur",
         emoji: "🌟",
         secret: false,
-        xpReward: 1500           // Réduit de 2000 à 1500
+        xpReward: 1200      // Légendaire
     },
 
     // === ACHIEVEMENTS JEUX - GÉNÉRAUX ===
@@ -147,7 +149,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Jouer sa première partie",
         emoji: "🎲",
         secret: false,
-        xpReward: 50
+        xpReward: 50        // Commun
     },
     {
         id: "game_played_50",
@@ -156,7 +158,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Jouer 50 parties au total",
         emoji: "🎮",
         secret: false,
-        xpReward: 100
+        xpReward: 150       // Peu commun
     },
     {
         id: "game_played_200",
@@ -165,7 +167,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Jouer 200 parties au total",
         emoji: "🎯",
         secret: false,
-        xpReward: 200
+        xpReward: 300       // Rare
     },
     {
         id: "game_polyvalent",
@@ -174,7 +176,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Jouer à tous les jeux disponibles",
         emoji: "🌟",
         secret: false,
-        xpReward: 150
+        xpReward: 200       // Rare (effort de découverte)
     },
     {
         id: "game_first_win",
@@ -183,7 +185,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner sa première partie",
         emoji: "🏆",
         secret: false,
-        xpReward: 50
+        xpReward: 75        // Commun
     },
     {
         id: "game_win_25",
@@ -192,7 +194,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 25 parties au total",
         emoji: "⭐",
         secret: false,
-        xpReward: 150
+        xpReward: 150       // Peu commun
     },
     {
         id: "game_win_100",
@@ -201,7 +203,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 100 parties au total",
         emoji: "👑",
         secret: false,
-        xpReward: 300
+        xpReward: 300       // Rare
     },
     {
         id: "game_win_500",
@@ -210,7 +212,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 500 parties au total",
         emoji: "🔥",
         secret: false,
-        xpReward: 400            // Réduit de 500 à 400
+        xpReward: 600       // Épique
     },
     {
         id: "game_streak_3",
@@ -219,7 +221,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 3 parties d'affilée",
         emoji: "🔥",
         secret: false,
-        xpReward: 100
+        xpReward: 100       // Peu commun
     },
     {
         id: "game_streak_5",
@@ -228,7 +230,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 5 parties d'affilée",
         emoji: "⚡",
         secret: false,
-        xpReward: 200
+        xpReward: 200       // Rare
     },
     {
         id: "game_streak_10",
@@ -237,7 +239,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 10 parties d'affilée",
         emoji: "🌟",
         secret: false,
-        xpReward: 400
+        xpReward: 450       // Épique
     },
     {
         id: "game_streak_20",
@@ -246,7 +248,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 20 parties d'affilée",
         emoji: "💎",
         secret: false,
-        xpReward: 500            // Réduit de 800 à 500
+        xpReward: 900       // Légendaire (quasi impossible)
     },
     {
         id: "game_loss_10",
@@ -255,7 +257,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Perdre 10 parties mais continuer à jouer",
         emoji: "💪",
         secret: false,
-        xpReward: 100
+        xpReward: 75        // Commun (consolation)
     },
     {
         id: "game_loss_50",
@@ -264,7 +266,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Perdre 50 parties mais continuer à jouer",
         emoji: "🛡️",
         secret: false,
-        xpReward: 200
+        xpReward: 150       // Peu commun
     },
     {
         id: "game_loss_100",
@@ -273,7 +275,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Perdre 100 parties mais continuer à jouer",
         emoji: "🦾",
         secret: false,
-        xpReward: 300
+        xpReward: 250       // Rare
     },
 
     // === ACHIEVEMENTS JEUX - ROCHE-PAPIER-CISEAUX ===
@@ -284,7 +286,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 10 parties de Roche-Papier-Ciseaux",
         emoji: "✊",
         secret: false,
-        xpReward: 100
+        xpReward: 75
     },
     {
         id: "rps_win_50",
@@ -293,7 +295,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 50 parties de Roche-Papier-Ciseaux",
         emoji: "🪨",
         secret: false,
-        xpReward: 200
+        xpReward: 150
     },
     {
         id: "rps_win_200",
@@ -302,7 +304,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 200 parties de Roche-Papier-Ciseaux",
         emoji: "📜",
         secret: false,
-        xpReward: 400
+        xpReward: 350
     },
     {
         id: "rps_pvp_25",
@@ -311,7 +313,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 25 parties de RPS contre des joueurs",
         emoji: "⚔️",
         secret: false,
-        xpReward: 200
+        xpReward: 200       // PvP vaut plus que PvE à même seuil
     },
     {
         id: "rps_pvp_100",
@@ -329,7 +331,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 50 parties de RPS contre Netricsa",
         emoji: "🤖",
         secret: false,
-        xpReward: 150
+        xpReward: 100
     },
     {
         id: "rps_pve_200",
@@ -338,7 +340,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 200 parties de RPS contre Netricsa",
         emoji: "🎯",
         secret: false,
-        xpReward: 300
+        xpReward: 250
     },
     {
         id: "rps_triple",
@@ -347,7 +349,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner avec chaque choix (Roche, Papier, Ciseaux)",
         emoji: "✊📜✂️",
         secret: false,
-        xpReward: 50
+        xpReward: 75
     },
     {
         id: "rps_only_rock",
@@ -356,7 +358,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 10 parties en ne jouant QUE Roche",
         emoji: "🪨",
         secret: true,
-        xpReward: 100
+        xpReward: 250       // Secret → au moins Rare
     },
     {
         id: "rps_only_paper",
@@ -365,7 +367,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 10 parties en ne jouant QUE Papier",
         emoji: "📜",
         secret: true,
-        xpReward: 100
+        xpReward: 250
     },
     {
         id: "rps_only_scissors",
@@ -374,7 +376,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 10 parties en ne jouant QUE Ciseaux",
         emoji: "✂️",
         secret: true,
-        xpReward: 100
+        xpReward: 250
     },
     {
         id: "rps_streak_5",
@@ -383,7 +385,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 5 parties d'affilée en RPS",
         emoji: "🔮",
         secret: false,
-        xpReward: 200
+        xpReward: 150
     },
 
     // === ACHIEVEMENTS JEUX - TIC-TAC-TOE ===
@@ -394,7 +396,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 10 parties de Tic-Tac-Toe",
         emoji: "⭕",
         secret: false,
-        xpReward: 100
+        xpReward: 75
     },
     {
         id: "ttt_win_50",
@@ -403,7 +405,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 50 parties de Tic-Tac-Toe",
         emoji: "❌",
         secret: false,
-        xpReward: 200
+        xpReward: 150
     },
     {
         id: "ttt_win_200",
@@ -412,7 +414,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 200 parties de Tic-Tac-Toe",
         emoji: "🎯",
         secret: false,
-        xpReward: 400
+        xpReward: 350
     },
     {
         id: "ttt_pvp_25",
@@ -439,7 +441,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 50 parties de TTT contre Netricsa",
         emoji: "🤖",
         secret: false,
-        xpReward: 150
+        xpReward: 100
     },
     {
         id: "ttt_pve_200",
@@ -448,7 +450,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 200 parties de TTT contre Netricsa",
         emoji: "🎓",
         secret: false,
-        xpReward: 300
+        xpReward: 250
     },
     {
         id: "ttt_draw_20",
@@ -461,6 +463,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
     },
 
     // === ACHIEVEMENTS JEUX - CONNECT 4 ===
+    // C4 est plus stratégique → légèrement plus valorisé que RPS/TTT
     {
         id: "c4_win_10",
         category: AchievementCategory.JEUX,
@@ -468,7 +471,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 10 parties de Connect 4",
         emoji: "🟡",
         secret: false,
-        xpReward: 150
+        xpReward: 100
     },
     {
         id: "c4_win_50",
@@ -477,7 +480,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 50 parties de Connect 4",
         emoji: "🔴",
         secret: false,
-        xpReward: 250
+        xpReward: 200
     },
     {
         id: "c4_win_200",
@@ -486,7 +489,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 200 parties de Connect 4",
         emoji: "⚫",
         secret: false,
-        xpReward: 500
+        xpReward: 450
     },
     {
         id: "c4_pvp_25",
@@ -495,7 +498,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 25 parties de C4 contre des joueurs",
         emoji: "🎯",
         secret: false,
-        xpReward: 300
+        xpReward: 250
     },
     {
         id: "c4_pvp_100",
@@ -513,7 +516,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 50 parties de C4 contre Netricsa",
         emoji: "🤖",
         secret: false,
-        xpReward: 200
+        xpReward: 150
     },
     {
         id: "c4_pve_200",
@@ -522,7 +525,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 200 parties de C4 contre Netricsa",
         emoji: "🎓",
         secret: false,
-        xpReward: 400
+        xpReward: 350
     },
 
     // === ACHIEVEMENTS JEUX - PENDU ===
@@ -533,7 +536,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 10 parties de Pendu",
         emoji: "📝",
         secret: false,
-        xpReward: 100
+        xpReward: 75
     },
     {
         id: "hangman_win_50",
@@ -542,7 +545,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 50 parties de Pendu",
         emoji: "📚",
         secret: false,
-        xpReward: 200
+        xpReward: 150
     },
     {
         id: "hangman_win_200",
@@ -551,7 +554,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 200 parties de Pendu",
         emoji: "🎓",
         secret: false,
-        xpReward: 400
+        xpReward: 350
     },
     {
         id: "hangman_perfect",
@@ -569,7 +572,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 10 parties sans aucune erreur",
         emoji: "💎",
         secret: false,
-        xpReward: 500
+        xpReward: 500       // Épique – très difficile
     },
     {
         id: "hangman_streak_5",
@@ -578,7 +581,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 5 parties de Pendu d'affilée",
         emoji: "🏆",
         secret: false,
-        xpReward: 250
+        xpReward: 200
     },
 
     // === ACHIEVEMENTS JEUX - BLACKJACK ===
@@ -616,7 +619,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Gagner 5 parties de Blackjack d'affilée",
         emoji: "🔥",
         secret: false,
-        xpReward: 150
+        xpReward: 200
     },
     {
         id: "blackjack_natural",
@@ -625,7 +628,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Obtenir un Blackjack (21 avec 2 cartes)",
         emoji: "💎",
         secret: false,
-        xpReward: 100
+        xpReward: 150
     },
     {
         id: "blackjack_21_perfect",
@@ -634,7 +637,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Atteindre 21 avec 5 cartes ou plus",
         emoji: "✨",
         secret: true,
-        xpReward: 200
+        xpReward: 400       // Épique – très rare et secret
     },
 
     // === ACHIEVEMENTS JEUX - SECRETS & FUN ===
@@ -654,7 +657,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Battre Netricsa 100 fois au total",
         emoji: "🤖",
         secret: true,
-        xpReward: 400
+        xpReward: 500
     },
     {
         id: "game_all_today",
@@ -663,7 +666,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Jouer à tous les jeux dans la même journée",
         emoji: "🔄",
         secret: false,
-        xpReward: 100
+        xpReward: 150
     },
     {
         id: "game_night_owl",
@@ -672,7 +675,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Jouer entre 2h et 5h du matin",
         emoji: "🌙",
         secret: true,
-        xpReward: 150
+        xpReward: 200
     },
     {
         id: "game_marathon",
@@ -690,7 +693,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Perdre 10 parties d'affilée",
         emoji: "💀",
         secret: true,
-        xpReward: 50
+        xpReward: 100       // Secret de consolation
     },
     {
         id: "game_first_10_loss",
@@ -699,7 +702,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Perdre ses 10 premières parties",
         emoji: "😅",
         secret: true,
-        xpReward: 50
+        xpReward: 100
     },
 
     // === ACHIEVEMENTS NETRICSA - GÉNÉRATION D'IMAGES ===
@@ -728,7 +731,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Imaginer 50 images avec Netricsa",
         emoji: "🖌️",
         secret: false,
-        xpReward: 200
+        xpReward: 250
     },
     {
         id: "netricsa_gen_200",
@@ -746,7 +749,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Imaginer 500 images avec Netricsa",
         emoji: "🎭",
         secret: false,
-        xpReward: 1000
+        xpReward: 1000      // Légendaire
     },
     // === ACHIEVEMENTS NETRICSA - RÉIMAGINATION ===
     {
@@ -774,7 +777,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Réimaginer 50 images",
         emoji: "🎪",
         secret: false,
-        xpReward: 200
+        xpReward: 250
     },
     {
         id: "netricsa_reimagine_200",
@@ -811,7 +814,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Upscaler 50 images",
         emoji: "🎬",
         secret: false,
-        xpReward: 200
+        xpReward: 250
     },
     {
         id: "netricsa_upscale_200",
@@ -839,7 +842,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Converser 50 fois avec Netricsa",
         emoji: "🗣️",
         secret: false,
-        xpReward: 100
+        xpReward: 150
     },
     {
         id: "netricsa_conv_200",
@@ -848,7 +851,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Converser 200 fois avec Netricsa",
         emoji: "💬",
         secret: false,
-        xpReward: 200
+        xpReward: 300
     },
     {
         id: "netricsa_conv_500",
@@ -857,7 +860,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Converser 500 fois avec Netricsa",
         emoji: "🎙️",
         secret: false,
-        xpReward: 500
+        xpReward: 600
     },
     // === ACHIEVEMENTS NETRICSA - PROMPTS ===
     {
@@ -885,7 +888,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Créer 20 prompts personnalisés",
         emoji: "📝",
         secret: false,
-        xpReward: 200
+        xpReward: 250
     },
     {
         id: "netricsa_prompt_50",
@@ -931,7 +934,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Rechercher 200 memes avec /findmeme",
         emoji: "🎭",
         secret: false,
-        xpReward: 500
+        xpReward: 400
     },
     // === ACHIEVEMENTS FUN - SLOTS ===
     {
@@ -959,7 +962,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Jouer 100 fois aux slots",
         emoji: "💰",
         secret: false,
-        xpReward: 200
+        xpReward: 250
     },
     {
         id: "fun_slots_777",
@@ -968,7 +971,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Obtenir 7️⃣7️⃣7️⃣ aux slots",
         emoji: "💎",
         secret: true,
-        xpReward: 500
+        xpReward: 1200      // Légendaire – probabilité très faible
     },
     // === ACHIEVEMENTS FUN - SHIP ===
     {
@@ -1005,7 +1008,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Obtenir 100% de compatibilité",
         emoji: "💗",
         secret: true,
-        xpReward: 300
+        xpReward: 350       // Épique – aléatoire
     },
     {
         id: "fun_ship_disaster",
@@ -1014,7 +1017,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Obtenir 0% de compatibilité",
         emoji: "💔",
         secret: true,
-        xpReward: 300
+        xpReward: 350
     },
     // === ACHIEVEMENTS FUN - DICE ===
     {
@@ -1033,7 +1036,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Lancer 50 dés",
         emoji: "🎯",
         secret: false,
-        xpReward: 100
+        xpReward: 150
     },
     {
         id: "fun_dice_d20_20",
@@ -1042,7 +1045,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Obtenir 20 sur un D20",
         emoji: "⭐",
         secret: true,
-        xpReward: 200
+        xpReward: 350       // Épique – 1/20, secret
     },
     {
         id: "fun_dice_d100_100",
@@ -1051,7 +1054,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Obtenir 100 sur un D100",
         emoji: "💯",
         secret: true,
-        xpReward: 500
+        xpReward: 900       // Légendaire – 1/100, secret
     },
     // === ACHIEVEMENTS FUN - COINFLIP ===
     {
@@ -1079,7 +1082,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Faire tomber la pièce sur la tranche (0.1% de chance)",
         emoji: "⚡",
         secret: true,
-        xpReward: 1000
+        xpReward: 2000      // Légendaire absolu – quasi impossible
     },
     // === ACHIEVEMENTS FUN - CRYSTALBALL ===
     {
@@ -1098,7 +1101,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Poser 50 questions à la boule de cristal",
         emoji: "🌟",
         secret: false,
-        xpReward: 100
+        xpReward: 150
     },
     {
         id: "fun_crystalball_200",
@@ -1107,7 +1110,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Poser 200 questions à la boule de cristal",
         emoji: "✨",
         secret: false,
-        xpReward: 300
+        xpReward: 350
     },
     // === ACHIEVEMENTS FUN - CHOOSE ===
     {
@@ -1126,7 +1129,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser /choose 50 fois",
         emoji: "🤔",
         secret: false,
-        xpReward: 100
+        xpReward: 150
     },
     {
         id: "fun_choose_200",
@@ -1135,7 +1138,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser /choose 200 fois",
         emoji: "🎲",
         secret: false,
-        xpReward: 200
+        xpReward: 300
     },
     // === ACHIEVEMENTS FUN - ASCII ===
     {
@@ -1154,7 +1157,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Créer 25 œuvres ASCII",
         emoji: "✍️",
         secret: false,
-        xpReward: 100
+        xpReward: 150
     },
     {
         id: "fun_ascii_100",
@@ -1163,7 +1166,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Créer 100 œuvres ASCII",
         emoji: "🎨",
         secret: false,
-        xpReward: 200
+        xpReward: 300
     },
     // === ACHIEVEMENTS FUN - CUCUMBER ===
     {
@@ -1182,7 +1185,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Mesurer son concombre 25 fois... pour la science",
         emoji: "🔬",
         secret: false,
-        xpReward: 100
+        xpReward: 150
     },
     {
         id: "fun_cucumber_legendary",
@@ -1191,7 +1194,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Obtenir 25cm",
         emoji: "🤯",
         secret: true,
-        xpReward: 300
+        xpReward: 600       // Épique – très improbable, secret
     },
     {
         id: "fun_cucumber_tiny",
@@ -1200,7 +1203,44 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Obtenir 1cm (le minimum)",
         emoji: "🔬",
         secret: true,
+        xpReward: 600
+    },
+    // === ACHIEVEMENTS FUN - QUOTE ===
+    {
+        id: "fun_quote_first",
+        category: AchievementCategory.FUN,
+        name: "Premier Mot",
+        description: "Créer sa première citation",
+        emoji: "💬",
+        secret: false,
+        xpReward: 50
+    },
+    {
+        id: "fun_quote_10",
+        category: AchievementCategory.FUN,
+        name: "Chroniqueur",
+        description: "Créer 10 citations",
+        emoji: "📜",
+        secret: false,
+        xpReward: 150
+    },
+    {
+        id: "fun_quote_50",
+        category: AchievementCategory.FUN,
+        name: "Historien",
+        description: "Créer 50 citations",
+        emoji: "📚",
+        secret: false,
         xpReward: 300
+    },
+    {
+        id: "fun_quote_immortaliser",
+        category: AchievementCategory.FUN,
+        name: "Immortalisé",
+        description: "Avoir été cité par quelqu'un d'autre",
+        emoji: "🌟",
+        secret: true,
+        xpReward: 450       // Épique – dépend d'autrui, secret
     },
     // === ACHIEVEMENTS FUN - POLYVALENT ===
     {
@@ -1210,7 +1250,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Essayer toutes les commandes fun au moins une fois",
         emoji: "🎪",
         secret: false,
-        xpReward: 200
+        xpReward: 300       // Rare – explorer tout
     },
     {
         id: "fun_addict",
@@ -1219,7 +1259,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser 500 commandes fun au total",
         emoji: "🎉",
         secret: false,
-        xpReward: 500
+        xpReward: 600       // Épique
     },
     // === ACHIEVEMENTS NETRICSA - COMBINÉS ===
     {
@@ -1238,7 +1278,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Imaginer 100 images et créer 10 prompts",
         emoji: "💎",
         secret: false,
-        xpReward: 300
+        xpReward: 400
     },
     {
         id: "netricsa_master",
@@ -1247,7 +1287,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "200 imaginations + 100 conversations + 20 prompts",
         emoji: "🌟",
         secret: false,
-        xpReward: 1000
+        xpReward: 1000      // Légendaire
     },
     {
         id: "netricsa_total_artist",
@@ -1256,7 +1296,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "500 imaginations + 200 réimages + 100 upscales",
         emoji: "🎭",
         secret: true,
-        xpReward: 2000
+        xpReward: 2000      // Légendaire absolu
     },
     // === ACHIEVEMENTS DISCORD - MESSAGES ===
     {
@@ -1293,7 +1333,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Envoyer 1000 messages sur le serveur",
         emoji: "🗣️",
         secret: false,
-        xpReward: 300
+        xpReward: 350
     },
     {
         id: "discord_msg_5000",
@@ -1302,7 +1342,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Envoyer 5000 messages sur le serveur",
         emoji: "📢",
         secret: false,
-        xpReward: 500
+        xpReward: 750
     },
     // === ACHIEVEMENTS DISCORD - RÉACTIONS DONNÉES ===
     {
@@ -1312,7 +1352,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Ajouter 50 réactions",
         emoji: "👍",
         secret: false,
-        xpReward: 50
+        xpReward: 75
     },
     {
         id: "discord_react_200",
@@ -1321,7 +1361,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Ajouter 200 réactions",
         emoji: "😄",
         secret: false,
-        xpReward: 100
+        xpReward: 150
     },
     {
         id: "discord_react_500",
@@ -1330,7 +1370,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Ajouter 500 réactions",
         emoji: "🎭",
         secret: false,
-        xpReward: 200
+        xpReward: 300
     },
     // === ACHIEVEMENTS DISCORD - COMMANDES ===
     {
@@ -1367,7 +1407,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser 500 commandes",
         emoji: "🏅",
         secret: false,
-        xpReward: 300
+        xpReward: 350
     },
     // === ACHIEVEMENTS DISCORD - VOCAL ===
     {
@@ -1386,7 +1426,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Passer 10h en vocal",
         emoji: "🎧",
         secret: false,
-        xpReward: 100
+        xpReward: 150
     },
     {
         id: "discord_voice_50h",
@@ -1395,7 +1435,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Passer 50h en vocal",
         emoji: "🎙️",
         secret: false,
-        xpReward: 200
+        xpReward: 300
     },
     {
         id: "discord_voice_100h",
@@ -1404,7 +1444,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Passer 100h en vocal",
         emoji: "📻",
         secret: false,
-        xpReward: 300
+        xpReward: 500
     },
     {
         id: "discord_voice_500h",
@@ -1413,7 +1453,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Passer 500h en vocal",
         emoji: "🔊",
         secret: false,
-        xpReward: 500
+        xpReward: 1000
     },
     {
         id: "discord_voice_1000h",
@@ -1422,7 +1462,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Passer 1000h en vocal",
         emoji: "📡",
         secret: false,
-        xpReward: 1000
+        xpReward: 2000      // Légendaire absolu – 1000h c'est énorme
     },
     // === ACHIEVEMENTS DISCORD - EMOJIS ===
     {
@@ -1432,7 +1472,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser 100 emojis",
         emoji: "😊",
         secret: false,
-        xpReward: 50
+        xpReward: 75
     },
     {
         id: "discord_emoji_500",
@@ -1441,7 +1481,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser 500 emojis",
         emoji: "😎",
         secret: false,
-        xpReward: 100
+        xpReward: 150
     },
     {
         id: "discord_emoji_1000",
@@ -1450,7 +1490,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser 1000 emojis",
         emoji: "🤩",
         secret: false,
-        xpReward: 200
+        xpReward: 250
     },
     {
         id: "discord_emoji_5000",
@@ -1459,7 +1499,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser 5000 emojis",
         emoji: "🌈",
         secret: false,
-        xpReward: 300
+        xpReward: 500
     },
     {
         id: "discord_emoji_fav",
@@ -1468,7 +1508,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Utiliser le même emoji 100 fois",
         emoji: "😄",
         secret: false,
-        xpReward: 100
+        xpReward: 150
     },
     // === ACHIEVEMENTS DISCORD - COMBINÉS ===
     {
@@ -1478,7 +1518,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "500 messages + 200 réactions + 50h vocal",
         emoji: "🎭",
         secret: false,
-        xpReward: 300
+        xpReward: 400
     },
     {
         id: "discord_active",
@@ -1487,7 +1527,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "1000 messages + 500 emojis + 100 commandes",
         emoji: "💎",
         secret: false,
-        xpReward: 500
+        xpReward: 600
     },
     {
         id: "discord_legend",
@@ -1496,7 +1536,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "5000 messages + 500 réactions + 500h vocal",
         emoji: "👑",
         secret: true,
-        xpReward: 1000
+        xpReward: 2000      // Légendaire absolu
     },
     // === ACHIEVEMENTS DISCORD - SPÉCIAUX ===
     {
@@ -1506,7 +1546,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Envoyer un message à 3h du matin",
         emoji: "🌙",
         secret: true,
-        xpReward: 100
+        xpReward: 200
     },
     {
         id: "discord_early_bird",
@@ -1515,7 +1555,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Envoyer un message à 6h du matin",
         emoji: "☀️",
         secret: true,
-        xpReward: 100
+        xpReward: 200
     },
     {
         id: "discord_birthday",
@@ -1524,7 +1564,7 @@ export const ALL_ACHIEVEMENTS: Achievement[] = [
         description: "Se connecter le jour de son anniversaire",
         emoji: "🎂",
         secret: false,
-        xpReward: 200
+        xpReward: 300       // Rare – n'arrive qu'une fois par an
     }
 ];
 
@@ -1721,23 +1761,34 @@ async function sendAchievementNotification(
             thumbnailUrl = "attachment://achievement_badge.png";
         }
 
-        // Déterminer le titre selon si c'est un succès secret ou non
-        let embedTitle = achievement.secret ? "🔓 Succès Secret !" : "✨ Succès";
-
-        // Déterminer la couleur selon l'XP
+        // Déterminer le titre et la couleur selon la grille de rareté :
+        // Commun    ≤ 75 XP  → Bronze  🟤
+        // Peu commun 76–150  → Argent  🔵
+        // Rare      151–300  → Violet  🟣
+        // Épique    301–600  → Or      🟡
+        // Légendaire > 600   → Rouge   🔴
+        let embedTitle = achievement.secret ? "🔓 Succès Secret" : "✨ Succès";
+        let rarityLabel = "";
         let embedColor: number;
-        if (achievement.xpReward <= 150) {
-            embedColor = 0xA05822; // Bronze (COMMON)
-        } else if (achievement.xpReward <= 500) {
-            embedColor = 0xC0C0C0; // Silver (RARE)
-            embedTitle += " Rare";
-        } else if (achievement.xpReward <= 1000) {
-            embedColor = 0xFFD700; // Gold (EPIC)
-            embedTitle += " Épique";
+
+        if (achievement.xpReward <= 75) {
+            embedColor = 0xA05822;  // Bronze – Commun
+            rarityLabel = "";
+        } else if (achievement.xpReward <= 150) {
+            embedColor = 0x5B9BD5;  // Bleu – Peu commun
+            rarityLabel = " Peu Commun";
+        } else if (achievement.xpReward <= 300) {
+            embedColor = 0x9B59B6;  // Violet – Rare
+            rarityLabel = " Rare";
+        } else if (achievement.xpReward <= 600) {
+            embedColor = 0xFFD700;  // Or – Épique
+            rarityLabel = " Épique";
         } else {
-            embedColor = 0xFFD700; // Violet (LEGENDARY)
-            embedTitle += " Légendaire";
+            embedColor = 0xFF4500;  // Rouge-Orange – Légendaire
+            rarityLabel = " Légendaire";
         }
+
+        embedTitle += rarityLabel;
 
         const embed = new EmbedBuilder()
             .setColor(embedColor)
@@ -1770,17 +1821,17 @@ async function sendAchievementNotification(
         let notificationSent = false;
         let targetChannel: TextChannel | null = null;
 
-        // Décider si DM ou Public basé sur l'XP, la catégorie et le contexte
+        // Décider si DM ou Public basé sur la rareté, la catégorie et le contexte
         // - Contexte externe (DM/DM de groupe/Serveur externe) : TOUJOURS en DM
         // - Achievements PROFIL : toujours en DM
         // - Achievements SECRET : toujours en DM
-        // - Achievements ≤ 150 XP : en DM
-        // - Achievements > 150 XP : en public
+        // - Commun (≤ 75 XP) : en DM (trop fréquent pour spammer le chan)
+        // - Peu Commun et plus (> 75 XP) : en public
         const sendInDM = (
-            isExternalContext || // Nouveau : forcer DM si contexte externe (DM, Groupe DM ou Serveur externe)
+            isExternalContext ||
             achievement.category === AchievementCategory.PROFIL ||
             achievement.secret ||
-            achievement.xpReward <= 150
+            achievement.xpReward <= 75
         );
 
         if (sendInDM) {
@@ -1968,6 +2019,7 @@ interface FunCommandStats {
         ascii: number;
         cucumber: number;
         meme: number;
+        quote: number;
         total: number;
         lastUpdate: number;
     };
@@ -2008,6 +2060,7 @@ function initUserFunStats(userId: string, username: string, stats: FunCommandSta
             ascii: 0,
             cucumber: 0,
             meme: 0,
+            quote: 0,
             total: 0,
             lastUpdate: Date.now()
         };
@@ -2026,7 +2079,8 @@ function checkAllFunCommandsUsed(stats: FunCommandStats[string]): boolean {
         stats.choose > 0 &&
         stats.ascii > 0 &&
         stats.cucumber > 0 &&
-        stats.meme > 0;
+        stats.meme > 0 &&
+        stats.quote > 0;
 }
 
 /**
@@ -2344,6 +2398,48 @@ export async function trackMemeAchievements(
         await unlockAchievement(userId, username, "fun_meme_50", client, channelId);
     } else if (stats[userId].meme === 200) {
         await unlockAchievement(userId, username, "fun_meme_200", client, channelId);
+    }
+
+    // Vérifier achievements globaux
+    await checkGlobalFunAchievements(userId, username, stats, client, channelId);
+}
+
+/**
+ * Track la création d'une citation (/quote ou menu contextuel)
+ * @param userId       Celui qui crée la citation
+ * @param username     Son username
+ * @param quotedUserId L'utilisateur cité (pour l'achievement "Immortalisé")
+ * @param quotedUsername Son username
+ */
+export async function trackQuoteAchievements(
+    userId: string,
+    username: string,
+    client?: Client,
+    channelId?: string,
+    quotedUserId?: string,
+    quotedUsername?: string
+): Promise<void> {
+    const stats = loadFunStats();
+    initUserFunStats(userId, username, stats);
+
+    stats[userId].quote++;
+    stats[userId].total++;
+    stats[userId].username = username;
+    stats[userId].lastUpdate = Date.now();
+    saveFunStats(stats);
+
+    // Achievements basés sur le nombre (créateur)
+    if (stats[userId].quote === 1) {
+        await unlockAchievement(userId, username, "fun_quote_first", client, channelId);
+    } else if (stats[userId].quote === 10) {
+        await unlockAchievement(userId, username, "fun_quote_10", client, channelId);
+    } else if (stats[userId].quote === 50) {
+        await unlockAchievement(userId, username, "fun_quote_50", client, channelId);
+    }
+
+    // Achievement "Immortalisé" : la personne citée (si différente du créateur)
+    if (quotedUserId && quotedUsername && quotedUserId !== userId) {
+        await unlockAchievement(quotedUserId, quotedUsername, "fun_quote_immortaliser", client, channelId);
     }
 
     // Vérifier achievements globaux
