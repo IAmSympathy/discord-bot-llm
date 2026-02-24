@@ -132,7 +132,7 @@ module.exports = {
 
             // Message de progression avec animation de points
             progressMessage = await interaction.reply({
-                content: "\`Réimagination de l'image\`"
+                content: "\`Réimagination de l'image.\`"
             });
 
             // Animation des points (intervalle plus rapide pour meilleur feedback)
