@@ -19,7 +19,7 @@ module.exports = {
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
-            await interaction.deferReply({flags: MessageFlags.Ephemeral});
+            await interaction.deferReply();
 
             const category = (interaction.options.getString("categorie") ?? undefined) as "games" | "other" | undefined;
             const games = getCurrentFreeGames(category);
@@ -32,8 +32,8 @@ module.exports = {
                         : "offre gratuite";
 
                 const embed = new EmbedBuilder()
-                    .setColor(0x95a5a6)
-                    .setTitle("🎮 Freestuff")
+                    .setColor(0xa4ce88)
+                    .setTitle("💸 Promotions")
                     .setDescription(`Aucun ${categoryLabel} disponible en ce moment.\n\nReviens plus tard, de nouvelles offres arrivent régulièrement !`)
                     .setTimestamp();
 
@@ -49,7 +49,7 @@ module.exports = {
 
             const message: any = {
                 components: allContainers,
-                flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
+                flags: MessageFlags.IsComponentsV2
             };
             if (allFiles.length > 0) message.files = allFiles;
 

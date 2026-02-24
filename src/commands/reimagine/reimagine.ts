@@ -292,38 +292,36 @@ module.exports = {
             unregisterActiveOperation(operationId);
             removeUserFromQueue(interaction.user.id);
 
-            // Créer un embed pour afficher les informations de manière compacte
-            const {EmbedBuilder} = require("discord.js");
-            const embed = new EmbedBuilder()
-                .setColor(0x4fa0dd) // Violet pour réimagination
-                .addFields(
-                    {name: "📝 Prompt", value: prompt.length > 1024 ? prompt.substring(0, 1021) + "..." : prompt}
-                )
-                .setFooter({text: `💪 Strength : ${strength} • Temps: ${generationTime}s`})
-                .setTimestamp();
+            // Construire le Container Components v2
+            const {ContainerBuilder, TextDisplayBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags: MF} = require("discord.js");
 
+            let textContent = `### 🌀 ${amount > 1 ? `${amount} réimaginations générées` : "Image réimaginée"}\n`;
+            textContent += `**📝 Prompt :** ${prompt.length > 900 ? prompt.substring(0, 897) + "..." : prompt}`;
             if (negativePrompt) {
-                embed.addFields({
-                    name: "🚫 Negative Prompt",
-                    value: negativePrompt.length > 1024 ? negativePrompt.substring(0, 1021) + "..." : negativePrompt
-                });
+                textContent += `\n**🚫 Négatif :** ${negativePrompt.length > 900 ? negativePrompt.substring(0, 897) + "..." : negativePrompt}`;
+            }
+            textContent += `\n-# 💪 Strength : ${strength} • ⏱️ Temps : ${generationTime}s`;
+
+            const gallery = new MediaGalleryBuilder();
+            for (const r of results) {
+                gallery.addItems(new MediaGalleryItemBuilder().setURL(`attachment://${r.attachment.name}`));
             }
 
-            let baseContent = amount === 1
-                ? `Voici l'image que tu m'as demandé de réimaginer :`
-                : `Voici ${amount} versions de l'image que tu m'as demandé de réimaginer :`;
+            const container = new ContainerBuilder()
+                .setAccentColor(0x4fa0dd)
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(textContent))
+                .addMediaGalleryComponents(gallery);
+
+            const sendPayload: any = {
+                content: "",
+                components: [container],
+                flags: MF.IsComponentsV2,
+                files: results.map(r => r.attachment)
+            };
 
             try {
-                const finalMessage = await progressMessage.edit({
-                    content: baseContent,
-                    embeds: [embed],
-                    files: results.map(r => r.attachment),
-                });
-
-                // Récupérer les URLs des 3 images envoyées pour le log
+                const finalMessage = await progressMessage.edit(sendPayload);
                 const imageUrls = Array.from(finalMessage.attachments.values()).map((att: any) => att.url);
-
-                // Logger les 3 images en une seule entrée
                 await logBotImageReimagine(
                     interaction.user.username,
                     prompt,
@@ -334,16 +332,8 @@ module.exports = {
                 );
             } catch (editError: any) {
                 logger.warn(`Cannot edit message, sending as follow-up. Error: ${editError.code}`);
-                const followUpMessage = await interaction.followUp({
-                    content: baseContent,
-                    embeds: [embed],
-                    files: results.map(r => r.attachment),
-                });
-
-                // Récupérer les URLs des 3 images envoyées pour le log
+                const followUpMessage = await interaction.followUp(sendPayload);
                 const imageUrls = Array.from(followUpMessage.attachments.values()).map((att: any) => att.url);
-
-                // Logger les 3 images en une seule entrée
                 await logBotImageReimagine(
                     interaction.user.username,
                     prompt,
