@@ -288,14 +288,21 @@ function getStoreLogoPath(store: Store): string | null {
 }
 
 /**
- * Retourne les jeux gratuits actuellement actifs (non expirés)
+ * Retourne les produits gratuits actuellement actifs (non expirés).
+ * @param category "games" = seulement les jeux, "other" = tout sauf les jeux, undefined = tout
  */
-export function getCurrentFreeGames(): { container: ContainerBuilder; logoAttachment: AttachmentBuilder | null }[] {
+export function getCurrentFreeGames(category?: "games" | "other"): { container: ContainerBuilder; logoAttachment: AttachmentBuilder | null }[] {
     const state = loadState();
     if (!state.currentGames || state.currentGames.length === 0) return [];
 
     const now = Math.floor(Date.now() / 1000);
-    const activeGames = state.currentGames.filter(p => p.until === 0 || p.until > now);
+    let activeGames = state.currentGames.filter(p => p.until === 0 || p.until > now);
+
+    if (category === "games") {
+        activeGames = activeGames.filter(p => p.kind === "game");
+    } else if (category === "other") {
+        activeGames = activeGames.filter(p => p.kind !== "game");
+    }
 
     return activeGames.map(product => createFreeGameEmbed(product));
 }
@@ -334,7 +341,7 @@ export function createFreeGameEmbed(product: Product): { container: ContainerBui
         'comedy': '😂', 'immersive sim': '🎭', 'female protagonist': '👩',
         'early access': '🚧', 'cross platform': '🔄', 'life sim': '🏡',
         'games workshop': '🎲', 'rpgmaker': '🎮', 'snow': '❄️', 'nature': '🌲',
-        'underwater': '🌊', 'desert': '🏜️'
+        'underwater': '🌊', 'desert': '🏜️', 'naval': '⚓', 'city builder': '🏙️', 'farming sim': '🚜', 'zombies': '🧟',
     };
 
     const storeColors: Record<Store, number> = {
