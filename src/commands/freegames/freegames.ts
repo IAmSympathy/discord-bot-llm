@@ -9,7 +9,7 @@ module.exports = {
 
     async execute(interaction: ChatInputCommandInteraction) {
         try {
-            await interaction.deferReply({flags: MessageFlags.Ephemeral});
+            await interaction.deferReply();
 
             const games = getCurrentFreeGames();
 

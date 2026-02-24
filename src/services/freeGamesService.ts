@@ -338,8 +338,8 @@ export function createFreeGameEmbed(product: Product): { container: ContainerBui
     };
 
     const storeColors: Record<Store, number> = {
-        steam: 0x1b2838, epic: 0x313131, humble: 0xcc2929, gog: 0x86328a,
-        origin: 0xf56c2d, ubi: 0x0080ff, itch: 0xfa5c5c, prime: 0x9146ff, other: 0x00cc66
+        steam: 0x144074, epic: 0x313131, humble: 0xcc2929, gog: 0x86328a,
+        origin: 0xf56c2d, ubi: 0x0080ff, itch: 0xfa5c5c, prime: 0x9146ff, other: 0xffdc64
     };
     const kindColors: Record<ProductKind, number> = {
         game: 0x00cc66, dlc: 0x5865F2, loot: 0xffc83c, software: 0x0db2ff,
@@ -350,13 +350,10 @@ export function createFreeGameEmbed(product: Product): { container: ContainerBui
         art: "art.png", ost: "ost.png", book: "book.png", storeitem: "storeitem.png", other: "other.png"
     };
 
-    const color = product.kind === "game"
-        ? (storeColors[product.store] ?? 0x00cc66)
-        : (kindColors[product.kind] ?? 0x95A5A6);
-
     // --- Thumbnail (logo plateforme ou icône de type) ---
     let logoAttachment: AttachmentBuilder | null = null;
     let thumbnailUrl: string | null = null;
+    let usedFallback = false;
 
     if (product.kind === "game") {
         const logoPath = getStoreLogoPath(product.store);
@@ -376,6 +373,24 @@ export function createFreeGameEmbed(product: Product): { container: ContainerBui
             }
         }
     }
+
+    // Fallback : si toujours pas de thumbnail, utiliser other.png
+    if (!thumbnailUrl) {
+        const otherPath = path.join(process.cwd(), "assets", "product_icons", "other.png");
+        if (fs.existsSync(otherPath)) {
+            const attachmentName = `other_icon_${product.id}.png`;
+            logoAttachment = new AttachmentBuilder(otherPath, {name: attachmentName});
+            thumbnailUrl = `attachment://${attachmentName}`;
+            usedFallback = true;
+        }
+    }
+
+    // Couleur : celle de la plateforme/type, sauf si fallback other.png → couleur other
+    const color = usedFallback
+        ? 0xffdc64
+        : product.kind === "game"
+            ? (storeColors[product.store] ?? 0xffdc64)
+            : (kindColors[product.kind] ?? 0xffdc64);
 
     // --- Construction du texte principal ---
     // until : l'API FreeStuff v2 retourne des millisecondes
@@ -412,21 +427,13 @@ export function createFreeGameEmbed(product: Product): { container: ContainerBui
         textContent += `⠀⠀${rating}/10 ★`;
     }
 
-    // Tags
-    if (product.tags && product.tags.length > 0) {
-        const tagList = product.tags.slice(0, 4).map(tag => {
-            const emoji = tagEmojis[tag.toLowerCase()] || '🔵';
-            return `${emoji} ${tag.toUpperCase()}`;
-        }).join('⠀⠀');
-        textContent += `\n${tagList}`;
-    }
-
     // Liens
     const productUrl = getBestUrl(product);
     if (productUrl) {
         let gameIdentifier = "";
         if (product.store === "steam") {
-            const m = productUrl.match(/\/app\/(\d+)/);
+            // Formats possibles : https://store.steampowered.com/app/XXXXX ou https://s.team/a/XXXXX
+            const m = productUrl.match(/\/app\/(\d+)/) || productUrl.match(/\/a\/(\d+)/);
             if (m) gameIdentifier = m[1];
         } else if (product.store === "epic") {
             const m = productUrl.match(/\/p\/([^?#]+)/);
@@ -440,6 +447,15 @@ export function createFreeGameEmbed(product: Product): { container: ContainerBui
             clientLink = `⠀⠀**[Ouvrir dans le client Epic Games ↗](https://freestuffbot.xyz/ext/open-client/epic/${gameIdentifier})**`;
         }
         textContent += `\n\n${browserLink}${clientLink}`;
+    }
+
+    // Tags
+    if (product.tags && product.tags.length > 0) {
+        const tagList = product.tags.slice(0, 4).map(tag => {
+            const emoji = tagEmojis[tag.toLowerCase()] || '🔵';
+            return `${emoji} ${tag.toUpperCase()}`;
+        }).join('⠀⠀');
+        textContent += `\n\n${tagList}`;
     }
 
     // --- Assemblage des composants ---
@@ -501,13 +517,38 @@ export async function processAnnouncement(client: Client, announcement: Resolved
         }
 
         const products: { container: ContainerBuilder; file: AttachmentBuilder | null; id: number }[] = [];
+        const filterConfig = loadFilterConfig();
 
         // Créer tous les containers et attachments
         for (const product of announcement.resolvedProducts) {
-            // Filtrer les jeux trash ou non approuvés si souhaité
+            // Filtrer les jeux trash
             const isTrash = product.flags & (1 << 0); // TRASH flag
             if (isTrash) {
                 logger.debug(`Skipping trash product: ${product.title} (ID: ${product.id})`);
+                continue;
+            }
+
+            // Filtrer par type de produit (kind)
+            if (!filterConfig.allowedTypes.includes(product.kind)) {
+                logger.debug(`Skipping product (kind="${product.kind}" not in allowedTypes): ${product.title}`);
+                continue;
+            }
+
+            // Filtrer par type d'offre (channel/type)
+            if (!filterConfig.allowedChannels.includes(product.type)) {
+                logger.debug(`Skipping product (type="${product.type}" not in allowedChannels): ${product.title}`);
+                continue;
+            }
+
+            // Filtrer par plateforme (store)
+            if (!filterConfig.allowedStores.includes(product.store)) {
+                logger.debug(`Skipping product (store="${product.store}" not in allowedStores): ${product.title}`);
+                continue;
+            }
+
+            // Filtrer par note minimale (rating est entre 0 et 1)
+            if (filterConfig.minRating > 0 && product.rating < filterConfig.minRating / 10) {
+                logger.debug(`Skipping product (rating=${product.rating} below min ${filterConfig.minRating / 10}): ${product.title}`);
                 continue;
             }
 
@@ -520,29 +561,33 @@ export async function processAnnouncement(client: Client, announcement: Resolved
             }
         }
 
-        // Envoyer un message séparé par produit (components v2 avec flag IsComponentsV2)
+        // Envoyer tous les produits dans un seul message (components v2)
         if (products.length > 0) {
-            for (let i = 0; i < products.length; i++) {
-                const {container, file, id} = products[i];
-
-                // Déterminer le rôle selon le type de CE produit spécifique
+            // Déterminer les pings nécessaires (dédupliqués)
+            const mentionSet = new Set<string>();
+            for (const {id} of products) {
                 const product = announcement.resolvedProducts.find(p => p.id === id)!;
-                const productRoleId = product.kind === "game" ? gamesRoleId : (lootRoleId || gamesRoleId);
+                const roleId = product.kind === "game" ? gamesRoleId : (lootRoleId || gamesRoleId);
+                if (roleId) mentionSet.add(`<@&${roleId}>`);
+            }
+            const content = mentionSet.size > 0 ? [...mentionSet].join(" ") : undefined;
 
-                const message: any = {
-                    content: productRoleId ? `<@&${productRoleId}>` : undefined,
-                    components: [container],
-                    flags: MessageFlags.IsComponentsV2
-                };
+            const allContainers = products.map(p => p.container);
+            const allFiles = products.map(p => p.file).filter(f => f !== null) as AttachmentBuilder[];
 
-                if (file) {
-                    message.files = [file];
-                }
+            const message: any = {
+                content,
+                components: allContainers,
+                flags: MessageFlags.IsComponentsV2
+            };
 
-                await channel.send(message);
+            if (allFiles.length > 0) {
+                message.files = allFiles;
             }
 
-            logger.info(`Notified ${products.length} free game(s) in ${products.length} separate message(s)`);
+            await channel.send(message);
+
+            logger.info(`Notified ${products.length} free game(s) in a single message`);
         }
 
         // Sauvegarder l'état
@@ -554,7 +599,14 @@ export async function processAnnouncement(client: Client, announcement: Resolved
         state.currentGames = state.currentGames.filter(p => p.until === 0 || p.until > now);
         for (const product of announcement.resolvedProducts) {
             const isTrash = product.flags & (1 << 0);
-            if (!isTrash && !state.currentGames.find(p => p.id === product.id)) {
+            const passesFilters =
+                !isTrash &&
+                filterConfig.allowedTypes.includes(product.kind) &&
+                filterConfig.allowedChannels.includes(product.type) &&
+                filterConfig.allowedStores.includes(product.store) &&
+                (filterConfig.minRating === 0 || product.rating >= filterConfig.minRating / 10);
+
+            if (passesFilters && !state.currentGames.find(p => p.id === product.id)) {
                 state.currentGames.push(product);
             }
         }
