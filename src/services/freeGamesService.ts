@@ -1,4 +1,4 @@
-import {AttachmentBuilder, Client, EmbedBuilder, TextChannel} from "discord.js";
+import {AttachmentBuilder, Client, ContainerBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags, SectionBuilder, TextChannel, TextDisplayBuilder, ThumbnailBuilder} from "discord.js";
 import {EnvConfig} from "../utils/envConfig";
 import {createLogger} from "../utils/logger";
 import * as fs from "fs";
@@ -290,7 +290,7 @@ function getStoreLogoPath(store: Store): string | null {
 /**
  * Retourne les jeux gratuits actuellement actifs (non expirés)
  */
-export function getCurrentFreeGames(): { embed: EmbedBuilder; logoAttachment: AttachmentBuilder | null }[] {
+export function getCurrentFreeGames(): { container: ContainerBuilder; logoAttachment: AttachmentBuilder | null }[] {
     const state = loadState();
     if (!state.currentGames || state.currentGames.length === 0) return [];
 
@@ -301,322 +301,170 @@ export function getCurrentFreeGames(): { embed: EmbedBuilder; logoAttachment: At
 }
 
 /**
- * Crée un embed pour afficher un jeu gratuit
- * Retourne l'embed et l'attachment du logo (si disponible)
+ * Crée un message Components v2 pour afficher un jeu/loot gratuit.
+ * Structure : Container (couleur) → Section (texte + thumbnail) + MediaGallery (grande image) + TextDisplay (footer)
  */
-export function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; logoAttachment: AttachmentBuilder | null } {
-    const kindEmoji: Record<ProductKind, string> = {
-        game: "🎮",
-        dlc: "📦",
-        loot: "🎁",
-        software: "💿",
-        art: "🎨",
-        ost: "🎵",
-        book: "📚",
-        storeitem: "🛒",
-        other: "✨"
+export function createFreeGameEmbed(product: Product): { container: ContainerBuilder; logoAttachment: AttachmentBuilder | null } {
+    const tagEmojis: Record<string, string> = {
+        'action': '⚔️', 'adventure': '🗺️', 'rpg': '🎭', 'strategy': '♟️',
+        'simulation': '🎮', 'shooter': '🔫', 'puzzle': '🧩', 'horror': '👻',
+        'racing': '🏎️', 'sports': '⚽', 'fighting': '🥊', 'platformer': '🪜',
+        '2d': '🔲', '3d': '🎲', '2d platformer': '🪜', '3d platformer': '🎲',
+        'indie': '💎', 'casual': '🎯', 'arcade': '🕹️', 'retro': '👾',
+        'pixel graphics': '🟦', 'minimalist': '⬜', 'hand-drawn': '✏️',
+        'action rpg': '⚔️', 'action-adventure': '🗡️', 'fps': '🎯', 'stealth': '🥷',
+        'swordplay': '⚔️', 'fast-paced': '⚡', 'jrpg': '🎌', 'party-based rpg': '👥',
+        'dark fantasy': '🌑', 'fantasy': '🧙', 'magic': '✨', 'medieval': '🏰',
+        'creature collector': '🦋', 'psychological horror': '🧠', 'survival horror': '🔦',
+        'dark': '🌙', 'multiplayer': '👥', 'co-op': '🤝', 'online co-op': '🌐',
+        'co-op campaign': '👫', 'competitive': '🏆', 'pvp': '⚔️',
+        'massively multiplayer': '👨‍👩‍👧‍👦', 'mmorpg': '🌍', 'team-based': '👥',
+        'social deduction': '🕵️', 'party': '🎉', 'trivia': '❓', 'single player': '👤',
+        'open world': '🌍', 'open world survival craft': '🏕️', 'sandbox': '🏖️',
+        'exploration': '🧭', 'metroidvania': '🗺️', 'rogue-lite': '🎲',
+        'turn-based strategy': '♟️', 'rts': '🏛️', 'story rich': '📖',
+        'choices matter': '🔀', 'visual novel': '📚', 'interactive fiction': '📜',
+        'noir': '🎩', 'investigation': '🔍', 'mystery': '❓', 'comic book': '📕',
+        'sci-fi': '🚀', 'cyberpunk': '🤖', 'steampunk': '⚙️', 'space': '🌌',
+        'post-apocalyptic': '☢️', 'western': '🤠', 'historical': '📜', 'war': '💣',
+        'crime': '🔫', 'building': '🏗️', 'crafting': '🔨', 'resource management': '📊',
+        'trading': '💰', 'hacking': '💻', 'puzzle platformer': '🧩', 'hidden object': '🔍',
+        'point & click': '🖱️', 'controller support': '🎮', 'first-person': '👁️',
+        'side scroller': '➡️', 'runner': '🏃', 'realistic': '🎥', 'relaxing': '😌',
+        'comedy': '😂', 'immersive sim': '🎭', 'female protagonist': '👩',
+        'early access': '🚧', 'cross platform': '🔄', 'life sim': '🏡',
+        'games workshop': '🎲', 'rpgmaker': '🎮', 'snow': '❄️', 'nature': '🌲',
+        'underwater': '🌊', 'desert': '🏜️'
     };
 
     const storeColors: Record<Store, number> = {
-        steam: 0x1b2838,
-        epic: 0x313131,
-        humble: 0xcc2929,
-        gog: 0x86328a,
-        origin: 0xf56c2d,
-        ubi: 0x0080ff,
-        itch: 0xfa5c5c,
-        prime: 0x9146ff,
-        other: 0x00ff00
+        steam: 0x1b2838, epic: 0x313131, humble: 0xcc2929, gog: 0x86328a,
+        origin: 0xf56c2d, ubi: 0x0080ff, itch: 0xfa5c5c, prime: 0x9146ff, other: 0x00cc66
     };
-
-    // Couleurs spécifiques pour chaque type de produit (non-jeux)
     const kindColors: Record<ProductKind, number> = {
-        game: 0x00ff00, // Pas utilisé, on utilise la couleur de la plateforme
-        dlc: 0x5865F2, // Bleu Discord
-        loot: 0xffc83c, // Jaune doré
-        software: 0x0db2ff, // Bleu ciel
-        art: 0xffe2b8, // Rose/Magenta
-        ost: 0x76c2af, // Violet
-        book: 0x35495e, // Orange
-        storeitem: 0x7cabbc, // Turquoise
-        other: 0xffdc64  // Gris
+        game: 0x00cc66, dlc: 0x5865F2, loot: 0xffc83c, software: 0x0db2ff,
+        art: 0xffe2b8, ost: 0x76c2af, book: 0x35495e, storeitem: 0x7cabbc, other: 0xffdc64
     };
-
-    // Chemins des icônes locales pour les différents types de produits
     const kindIconPaths: Record<ProductKind, string> = {
-        game: "", // Vide = utilise le logo de la plateforme
-        dlc: "dlc.png",
-        loot: "loot.png",
-        software: "software.png",
-        art: "art.png",
-        ost: "ost.png",
-        book: "book.png",
-        storeitem: "storeitem.png",
-        other: "other.png"
+        game: "", dlc: "dlc.png", loot: "loot.png", software: "software.png",
+        art: "art.png", ost: "ost.png", book: "book.png", storeitem: "storeitem.png", other: "other.png"
     };
 
-    // Déterminer la couleur selon le type de produit
     const color = product.kind === "game"
-        ? (storeColors[product.store] || 0x00ff00)
-        : (kindColors[product.kind] || 0x95A5A6);
+        ? (storeColors[product.store] ?? 0x00cc66)
+        : (kindColors[product.kind] ?? 0x95A5A6);
 
-    // Créer l'attachment pour le thumbnail
+    // --- Thumbnail (logo plateforme ou icône de type) ---
     let logoAttachment: AttachmentBuilder | null = null;
-    const embed = new EmbedBuilder()
-        .setTitle(product.title)
-        .setColor(color);
+    let thumbnailUrl: string | null = null;
 
-    // Décider quel thumbnail utiliser
-    // Les noms d'attachments sont rendus uniques par product.id pour éviter les conflits
-    // quand plusieurs embeds sont envoyés dans le même message Discord
     if (product.kind === "game") {
-        // Pour les jeux, utiliser le logo de la plateforme
         const logoPath = getStoreLogoPath(product.store);
         if (logoPath) {
             const logoFileName = `${product.store}_logo_${product.id}.png`;
             logoAttachment = new AttachmentBuilder(logoPath, {name: logoFileName});
-            embed.setThumbnail(`attachment://${logoFileName}`);
+            thumbnailUrl = `attachment://${logoFileName}`;
         }
     } else {
-        // Pour les autres types, utiliser une icône de type de produit
         const iconFileName = kindIconPaths[product.kind];
         if (iconFileName) {
             const iconPath = path.join(process.cwd(), "assets", "product_icons", iconFileName);
             if (fs.existsSync(iconPath)) {
                 const attachmentName = `${product.kind}_icon_${product.id}.png`;
                 logoAttachment = new AttachmentBuilder(iconPath, {name: attachmentName});
-                embed.setThumbnail(`attachment://${attachmentName}`);
+                thumbnailUrl = `attachment://${attachmentName}`;
             }
         }
     }
 
+    // --- Construction du texte principal ---
+    // until : l'API FreeStuff v2 retourne des millisecondes
+    const untilSeconds = product.until > 9999999999 ? Math.floor(product.until / 1000) : product.until;
 
-    // Description avec prix et date
-    let description = "";
+    let textContent = `### ${product.title}\n`;
 
     if (product.description) {
         const shortDesc = product.description.length > 200
             ? product.description.substring(0, 197) + "..."
             : product.description;
-        // Ajouter la quotation Discord (>) au début de la description
-        description += `> ${shortDesc}\n\n`;
+        textContent += `> ${shortDesc}\n\n`;
     }
 
-    // until est en millisecondes dans l'API FreeStuff v2, Discord attend des secondes
-    const untilSeconds = product.until > 9999999999 ? Math.floor(product.until / 1000) : product.until;
-
-    // Prix formaté comme FreeStuff
     if (product.prices && product.prices.length > 0) {
         const price = product.prices[0];
         if (price.oldValue > 0) {
             const oldPrice = (price.oldValue / 100).toFixed(2).replace('.', ',');
             const currency = price.currency.toUpperCase();
-            description += `~~${oldPrice} $${currency}~~ **Gratuit** jusqu'au <t:${untilSeconds}:D>`;
+            textContent += `~~${oldPrice} $${currency}~~ **Gratuit**`;
+        } else {
+            textContent += `**Gratuit**`;
         }
-    } else if (untilSeconds > 0) {
-        description += `**Gratuit** jusqu'au <t:${untilSeconds}:D>`;
+    } else {
+        textContent += `**Gratuit**`;
     }
 
-    // Note avec étoiles (rating est entre 0 et 1 dans l'API FreeStuff v2)
+    if (untilSeconds > 0) {
+        textContent += ` jusqu'au <t:${untilSeconds}:D>`;
+    }
+
     if (product.rating > 0) {
         const rating = (product.rating * 10).toFixed(1);
-        description += `⠀⠀${rating}/10 ★`;
+        textContent += `⠀⠀${rating}/10 ★`;
     }
 
-    // Ajouter les liens d'ouverture (navigateur et client)
+    // Tags
+    if (product.tags && product.tags.length > 0) {
+        const tagList = product.tags.slice(0, 4).map(tag => {
+            const emoji = tagEmojis[tag.toLowerCase()] || '🔵';
+            return `${emoji} ${tag.toUpperCase()}`;
+        }).join('⠀⠀');
+        textContent += `\n${tagList}`;
+    }
+
+    // Liens
     const productUrl = getBestUrl(product);
     if (productUrl) {
-        // Extraire l'ID/slug du jeu selon la plateforme
         let gameIdentifier = "";
-
         if (product.store === "steam") {
-            const steamMatch = productUrl.match(/\/app\/(\d+)/);
-            if (steamMatch) {
-                gameIdentifier = steamMatch[1];
-            }
+            const m = productUrl.match(/\/app\/(\d+)/);
+            if (m) gameIdentifier = m[1];
         } else if (product.store === "epic") {
-            const epicMatch = productUrl.match(/\/p\/([^?#]+)/);
-            if (epicMatch) {
-                gameIdentifier = epicMatch[1];
-            }
+            const m = productUrl.match(/\/p\/([^?#]+)/);
+            if (m) gameIdentifier = m[1];
         }
-
-        // Créer les liens formatés
         const browserLink = `**[Ouvrir dans le navigateur ↗](${productUrl})**`;
         let clientLink = "";
-
         if (product.store === "steam" && gameIdentifier) {
             clientLink = `⠀⠀**[Ouvrir dans le client Steam ↗](https://freestuffbot.xyz/ext/open-client/steam/${gameIdentifier})**`;
         } else if (product.store === "epic" && gameIdentifier) {
             clientLink = `⠀⠀**[Ouvrir dans le client Epic Games ↗](https://freestuffbot.xyz/ext/open-client/epic/${gameIdentifier})**`;
         }
-
-        description += `\n\n${browserLink}${clientLink}`;
+        textContent += `\n\n${browserLink}${clientLink}`;
     }
 
-    if (description) {
-        embed.setDescription(description);
+    // --- Assemblage des composants ---
+    const textDisplay = new TextDisplayBuilder().setContent(textContent);
+
+    const section = new SectionBuilder().addTextDisplayComponents(textDisplay);
+    if (thumbnailUrl) {
+        section.setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbnailUrl));
     }
 
-    // Image
+    const container = new ContainerBuilder().setAccentColor(color).addSectionComponents(section);
+
+    // Grande image du jeu
     const imageUrl = getBestImage(product);
     if (imageUrl) {
-        embed.setImage(imageUrl);
+        const gallery = new MediaGalleryBuilder()
+            .addItems(new MediaGalleryItemBuilder().setURL(imageUrl));
+        container.addMediaGalleryComponents(gallery);
     }
 
+    // Footer
+    const footerText = `via freestuffbot.xyz⠀⠀© ${product.copyright || 'TakeThemGames (Creative)'}`;
+    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(`-# ${footerText}`));
 
-    // Tags en badges compacts
-    if (product.tags && product.tags.length > 0) {
-        const tagEmojis: Record<string, string> = {
-            // Genres principaux
-            'action': '⚔️',
-            'adventure': '🗺️',
-            'rpg': '🎭',
-            'strategy': '♟️',
-            'simulation': '🎮',
-            'shooter': '🔫',
-            'puzzle': '🧩',
-            'horror': '👻',
-            'racing': '🏎️',
-            'sports': '⚽',
-            'fighting': '🥊',
-            'platformer': '🪜',
-
-            // Styles de jeu
-            '2d': '🔲',
-            '3d': '🎲',
-            '2d platformer': '🪜',
-            '3d platformer': '🎲',
-            'indie': '💎',
-            'casual': '🎯',
-            'arcade': '🕹️',
-            'retro': '👾',
-            'pixel graphics': '🟦',
-            'minimalist': '⬜',
-            'hand-drawn': '✏️',
-
-            // Sous-genres Action
-            'action rpg': '⚔️',
-            'action-adventure': '🗡️',
-            'fps': '🎯',
-            'stealth': '🥷',
-            'swordplay': '⚔️',
-            'fast-paced': '⚡',
-
-            // RPG
-            'jrpg': '🎌',
-            'party-based rpg': '👥',
-            'dark fantasy': '🌑',
-            'fantasy': '🧙',
-            'magic': '✨',
-            'medieval': '🏰',
-            'creature collector': '🦋',
-
-            // Horror
-            'psychological horror': '🧠',
-            'survival horror': '🔦',
-            'dark': '🌙',
-
-            // Multiplayer
-            'multiplayer': '👥',
-            'co-op': '🤝',
-            'online co-op': '🌐',
-            'co-op campaign': '👫',
-            'competitive': '🏆',
-            'pvp': '⚔️',
-            'massively multiplayer': '👨‍👩‍👧‍👦',
-            'mmorpg': '🌍',
-            'team-based': '👥',
-            'social deduction': '🕵️',
-            'party': '🎉',
-            'trivia': '❓',
-
-            // Modes de jeu
-            'single player': '👤',
-            'open world': '🌍',
-            'open world survival craft': '🏕️',
-            'sandbox': '🏖️',
-            'exploration': '🧭',
-            'metroidvania': '🗺️',
-            'rogue-lite': '🎲',
-            'turn-based strategy': '♟️',
-            'rts': '🏛️',
-
-            // Story & Narrative
-            'story rich': '📖',
-            'choices matter': '🔀',
-            'visual novel': '📚',
-            'interactive fiction': '📜',
-            'noir': '🎩',
-            'investigation': '🔍',
-            'mystery': '❓',
-            'comic book': '📕',
-
-            // Thèmes
-            'sci-fi': '🚀',
-            'cyberpunk': '🤖',
-            'steampunk': '⚙️',
-            'space': '🌌',
-            'post-apocalyptic': '☢️',
-            'western': '🤠',
-            'historical': '📜',
-            'war': '💣',
-            'crime': '🔫',
-
-            // Mécaniques
-            'building': '🏗️',
-            'crafting': '🔨',
-            'resource management': '📊',
-            'trading': '💰',
-            'hacking': '💻',
-            'puzzle platformer': '🧩',
-            'hidden object': '🔍',
-            'point & click': '🖱️',
-
-            // Gameplay
-            'controller support': '🎮',
-            'first-person': '👁️',
-            'side scroller': '➡️',
-            'runner': '🏃',
-            'realistic': '🎥',
-            'relaxing': '😌',
-            'comedy': '😂',
-            'immersive sim': '🎭',
-
-            // Caractéristiques
-            'female protagonist': '👩',
-            'early access': '🚧',
-            'cross platform': '🔄',
-            'life sim': '🏡',
-
-            // Éditeurs/Franchises
-            'games workshop': '🎲',
-            'rpgmaker': '🎮',
-
-            // Environnement
-            'snow': '❄️',
-            'nature': '🌲',
-            'underwater': '🌊',
-            'desert': '🏜️'
-        };
-
-        const tagList = product.tags.slice(0, 4).map(tag => {
-            const emoji = tagEmojis[tag.toLowerCase()] || '🔵';
-            return `${emoji} ${tag.toUpperCase()}`;
-        }).join('⠀⠀');
-
-        embed.addFields({
-            name: '\u200B',
-            value: tagList,
-            inline: false
-        });
-    }
-
-    // Footer avec source
-    const footerText = `via freestuffbot.xyz      © ${product.copyright || 'TakeThemGames (Creative)'}`;
-    embed.setFooter({text: footerText});
-
-    return {embed, logoAttachment};
+    return {container, logoAttachment};
 }
 
 /**
@@ -641,9 +489,9 @@ export async function processAnnouncement(client: Client, announcement: Resolved
             return;
         }
 
-        const products: { embed: EmbedBuilder; file: AttachmentBuilder | null; id: number }[] = [];
+        const products: { container: ContainerBuilder; file: AttachmentBuilder | null; id: number }[] = [];
 
-        // Créer tous les embeds et attachments
+        // Créer tous les containers et attachments
         for (const product of announcement.resolvedProducts) {
             // Filtrer les jeux trash ou non approuvés si souhaité
             const isTrash = product.flags & (1 << 0); // TRASH flag
@@ -652,8 +500,8 @@ export async function processAnnouncement(client: Client, announcement: Resolved
                 continue;
             }
 
-            const {embed, logoAttachment} = createFreeGameEmbed(product);
-            products.push({embed, file: logoAttachment, id: product.id});
+            const {container, logoAttachment} = createFreeGameEmbed(product);
+            products.push({container, file: logoAttachment, id: product.id});
 
             // Ajouter à la liste des jeux notifiés (pour historique seulement)
             if (!state.notifiedGames.includes(product.id)) {
@@ -661,20 +509,19 @@ export async function processAnnouncement(client: Client, announcement: Resolved
             }
         }
 
-        // Envoyer un message séparé par produit pour que chaque embed ait son propre
-        // fichier attaché (thumbnail + couleur corrects sur Discord)
+        // Envoyer un message séparé par produit (components v2 avec flag IsComponentsV2)
         if (products.length > 0) {
-
             for (let i = 0; i < products.length; i++) {
-                const {embed, file, id} = products[i];
+                const {container, file, id} = products[i];
 
                 // Déterminer le rôle selon le type de CE produit spécifique
                 const product = announcement.resolvedProducts.find(p => p.id === id)!;
                 const productRoleId = product.kind === "game" ? gamesRoleId : (lootRoleId || gamesRoleId);
 
                 const message: any = {
-                    content: productRoleId ? `||<@&${productRoleId}>||` : undefined,
-                    embeds: [embed]
+                    content: productRoleId ? `<@&${productRoleId}>` : undefined,
+                    components: [container],
+                    flags: MessageFlags.IsComponentsV2
                 };
 
                 if (file) {

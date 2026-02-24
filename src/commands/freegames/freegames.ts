@@ -24,19 +24,26 @@ module.exports = {
                 return;
             }
 
-            const embeds = games.map(g => g.embed);
-            const files = games.map(g => g.logoAttachment).filter(a => a !== null) as any[];
+            // Envoyer chaque jeu dans un message séparé (ephemeral = seulement le premier peut être ephemeral)
+            for (let i = 0; i < games.length; i++) {
+                const {container, logoAttachment} = games[i];
+                const message: any = {
+                    components: [container],
+                    flags: MessageFlags.IsComponentsV2
+                };
+                if (logoAttachment) message.files = [logoAttachment];
 
-            const message: any = {embeds};
-            if (files.length > 0) message.files = files;
-
-            await interaction.editReply(message);
+                if (i === 0) {
+                    await interaction.editReply(message);
+                } else {
+                    await interaction.followUp(message);
+                }
+            }
 
         } catch (error: any) {
             await handleInteractionError(interaction, error, "FreeGames");
         }
     },
 };
-
 
 
