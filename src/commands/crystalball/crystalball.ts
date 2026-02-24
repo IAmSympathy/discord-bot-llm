@@ -72,8 +72,7 @@ module.exports = {
                 inline: false
             });
 
-            embed.setFooter({text: `Demandé par ${interaction.user.displayName}`})
-                .setTimestamp();
+            embed.setTimestamp();
 
             await interaction.editReply({content: " ", embeds: [embed]});
 

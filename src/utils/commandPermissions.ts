@@ -44,6 +44,7 @@ const GLOBAL_COMMANDS = [
     'answer',
     'harvest',
     'quote',
+    'freestuff',
     // Ajoutez ici d'autres commandes qui peuvent être utilisées n'importe où
 ];
 
