@@ -12,12 +12,19 @@ const FONTS_DIR = path.join(process.cwd(), "assets", "fonts");
 function registerFonts(): void {
     const regular = path.join(FONTS_DIR, "Lora-Regular.ttf");
     const italic = path.join(FONTS_DIR, "Lora-Italic.ttf");
+    const emoji = path.join(FONTS_DIR, "NotoColorEmoji.ttf");
     try {
         GlobalFonts.registerFromPath(regular, "Lora");
         GlobalFonts.registerFromPath(italic, "Lora");
         logger.info("Lora fonts registered successfully");
     } catch (err) {
         logger.warn("Could not register Lora fonts, falling back to sans-serif:", err);
+    }
+    try {
+        GlobalFonts.registerFromPath(emoji, "NotoColorEmoji");
+        logger.info("NotoColorEmoji font registered successfully");
+    } catch (err) {
+        logger.warn("Could not register NotoColorEmoji font:", err);
     }
 }
 
@@ -195,9 +202,9 @@ function stripMarkdown(text: string): string {
 }
 
 /**
- * Détermine si un code point est un caractère "sûr" à afficher sur canvas :
- * lettres, chiffres, ponctuation courante, espaces, sauts de ligne.
- * Supprime les emojis, symboles inconnus, caractères de contrôle, etc.
+ * Détermine si un code point est un caractère "sûr" à afficher sur canvas.
+ * Les emojis sont autorisés (rendus par NotoColorEmoji en fallback).
+ * Supprime les caractères de contrôle, PUA, et symboles de dessin.
  */
 function isSafeCodePoint(cp: number): boolean {
     // Caractères de contrôle (sauf tabulation et saut de ligne)
@@ -209,27 +216,10 @@ function isSafeCodePoint(cp: number): boolean {
     if (cp >= 0xE0100 && cp <= 0xE01EF) return false;
     // Zero-width joiner / non-joiner / BOM / etc.
     if ([0x200B, 0x200C, 0x200D, 0x200E, 0x200F, 0xFEFF, 0x2060].includes(cp)) return false;
-    // Emojis & pictographes (plages principales)
-    if (cp >= 0x1F300 && cp <= 0x1FAFF) return false; // Misc symbols, emojis, pictographs
-    if (cp >= 0x2600 && cp <= 0x27BF) return false;   // Misc symbols, Dingbats
-    if (cp >= 0x1F000 && cp <= 0x1F02F) return false; // Mahjong, Domino
-    if (cp >= 0x1F030 && cp <= 0x1F09F) return false; // Domino Tiles
-    if (cp >= 0x1F0A0 && cp <= 0x1F0FF) return false; // Playing Cards
-    if (cp >= 0x1F100 && cp <= 0x1F1FF) return false; // Enclosed Alphanum. Supplement
-    if (cp >= 0x1F200 && cp <= 0x1F2FF) return false; // Enclosed Ideographic Supplement
-    if (cp >= 0x1F900 && cp <= 0x1F9FF) return false; // Supplemental Symbols
-    if (cp >= 0x1FA00 && cp <= 0x1FA6F) return false; // Chess Symbols
-    if (cp >= 0x1FA70 && cp <= 0x1FAFF) return false; // Symbols & Pictographs Extended-A
-    if (cp >= 0xE000 && cp <= 0xF8FF) return false; // Zone usage privé (PUA)
-    if (cp >= 0xF0000 && cp <= 0xFFFFF) return false; // Supplementary PUA-A
-    if (cp >= 0x100000 && cp <= 0x10FFFF && cp < 0x1D000) return false; // Supplementary PUA-B (hors math)
-    // Regional Indicator Symbols (drapeaux) U+1F1E6–U+1F1FF
-    if (cp >= 0x1F1E6 && cp <= 0x1F1FF) return false;
-    // Combining Enclosing Keycap U+20E3
-    if (cp === 0x20E3) return false;
-    // Symboles divers U+2300–U+23FF (horloges, tech symbols)
-    if (cp >= 0x2300 && cp <= 0x23FF) return false;
-    // Flèches ornementales, boîtes, blocs (ne sont généralement pas dans Lora)
+    // Zone usage privé (PUA)
+    if (cp >= 0xE000 && cp <= 0xF8FF) return false;
+    if (cp >= 0xF0000 && cp <= 0xFFFFF) return false;
+    // Flèches ornementales, boîtes, blocs (non supportés par Lora ni NotoColorEmoji)
     if (cp >= 0x2500 && cp <= 0x25FF) return false; // Box Drawing & Block Elements
     if (cp >= 0x2B00 && cp <= 0x2BFF) return false; // Misc Symbols and Arrows
     return true;
@@ -280,7 +270,7 @@ function calculateLines(
     fontSize: number,
     maxWidth: number
 ): string[] {
-    ctx.font = `300 ${fontSize}px 'Lora', serif`;
+    ctx.font = `300 ${fontSize}px 'Lora', 'NotoColorEmoji', serif`;
     const words = text.split(" ");
     const lines: string[] = [];
     let currentLine: string[] = [];
@@ -427,30 +417,32 @@ export async function createQuoteImage(options: QuoteOptions): Promise<Buffer> {
 
     // ── Texte de la citation ──
     ctx.fillStyle = "#ffffff";
-    ctx.font = `300 ${calc.fontSize}px 'Lora', serif`;
+    ctx.font = `300 ${calc.fontSize}px 'Lora', 'NotoColorEmoji', serif`;
 
     let quoteY = (CANVAS_HEIGHT - calc.totalHeight) / 2;
 
-    for (const line of calc.lines) {
-        const lineWidth = ctx.measureText(line).width;
-        const xOffset = (QUOTE_AREA_WIDTH - lineWidth) / 2;
+    for (let i = 0; i < calc.lines.length; i++) {
+        const line = calc.lines[i];
         quoteY += calc.lineHeight;
-        ctx.fillText(line, QUOTE_AREA_X + xOffset, quoteY);
+        // Guillemet ouvrant sur la première ligne, fermant sur la dernière
+        const prefix = i === 0 ? "\u201C" : "";
+        const suffix = i === calc.lines.length - 1 ? "\u201D" : "";
+        ctx.fillText(prefix + line + suffix, QUOTE_AREA_X, quoteY);
     }
 
     // ── Auteur ──
-    ctx.font = `italic 300 ${calc.authorFontSize}px 'Lora', serif`;
+    ctx.font = `italic 300 ${calc.authorFontSize}px 'Lora', 'NotoColorEmoji', serif`;
     ctx.fillStyle = "#ffffff";
     const authorText = quoteDate
         ? `- ${normalizedDisplayName}, ${quoteDate}`
         : `- ${normalizedDisplayName}`;
     const authorWidth = ctx.measureText(authorText).width;
-    const authorX = QUOTE_AREA_X + (QUOTE_AREA_WIDTH - authorWidth) / 2;
+    const authorX = QUOTE_AREA_X + QUOTE_AREA_WIDTH - authorWidth;
     const authorY = quoteY + SPACING.authorTop;
     ctx.fillText(authorText, authorX, authorY);
 
     // ── Username ──
-    ctx.font = `300 ${calc.usernameFontSize}px 'Lora', serif`;
+    ctx.font = `300 ${calc.usernameFontSize}px 'Lora', 'NotoColorEmoji', serif`;
     ctx.fillStyle = "#888888";
     const usernameText = `@${normalizedUsername}`;
     const usernameWidth = ctx.measureText(usernameText).width;
