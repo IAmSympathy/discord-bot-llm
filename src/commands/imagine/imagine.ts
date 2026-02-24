@@ -106,7 +106,7 @@ module.exports = {
 
             // Message de progression avec animation de points
             progressMessage = await interaction.reply({
-                content: "`Imagination de l'image.`"
+                content: `\`Imagination de ${amount === 1 ? "l'" : `${amount} `}${amount === 1 ? "image" : "images"}\``
             });
 
             // Animation des points

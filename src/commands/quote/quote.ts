@@ -38,20 +38,20 @@ module.exports = {
         )
         .addStringOption((opt) =>
             opt
-                .setName("context")
-                .setDescription("Watermark / contexte affiché en bas à droite (max 32 caractères)")
+                .setName("year")
+                .setDescription("Année à afficher après le nom (défaut : année actuelle)")
                 .setRequired(false)
         )
         .addStringOption((opt) =>
             opt
-                .setName("date")
-                .setDescription("Date à afficher après le nom. (défaut : année actuelle)")
+                .setName("context")
+                .setDescription("Contexte affiché en bas à droite (max 32 caractères)")
                 .setRequired(false)
         )
         .addBooleanOption((opt) =>
             opt
                 .setName("grayscale")
-                .setDescription("Appliquer un filtre niveaux de gris (défaut : activé)")
+                .setDescription("Met la photo de profile en noir et blanc (défaut : activé)")
                 .setRequired(false)
         ),
 
