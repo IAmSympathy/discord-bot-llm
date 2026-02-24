@@ -88,6 +88,14 @@ export class EnvConfig {
         return process.env.ROLE_REACTION_ROLE_ID;
     }
 
+    static get FREE_GAMES_LOOT_ROLE_ID(): string | undefined {
+        return process.env.FREE_GAMES_LOOT_ROLE_ID;
+    }
+
+    static get FREE_GAMES_LOOT_EMOJI_ID(): string | undefined {
+        return process.env.FREE_GAMES_LOOT_EMOJI_ID;
+    }
+
     static get ROLE_REACTION_EMOJI_ID(): string | undefined {
         return process.env.ROLE_REACTION_EMOJI_ID;
     }

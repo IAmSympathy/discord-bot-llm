@@ -367,13 +367,15 @@ export function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; lo
         .setColor(color);
 
     // Décider quel thumbnail utiliser
+    // Les noms d'attachments sont rendus uniques par product.id pour éviter les conflits
+    // quand plusieurs embeds sont envoyés dans le même message Discord
     if (product.kind === "game") {
         // Pour les jeux, utiliser le logo de la plateforme
         const logoPath = getStoreLogoPath(product.store);
         if (logoPath) {
-            const logoFileName = `${product.store}_logo.png`;
+            const logoFileName = `${product.store}_logo_${product.id}.png`;
             logoAttachment = new AttachmentBuilder(logoPath, {name: logoFileName});
-            embed.setThumbnail(`attachment://${product.store}_logo.png`);
+            embed.setThumbnail(`attachment://${logoFileName}`);
         }
     } else {
         // Pour les autres types, utiliser une icône de type de produit
@@ -381,7 +383,7 @@ export function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; lo
         if (iconFileName) {
             const iconPath = path.join(process.cwd(), "assets", "product_icons", iconFileName);
             if (fs.existsSync(iconPath)) {
-                const attachmentName = `${product.kind}_icon.png`;
+                const attachmentName = `${product.kind}_icon_${product.id}.png`;
                 logoAttachment = new AttachmentBuilder(iconPath, {name: attachmentName});
                 embed.setThumbnail(`attachment://${attachmentName}`);
             }
@@ -400,21 +402,24 @@ export function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; lo
         description += `> ${shortDesc}\n\n`;
     }
 
+    // until est en millisecondes dans l'API FreeStuff v2, Discord attend des secondes
+    const untilSeconds = product.until > 9999999999 ? Math.floor(product.until / 1000) : product.until;
+
     // Prix formaté comme FreeStuff
     if (product.prices && product.prices.length > 0) {
         const price = product.prices[0];
         if (price.oldValue > 0) {
             const oldPrice = (price.oldValue / 100).toFixed(2).replace('.', ',');
             const currency = price.currency.toUpperCase();
-            description += `~~${oldPrice} $${currency}~~ **Gratuit** jusqu'au <t:${product.until}:D>`;
+            description += `~~${oldPrice} $${currency}~~ **Gratuit** jusqu'au <t:${untilSeconds}:D>`;
         }
-    } else if (product.until > 0) {
-        description += `**Gratuit** jusqu'au <t:${product.until}:D>`;
+    } else if (untilSeconds > 0) {
+        description += `**Gratuit** jusqu'au <t:${untilSeconds}:D>`;
     }
 
-    // Note avec étoiles
+    // Note avec étoiles (rating est entre 0 et 1 dans l'API FreeStuff v2)
     if (product.rating > 0) {
-        const rating = product.rating.toFixed(1);
+        const rating = (product.rating * 10).toFixed(1);
         description += `⠀⠀${rating}/10 ★`;
     }
 
@@ -620,7 +625,8 @@ export function createFreeGameEmbed(product: Product): { embed: EmbedBuilder; lo
 export async function processAnnouncement(client: Client, announcement: ResolvedAnnouncement): Promise<void> {
     const state = loadState();
     const channelId = EnvConfig.FREE_GAMES_CHANNEL_ID;
-    const roleId = EnvConfig.ROLE_REACTION_ROLE_ID;
+    const gamesRoleId = EnvConfig.ROLE_REACTION_ROLE_ID;
+    const lootRoleId = EnvConfig.FREE_GAMES_LOOT_ROLE_ID;
 
     if (!channelId) {
         logger.warn("Free games channel ID not configured");
@@ -635,9 +641,7 @@ export async function processAnnouncement(client: Client, announcement: Resolved
             return;
         }
 
-        const embeds: EmbedBuilder[] = [];
-        const files: AttachmentBuilder[] = [];
-        const productIds: number[] = [];
+        const products: { embed: EmbedBuilder; file: AttachmentBuilder | null; id: number }[] = [];
 
         // Créer tous les embeds et attachments
         for (const product of announcement.resolvedProducts) {
@@ -649,13 +653,7 @@ export async function processAnnouncement(client: Client, announcement: Resolved
             }
 
             const {embed, logoAttachment} = createFreeGameEmbed(product);
-            embeds.push(embed);
-
-            if (logoAttachment) {
-                files.push(logoAttachment);
-            }
-
-            productIds.push(product.id);
+            products.push({embed, file: logoAttachment, id: product.id});
 
             // Ajouter à la liste des jeux notifiés (pour historique seulement)
             if (!state.notifiedGames.includes(product.id)) {
@@ -663,27 +661,30 @@ export async function processAnnouncement(client: Client, announcement: Resolved
             }
         }
 
-        // Envoyer un seul message avec tous les embeds
-        if (embeds.length > 0) {
-            // Message simple avec juste la mention du rôle (style FreeStuff)
-            let messageContent = "";
-            if (roleId) {
-                messageContent = `||<@&${roleId}>||`;
+        // Envoyer un message séparé par produit pour que chaque embed ait son propre
+        // fichier attaché (thumbnail + couleur corrects sur Discord)
+        if (products.length > 0) {
+
+            for (let i = 0; i < products.length; i++) {
+                const {embed, file, id} = products[i];
+
+                // Déterminer le rôle selon le type de CE produit spécifique
+                const product = announcement.resolvedProducts.find(p => p.id === id)!;
+                const productRoleId = product.kind === "game" ? gamesRoleId : (lootRoleId || gamesRoleId);
+
+                const message: any = {
+                    content: productRoleId ? `||<@&${productRoleId}>||` : undefined,
+                    embeds: [embed]
+                };
+
+                if (file) {
+                    message.files = [file];
+                }
+
+                await channel.send(message);
             }
 
-            const message: any = {
-                content: messageContent || undefined,
-                embeds: embeds
-            };
-
-            // Ajouter tous les fichiers attachés si disponibles
-            if (files.length > 0) {
-                message.files = files;
-            }
-
-            await channel.send(message);
-
-            logger.info(`Notified ${embeds.length} free game(s) in a single message`);
+            logger.info(`Notified ${products.length} free game(s) in ${products.length} separate message(s)`);
         }
 
         // Sauvegarder l'état

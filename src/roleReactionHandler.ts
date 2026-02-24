@@ -5,34 +5,50 @@ import {createLogger} from "./utils/logger";
 
 const logger = createLogger("RoleReaction");
 const ROLE_REACTION_MESSAGE_ID = EnvConfig.ROLE_REACTION_MESSAGE_ID;
-const ROLE_REACTION_EMOJI_ID = EnvConfig.ROLE_REACTION_EMOJI_ID;
-const ROLE_TO_GIVE_ID = EnvConfig.ROLE_REACTION_ROLE_ID;
 const ROLE_REACTION_CHANNEL_ID = EnvConfig.ROLE_REACTION_CHANNEL_ID || "1158184382679498832";
 
 /**
- * Ajoute automatiquement la réaction de base au message
- * pour qu'elle reste toujours visible
+ * Map des emoji → rôle à donner
+ * Chaque entrée représente une réaction possible sur le message info
  */
-async function addBaseReaction(client: Client) {
-    if (!ROLE_REACTION_MESSAGE_ID || !ROLE_REACTION_EMOJI_ID) {
-        logger.warn(`Missing MESSAGE_ID or EMOJI_ID in .env`);
+function getRoleReactionMap(): { emojiId: string; roleId: string; label: string }[] {
+    const map: { emojiId: string; roleId: string; label: string }[] = [];
+
+    const gamesEmojiId = EnvConfig.ROLE_REACTION_EMOJI_ID;
+    const gamesRoleId = EnvConfig.ROLE_REACTION_ROLE_ID;
+    if (gamesEmojiId && gamesRoleId) {
+        map.push({emojiId: gamesEmojiId, roleId: gamesRoleId, label: "Jeux gratuits"});
+    }
+
+    const lootEmojiId = EnvConfig.FREE_GAMES_LOOT_EMOJI_ID;
+    const lootRoleId = EnvConfig.FREE_GAMES_LOOT_ROLE_ID;
+    if (lootEmojiId && lootRoleId) {
+        map.push({emojiId: lootEmojiId, roleId: lootRoleId, label: "Loots & DLC"});
+    }
+
+    return map;
+}
+
+/**
+ * Ajoute automatiquement les réactions de base au message
+ * pour qu'elles restent toujours visibles
+ */
+async function addBaseReactions(client: Client) {
+    if (!ROLE_REACTION_MESSAGE_ID) {
+        logger.warn(`Missing ROLE_REACTION_MESSAGE_ID in .env`);
         return;
     }
 
     try {
         logger.info(`Fetching message ${ROLE_REACTION_MESSAGE_ID} from channel ${ROLE_REACTION_CHANNEL_ID}...`);
 
-        // Récupérer le canal directement
         const channel = await client.channels.fetch(ROLE_REACTION_CHANNEL_ID);
-
         if (!channel || !channel.isTextBased()) {
             logger.error(`❌ Channel ${ROLE_REACTION_CHANNEL_ID} not found or not text-based`);
             return;
         }
 
-        // Récupérer le message
         const message = await channel.messages.fetch(ROLE_REACTION_MESSAGE_ID);
-
         if (!message) {
             logger.error(`❌ Message ${ROLE_REACTION_MESSAGE_ID} not found in channel`);
             return;
@@ -40,44 +56,48 @@ async function addBaseReaction(client: Client) {
 
         logger.info(`✅ Message found in #${(channel as any).name || channel.id}`);
 
-        // Vérifier si Netricsa a déjà réagi
-        const botReaction = message.reactions.cache.find(
-            r => r.emoji.id === ROLE_REACTION_EMOJI_ID && r.me
-        );
-
-        if (!botReaction) {
-            // Ajouter la réaction
-            await message.react(`<:zzzRole_Netricsa:${ROLE_REACTION_EMOJI_ID}>`);
-            logger.info(`✅ Base reaction added to message`);
-        } else {
-            logger.info(`✅ Base reaction already present`);
+        const reactionMap = getRoleReactionMap();
+        for (const entry of reactionMap) {
+            const botReaction = message.reactions.cache.find(
+                r => r.emoji.id === entry.emojiId && r.me
+            );
+            if (!botReaction) {
+                await message.react(`<:role_emoji:${entry.emojiId}>`);
+                logger.info(`✅ Reaction added for role "${entry.label}" (emoji ${entry.emojiId})`);
+            } else {
+                logger.info(`✅ Reaction already present for role "${entry.label}"`);
+            }
         }
 
     } catch (error: any) {
-        logger.error(`❌ Error adding base reaction:`, error.message);
+        logger.error(`❌ Error adding base reactions:`, error.message);
     }
 }
 
 export function registerRoleReactionHandler(client: Client) {
-    if (!ROLE_REACTION_MESSAGE_ID || !ROLE_REACTION_EMOJI_ID || !ROLE_TO_GIVE_ID) {
-        logger.warn("Missing configuration in .env - handler disabled");
+    if (!ROLE_REACTION_MESSAGE_ID) {
+        logger.warn("Missing ROLE_REACTION_MESSAGE_ID in .env - handler disabled");
         return;
     }
 
-    logger.info(`Handler registered for message ${ROLE_REACTION_MESSAGE_ID}`);
+    const reactionMap = getRoleReactionMap();
+    if (reactionMap.length === 0) {
+        logger.warn("No valid emoji/role pairs configured - handler disabled");
+        return;
+    }
 
-    // Ajouter la réaction de base au démarrage du bot
+    logger.info(`Handler registered for message ${ROLE_REACTION_MESSAGE_ID} with ${reactionMap.length} reaction(s)`);
+
+    // Ajouter les réactions de base au démarrage du bot
     client.once(Events.ClientReady, async () => {
-        await addBaseReaction(client);
+        await addBaseReactions(client);
     });
 
     // Événement: Réaction ajoutée
     client.on(Events.MessageReactionAdd, async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => {
         try {
-            // Ignorer les réactions du bot lui-même
             if (user.bot) return;
 
-            // Si la réaction est partielle, fetch les données complètes
             if (reaction.partial) {
                 try {
                     await reaction.fetch();
@@ -87,21 +107,17 @@ export function registerRoleReactionHandler(client: Client) {
                 }
             }
 
-            // Vérifier si c'est le bon message
-            if (reaction.message.id !== ROLE_REACTION_MESSAGE_ID) {
+            if (reaction.message.id !== ROLE_REACTION_MESSAGE_ID) return;
+
+            // Trouver la paire emoji → rôle correspondante
+            const entry = reactionMap.find(e => e.emojiId === reaction.emoji.id);
+            if (!entry) {
+                logger.debug(`Unknown emoji reaction: ${reaction.emoji.id}`);
                 return;
             }
 
-            // Vérifier si c'est le bon emoji
-            const emojiId = reaction.emoji.id;
-            if (emojiId !== ROLE_REACTION_EMOJI_ID) {
-                logger.info(`Wrong emoji: ${emojiId} (expected ${ROLE_REACTION_EMOJI_ID})`);
-                return;
-            }
+            logger.info(`Valid reaction "${entry.label}" from ${user.username} - giving role`);
 
-            logger.info(`Valid reaction from ${user.username} - giving role`);
-
-            // Récupérer le membre
             const guild = reaction.message.guild;
             if (!guild) {
                 logger.error("No guild found");
@@ -114,21 +130,18 @@ export function registerRoleReactionHandler(client: Client) {
                 return;
             }
 
-            // Vérifier si le membre a déjà le rôle
-            if (member.roles.cache.has(ROLE_TO_GIVE_ID)) {
-                logger.info(`${user.username} already has the role`);
+            if (member.roles.cache.has(entry.roleId)) {
+                logger.info(`${user.username} already has role "${entry.label}"`);
                 return;
             }
 
-            // Donner le rôle
-            await member.roles.add(ROLE_TO_GIVE_ID);
-            logger.info(`✅ Role given to ${user.username}`);
+            await member.roles.add(entry.roleId);
+            logger.info(`✅ Role "${entry.label}" given to ${user.username}`);
 
-            // Logger dans Discord
             const channelName = (reaction.message.channel as any).name || "Unknown";
             await logCommand("🎭 Rôle attribué par réaction", undefined, [
                 {name: "👤 Membre", value: user.username || user.id, inline: true},
-                {name: "📝 Rôle", value: `<@&${ROLE_TO_GIVE_ID}>`, inline: true},
+                {name: "📝 Rôle", value: `<@&${entry.roleId}> (${entry.label})`, inline: true},
                 {name: "💬 Message", value: ROLE_REACTION_MESSAGE_ID, inline: true}
             ], undefined, channelName, user.displayAvatarURL());
 
@@ -140,10 +153,8 @@ export function registerRoleReactionHandler(client: Client) {
     // Événement: Réaction retirée
     client.on(Events.MessageReactionRemove, async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => {
         try {
-            // Ignorer les réactions du bot lui-même
             if (user.bot) return;
 
-            // Si la réaction est partielle, fetch les données complètes
             if (reaction.partial) {
                 try {
                     await reaction.fetch();
@@ -153,20 +164,14 @@ export function registerRoleReactionHandler(client: Client) {
                 }
             }
 
-            // Vérifier si c'est le bon message
-            if (reaction.message.id !== ROLE_REACTION_MESSAGE_ID) {
-                return;
-            }
+            if (reaction.message.id !== ROLE_REACTION_MESSAGE_ID) return;
 
-            // Vérifier si c'est le bon emoji
-            const emojiId = reaction.emoji.id;
-            if (emojiId !== ROLE_REACTION_EMOJI_ID) {
-                return;
-            }
+            // Trouver la paire emoji → rôle correspondante
+            const entry = reactionMap.find(e => e.emojiId === reaction.emoji.id);
+            if (!entry) return;
 
-            logger.info(`Reaction removed from ${user.username} - removing role`);
+            logger.info(`Reaction "${entry.label}" removed from ${user.username} - removing role`);
 
-            // Récupérer le membre
             const guild = reaction.message.guild;
             if (!guild) {
                 logger.error("No guild found");
@@ -179,21 +184,18 @@ export function registerRoleReactionHandler(client: Client) {
                 return;
             }
 
-            // Vérifier si le membre a le rôle
-            if (!member.roles.cache.has(ROLE_TO_GIVE_ID)) {
-                logger.info(`${user.username} doesn't have the role`);
+            if (!member.roles.cache.has(entry.roleId)) {
+                logger.info(`${user.username} doesn't have role "${entry.label}"`);
                 return;
             }
 
-            // Retirer le rôle
-            await member.roles.remove(ROLE_TO_GIVE_ID);
-            logger.info(`✅ Role removed from ${user.username}`);
+            await member.roles.remove(entry.roleId);
+            logger.info(`✅ Role "${entry.label}" removed from ${user.username}`);
 
-            // Logger dans Discord
             const channelName = (reaction.message.channel as any).name || "Unknown";
             await logCommand("🎭 Rôle retiré par réaction", undefined, [
                 {name: "👤 Membre", value: user.username || user.id, inline: true},
-                {name: "📝 Rôle", value: `<@&${ROLE_TO_GIVE_ID}>`, inline: true},
+                {name: "📝 Rôle", value: `<@&${entry.roleId}> (${entry.label})`, inline: true},
                 {name: "💬 Message", value: ROLE_REACTION_MESSAGE_ID, inline: true}
             ], undefined, channelName, user.displayAvatarURL());
 
