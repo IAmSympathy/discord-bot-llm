@@ -2,8 +2,10 @@ import {Client, Events, Message} from "discord.js";
 import {generateCitationEmoji} from "./services/emojiService";
 import {BotStatus, clearStatus, setStatus} from "./services/statusService";
 import {isLowPowerMode} from "./services/botStateService";
+import {isStandbyMode} from "./services/standbyModeService";
 import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
+import {consumePendingQuote} from "./services/quotePendingCache";
 
 const CITATIONS_THREAD_ID = EnvConfig.CITATIONS_THREAD_ID;
 const logger = createLogger("CitationsThread");
@@ -13,12 +15,25 @@ export function registerCitationsThreadHandler(client: Client) {
         let statusId: string = "";
 
         try {
-            if (message.author.bot) return;
             if (!CITATIONS_THREAD_ID || message.channelId !== CITATIONS_THREAD_ID) return;
             if (!message.channel.isThread()) return;
 
-            // Vérifier si le bot est en Low Power Mode
-            if (isLowPowerMode()) {
+            // Vérifier si le bot est en Low Power Mode ou Standby
+            if (isLowPowerMode() || isStandbyMode(client)) return;
+
+            // Si c'est le bot lui-même, vérifier s'il y a une citation en attente
+            if (message.author.bot) {
+                const pendingText = consumePendingQuote(message.channelId);
+                if (!pendingText) return; // Pas une citation postée par commande
+
+                statusId = await setStatus(client, BotStatus.GENERATING_CITATION);
+                logger.info(`Citation postée par le bot — texte récupéré depuis le cache`);
+
+                const emoji = await generateCitationEmoji(pendingText);
+                await message.react(emoji);
+                logger.info(`Réaction ${emoji} ajoutée`);
+
+                await clearStatus(client, statusId);
                 return;
             }
 

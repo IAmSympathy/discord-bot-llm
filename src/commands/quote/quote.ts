@@ -5,6 +5,7 @@ import {logCommand} from "../../utils/discordLogger";
 import {addXP, XP_REWARDS} from "../../services/xpSystem";
 import {getChannelNameFromInteraction} from "../../utils/channelHelper";
 import {tryRewardAndNotify} from "../../services/rewardNotifier";
+import {registerPendingQuote} from "../../services/quotePendingCache";
 
 const logger = createLogger("QuoteCmd");
 
@@ -105,6 +106,10 @@ module.exports = {
             const attachment = new AttachmentBuilder(imageBuffer, {
                 name: `quote_${username}_${Date.now()}.png`,
             });
+
+            if (interaction.channelId) {
+                registerPendingQuote(interaction.channelId, manualMessage);
+            }
 
             await interaction.editReply({
                 content: `<@${targetUser.id}>`,
