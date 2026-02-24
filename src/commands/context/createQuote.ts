@@ -114,7 +114,7 @@ module.exports = {
             });
 
             await interaction.editReply({
-                content: "",
+                content: `<@${authorUser.id}>`,
                 files: [attachment],
             });
 
