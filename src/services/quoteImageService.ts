@@ -65,6 +65,8 @@ export interface QuoteOptions {
     watermark?: string;
     /** Afficher le watermark */
     showWatermark?: boolean;
+    /** Date à afficher après le nom de l'auteur (ex: "24 février 2026") */
+    quoteDate?: string;
 }
 
 // ─── Normalisation des caractères Unicode fantaisie ─────────────────────────
@@ -286,6 +288,7 @@ export async function createQuoteImage(options: QuoteOptions): Promise<Buffer> {
         grayScale = true,
         watermark = "Netricsa Bot",
         showWatermark = false,
+        quoteDate,
     } = options;
 
     logger.info(`Generating quote image for @${username}`);
@@ -352,7 +355,9 @@ export async function createQuoteImage(options: QuoteOptions): Promise<Buffer> {
     // ── Auteur ──
     ctx.font = `italic 300 ${calc.authorFontSize}px 'Lora', serif`;
     ctx.fillStyle = "#ffffff";
-    const authorText = `- ${normalizedDisplayName}`;
+    const authorText = quoteDate
+        ? `- ${normalizedDisplayName}, ${quoteDate}`
+        : `- ${normalizedDisplayName}`;
     const authorWidth = ctx.measureText(authorText).width;
     const authorX = QUOTE_AREA_X + (QUOTE_AREA_WIDTH - authorWidth) / 2;
     const authorY = quoteY + SPACING.authorTop;
