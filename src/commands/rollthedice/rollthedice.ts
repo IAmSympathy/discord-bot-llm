@@ -69,9 +69,9 @@ module.exports = {
 
             // Message d'animation
             if (numberOfDice > 1) {
-                await interaction.reply(`<a:znDice:1471941139287375882> *Lance les dés...*`);
+                await interaction.reply(`<a:znDice:1475708760944152699> *Lance les dés...*`);
             } else {
-                await interaction.reply(`<a:znDice:1471941139287375882> *Lance le dé...*`);
+                await interaction.reply(`<a:znDice:1475708760944152699> *Lance le dé...*`);
             }
 
             // Attendre un peu pour l'effet d'animation

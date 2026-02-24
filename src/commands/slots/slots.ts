@@ -137,7 +137,7 @@ module.exports = {
                 .setTitle("🎰 Machine à Sous")
                 .setDescription(
                     `<@${userId}> lance sa machine !\n\n` +
-                    `[ <a:znSlots:1471942669394509975> | <a:znSlots:1471942669394509975> | <a:znSlots:1471942669394509975> ] 📍`
+                    `[ <a:znSlots:1475710024813645874> | <a:znSlots:1475710024813645874> | <a:znSlots:1475710024813645874> ] 📍`
                 )
                 .setTimestamp();
 
@@ -147,7 +147,7 @@ module.exports = {
             await new Promise(resolve => setTimeout(resolve, 800));
             animationEmbed.setDescription(
                 `<@${userId}> lance sa machine !\n\n` +
-                `[ ${finalSymbols[0]} | <a:znSlots:1471942669394509975> | <a:znSlots:1471942669394509975> ] 📍`
+                `[ ${finalSymbols[0]} | <a:znSlots:1475710024813645874> | <a:znSlots:1475710024813645874> ] 📍`
             );
             await interaction.editReply({embeds: [animationEmbed]});
 
@@ -155,7 +155,7 @@ module.exports = {
             await new Promise(resolve => setTimeout(resolve, 800));
             animationEmbed.setDescription(
                 `<@${userId}> lance sa machine !\n\n` +
-                `[ ${finalSymbols[0]} | ${finalSymbols[1]} | <a:znSlots:1471942669394509975> ] 📍`
+                `[ ${finalSymbols[0]} | ${finalSymbols[1]} | <a:znSlots:1475710024813645874> ] 📍`
             );
             await interaction.editReply({embeds: [animationEmbed]});
 

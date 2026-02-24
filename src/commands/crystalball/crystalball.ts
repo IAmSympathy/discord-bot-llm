@@ -48,7 +48,7 @@ module.exports = {
             const randomResponse = responses[Math.floor(Math.random() * responses.length)];
 
             // Message d'animation
-            await interaction.reply(`<:znMagicBall:1471947304989753508> *La boule de crystal réfléchit...*`);
+            await interaction.reply(`<:znMagicBall:1475709306388222065> *La boule de crystal réfléchit...*`);
 
             // Attendre un peu pour l'effet d'animation
             await new Promise(resolve => setTimeout(resolve, 1500));
@@ -75,7 +75,7 @@ module.exports = {
             embed.setFooter({text: `Demandé par ${interaction.user.displayName}`})
                 .setTimestamp();
 
-            await interaction.editReply({content: "", embeds: [embed]});
+            await interaction.editReply({content: " ", embeds: [embed]});
 
             // Logger la commande
             const channelName = getChannelNameFromInteraction(interaction);
@@ -109,7 +109,7 @@ module.exports = {
 
             // Chance d'obtenir un objet saisonnier (3% - commande Netricsa)
             const {tryRewardAndNotify} = require("../../services/rewardNotifier");
-            await tryRewardAndNotify(interaction, interaction.user.id, interaction.user.username, "command");
+            await tryRewardAndNotify(interaction, interaction.channel, interaction.user.id, interaction.user.username, "command");
 
             // Tracker les achievements de crystalball
             const {trackCrystalballAchievements} = require("../../services/achievementService");
