@@ -1,10 +1,12 @@
 server:
   port: 2333
-  address: 0.0.0.0
+  address: 127.0.0.1
 
 lavalink:
   plugins:
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.0"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.7.2"
+      snapshot: false
+    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.1.1"
       snapshot: false
   server:
     password: "youshallnotpass"
@@ -34,7 +36,7 @@ lavalink:
     trackStuckThresholdMs: 10000
     useSeekGhosting: true
     playerUpdateInterval: 5
-    youtubeSearchEnabled: true
+    youtubeSearchEnabled: false
     soundcloudSearchEnabled: true
     gc-warnings: true
 
@@ -45,15 +47,25 @@ plugins:
     allowDirectVideoIds: true
     allowDirectPlaylistIds: true
     clients:
-      - ANDROID_VR
+      - MUSIC
+      - ANDROID_TESTSUITE
       - WEB
-      - TVHTML5EMBEDDED
     oauth:
-      enabled: false
-    pot:
-      enabled: false
-    # Cookies pour contourner les restrictions anti-bot YouTube
-    cookiesPath: /home/ubuntu/discord-bot-llm/cookies.txt
+      enabled: true
+      # Laisser vide : Lavalink génère un lien d'authentification au démarrage
+      # Une fois authentifié, le token sera sauvegardé automatiquement
+      accessToken: ""
+
+  lavasrc:
+    providers:
+      - "ytsearch:\"%ISRC%\""
+      - "ytsearch:%QUERY%"
+      - "spsearch:%QUERY%"
+    sources:
+      spotify: false
+      appleMusic: false
+      deezer: false
+      youtube: true
 
 metrics:
   prometheus:
@@ -68,4 +80,3 @@ logging:
   level:
     root: INFO
     lavalink: INFO
-

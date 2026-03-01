@@ -12,8 +12,7 @@ import {Client} from "discord.js";
 export function getLavalinkNodes() {
     return [{
         name: "main",
-        host: process.env.LAVALINK_HOST ?? "127.0.0.1",
-        port: parseInt(process.env.LAVALINK_PORT ?? "2333"),
+        url: `${process.env.LAVALINK_HOST ?? "127.0.0.1"}:${process.env.LAVALINK_PORT ?? "2333"}`,
         auth: process.env.LAVALINK_PASSWORD ?? "youshallnotpass",
         secure: false,
     }];
