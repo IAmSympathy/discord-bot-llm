@@ -33,6 +33,8 @@ function Show-Menu
     Write-Host "  5️⃣  🔄 Restart Lavalink uniquement"
     Write-Host "  6️⃣  🔄 Restart TOUT (Lavalink + Bot)"
     Write-Host "  7️⃣  ⏸️  Stop TOUT"
+    Write-Host "  A   ⏸️  Stop Bot uniquement"
+    Write-Host "  B   ⏸️  Stop Lavalink uniquement"
     Write-Host "  8️⃣  ▶️  Start TOUT"
     Write-Host "  9️⃣  🚀 Deploy"
     Write-Host "  S   🔐 SSH"
@@ -106,6 +108,20 @@ while ($true)
             Write-Host "⏸️ Stop de tous les services..." -ForegroundColor Cyan
             Invoke-SSH "pm2 stop all"
             Write-Host "⚠️ Tout arrêté." -ForegroundColor Yellow
+            Pause
+        }
+
+        "a" {
+            Write-Host "⏸️ Stop du Bot..." -ForegroundColor Cyan
+            Invoke-SSH "pm2 stop discord-bot-netricsa"
+            Write-Host "⚠️ Bot arrêté." -ForegroundColor Yellow
+            Pause
+        }
+
+        "b" {
+            Write-Host "⏸️ Stop de Lavalink..." -ForegroundColor Cyan
+            Invoke-SSH "pm2 stop lavalink"
+            Write-Host "⚠️ Lavalink arrêté." -ForegroundColor Yellow
             Pause
         }
 
