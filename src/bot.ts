@@ -211,6 +211,16 @@ client.once(Events.ClientReady, async () => {
     const klodovik = getKlodovikBot();
     await klodovik.start();
     logger.info("Klodovik bot initialized in the same process");
+
+    // Initialiser Nexa (bot de musique YouTube — Components V2)
+    if (process.env.NEXA_TOKEN && process.env.NEXA_MUSIC_CHANNEL_ID) {
+        const {getNexaBot} = require("./services/nexa/nexaBot");
+        const nexa = getNexaBot();
+        await nexa.start();
+        logger.info("Nexa music bot initialized in the same process");
+    } else {
+        logger.warn("Nexa music bot skipped (NEXA_TOKEN or NEXA_MUSIC_CHANNEL_ID not set)");
+    }
 });
 
 // === ÉVÉNEMENT : MISE À JOUR DES RÔLES ===

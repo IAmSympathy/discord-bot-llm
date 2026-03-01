@@ -154,6 +154,25 @@ export class EnvConfig {
         return parseInt(process.env.FREESTUFF_WEBHOOK_PORT || "3000", 10);
     }
 
+    // ── Nexa (bot de musique)
+    static get NEXA_TOKEN(): string | undefined {
+        return process.env.NEXA_TOKEN;
+    }
+
+    static get NEXA_CLIENT_ID(): string | undefined {
+        return process.env.NEXA_CLIENT_ID;
+    }
+
+    /** ID du salon dédié musique (texte + requêtes) */
+    static get NEXA_MUSIC_CHANNEL_ID(): string | undefined {
+        return process.env.NEXA_MUSIC_CHANNEL_ID;
+    }
+
+    /** Cookie YouTube optionnel pour contourner les restrictions anti-bot */
+    static get YOUTUBE_COOKIE(): string | undefined {
+        return process.env.YOUTUBE_COOKIE;
+    }
+
     // Meme Subreddits
     static get MEME_SUBREDDITS(): string[] {
         const subreddits = process.env.MEME_SUBREDDITS || "shitposting";
