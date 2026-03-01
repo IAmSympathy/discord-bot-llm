@@ -6,7 +6,7 @@
 
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, ContainerBuilder, Events, GatewayIntentBits, Message, MessageFlags, SectionBuilder, SeparatorBuilder, TextChannel, TextDisplayBuilder, ThumbnailBuilder,} from "discord.js";
 import * as dotenv from "dotenv";
-import {getKazagumo, getOrCreatePlayer, initKazagumo, isLavalinkReady, KazagumoPlayer, KazagumoTrack, searchYouTube, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
+import {getKazagumo, getOrCreatePlayer, initKazagumo, isLavalinkReady, KazagumoPlayer, KazagumoTrack, searchYouTube, skipTrack, stopPlayback, togglePause, waitForLavalink,} from "./musicPlayer";
 import {buildNexaMessageOptions} from "./nexaComponents";
 
 dotenv.config();
@@ -155,6 +155,15 @@ export class NexaBot {
             // Initialiser Kazagumo avec ce client
             const k = initKazagumo(this.client);
 
+            // Attendre que Lavalink soit prêt (il démarre ~20s après le bot)
+            waitForLavalink(120000).then(ready => {
+                if (ready) {
+                    console.log("[Nexa] ✅ Lavalink connecté et prêt !");
+                } else {
+                    console.error("[Nexa] ❌ Lavalink indisponible après 120s");
+                }
+            });
+
             // ── Events Kazagumo
             k.on("playerStart", async (player) => {
                 console.log(`[Nexa] ▶️ Lecture: ${player.queue.current?.title}`);
@@ -245,7 +254,7 @@ export class NexaBot {
         // Vérifier que Lavalink est connecté
         if (!isLavalinkReady()) {
             const errMsg = await (message.channel as TextChannel).send({
-                content: `⏳ Lavalink n'est pas encore prêt, réessaie dans quelques secondes...`
+                content: `⏳ Connexion à Lavalink en cours... réessaie dans quelques secondes.`
             }).catch(() => null);
             if (errMsg) setTimeout(() => errMsg.delete().catch(() => {
             }), 7000);

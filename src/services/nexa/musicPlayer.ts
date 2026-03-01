@@ -62,8 +62,18 @@ export function initKazagumo(client: Client): Kazagumo {
 /** Vérifie si au moins un node Lavalink est disponible */
 export function isLavalinkReady(): boolean {
     if (!kazagumo) return false;
-    return kazagumo.shoukaku.nodes.size > 0 &&
-        [...kazagumo.shoukaku.nodes.values()].some(n => n.state === 1); // 1 = CONNECTED
+    const nodes = [...kazagumo.shoukaku.nodes.values()];
+    return nodes.length > 0 && nodes.some(n => n.state === 1); // 1 = CONNECTED
+}
+
+/** Attend que Lavalink soit prêt (poll toutes les 3s, max 120s) */
+export async function waitForLavalink(timeoutMs = 120000): Promise<boolean> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+        if (isLavalinkReady()) return true;
+        await new Promise(r => setTimeout(r, 3000));
+    }
+    return false;
 }
 
 export function getKazagumo(): Kazagumo {
