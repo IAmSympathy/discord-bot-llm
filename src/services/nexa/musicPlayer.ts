@@ -194,7 +194,11 @@ function createYtDlpStream(url: string, cookiesPath?: string): Readable {
     ytDlpArgs.push(
         "--no-playlist",
         "--js-runtimes", "node",
-        "-f", "bestaudio[ext=webm]/bestaudio/best",
+        // Utiliser ffmpeg pour merger audio+vidéo et streamer sur stdout
+        "--downloader", "ffmpeg",
+        "-f", "bestaudio/best",
+        // Streamer vers stdout via ffmpeg → opus pour Discord
+        "--downloader-args", "ffmpeg:-vn -acodec libopus -f opus pipe:1",
         "--no-warnings",
         "-o", "-",
         url,
@@ -264,7 +268,7 @@ export async function playCurrentTrack(guildId: string): Promise<boolean> {
 
         const stream = createYtDlpStream(track.url, cookiesPath);
         const resource = createAudioResource(stream, {
-            inputType: StreamType.Arbitrary,
+            inputType: StreamType.OggOpus,
             inlineVolume: true,
         });
         resource.volume?.setVolume(q.volume);
