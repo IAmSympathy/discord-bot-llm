@@ -48,6 +48,12 @@ plugins:
       - ANDROID_VR
       - WEB
       - TVHTML5EMBEDDED
+    oauth:
+      enabled: false
+    pot:
+      enabled: false
+    # Cookies pour contourner les restrictions anti-bot YouTube
+    cookiesPath: /home/ubuntu/discord-bot-llm/cookies.txt
 
 metrics:
   prometheus:
@@ -62,5 +68,4 @@ logging:
   level:
     root: INFO
     lavalink: INFO
-
 

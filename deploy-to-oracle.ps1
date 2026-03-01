@@ -1,8 +1,9 @@
-﻿# Script de déploiement automatique vers le serveur Oracle
+﻿﻿# Script de déploiement automatique vers le serveur Oracle
 # Usage: .\deploy-to-oracle.ps1
 
 $SSH_KEY = "C:\Users\samyl\Downloads\ssh-key-2026-02-10.key"
 $SERVER = "ubuntu@151.145.51.189"
+$SSH_OPTS = "-o StrictHostKeyChecking=no -o ConnectTimeout=15"
 
 Write-Host "🚀 Déploiement vers le serveur Oracle Cloud..." -ForegroundColor Cyan
 
@@ -23,24 +24,30 @@ if ($commit -eq "o")
 Write-Host "`n🔄 Déploiement sur le serveur..." -ForegroundColor Cyan
 
 $commands = @"
+set -e
 cd ~/discord-bot-llm
 echo '📥 Récupération des dernières modifications...'
-git pull
+git stash && git pull && git stash pop || git pull
 echo '🔨 Compilation du TypeScript...'
 npx tsc
-echo '🔄 Redémarrage du bot...'
-pm2 restart discord-bot-netricsa
+echo '📁 Création du dossier logs si nécessaire...'
+mkdir -p logs
+echo '🔄 Redémarrage via ecosystem.config.js...'
+pm2 stop all 2>/dev/null || true
+sleep 2
+pm2 start ecosystem.config.js
+pm2 save
 echo '✅ Déploiement terminé!'
 echo ''
-echo '📊 Statut du bot:'
-pm2 status discord-bot-netricsa
+echo '📊 Statut des services:'
+pm2 status
 echo ''
-echo '📋 Derniers logs:'
-pm2 logs discord-bot-netricsa --lines 20 --nostream
+echo '📋 Derniers logs bot:'
+pm2 logs discord-bot-netricsa --lines 15 --nostream
 "@
 
-ssh -i $SSH_KEY $SERVER $commands
+$expr = "ssh -i `"$SSH_KEY`" $SSH_OPTS $SERVER `"$commands`""
+Invoke-Expression $expr
 
 Write-Host "`n✅ Déploiement terminé avec succès!" -ForegroundColor Green
-Write-Host "🔍 Pour voir les logs en temps réel: ssh -i `"$SSH_KEY`" $SERVER `"pm2 logs discord-bot-netricsa`"" -ForegroundColor Yellow
-
+Write-Host "🔍 Logs en temps réel: .\manage-bot.ps1" -ForegroundColor Yellow
