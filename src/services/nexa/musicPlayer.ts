@@ -97,13 +97,17 @@ export async function waitForLavalink(timeoutMs = 120000): Promise<boolean> {
                 for (const node of nodes) {
                     if ((node as any).state !== 1) {
                         console.log(`[Nexa] 🔄 Force reconnexion "${node.name}" (état: ${(node as any).state})`);
+                        // Forcer DISCONNECTED (3) pour contourner le guard qui bloque
+                        // connect() si state === CONNECTING (0)
+                        (node as any).state = 3;
                         try {
                             (node as any).connect();
-                        } catch (_) {
+                        } catch (e) {
+                            console.error(`[Nexa] Erreur connect():`, e);
                         }
                     }
                 }
-                await new Promise(r => setTimeout(r, 2000));
+                await new Promise(r => setTimeout(r, 3000));
                 const connected = [...kazagumo.shoukaku.nodes.values()].some(n => (n as any).state === 1);
                 if (connected) return true;
             }
