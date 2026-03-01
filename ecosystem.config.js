@@ -21,7 +21,7 @@ module.exports = {
             script: "Lavalink.jar",
             interpreter: "java",
             interpreter_args: "-Xms64m -Xmx384m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -jar",
-            cwd: "/home/ubuntu/discord-bot-llm/lavalink",
+            cwd: "/home/ubuntu/lavalink",
             max_memory_restart: "430M",
             restart_delay: 8000,
             max_restarts: 5,
