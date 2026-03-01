@@ -66,11 +66,28 @@ export function isLavalinkReady(): boolean {
     return nodes.length > 0 && nodes.some(n => n.state === 1); // 1 = CONNECTED
 }
 
-/** Attend que Lavalink soit prêt (poll toutes les 3s, max 120s) */
+/** Attend que Lavalink soit prêt, force reconnexion si nécessaire (poll toutes les 3s, max 120s) */
 export async function waitForLavalink(timeoutMs = 120000): Promise<boolean> {
     const start = Date.now();
+    let attempt = 0;
     while (Date.now() - start < timeoutMs) {
         if (isLavalinkReady()) return true;
+
+        // Toutes les 15s, forcer une reconnexion si le node est DISCONNECTED (3)
+        if (attempt % 5 === 0 && kazagumo) {
+            const nodes = [...kazagumo.shoukaku.nodes.values()];
+            for (const node of nodes) {
+                if ((node as any).state === 3) { // DISCONNECTED
+                    console.log(`[Nexa] 🔄 Force reconnexion du node "${node.name}" (état: DISCONNECTED)`);
+                    try {
+                        (node as any).connect();
+                    } catch (_) {
+                    }
+                }
+            }
+        }
+
+        attempt++;
         await new Promise(r => setTimeout(r, 3000));
     }
     return false;
