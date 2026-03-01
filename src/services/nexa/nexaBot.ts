@@ -6,7 +6,7 @@
 
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, ContainerBuilder, Events, GatewayIntentBits, Message, MessageFlags, SectionBuilder, SeparatorBuilder, TextChannel, TextDisplayBuilder, ThumbnailBuilder,} from "discord.js";
 import * as dotenv from "dotenv";
-import {getKazagumo, getOrCreatePlayer, initKazagumo, KazagumoPlayer, KazagumoTrack, searchYouTube, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
+import {getKazagumo, getOrCreatePlayer, initKazagumo, isLavalinkReady, KazagumoPlayer, KazagumoTrack, searchYouTube, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
 import {buildNexaMessageOptions} from "./nexaComponents";
 
 dotenv.config();
@@ -183,8 +183,8 @@ export class NexaBot {
                 await this.refreshControlPanel(player.guildId);
             });
 
-            k.shoukaku.on("error", (name, error) => {
-                console.error(`[Nexa] Shoukaku error [${name}]:`, error.message);
+            k.shoukaku.on("reconnecting", (name) => {
+                console.log(`[Nexa] 🔄 Reconnexion au node "${name}"...`);
             });
 
             await this.restoreControlPanels();
@@ -241,6 +241,16 @@ export class NexaBot {
 
         await message.delete().catch(() => {
         });
+
+        // Vérifier que Lavalink est connecté
+        if (!isLavalinkReady()) {
+            const errMsg = await (message.channel as TextChannel).send({
+                content: `⏳ Lavalink n'est pas encore prêt, réessaie dans quelques secondes...`
+            }).catch(() => null);
+            if (errMsg) setTimeout(() => errMsg.delete().catch(() => {
+            }), 7000);
+            return;
+        }
 
         const textChan = message.channel as TextChannel;
         const loadingMsg = await textChan.send({content: `🔍 Recherche de **${query}**...`}).catch(() => null);

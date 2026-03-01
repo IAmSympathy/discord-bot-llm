@@ -38,13 +38,32 @@ export function initKazagumo(client: Client): Kazagumo {
         getLavalinkNodes(),
         {
             resume: true,
-            resumeTimeout: 30,
-            reconnectTries: 5,
+            resumeTimeout: 60,
+            reconnectTries: 20,
+            reconnectInterval: 5000,
             restTimeout: 60000,
+            moveOnDisconnect: false,
         }
     );
 
+    kazagumo.shoukaku.on("ready", (name) => {
+        console.log(`[Nexa] ✅ Lavalink node "${name}" connecté`);
+    });
+    kazagumo.shoukaku.on("disconnect", (name, count) => {
+        console.warn(`[Nexa] ⚠️ Lavalink node "${name}" déconnecté (players: ${count})`);
+    });
+    kazagumo.shoukaku.on("error", (name, error) => {
+        console.error(`[Nexa] ❌ Lavalink node "${name}" erreur: ${error.message}`);
+    });
+
     return kazagumo;
+}
+
+/** Vérifie si au moins un node Lavalink est disponible */
+export function isLavalinkReady(): boolean {
+    if (!kazagumo) return false;
+    return kazagumo.shoukaku.nodes.size > 0 &&
+        [...kazagumo.shoukaku.nodes.values()].some(n => n.state === 1); // 1 = CONNECTED
 }
 
 export function getKazagumo(): Kazagumo {
