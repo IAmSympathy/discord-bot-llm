@@ -86,29 +86,37 @@ export async function isLavalinkReady(): Promise<boolean> {
     }
 }
 
-/** Attend que Lavalink soit prêt et force la connexion Shoukaku */
+/** Attend que Lavalink soit prêt et force la connexion Shoukaku via l'API publique */
 export async function waitForLavalink(timeoutMs = 120000): Promise<boolean> {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
         if (await isLavalinkReady()) {
-            // Forcer la reconnexion Shoukaku si le node n'est pas CONNECTED (1)
             if (kazagumo) {
-                const nodes = [...kazagumo.shoukaku.nodes.values()];
-                for (const node of nodes) {
-                    if ((node as any).state !== 1) {
-                        console.log(`[Nexa] 🔄 Force reconnexion "${node.name}" (état: ${(node as any).state})`);
-                        // Forcer DISCONNECTED (3) pour contourner le guard qui bloque
-                        // connect() si state === CONNECTING (0)
-                        (node as any).state = 3;
-                        try {
-                            (node as any).connect();
-                        } catch (e) {
-                            console.error(`[Nexa] Erreur connect():`, e);
+                const shoukaku = kazagumo.shoukaku;
+                const nodes = [...shoukaku.nodes.values()];
+                const notConnected = nodes.filter(n => (n as any).state !== 1);
+
+                for (const node of notConnected) {
+                    console.log(`[Nexa] 🔄 Reconnexion du node "${node.name}" via removeNode/addNode`);
+                    try {
+                        const nodeOptions = getLavalinkNodes().find(n => n.name === node.name);
+                        if (nodeOptions) {
+                            shoukaku.removeNode(node.name);
+                            await new Promise(r => setTimeout(r, 500));
+                            shoukaku.addNode({
+                                name: nodeOptions.name,
+                                url: nodeOptions.url,
+                                auth: nodeOptions.auth,
+                                secure: nodeOptions.secure,
+                            });
                         }
+                    } catch (e) {
+                        console.error(`[Nexa] Erreur reconnexion node:`, e);
                     }
                 }
+
                 await new Promise(r => setTimeout(r, 3000));
-                const connected = [...kazagumo.shoukaku.nodes.values()].some(n => (n as any).state === 1);
+                const connected = [...shoukaku.nodes.values()].some(n => (n as any).state === 1);
                 if (connected) return true;
             }
         }
