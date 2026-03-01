@@ -570,6 +570,12 @@ client.on(Events.MessageDelete, async (message) => {
             return; // Skip logging pour le compteur
         }
 
+        // Ne pas logger les suppressions dans le salon de musique Nexa
+        const NEXA_MUSIC_CHANNEL_ID = EnvConfig.NEXA_MUSIC_CHANNEL_ID;
+        if (NEXA_MUSIC_CHANNEL_ID && message.channelId === NEXA_MUSIC_CHANNEL_ID) {
+            return; // Skip logging pour le salon musique
+        }
+
         if (message.content || message.attachments.size > 0) {
             let deletedBy: string | undefined;
 

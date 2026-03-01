@@ -10,30 +10,60 @@ import * as fs from "fs";
 import * as path from "path";
 import {advanceQueue, formatDuration, getCurrentTrack, getQueue, TrackInfo,} from "./musicQueue";
 
+/**
+ * Parse un fichier cookies au format Netscape et retourne la chaîne "key=value; key2=value2"
+ * attendue par play-dl / les headers HTTP.
+ */
+function parseNetscapeCookies(content: string): string {
+    return content
+        .split("\n")
+        .filter(line => line && !line.startsWith("#") && !line.startsWith(" "))
+        .map(line => {
+            const parts = line.split("\t");
+            // Format Netscape : domain flag path secure expiry name value
+            if (parts.length >= 7) {
+                const name = parts[5].trim();
+                const value = parts[6].trim();
+                return `${name}=${value}`;
+            }
+            return null;
+        })
+        .filter(Boolean)
+        .join("; ");
+}
+
 // ── Initialisation des cookies YouTube si définis (contourne les restrictions anti-bot)
 (async () => {
     const cookieEnv = process.env.YOUTUBE_COOKIE;
     if (!cookieEnv) return;
 
     try {
-        let cookieContent = cookieEnv;
+        let rawContent = cookieEnv;
 
         // Si c'est un chemin de fichier, lire le contenu
         if (cookieEnv.endsWith(".txt") || cookieEnv.startsWith("./") || cookieEnv.startsWith("/")) {
             const cookiePath = path.resolve(process.cwd(), cookieEnv);
             if (fs.existsSync(cookiePath)) {
-                cookieContent = fs.readFileSync(cookiePath, "utf-8");
-                console.log(`[Nexa] Cookies YouTube chargés depuis: ${cookiePath}`);
+                rawContent = fs.readFileSync(cookiePath, "utf-8");
+                console.log(`[Nexa] Fichier cookies chargé depuis: ${cookiePath}`);
             } else {
                 console.warn(`[Nexa] Fichier cookies introuvable: ${cookiePath}`);
                 return;
             }
         }
 
+        // Convertir le format Netscape → "key=value; key2=value2"
+        const cookieString = parseNetscapeCookies(rawContent);
+        if (!cookieString) {
+            console.warn("[Nexa] Aucun cookie valide trouvé dans le fichier");
+            return;
+        }
+
         await playdl.setToken({
-            youtube: {cookie: cookieContent},
+            youtube: {cookie: cookieString},
         });
-        console.log("[Nexa] ✓ Cookies YouTube initialisés");
+        const cookieCount = cookieString.split(";").length;
+        console.log(`[Nexa] ✓ ${cookieCount} cookies YouTube initialisés`);
     } catch (err) {
         console.warn("[Nexa] Impossible d'initialiser les cookies YouTube:", err);
     }
