@@ -252,7 +252,7 @@ export class NexaBot {
         });
 
         // Vérifier que Lavalink est connecté
-        if (!isLavalinkReady()) {
+        if (!await isLavalinkReady()) {
             const errMsg = await (message.channel as TextChannel).send({
                 content: `⏳ Connexion à Lavalink en cours... réessaie dans quelques secondes.`
             }).catch(() => null);

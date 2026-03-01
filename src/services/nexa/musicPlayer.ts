@@ -59,35 +59,55 @@ export function initKazagumo(client: Client): Kazagumo {
     return kazagumo;
 }
 
-/** Vérifie si au moins un node Lavalink est disponible */
-export function isLavalinkReady(): boolean {
-    if (!kazagumo) return false;
-    const nodes = [...kazagumo.shoukaku.nodes.values()];
-    return nodes.length > 0 && nodes.some(n => n.state === 1); // 1 = CONNECTED
+/** Vérifie si Lavalink répond via HTTP (plus fiable que l'état WebSocket Shoukaku) */
+export async function isLavalinkReady(): Promise<boolean> {
+    const host = process.env.LAVALINK_HOST ?? "127.0.0.1";
+    const port = process.env.LAVALINK_PORT ?? "2333";
+    const password = process.env.LAVALINK_PASSWORD ?? "youshallnotpass";
+    try {
+        const http = await import("http");
+        return await new Promise<boolean>((resolve) => {
+            const req = http.request(
+                {
+                    hostname: host, port: parseInt(port), path: "/version", method: "GET",
+                    headers: {Authorization: password}, timeout: 2000
+                },
+                (res) => resolve(res.statusCode === 200)
+            );
+            req.on("error", () => resolve(false));
+            req.on("timeout", () => {
+                req.destroy();
+                resolve(false);
+            });
+            req.end();
+        });
+    } catch {
+        return false;
+    }
 }
 
-/** Attend que Lavalink soit prêt, force reconnexion si nécessaire (poll toutes les 3s, max 120s) */
+/** Attend que Lavalink soit prêt et force la connexion Shoukaku */
 export async function waitForLavalink(timeoutMs = 120000): Promise<boolean> {
     const start = Date.now();
-    let attempt = 0;
     while (Date.now() - start < timeoutMs) {
-        if (isLavalinkReady()) return true;
-
-        // Toutes les 15s, forcer une reconnexion si le node est DISCONNECTED (3)
-        if (attempt % 5 === 0 && kazagumo) {
-            const nodes = [...kazagumo.shoukaku.nodes.values()];
-            for (const node of nodes) {
-                if ((node as any).state === 3) { // DISCONNECTED
-                    console.log(`[Nexa] 🔄 Force reconnexion du node "${node.name}" (état: DISCONNECTED)`);
-                    try {
-                        (node as any).connect();
-                    } catch (_) {
+        if (await isLavalinkReady()) {
+            // Forcer la reconnexion Shoukaku si le node n'est pas CONNECTED (1)
+            if (kazagumo) {
+                const nodes = [...kazagumo.shoukaku.nodes.values()];
+                for (const node of nodes) {
+                    if ((node as any).state !== 1) {
+                        console.log(`[Nexa] 🔄 Force reconnexion "${node.name}" (état: ${(node as any).state})`);
+                        try {
+                            (node as any).connect();
+                        } catch (_) {
+                        }
                     }
                 }
+                await new Promise(r => setTimeout(r, 2000));
+                const connected = [...kazagumo.shoukaku.nodes.values()].some(n => (n as any).state === 1);
+                if (connected) return true;
             }
         }
-
-        attempt++;
         await new Promise(r => setTimeout(r, 3000));
     }
     return false;
