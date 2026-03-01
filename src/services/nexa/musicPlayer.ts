@@ -11,8 +11,7 @@ import * as path from "path";
 import {advanceQueue, formatDuration, getCurrentTrack, getQueue, TrackInfo,} from "./musicQueue";
 
 /**
- * Parse un fichier cookies au format Netscape et retourne la chaîne "key=value; key2=value2"
- * attendue par play-dl / les headers HTTP.
+ * Parse un fichier cookies au format Netscape → "key=value; key2=value2"
  */
 function parseNetscapeCookies(content: string): string {
     return content
@@ -20,7 +19,6 @@ function parseNetscapeCookies(content: string): string {
         .filter(line => line && !line.startsWith("#") && !line.startsWith(" "))
         .map(line => {
             const parts = line.split("\t");
-            // Format Netscape : domain flag path secure expiry name value
             if (parts.length >= 7) {
                 const name = parts[5].trim();
                 const value = parts[6].trim();
@@ -32,15 +30,17 @@ function parseNetscapeCookies(content: string): string {
         .join("; ");
 }
 
-// ── Initialisation des cookies YouTube si définis (contourne les restrictions anti-bot)
-(async () => {
+/**
+ * Initialise les cookies YouTube — retourne une Promise résolue quand c'est prêt.
+ * Doit être await-ée dans NexaBot.start() avant toute recherche.
+ */
+export async function initializeCookies(): Promise<void> {
     const cookieEnv = process.env.YOUTUBE_COOKIE;
     if (!cookieEnv) return;
 
     try {
         let rawContent = cookieEnv;
 
-        // Si c'est un chemin de fichier, lire le contenu
         if (cookieEnv.endsWith(".txt") || cookieEnv.startsWith("./") || cookieEnv.startsWith("/")) {
             const cookiePath = path.resolve(process.cwd(), cookieEnv);
             if (fs.existsSync(cookiePath)) {
@@ -52,22 +52,18 @@ function parseNetscapeCookies(content: string): string {
             }
         }
 
-        // Convertir le format Netscape → "key=value; key2=value2"
         const cookieString = parseNetscapeCookies(rawContent);
         if (!cookieString) {
             console.warn("[Nexa] Aucun cookie valide trouvé dans le fichier");
             return;
         }
 
-        await playdl.setToken({
-            youtube: {cookie: cookieString},
-        });
-        const cookieCount = cookieString.split(";").length;
-        console.log(`[Nexa] ✓ ${cookieCount} cookies YouTube initialisés`);
+        await playdl.setToken({youtube: {cookie: cookieString}});
+        console.log(`[Nexa] ✓ ${cookieString.split(";").length} cookies YouTube initialisés`);
     } catch (err) {
         console.warn("[Nexa] Impossible d'initialiser les cookies YouTube:", err);
     }
-})();
+}
 
 // Map guildId → AudioPlayer actif
 const players = new Map<string, AudioPlayer>();
@@ -88,7 +84,6 @@ export function setCallbacks(onEnd: OnTrackEnd, onError: OnTrackError) {
 export async function joinVoice(channel: VoiceBasedChannel): Promise<VoiceConnection> {
     const existing = getVoiceConnection(channel.guild.id);
     if (existing) {
-        // Si on est déjà dans un salon, s'assurer qu'on est dans le bon
         if (existing.joinConfig.channelId !== channel.id) {
             existing.destroy();
         } else {
@@ -96,14 +91,12 @@ export async function joinVoice(channel: VoiceBasedChannel): Promise<VoiceConnec
         }
     }
 
-    const connection = joinVoiceChannel({
+    return joinVoiceChannel({
         channelId: channel.id,
         guildId: channel.guild.id,
         adapterCreator: channel.guild.voiceAdapterCreator as any,
         selfDeaf: true,
     });
-
-    return connection;
 }
 
 /** Déconnecte le bot d'un salon vocal */
@@ -117,40 +110,48 @@ export function leaveVoice(guildId: string): void {
     }
 }
 
-/** Recherche YouTube et retourne les infos du premier résultat */
+/**
+ * Recherche YouTube — utilise search() pour les textes et video_info() uniquement
+ * pour les URLs directes (évite le blocage anti-bot sur les recherches texte).
+ */
 export async function searchYouTube(query: string): Promise<TrackInfo | null> {
     try {
-        let info: any;
+        const isUrl = query.startsWith("http://") || query.startsWith("https://");
 
-        // URL directe (YouTube video ou playlist)
-        if (playdl.yt_validate(query) === "video" || playdl.yt_validate(query) === "search") {
-            const isUrl = query.startsWith("http://") || query.startsWith("https://");
-            if (isUrl) {
-                info = await playdl.video_info(query);
-            } else {
-                const results = await playdl.search(query, {source: {youtube: "video"}, limit: 1});
-                if (!results.length) return null;
-                info = await playdl.video_info(results[0].url);
-            }
-        } else {
-            const results = await playdl.search(query, {source: {youtube: "video"}, limit: 1});
-            if (!results.length) return null;
-            info = await playdl.video_info(results[0].url);
+        if (isUrl && playdl.yt_validate(query) === "video") {
+            // URL directe → video_info
+            const info = await playdl.video_info(query);
+            const v = info.video_details;
+            const durationSec = v.durationInSec ?? 0;
+            return {
+                url: v.url,
+                title: v.title ?? "Titre inconnu",
+                durationSeconds: durationSec,
+                durationFormatted: formatDuration(durationSec),
+                thumbnail: v.thumbnails?.[0]?.url ?? "",
+                requestedBy: "",
+                requestedById: "",
+                isLive: v.live ?? false,
+                channelName: v.channel?.name ?? "",
+            };
         }
 
-        const video = info.video_details;
-        const durationSec = video.durationInSec ?? 0;
+        // Recherche textuelle (ou URL non-vidéo) → search() uniquement, pas de video_info
+        const results = await playdl.search(query, {source: {youtube: "video"}, limit: 1});
+        if (!results.length) return null;
 
+        const v = results[0];
+        const durationSec = v.durationInSec ?? 0;
         return {
-            url: video.url,
-            title: video.title ?? "Titre inconnu",
+            url: v.url,
+            title: v.title ?? "Titre inconnu",
             durationSeconds: durationSec,
             durationFormatted: formatDuration(durationSec),
-            thumbnail: video.thumbnails?.[0]?.url ?? "",
-            requestedBy: "",      // sera rempli par l'appelant
+            thumbnail: v.thumbnails?.[0]?.url ?? "",
+            requestedBy: "",
             requestedById: "",
-            isLive: video.live ?? false,
-            channelName: video.channel?.name ?? "",
+            isLive: v.live ?? false,
+            channelName: v.channel?.name ?? "",
         };
     } catch (error) {
         console.error("[Nexa] Erreur lors de la recherche YouTube:", error);
@@ -171,20 +172,17 @@ export async function playCurrentTrack(guildId: string): Promise<boolean> {
         let player = players.get(guildId);
         if (!player) {
             player = createAudioPlayer({
-                behaviors: {
-                    noSubscriber: NoSubscriberBehavior.Pause,
-                },
+                behaviors: {noSubscriber: NoSubscriberBehavior.Pause},
             });
             players.set(guildId, player);
             connection.subscribe(player);
 
-            // Événement : track terminé
+            // Track terminé
             player.on(AudioPlayerStatus.Idle, async () => {
                 const hasNext = advanceQueue(guildId);
                 if (hasNext) {
                     await playCurrentTrack(guildId);
                 } else {
-                    // File épuisée → déconnexion après 30s d'inactivité
                     setTimeout(() => {
                         const stillIdle = player?.state.status === AudioPlayerStatus.Idle;
                         if (stillIdle) leaveVoice(guildId);
@@ -197,22 +195,16 @@ export async function playCurrentTrack(guildId: string): Promise<boolean> {
             player.on("error", async (error) => {
                 console.error(`[Nexa] Erreur audio [${guildId}]:`, error);
                 if (onTrackErrorCallback) await onTrackErrorCallback(guildId, error);
-                // Passer au suivant
                 const hasNext = advanceQueue(guildId);
                 if (hasNext) await playCurrentTrack(guildId);
             });
         }
 
-        // Créer le stream play-dl
-        const stream = await playdl.stream(track.url, {
-            quality: 2, // 0=basse, 2=haute
-        });
-
+        const stream = await playdl.stream(track.url, {quality: 2});
         const resource = createAudioResource(stream.stream, {
             inputType: stream.type,
             inlineVolume: true,
         });
-
         resource.volume?.setVolume(q.volume);
 
         player.play(resource);
@@ -244,7 +236,7 @@ export function togglePause(guildId: string): "paused" | "resumed" | "no_player"
     return "no_player";
 }
 
-/** Stoppe la lecture et vide la file */
+/** Stoppe la lecture */
 export function stopPlayback(guildId: string): void {
     const player = players.get(guildId);
     if (player) player.stop(true);
@@ -253,7 +245,7 @@ export function stopPlayback(guildId: string): void {
 /** Skip le track courant */
 export function skipTrack(guildId: string): void {
     const player = players.get(guildId);
-    if (player) player.stop(); // déclenche l'événement Idle → advanceQueue
+    if (player) player.stop();
 }
 
 /** Vérifie si le bot joue actuellement */
@@ -266,5 +258,3 @@ export function isPlaying(guildId: string): boolean {
 export function getPlayer(guildId: string): AudioPlayer | undefined {
     return players.get(guildId);
 }
-
-

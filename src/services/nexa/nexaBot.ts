@@ -12,7 +12,7 @@
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, ContainerBuilder, Events, GatewayIntentBits, Message, MessageFlags, SectionBuilder, SeparatorBuilder, TextChannel, TextDisplayBuilder, ThumbnailBuilder,} from "discord.js";
 import * as dotenv from "dotenv";
 import {clearQueue, deleteQueue, enqueue, getCurrentTrack, getOrCreateQueue, getQueue, GuildQueue,} from "./musicQueue";
-import {joinVoice, leaveVoice, playCurrentTrack, searchYouTube, setCallbacks, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
+import {initializeCookies, joinVoice, leaveVoice, playCurrentTrack, searchYouTube, setCallbacks, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
 import {buildNexaMessageOptions} from "./nexaComponents";
 
 dotenv.config();
@@ -41,6 +41,8 @@ export class NexaBot {
             return;
         }
         try {
+            // Initialiser les cookies AVANT de se connecter
+            await initializeCookies();
             await this.client.login(token);
         } catch (error) {
             console.error("[Nexa] Erreur de connexion:", error);
