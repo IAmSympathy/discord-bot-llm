@@ -168,13 +168,14 @@ export async function searchYouTube(query: string): Promise<TrackInfo | null> {
 function createYtDlpStream(url: string, cookiesPath?: string): Readable {
     const ytDlpArgs = [
         "--no-playlist",
+        "--js-runtimes", "node",
         "-f", "bestaudio[ext=webm]/bestaudio/best",
         "--no-warnings",
-        "-o", "-",   // output sur stdout
+        "-o", "-",
         url,
     ];
 
-    // Ajouter les cookies si disponibles
+    // Ajouter les cookies avec chemin absolu
     if (cookiesPath && fs.existsSync(cookiesPath)) {
         ytDlpArgs.unshift("--cookies", cookiesPath);
     }
@@ -238,7 +239,7 @@ export async function playCurrentTrack(guildId: string): Promise<boolean> {
 
         const cookieEnv = process.env.YOUTUBE_COOKIE;
         const cookiesPath = cookieEnv
-            ? path.resolve(process.cwd(), cookieEnv)
+            ? path.resolve(__dirname, "../../../", cookieEnv)
             : undefined;
 
         const stream = createYtDlpStream(track.url, cookiesPath);
