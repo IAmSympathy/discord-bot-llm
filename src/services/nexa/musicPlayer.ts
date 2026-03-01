@@ -3,11 +3,13 @@
  * Gère la connexion vocale et la lecture avec @discordjs/voice + play-dl
  */
 
-import {AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, getVoiceConnection, joinVoiceChannel, NoSubscriberBehavior, VoiceConnection,} from "@discordjs/voice";
+import {AudioPlayer, AudioPlayerStatus, createAudioPlayer, createAudioResource, getVoiceConnection, joinVoiceChannel, NoSubscriberBehavior, StreamType, VoiceConnection,} from "@discordjs/voice";
 import {VoiceBasedChannel} from "discord.js";
 import playdl from "play-dl";
 import * as fs from "fs";
 import * as path from "path";
+import {spawn} from "child_process";
+import {Readable} from "stream";
 import {advanceQueue, formatDuration, getCurrentTrack, getQueue, TrackInfo,} from "./musicQueue";
 
 /**
@@ -159,6 +161,40 @@ export async function searchYouTube(query: string): Promise<TrackInfo | null> {
     }
 }
 
+/**
+ * Crée un stream audio via yt-dlp + ffmpeg.
+ * yt-dlp extrait l'URL du stream audio, ffmpeg le transcode en opus/pcm pour Discord.
+ */
+function createYtDlpStream(url: string, cookiesPath?: string): Readable {
+    const ytDlpArgs = [
+        "--no-playlist",
+        "-f", "bestaudio[ext=webm]/bestaudio/best",
+        "--no-warnings",
+        "-o", "-",   // output sur stdout
+        url,
+    ];
+
+    // Ajouter les cookies si disponibles
+    if (cookiesPath && fs.existsSync(cookiesPath)) {
+        ytDlpArgs.unshift("--cookies", cookiesPath);
+    }
+
+    const ytDlp = spawn("yt-dlp", ytDlpArgs, {stdio: ["ignore", "pipe", "pipe"]});
+
+    ytDlp.stderr.on("data", (data: Buffer) => {
+        const msg = data.toString().trim();
+        if (msg && !msg.startsWith("[download]") && !msg.startsWith("[info]")) {
+            console.error(`[Nexa yt-dlp] ${msg}`);
+        }
+    });
+
+    ytDlp.on("error", (err) => {
+        console.error("[Nexa yt-dlp] Erreur spawn:", err.message);
+    });
+
+    return ytDlp.stdout as unknown as Readable;
+}
+
 /** Lance la lecture du track actuel dans la file */
 export async function playCurrentTrack(guildId: string): Promise<boolean> {
     const q = getQueue(guildId);
@@ -200,9 +236,14 @@ export async function playCurrentTrack(guildId: string): Promise<boolean> {
             });
         }
 
-        const stream = await playdl.stream(track.url, {quality: 2});
-        const resource = createAudioResource(stream.stream, {
-            inputType: stream.type,
+        const cookieEnv = process.env.YOUTUBE_COOKIE;
+        const cookiesPath = cookieEnv
+            ? path.resolve(process.cwd(), cookieEnv)
+            : undefined;
+
+        const stream = createYtDlpStream(track.url, cookiesPath);
+        const resource = createAudioResource(stream, {
+            inputType: StreamType.Arbitrary,
             inlineVolume: true,
         });
         resource.volume?.setVolume(q.volume);
