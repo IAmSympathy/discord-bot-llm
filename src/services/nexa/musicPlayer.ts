@@ -162,23 +162,43 @@ export async function searchYouTube(query: string): Promise<TrackInfo | null> {
 }
 
 /**
- * Crée un stream audio via yt-dlp + ffmpeg.
- * yt-dlp extrait l'URL du stream audio, ffmpeg le transcode en opus/pcm pour Discord.
+ * Trouve la racine du projet (dossier contenant package.json)
+ * en remontant depuis __dirname, quelle que soit la structure dist/ ou src/
+ */
+function findProjectRoot(): string {
+    let dir = __dirname;
+    for (let i = 0; i < 6; i++) {
+        if (fs.existsSync(path.join(dir, "package.json"))) return dir;
+        dir = path.dirname(dir);
+    }
+    return process.cwd();
+}
+
+const PROJECT_ROOT = findProjectRoot();
+
+/**
+ * Crée un stream audio via yt-dlp.
+ * yt-dlp pipe le stream audio directement sur stdout → createAudioResource.
  */
 function createYtDlpStream(url: string, cookiesPath?: string): Readable {
-    const ytDlpArgs = [
+    const ytDlpArgs: string[] = [];
+
+    // Cookies en premier
+    if (cookiesPath && fs.existsSync(cookiesPath)) {
+        ytDlpArgs.push("--cookies", cookiesPath);
+        console.log(`[Nexa yt-dlp] Cookies: ${cookiesPath}`);
+    } else {
+        console.warn(`[Nexa yt-dlp] ⚠️ Cookies introuvables: ${cookiesPath}`);
+    }
+
+    ytDlpArgs.push(
         "--no-playlist",
         "--js-runtimes", "node",
         "-f", "bestaudio[ext=webm]/bestaudio/best",
         "--no-warnings",
         "-o", "-",
         url,
-    ];
-
-    // Ajouter les cookies avec chemin absolu
-    if (cookiesPath && fs.existsSync(cookiesPath)) {
-        ytDlpArgs.unshift("--cookies", cookiesPath);
-    }
+    );
 
     const ytDlp = spawn("yt-dlp", ytDlpArgs, {stdio: ["ignore", "pipe", "pipe"]});
 
@@ -239,7 +259,7 @@ export async function playCurrentTrack(guildId: string): Promise<boolean> {
 
         const cookieEnv = process.env.YOUTUBE_COOKIE;
         const cookiesPath = cookieEnv
-            ? path.resolve(__dirname, "../../../", cookieEnv)
+            ? path.resolve(PROJECT_ROOT, cookieEnv.replace(/^\.\//, ""))
             : undefined;
 
         const stream = createYtDlpStream(track.url, cookiesPath);
