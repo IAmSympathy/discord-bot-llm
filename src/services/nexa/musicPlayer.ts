@@ -162,47 +162,65 @@ export async function searchYouTube(query: string): Promise<TrackInfo | null> {
 }
 
 /**
- * Trouve la racine du projet (dossier contenant package.json)
- * en remontant depuis __dirname, quelle que soit la structure dist/ ou src/
+ * Résout le chemin absolu vers cookies.txt de façon fiable.
+ * Priorité : YOUTUBE_COOKIE absolu > relatif à PROJECT_ROOT > relatif à cwd
  */
-function findProjectRoot(): string {
+function resolveCookiesPath(): string | undefined {
+    const cookieEnv = process.env.YOUTUBE_COOKIE;
+    if (!cookieEnv) return undefined;
+
+    // Déjà un chemin absolu
+    if (path.isAbsolute(cookieEnv)) {
+        return fs.existsSync(cookieEnv) ? cookieEnv : undefined;
+    }
+
+    // Chercher depuis __dirname en remontant jusqu'à trouver package.json
     let dir = __dirname;
-    for (let i = 0; i < 6; i++) {
-        if (fs.existsSync(path.join(dir, "package.json"))) return dir;
+    for (let i = 0; i < 8; i++) {
+        const candidate = path.join(dir, cookieEnv.replace(/^\.\//, ""));
+        if (fs.existsSync(candidate)) {
+            console.log(`[Nexa] Cookies résolus: ${candidate}`);
+            return candidate;
+        }
+        if (fs.existsSync(path.join(dir, "package.json"))) {
+            // On est à la racine, essayer ici
+            const rootCandidate = path.join(dir, cookieEnv.replace(/^\.\//, ""));
+            return fs.existsSync(rootCandidate) ? rootCandidate : undefined;
+        }
         dir = path.dirname(dir);
     }
-    return process.cwd();
+    return undefined;
 }
 
-const PROJECT_ROOT = findProjectRoot();
+// Résoudre une seule fois au démarrage du module
+const COOKIES_PATH = resolveCookiesPath();
+console.log(`[Nexa] Chemin cookies au démarrage: ${COOKIES_PATH ?? "non trouvé"}`);
 
 /**
  * Crée un stream audio via yt-dlp.
  * yt-dlp pipe le stream audio directement sur stdout → createAudioResource.
  */
-function createYtDlpStream(url: string, cookiesPath?: string): Readable {
+function createYtDlpStream(url: string): Readable {
     const ytDlpArgs: string[] = [];
 
-    // Cookies en premier
-    if (cookiesPath && fs.existsSync(cookiesPath)) {
-        ytDlpArgs.push("--cookies", cookiesPath);
-        console.log(`[Nexa yt-dlp] Cookies: ${cookiesPath}`);
+    if (COOKIES_PATH) {
+        ytDlpArgs.push("--cookies", COOKIES_PATH);
     } else {
-        console.warn(`[Nexa yt-dlp] ⚠️ Cookies introuvables: ${cookiesPath}`);
+        console.warn("[Nexa yt-dlp] ⚠️ Aucun fichier cookies disponible");
     }
 
     ytDlpArgs.push(
         "--no-playlist",
         "--js-runtimes", "node",
-        // Utiliser ffmpeg pour merger audio+vidéo et streamer sur stdout
         "--downloader", "ffmpeg",
         "-f", "bestaudio/best",
-        // Streamer vers stdout via ffmpeg → opus pour Discord
         "--downloader-args", "ffmpeg:-vn -acodec libopus -f opus pipe:1",
         "--no-warnings",
         "-o", "-",
         url,
     );
+
+    console.log(`[Nexa yt-dlp] Commande: yt-dlp ${ytDlpArgs.slice(0, 4).join(" ")} ... ${url}`);
 
     const ytDlp = spawn("yt-dlp", ytDlpArgs, {stdio: ["ignore", "pipe", "pipe"]});
 
@@ -261,12 +279,7 @@ export async function playCurrentTrack(guildId: string): Promise<boolean> {
             });
         }
 
-        const cookieEnv = process.env.YOUTUBE_COOKIE;
-        const cookiesPath = cookieEnv
-            ? path.resolve(PROJECT_ROOT, cookieEnv.replace(/^\.\//, ""))
-            : undefined;
-
-        const stream = createYtDlpStream(track.url, cookiesPath);
+        const stream = createYtDlpStream(track.url);
         const resource = createAudioResource(stream, {
             inputType: StreamType.OggOpus,
             inlineVolume: true,
