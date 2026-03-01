@@ -9,7 +9,7 @@
  *  - Aucune commande slash
  */
 
-import {ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, ContainerBuilder, Events, GatewayIntentBits, Message, MessageFlags, SeparatorBuilder, TextChannel, TextDisplayBuilder, ThumbnailBuilder,} from "discord.js";
+import {ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, ContainerBuilder, Events, GatewayIntentBits, Message, MessageFlags, SectionBuilder, SeparatorBuilder, TextChannel, TextDisplayBuilder, ThumbnailBuilder,} from "discord.js";
 import * as dotenv from "dotenv";
 import {clearQueue, deleteQueue, enqueue, getCurrentTrack, getOrCreateQueue, getQueue, GuildQueue,} from "./musicQueue";
 import {joinVoice, leaveVoice, playCurrentTrack, searchYouTube, setCallbacks, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
