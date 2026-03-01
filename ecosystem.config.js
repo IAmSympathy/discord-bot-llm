@@ -2,7 +2,7 @@ module.exports = {
     apps: [
         {
             name: "discord-bot-netricsa",
-            script: "dist/index.js",
+            script: "dist/bot.js",
             cwd: "/home/ubuntu/discord-bot-llm",
             exec_mode: "fork",
             instances: 1,
