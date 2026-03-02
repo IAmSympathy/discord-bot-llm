@@ -137,8 +137,7 @@ export type {KazagumoPlayer, KazagumoTrack};
 export async function searchYouTube(query: string): Promise<KazagumoTrack | null> {
     try {
         const k = getKazagumo();
-        const isUrl = query.startsWith("http://") || query.startsWith("https://");
-        const result = await k.search(isUrl ? query : `ytsearch:${query}`);
+        const result = await k.search(query);
         if (!result || result.tracks.length === 0) return null;
         return result.tracks[0];
     } catch (err) {
