@@ -6,7 +6,7 @@
 
 import {ActionRowBuilder, ButtonBuilder, ButtonStyle, Client, ContainerBuilder, Events, GatewayIntentBits, Message, MessageFlags, SectionBuilder, SeparatorBuilder, TextChannel, TextDisplayBuilder, ThumbnailBuilder,} from "discord.js";
 import * as dotenv from "dotenv";
-import {getKazagumo, getOrCreatePlayer, initKazagumo, isLavalinkReady, KazagumoPlayer, KazagumoTrack, searchYouTube, skipTrack, stopPlayback, togglePause, waitForLavalink,} from "./musicPlayer";
+import {getKazagumo, getOrCreatePlayer, initKazagumo, isLavalinkReady, KazagumoPlayer, KazagumoTrack, searchYouTube, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
 import {buildNexaMessageOptions} from "./nexaComponents";
 
 dotenv.config();
@@ -83,6 +83,33 @@ export class NexaBot {
             return;
         }
         try {
+            // ✅ Initialiser Kazagumo AVANT client.login() — comme la doc officielle
+            const k = initKazagumo(this.client);
+
+            // Attacher les listeners Kazagumo
+            k.on("playerStart", async (player) => {
+                console.log(`[Nexa] ▶️ Lecture: ${player.queue.current?.title}`);
+                await this.refreshControlPanel(player.guildId);
+            });
+            k.on("playerEnd", async (player) => {
+                await this.refreshControlPanel(player.guildId);
+            });
+            k.on("playerEmpty", async (player) => {
+                console.log(`[Nexa] File vide pour ${player.guildId}`);
+                await this.refreshControlPanel(player.guildId);
+                setTimeout(async () => {
+                    const p = k.players.get(player.guildId);
+                    if (p && !p.playing && p.queue.size === 0) {
+                        await p.destroy();
+                        await this.refreshControlPanel(player.guildId);
+                    }
+                }, 5 * 60 * 1000);
+            });
+            k.on("playerException", async (player, error) => {
+                console.error(`[Nexa] Erreur Lavalink:`, error);
+                await this.refreshControlPanel(player.guildId);
+            });
+
             await this.client.login(token);
         } catch (error) {
             console.error("[Nexa] Erreur de connexion:", error);
@@ -152,49 +179,6 @@ export class NexaBot {
             console.log(`[Nexa] ✓ Bot connecté: ${c.user.tag}`);
             this.ready = true;
 
-            // Initialiser Kazagumo avec ce client
-            const k = initKazagumo(this.client);
-
-            // Attendre que Lavalink soit prêt (il démarre ~20s après le bot)
-            waitForLavalink(120000).then(ready => {
-                if (ready) {
-                    console.log("[Nexa] ✅ Lavalink connecté et prêt !");
-                } else {
-                    console.error("[Nexa] ❌ Lavalink indisponible après 120s");
-                }
-            });
-
-            // ── Events Kazagumo
-            k.on("playerStart", async (player) => {
-                console.log(`[Nexa] ▶️ Lecture: ${player.queue.current?.title}`);
-                await this.refreshControlPanel(player.guildId);
-            });
-
-            k.on("playerEnd", async (player) => {
-                await this.refreshControlPanel(player.guildId);
-            });
-
-            k.on("playerEmpty", async (player) => {
-                console.log(`[Nexa] File vide pour ${player.guildId}`);
-                await this.refreshControlPanel(player.guildId);
-                // Déconnecter après 5 min d'inactivité
-                setTimeout(async () => {
-                    const p = k.players.get(player.guildId);
-                    if (p && !p.playing && p.queue.size === 0) {
-                        await p.destroy();
-                        await this.refreshControlPanel(player.guildId);
-                    }
-                }, 5 * 60 * 1000);
-            });
-
-            k.on("playerException", async (player, error) => {
-                console.error(`[Nexa] Erreur Lavalink:`, error);
-                await this.refreshControlPanel(player.guildId);
-            });
-
-            k.shoukaku.on("reconnecting", (name) => {
-                console.log(`[Nexa] 🔄 Reconnexion au node "${name}"...`);
-            });
 
             await this.restoreControlPanels();
         });
