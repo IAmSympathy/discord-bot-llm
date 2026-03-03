@@ -577,14 +577,19 @@ export async function processAnnouncement(client: Client, announcement: Resolved
                 const roleId = product.kind === "game" ? gamesRoleId : (lootRoleId || gamesRoleId);
                 if (roleId) mentionSet.add(`<@&${roleId}>`);
             }
-            const content = mentionSet.size > 0 ? [...mentionSet].join(" ") : undefined;
+            const mentionText = mentionSet.size > 0 ? [...mentionSet].join(" ") : null;
 
             const allContainers = products.map(p => p.container);
             const allFiles = products.map(p => p.file).filter(f => f !== null) as AttachmentBuilder[];
 
+            // Avec IS_COMPONENTS_V2, le champ 'content' est interdit.
+            // La mention de rôle est donc ajoutée comme TextDisplay en tête des composants.
+            const components: any[] = mentionText
+                ? [new TextDisplayBuilder().setContent(mentionText), ...allContainers]
+                : allContainers;
+
             const message: any = {
-                content,
-                components: allContainers,
+                components,
                 flags: MessageFlags.IsComponentsV2
             };
 

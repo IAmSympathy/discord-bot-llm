@@ -4,9 +4,9 @@ module.exports = {
             name: "lavalink",
             script: "Lavalink.jar",
             interpreter: "java",
-            interpreter_args: "-Xms64m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication -jar",
+            interpreter_args: "-Xms128m -Xmx1g -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication -jar",
             cwd: "/home/ubuntu/lavalink",
-            max_memory_restart: "300M",
+            max_memory_restart: "1200M",
             restart_delay: 8000,
             max_restarts: 5,
             min_uptime: "15s",
@@ -23,7 +23,7 @@ module.exports = {
             exec_mode: "fork",
             instances: 1,
             env_file: ".env",
-            max_memory_restart: "280M",
+            max_memory_restart: "600M",
             restart_delay: 5000,
             max_restarts: 10,
             min_uptime: "10s",
@@ -38,4 +38,3 @@ module.exports = {
         }
     ]
 };
-
