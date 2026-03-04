@@ -8,7 +8,7 @@ import {Client, Events, GatewayIntentBits, type Message, MessageFlags, TextChann
 import * as dotenv from "dotenv";
 import type {Player, Track} from "lavalink-client";
 import {clearHistory, getHistory, getKazagumo, getOrCreatePlayer, initKazagumo, isLavalinkReady, previousTrack, pushHistory, searchTrack, seekRelative, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
-import {buildJukeboxPanel, buildTrackProposal} from "./nexaComponents";
+import {buildJukeboxPanel, buildTrackProposal, cacheThumbnailCdn} from "./nexaComponents";
 import {applyFilterSet, getActiveFilters} from "./nexaFilters";
 
 dotenv.config();
@@ -222,12 +222,21 @@ export class NexaBot {
 
         const options = await buildJukeboxPanel(player ?? null, getHistory(guildId));
 
+        // Récupère la source URL de la thumbnail courante (pour le cache CDN)
+        const currentTrack = player?.queue?.current;
+        const sourceThumbUrl = currentTrack ? (currentTrack.info.artworkUrl ?? "") : "";
+
         // Essaie d'éditer le message existant
         const existingId = this.controlMessages.get(guildId);
         if (existingId) {
             const existing = await channel.messages.fetch(existingId).catch(() => null);
             if (existing) {
-                await existing.edit(options as any).catch(() => null);
+                const edited = await existing.edit(options as any).catch(() => null);
+                // Mettre en cache l'URL CDN de la thumbnail pour éviter le re-upload
+                if (edited && sourceThumbUrl) {
+                    const att = edited.attachments.find(a => a.name === "thumb.jpg");
+                    if (att) cacheThumbnailCdn(sourceThumbUrl, att.url);
+                }
                 return;
             }
         }
@@ -242,6 +251,11 @@ export class NexaBot {
                 }
             }
             const newMsg = await channel.send(options as any);
+            // Mettre en cache l'URL CDN de la thumbnail
+            if (sourceThumbUrl) {
+                const att = newMsg.attachments.find(a => a.name === "thumb.jpg");
+                if (att) cacheThumbnailCdn(sourceThumbUrl, att.url);
+            }
             this.controlMessages.set(guildId, newMsg.id);
         } catch (err) {
             console.error("[Nexa] Erreur panneau:", err);
