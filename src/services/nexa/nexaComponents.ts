@@ -178,22 +178,29 @@ export async function buildJukeboxPanel(player: Player | null, hasHistory = fals
 }
 
 /** Message de confirmation d'ajout de track (avec sélection parmi plusieurs résultats) */
-export function buildTrackProposal(tracks: Track[], userId: string): { components: any[]; flags: number; files?: AttachmentBuilder[] } {
+export async function buildTrackProposal(tracks: Track[], userId: string): Promise<{ components: any[]; flags: number; files?: AttachmentBuilder[] }> {
     const track = tracks[0];
     const info = trackToDisplay(track);
     const container = new ContainerBuilder();
+
+    // Thumbnail redimensionnée comme le panneau principal
+    let thumbUrl = PLACEHOLDER_URL;
+    let files: AttachmentBuilder[] | undefined = [makePlaceholderAttachment()];
+    if (info.thumbnail) {
+        const thumbAttachment = await fetchThumbnailAttachment(info.thumbnail);
+        if (thumbAttachment) {
+            thumbUrl = "attachment://thumb.jpg";
+            files = [thumbAttachment];
+        }
+    }
 
     container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
             `### 🎵 Résultat trouvé\n**[${info.title}](${info.url})**\n-# 📺 ${info.channel}${info.isLive ? " · 🔴 LIVE" : ` · ⏱️ ${info.duration}`}`
         )
     );
-    const thumbUrl = info.thumbnail || PLACEHOLDER_URL;
-    const files = info.thumbnail ? undefined : [makePlaceholderAttachment()];
     container.addMediaGalleryComponents(
-        new MediaGalleryBuilder().addItems(
-            new MediaGalleryItemBuilder().setURL(thumbUrl)
-        )
+        new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(thumbUrl))
     );
     container.addSeparatorComponents(new SeparatorBuilder());
     container.addActionRowComponents(
@@ -225,5 +232,5 @@ export function buildTrackProposal(tracks: Track[], userId: string): { component
         );
     }
 
-    return {components: [container], flags: MessageFlags.IsComponentsV2, ...(files ? {files} : {})};
+    return {components: [container], flags: MessageFlags.IsComponentsV2, files};
 }

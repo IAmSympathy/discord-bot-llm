@@ -250,7 +250,7 @@ export class NexaBot {
         });
         setTimeout(() => pendingTracks.delete(userId), 5 * 60 * 1000);
 
-        const proposal = buildTrackProposal(tracks, userId);
+        const proposal = await buildTrackProposal(tracks, userId);
         const proposalMsg = await textChan.send(proposal as any).catch(() => null);
         if (proposalMsg) setTimeout(() => proposalMsg.delete().catch(() => {
         }), 5 * 60 * 1000);
@@ -357,7 +357,7 @@ export class NexaBot {
 
         // Reconstruire la proposition avec le nouveau premier choix
         const newTracks = [selectedTrack, ...pending.tracks.filter((_, i) => i !== idx)];
-        const proposal = buildTrackProposal(newTracks, userId);
+        const proposal = await buildTrackProposal(newTracks, userId);
 
         // Éditer le message de proposition
         await interaction.message.edit(proposal as any).catch(() => {
