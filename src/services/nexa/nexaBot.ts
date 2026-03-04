@@ -134,17 +134,12 @@ export class NexaBot {
             stopProgressTimer(player.guildId);
             console.log(`[Nexa] 🏁 File vide — ${player.guildId}`);
 
-            // Démarrer le timer de fermeture de 5 minutes
             const CLOSE_DELAY = 5 * 60 * 1000;
             const endsAt = Date.now() + CLOSE_DELAY;
 
-            // Refresh immédiat pour afficher l'état "fermeture imminente"
-            await this.refreshPanel(player.guildId);
-
-            // Refresh toutes les 30s pour mettre à jour le compte à rebours
             const countdownInterval = setInterval(async () => {
                 await this.refreshPanel(player.guildId);
-            }, 30_000);
+            }, 10_000);
 
             const closeTimer = setTimeout(async () => {
                 clearInterval(countdownInterval);
@@ -157,7 +152,10 @@ export class NexaBot {
                 await this.refreshPanel(player.guildId);
             }, CLOSE_DELAY);
 
+            // Stocker AVANT le refresh pour que buildJukeboxPanel le voie immédiatement
             closingTimers.set(player.guildId, {timer: closeTimer, endsAt});
+
+            await this.refreshPanel(player.guildId);
         });
         m.on("trackError", async (player) => {
             stopProgressTimer(player.guildId);

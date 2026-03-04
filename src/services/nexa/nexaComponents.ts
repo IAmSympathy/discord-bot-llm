@@ -291,26 +291,65 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
                     ].join("\n")
                 )
             );
+            container.addMediaGalleryComponents(
+                new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(PLACEHOLDER_URL))
+            );
+            container.addSeparatorComponents(new SeparatorBuilder());
+            // Boutons avec seulement "Préc." actif si historique dispo
+            container.addActionRowComponents(
+                new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder().setCustomId("nexa_prev").setLabel("⏮ Préc.").setStyle(ButtonStyle.Secondary).setDisabled(!hasHistory),
+                    new ButtonBuilder().setCustomId("nexa_playpause").setLabel("⏸ Pause").setStyle(ButtonStyle.Primary).setDisabled(true),
+                    new ButtonBuilder().setCustomId("nexa_skip").setLabel("⏭ Skip").setStyle(ButtonStyle.Secondary).setDisabled(true),
+                    new ButtonBuilder().setCustomId("nexa_stop").setLabel("⏹ Stop").setStyle(ButtonStyle.Danger).setDisabled(true),
+                )
+            );
+            container.addActionRowComponents(
+                new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder().setCustomId("nexa_seek_back").setLabel("⏪ -10s").setStyle(ButtonStyle.Secondary).setDisabled(true),
+                    new ButtonBuilder().setCustomId("nexa_seek_forward").setLabel("+10s ⏩").setStyle(ButtonStyle.Secondary).setDisabled(true),
+                    new ButtonBuilder().setCustomId("nexa_loop").setLabel("🔁 Boucle: Off").setStyle(ButtonStyle.Secondary).setDisabled(true),
+                    new ButtonBuilder().setCustomId("nexa_shuffle").setLabel("🔀 Shuffle").setStyle(ButtonStyle.Secondary).setDisabled(true),
+                )
+            );
+            // Liste historique
+            if (history.length > 0) {
+                const prevTrack = history[history.length - 1];
+                const fmtLine = (t: Track) => {
+                    const inf = trackToDisplay(t);
+                    const title = inf.title.length > 46 ? inf.title.slice(0, 45) + "…" : inf.title;
+                    return ` ${title} (${inf.duration})`;
+                };
+                const lines = [
+                    fmtLine(prevTrack),
+                    `▶ (fin de la file)`,
+                    ` `,
+                ];
+                container.addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(`**📋 Liste de lecture**\n\`\`\`\n${lines.join("\n")}\n\`\`\``)
+                );
+            }
+            return {components: [container], flags: MessageFlags.IsComponentsV2, files: [makePlaceholderAttachment()]};
         } else {
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
                     "## 💽 Nexa's Jukebox\n*Aucune musique en cours.*\n-# Envoie le titre d'une chanson dans ce salon pour lancer la lecture !"
                 )
             );
+            container.addMediaGalleryComponents(
+                new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(PLACEHOLDER_URL))
+            );
+            container.addSeparatorComponents(new SeparatorBuilder());
+            container.addActionRowComponents(
+                new ActionRowBuilder<ButtonBuilder>().addComponents(
+                    new ButtonBuilder().setCustomId("nexa_prev").setLabel("⏮ Préc.").setStyle(ButtonStyle.Secondary).setDisabled(true),
+                    new ButtonBuilder().setCustomId("nexa_playpause").setLabel("⏸ Pause").setStyle(ButtonStyle.Primary).setDisabled(true),
+                    new ButtonBuilder().setCustomId("nexa_skip").setLabel("⏭ Skip").setStyle(ButtonStyle.Secondary).setDisabled(true),
+                    new ButtonBuilder().setCustomId("nexa_stop").setLabel("⏹ Stop").setStyle(ButtonStyle.Danger).setDisabled(true),
+                )
+            );
+            return {components: [container], flags: MessageFlags.IsComponentsV2, files: [makePlaceholderAttachment()]};
         }
-        container.addMediaGalleryComponents(
-            new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(PLACEHOLDER_URL))
-        );
-        container.addSeparatorComponents(new SeparatorBuilder());
-        container.addActionRowComponents(
-            new ActionRowBuilder<ButtonBuilder>().addComponents(
-                new ButtonBuilder().setCustomId("nexa_prev").setLabel("⏮ Préc.").setStyle(ButtonStyle.Secondary).setDisabled(true),
-                new ButtonBuilder().setCustomId("nexa_playpause").setLabel("⏸ Pause").setStyle(ButtonStyle.Primary).setDisabled(true),
-                new ButtonBuilder().setCustomId("nexa_skip").setLabel("⏭ Skip").setStyle(ButtonStyle.Secondary).setDisabled(true),
-                new ButtonBuilder().setCustomId("nexa_stop").setLabel("⏹ Stop").setStyle(ButtonStyle.Danger).setDisabled(true),
-            )
-        );
-        return {components: [container], flags: MessageFlags.IsComponentsV2, files: [makePlaceholderAttachment()]};
     }
 }
 

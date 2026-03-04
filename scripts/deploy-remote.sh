@@ -22,6 +22,7 @@ BACKUP_DIR=$(mktemp -d)
 [ -d generated_images ] && cp -a generated_images "$BACKUP_DIR/"
 
 echo "==> Nettoyage et synchronisation git..."
+git reset --hard
 git clean -fdx --exclude=.env
 git checkout -B main origin/main
 
