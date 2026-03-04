@@ -75,7 +75,14 @@ export class NexaBot {
         });
         m.on("trackEnd", async (player, track) => {
             stopProgressTimer(player.guildId);
-            if (track) pushHistory(player.guildId, track as Track);
+            if (track) {
+                const repeatMode = player.repeatMode ?? "off";
+                // En loop track → même track qui va rejouer, ne pas historiser
+                // En loop queue → la track repart en fin de file, ne pas historiser non plus
+                if (repeatMode === "off") {
+                    pushHistory(player.guildId, track as Track);
+                }
+            }
             await this.refreshPanel(player.guildId);
         });
         m.on("queueEnd", async (player) => {

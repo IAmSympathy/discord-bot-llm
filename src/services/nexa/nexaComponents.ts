@@ -54,13 +54,13 @@ function fmt(ms: number): string {
     return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
 }
 
-const BAR_WIDTH = 34; // ~largeur d'un MediaGallery Discord en monospace
+const BAR_WIDTH = 102; // ~largeur d'un MediaGallery Discord en monospace
 
 function buildProgressBar(posMs: number, durationMs: number): string {
     if (!durationMs) return "";
     const ratio = Math.min(1, Math.max(0, posMs / durationMs));
     const filled = Math.round(ratio * BAR_WIDTH);
-    const bar = "▬".repeat(filled) + "─".repeat(BAR_WIDTH - filled);
+    const bar = "▰".repeat(filled) + "▱".repeat(BAR_WIDTH - filled);
     const elapsed = fmt(posMs);
     const remaining = fmt(Math.max(0, durationMs - posMs));
     // elapsed à gauche, remaining à droite, séparés par la barre
@@ -186,11 +186,11 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
 
             const total = history.length + 1 + queue.length;
             // Titre avec temps restant aligné à droite via padding (monospace -#)
-            const label = "📋 Liste de lecture";
+            const label = "📋 Liste de lecture:";
             const timeLabel = `${remainingFmt} restant`;
             const PAD = 42; // largeur approximative du conteneur en monospace
             const gap = Math.max(1, PAD - label.length - timeLabel.length);
-            const header = `**${label}**${" ".repeat(gap)}*${timeLabel}*`;
+            const header = `**${label}**${"‎".repeat(gap)}*${timeLabel}*`;
             const footer = `\n-# *${total} titre${total > 1 ? "s" : ""} au total*`;
 
             container.addTextDisplayComponents(
