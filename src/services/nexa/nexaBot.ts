@@ -443,13 +443,30 @@ export class NexaBot {
                 break;
 
             case "nexa_stop":
+                cancelClosingTimer(guildId);
                 await stopPlayback(guildId);
                 await this.refreshPanel(guildId);
                 break;
 
             case "nexa_loop": {
                 if (!player) return;
-                const cycle = ["off", "track", "queue"] as const;
+                // En mode fermeture (pas de current), "boucle" relance toute la liste depuis l'historique
+                const isClosing = !!getClosingTimer(guildId);
+                if (isClosing && !player.queue.current) {
+                    cancelClosingTimer(guildId);
+                    const hist = getHistory(guildId);
+                    if (hist.length > 0) {
+                        // Remettre toutes les tracks de l'historique dans la queue
+                        for (const t of hist) {
+                            player.queue.add(t);
+                        }
+                        await player.setRepeatMode("queue");
+                        await player.play();
+                    }
+                    await this.refreshPanel(guildId);
+                    break;
+                }
+                const cycle = ["off", "queue", "track"] as const;
                 const cur = (player.repeatMode ?? "off") as typeof cycle[number];
                 await player.setRepeatMode(cycle[(cycle.indexOf(cur) + 1) % cycle.length]);
                 await this.refreshPanel(guildId);
