@@ -16,6 +16,21 @@ dotenv.config();
 // ── Pending tracks par userId (en attente de confirmation)
 const pendingTracks = new Map<string, { track: Track; tracks: Track[]; guildId: string; voiceChannelId: string; textChannelId: string }>();
 
+// ── Timers de fermeture du jukebox (quand la file est vide)
+const closingTimers = new Map<string, { timer: ReturnType<typeof setTimeout>; endsAt: number }>();
+
+export function getClosingTimer(guildId: string): { endsAt: number } | undefined {
+    return closingTimers.get(guildId);
+}
+
+function cancelClosingTimer(guildId: string) {
+    const t = closingTimers.get(guildId);
+    if (t) {
+        clearTimeout(t.timer);
+        closingTimers.delete(guildId);
+    }
+}
+
 // ── Cache lyrics disponibles par trackIdentifier (true/false/undefined=inconnu)
 const lyricsAvailableCache = new Map<string, boolean>();
 
@@ -23,7 +38,7 @@ async function checkLyricsAvailable(player: Player, track: Track): Promise<boole
     const id = (track.info as any).identifier ?? track.info.uri ?? "";
     if (lyricsAvailableCache.has(id)) return lyricsAvailableCache.get(id)!;
     try {
-u        const result = await (player as any).getLyrics(track, true).catch(() => null);
+        const result = await (player as any).getLyrics(track, true).catch(() => null);
         let hasLyrics = false;
         if (result?.lines && Array.isArray(result.lines) && result.lines.length > 0) hasLyrics = true;
         else if (typeof result === "string" && result.length > 10) hasLyrics = true;
@@ -90,6 +105,8 @@ export class NexaBot {
 
         m.on("trackStart", async (player) => {
             console.log(`[Nexa] ▶️ ${player.queue.current?.info.title}`);
+            // Annuler le timer de fermeture si une nouvelle musique démarre
+            cancelClosingTimer(player.guildId);
             startProgressTimer(player.guildId);
             await this.refreshPanel(player.guildId);
             // Vérifier les lyrics en background et refresh si le résultat est connu
@@ -116,14 +133,31 @@ export class NexaBot {
         m.on("queueEnd", async (player) => {
             stopProgressTimer(player.guildId);
             console.log(`[Nexa] 🏁 File vide — ${player.guildId}`);
+
+            // Démarrer le timer de fermeture de 5 minutes
+            const CLOSE_DELAY = 5 * 60 * 1000;
+            const endsAt = Date.now() + CLOSE_DELAY;
+
+            // Refresh immédiat pour afficher l'état "fermeture imminente"
             await this.refreshPanel(player.guildId);
-            setTimeout(async () => {
-                const p = getKazagumo().getPlayer(player.guildId);
-                if (p && !p.playing && !p.queue.tracks.length) {
-                    await p.destroy();
-                    await this.refreshPanel(player.guildId);
+
+            // Refresh toutes les 30s pour mettre à jour le compte à rebours
+            const countdownInterval = setInterval(async () => {
+                await this.refreshPanel(player.guildId);
+            }, 30_000);
+
+            const closeTimer = setTimeout(async () => {
+                clearInterval(countdownInterval);
+                closingTimers.delete(player.guildId);
+                try {
+                    const p = getKazagumo().getPlayer(player.guildId);
+                    if (p) await p.destroy();
+                } catch {
                 }
-            }, 5 * 60 * 1000);
+                await this.refreshPanel(player.guildId);
+            }, CLOSE_DELAY);
+
+            closingTimers.set(player.guildId, {timer: closeTimer, endsAt});
         });
         m.on("trackError", async (player) => {
             stopProgressTimer(player.guildId);

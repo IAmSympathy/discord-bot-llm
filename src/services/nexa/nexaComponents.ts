@@ -9,6 +9,7 @@ import sharp from "sharp";
 import {ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags, SeparatorBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, TextDisplayBuilder,} from "discord.js";
 import type {Player, Track} from "lavalink-client";
 import {FILTERS, getActiveFilters} from "./nexaFilters";
+import {getClosingTimer} from "./nexaBot";
 // SectionBuilder et ThumbnailBuilder existent à runtime mais pas encore dans les types
 const {SectionBuilder, ThumbnailBuilder} = require("discord.js") as any;
 
@@ -261,11 +262,42 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
 
         return {components: [container], flags: MessageFlags.IsComponentsV2, files};
     } else {
-        container.addTextDisplayComponents(
-            new TextDisplayBuilder().setContent(
-                "## 💽 Nexa's Jukebox\n*Aucune musique en cours.*\n-# Envoie le titre d'une chanson dans ce salon pour lancer la lecture !"
-            )
-        );
+        // Vérifier si on est en mode "fermeture imminente"
+        const guildId = (player as any)?.guildId as string | undefined;
+        const closingTimer = guildId ? getClosingTimer(guildId) : undefined;
+
+        if (closingTimer) {
+            const msLeft = Math.max(0, closingTimer.endsAt - Date.now());
+            const secsLeft = Math.ceil(msLeft / 1000);
+            const minsLeft = Math.floor(secsLeft / 60);
+            const sLeft = secsLeft % 60;
+            const countdown = minsLeft > 0 ? `${minsLeft}m${String(sLeft).padStart(2, "0")}s` : `${secsLeft}s`;
+
+            // Barre de compte à rebours
+            const totalMs = 5 * 60 * 1000;
+            const ratio = Math.min(1, Math.max(0, msLeft / totalMs));
+            const filled = Math.round(ratio * BAR_WIDTH);
+            const bar = "▰".repeat(filled) + "▱".repeat(BAR_WIDTH - filled);
+
+            container.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    [
+                        `## 💽 Nexa's Jukebox`,
+                        `*File de lecture terminée*`,
+                        ``,
+                        `⏳ Fermeture dans **${countdown}**`,
+                        `-# ${bar}`,
+                        `-# Envoie une chanson pour continuer !`,
+                    ].join("\n")
+                )
+            );
+        } else {
+            container.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(
+                    "## 💽 Nexa's Jukebox\n*Aucune musique en cours.*\n-# Envoie le titre d'une chanson dans ce salon pour lancer la lecture !"
+                )
+            );
+        }
         container.addMediaGalleryComponents(
             new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(PLACEHOLDER_URL))
         );
