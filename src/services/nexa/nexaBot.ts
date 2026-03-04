@@ -18,6 +18,8 @@ const pendingTracks = new Map<string, { track: Track; tracks: Track[]; guildId: 
 
 // ── Timers de fermeture du jukebox (quand la file est vide)
 const closingTimers = new Map<string, { timer: ReturnType<typeof setTimeout>; endsAt: number }>();
+// ── Dernière track jouée par guildId (pour l'historique au queueEnd)
+const lastPlayedTrack = new Map<string, Track>();
 
 export function getClosingTimer(guildId: string): { endsAt: number } | undefined {
     return closingTimers.get(guildId);
@@ -105,12 +107,11 @@ export class NexaBot {
 
         m.on("trackStart", async (player) => {
             console.log(`[Nexa] ▶️ ${player.queue.current?.info.title}`);
-            // Annuler le timer de fermeture si une nouvelle musique démarre
             cancelClosingTimer(player.guildId);
+            const track = player.queue.current;
+            if (track) lastPlayedTrack.set(player.guildId, track as Track);
             startProgressTimer(player.guildId);
             await this.refreshPanel(player.guildId);
-            // Vérifier les lyrics en background et refresh si le résultat est connu
-            const track = player.queue.current;
             if (track) {
                 const id = (track.info as any).identifier ?? track.info.uri ?? "";
                 if (!lyricsAvailableCache.has(id)) {
@@ -133,6 +134,18 @@ export class NexaBot {
         m.on("queueEnd", async (player) => {
             stopProgressTimer(player.guildId);
             console.log(`[Nexa] 🏁 File vide — ${player.guildId}`);
+
+            // S'assurer que la dernière track est bien dans l'historique
+            const last = lastPlayedTrack.get(player.guildId);
+            if (last) {
+                const hist = getHistory(player.guildId);
+                const lastInHist = hist[hist.length - 1];
+                const lastId = (last.info as any).identifier ?? last.info.uri ?? "";
+                const lastHistId = lastInHist ? ((lastInHist.info as any).identifier ?? lastInHist.info.uri ?? "") : "";
+                if (lastId !== lastHistId) {
+                    pushHistory(player.guildId, last);
+                }
+            }
 
             const CLOSE_DELAY = 5 * 60 * 1000;
             const endsAt = Date.now() + CLOSE_DELAY;

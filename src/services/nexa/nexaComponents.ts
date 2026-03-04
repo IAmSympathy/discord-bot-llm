@@ -122,8 +122,8 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 [
-                    `## 💽 Nexa's Jukebox - Mode Requêtes`,
-                    `**[${info.title}](${info.url})**`,
+                    `# 💽 Nexa's Jukebox - Mode Requêtes`,
+                    `## [${info.title}](${info.url})`,
                     [
                         `${info.sourceEmoji} ${info.channel}`,
                         info.isLive ? `🔴 LIVE` : `⏱️ ${info.duration}`,
@@ -149,7 +149,7 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
                 new ButtonBuilder().setCustomId("nexa_playpause").setLabel(isPaused ? "▶️ Reprendre" : "⏸ Pause").setStyle(isPaused ? ButtonStyle.Success : ButtonStyle.Primary).setDisabled(!isPlaying),
                 new ButtonBuilder().setCustomId("nexa_skip").setLabel("⏭ Skip").setStyle(ButtonStyle.Secondary).setDisabled(!isPlaying),
                 new ButtonBuilder().setCustomId("nexa_stop").setLabel("⏹ Stop").setStyle(ButtonStyle.Danger).setDisabled(!isPlaying),
-                new ButtonBuilder().setCustomId("nexa_loop").setLabel(repeatMode === "off" ? "🔁 Off" : repeatMode === "queue" ? "🔁 Liste" : "🔂 Titre").setStyle(repeatMode === "off" ? ButtonStyle.Secondary : ButtonStyle.Success),
+                new ButtonBuilder().setCustomId("nexa_loop").setLabel(repeatMode === "off" ? "🔁 Boucle: Off" : repeatMode === "queue" ? "🔁 Boucle: Liste" : "🔂 Boucle: Titre").setStyle(repeatMode === "off" ? ButtonStyle.Secondary : ButtonStyle.Success),
             )
         );
         container.addActionRowComponents(
@@ -218,7 +218,7 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
             const bar = "▰".repeat(filled) + "▱".repeat(BAR_WIDTH - filled);
 
             container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`## 💽 Nexa's Jukebox - En fermeture`)
+                new TextDisplayBuilder().setContent(`# 💽 Nexa's Jukebox - En fermeture`)
             );
             container.addMediaGalleryComponents(
                 new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(PLACEHOLDER_URL))
@@ -236,7 +236,7 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
                     new ButtonBuilder().setCustomId("nexa_restart_queue").setLabel("▶️ Reprendre").setStyle(ButtonStyle.Success).setDisabled(!hasHistory),
                     new ButtonBuilder().setCustomId("nexa_skip").setLabel("⏭ Skip").setStyle(ButtonStyle.Secondary).setDisabled(true),
                     new ButtonBuilder().setCustomId("nexa_stop").setLabel("⏹ Stop").setStyle(ButtonStyle.Danger).setDisabled(!hasHistory),
-                    new ButtonBuilder().setCustomId("nexa_loop").setLabel("🔁 Off").setStyle(ButtonStyle.Secondary).setDisabled(true),
+                    new ButtonBuilder().setCustomId("nexa_loop").setLabel("🔁 Boucle: Off").setStyle(ButtonStyle.Secondary).setDisabled(true),
                 )
             );
             // Row 2 : seek désactivés + shuffle désactivé
@@ -280,7 +280,7 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
         } else {
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    "## 💽 Nexa's Jukebox\n*Aucune musique en cours.*\n-# Envoie le titre d'une chanson dans ce salon pour lancer la lecture !"
+                    "# 💽 Nexa's Jukebox\n*Aucune musique en cours.*\n-# Envoie le titre d'une chanson dans ce salon pour lancer la lecture !"
                 )
             );
             container.addMediaGalleryComponents(
@@ -293,7 +293,7 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
                     new ButtonBuilder().setCustomId("nexa_playpause").setLabel("⏸ Pause").setStyle(ButtonStyle.Primary).setDisabled(true),
                     new ButtonBuilder().setCustomId("nexa_skip").setLabel("⏭ Skip").setStyle(ButtonStyle.Secondary).setDisabled(true),
                     new ButtonBuilder().setCustomId("nexa_stop").setLabel("⏹ Stop").setStyle(ButtonStyle.Danger).setDisabled(true),
-                    new ButtonBuilder().setCustomId("nexa_loop").setLabel("🔁 Off").setStyle(ButtonStyle.Secondary).setDisabled(true),
+                    new ButtonBuilder().setCustomId("nexa_loop").setLabel("🔁 Boucle: Off").setStyle(ButtonStyle.Secondary).setDisabled(true),
                 )
             );
             return {components: [container], flags: MessageFlags.IsComponentsV2, files: [makePlaceholderAttachment()]};

@@ -23,7 +23,7 @@ BACKUP_DIR=$(mktemp -d)
 
 echo "==> Nettoyage et synchronisation git..."
 git reset --hard
-git clean -fdx --exclude=.env
+git clean -fdx --exclude=.env --exclude=data --exclude=lavalink --exclude=logs --exclude=generated_images --exclude=node_modules --exclude=python_services
 git checkout -B main origin/main
 
 echo "==> Restauration des dossiers critiques..."
