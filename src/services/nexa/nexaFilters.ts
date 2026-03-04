@@ -38,7 +38,8 @@ const EQ_PRESETS: Record<string, any[]> = {
 /** Retourne les filtres actuellement actifs sous forme d'ensembles d'ids */
 export function getActiveFilters(player: Player): Set<string> {
     const active = new Set<string>();
-    const f = (player.filterManager as any).filters ?? {};
+    const fm = player.filterManager as any;
+    const f = fm.filters ?? {};
     if (f.nightcore) active.add("nightcore");
     if (f.vaporwave) active.add("vaporwave");
     if (f.karaoke) active.add("karaoke");
@@ -47,18 +48,18 @@ export function getActiveFilters(player: Player): Set<string> {
     if (f.vibrato) active.add("vibrato");
     if (f.lowPass) active.add("lowpass");
 
-    // Détecter le preset EQ actif par comparaison des bandes
-    const eq: any[] = f.equalizer ?? [];
-    if (eq.length > 0) {
-        const eqJson = JSON.stringify(
-            [...eq].map((b: any) => ({band: b.band, gain: +b.gain.toFixed(4)})).sort((a: any, b: any) => a.band - b.band)
-        );
+    // Lire equalizerBands directement (tableau indexé par band number)
+    const eqBands: any[] = fm.equalizerBands ?? [];
+    const activeBands = eqBands.filter((b: any) => b != null && b.gain !== 0);
+    if (activeBands.length > 0) {
+        const sig = (bands: any[]) => bands
+            .map((b: any) => `${b.band}:${Math.round(b.gain * 10000)}`)
+            .sort()
+            .join(",");
+        const activeSig = sig(activeBands);
         let matched = false;
-        for (const [id, bands] of Object.entries(EQ_PRESETS)) {
-            const presetJson = JSON.stringify(
-                [...bands].map((b: any) => ({band: b.band, gain: +b.gain.toFixed(4)})).sort((a: any, b: any) => a.band - b.band)
-            );
-            if (eqJson === presetJson) {
+        for (const [id, presetBands] of Object.entries(EQ_PRESETS)) {
+            if (sig(presetBands) === activeSig) {
                 active.add(id);
                 matched = true;
                 break;
@@ -119,4 +120,3 @@ export async function applyFilterSet(player: Player, selectedIds: string[]): Pro
             break;
     }
 }
-
