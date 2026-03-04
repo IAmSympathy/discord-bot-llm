@@ -75,8 +75,9 @@ export function getActiveFilters(player: Player): Set<string> {
 export async function applyFilterSet(player: Player, selectedIds: string[]): Promise<void> {
     const fm = player.filterManager;
 
-    // Désactiver tous les filtres actifs
+    // Désactiver tous les filtres + vider les bandes EQ
     await fm.resetFilters();
+    await fm.clearEQ(); // resetFilters ne reset pas equalizerBands
 
     // Activer le filtre sélectionné (s'il y en a un)
     const filterId = selectedIds[0] ?? null;

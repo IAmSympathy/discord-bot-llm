@@ -69,6 +69,16 @@ function buildProgressBar(posMs: number, durationMs: number): string {
 }
 
 export function trackToDisplay(t: Track) {
+    const sourceName: string = (t.info as any).sourceName ?? "";
+    const sourceEmoji: Record<string, string> = {
+        youtube: "<:Nexa_Youtube:1478660975736651857>",
+        youtubemusic: "<:Nexa_YoutubeMusic:1478660976864923678>",
+        soundcloud: "<:Nexa_SoundCloud:1478660979754537030>",
+        spotify: "<:Nexa_Spotify:1478660977875615814>",
+        applemusic: "<:Nexa_AppleMusic:1478660980530483320>",
+        deezer: "<:Nexa_Deezer:1478660978936909898>",
+        twitch: "<:Nexa_Twitch:1478660981398700052>",
+    };
     return {
         title: t.info.title,
         url: t.info.uri ?? "",
@@ -78,6 +88,8 @@ export function trackToDisplay(t: Track) {
         isLive: t.info.isStream ?? false,
         requestedBy: (t as any).requester?.displayName ?? (t as any).requester?.name ?? "",
         requestedById: (t as any).requester?.id ?? "",
+        sourceName,
+        sourceEmoji: sourceEmoji[sourceName.toLowerCase()] ?? "🎵",
     };
 }
 
@@ -108,7 +120,15 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
 
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `## 💽 Nexa's Jukebox — Mode Requête\n**[${info.title}](${info.url})**\n-# 📺 ${info.channel}${info.isLive ? " · 🔴 LIVE" : ` · ⏱️ ${info.duration}`}${info.requestedBy ? ` · demandé par **${info.requestedBy}**` : ""}`
+                [
+                    `## 💽 Nexa's Jukebox`,
+                    `**[${info.title}](${info.url})**`,
+                    [
+                        `${info.sourceEmoji} ${info.channel}`,
+                        info.isLive ? `🔴 LIVE` : `⏱️ ${info.duration}`,
+                        info.requestedBy ? `👤 ${info.requestedBy}` : null,
+                    ].filter(Boolean).join(" · "),
+                ].join("\n")
             )
         );
         container.addMediaGalleryComponents(
@@ -226,10 +246,11 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
             const remainingFmt = info.isLive ? "∞" : fmt(remainingMs);
 
             const total = history.length + 1 + queue.length;
+            const remaining = 1 + queue.length;
             // Titre avec temps restant aligné à droite via padding (monospace -#)
             const label = "📋 Liste de lecture";
-            const timeLabel = `(${remainingFmt} restant)`;
-            const header = `**${label}**‎ ${timeLabel}`;
+            const timeLabel = `(${remainingFmt} · ${remaining} titre${remaining > 1 ? "s" : ""} restant${remaining > 1 ? "s" : ""})`;
+            const header = `**${label}** ${timeLabel}`;
             const footer = `\n-# *${total} titre${total > 1 ? "s" : ""} au total*`;
 
             container.addTextDisplayComponents(
@@ -271,7 +292,15 @@ export async function buildTrackProposal(tracks: Track[], userId: string): Promi
     const section = new SectionBuilder()
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `### 🎵 Résultat trouvé\n**[${info.title}](${info.url})**\n-# 📺 ${info.channel}${info.isLive ? " · 🔴 LIVE" : ` · ⏱️ ${info.duration}`}`
+                [
+                    `### 🎵 Résultat trouvé`,
+                    `**[${info.title}](${info.url})**`,
+                    [
+                        `${info.sourceEmoji} ${info.channel}`,
+                        info.isLive ? `🔴 LIVE` : `⏱️ ${info.duration}`,
+                        info.requestedBy ? `👤 ${info.requestedBy}` : null,
+                    ].filter(Boolean).join(" · "),
+                ].join("\n")
             )
         );
     if (info.thumbnail) {
