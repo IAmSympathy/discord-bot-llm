@@ -26,7 +26,16 @@ export const FILTERS: FilterDef[] = [
     {id: "gaming", label: "Gaming", emoji: "🎮", description: "Equalizer Gaming"},
 ];
 
-/** Retourne les filtres actuellement actifs sous forme d'ensemble d'ids */
+// Map preset id → bandes EQ pour comparaison à la détection
+const EQ_PRESETS: Record<string, any[]> = {
+    bassboost: EQList.BassboostHigh,
+    pop: EQList.Pop,
+    rock: EQList.Rock,
+    electronic: EQList.Electronic,
+    gaming: EQList.Gaming,
+};
+
+/** Retourne les filtres actuellement actifs sous forme d'ensembles d'ids */
 export function getActiveFilters(player: Player): Set<string> {
     const active = new Set<string>();
     const f = (player.filterManager as any).filters ?? {};
@@ -37,22 +46,25 @@ export function getActiveFilters(player: Player): Set<string> {
     if (f.tremolo) active.add("tremolo");
     if (f.vibrato) active.add("vibrato");
     if (f.lowPass) active.add("lowpass");
-    // Détecter quel EQ preset est actif via le nom du preset
-    const preset = (player.filterManager as any).equalizerPreset as string | undefined;
-    if (preset) {
-        const presetMap: Record<string, string> = {
-            BassboostHigh: "bassboost",
-            Pop: "pop",
-            Rock: "rock",
-            Electronic: "electronic",
-            Gaming: "gaming",
-        };
-        const id = presetMap[preset];
-        if (id) active.add(id);
-        else active.add("_eq");
-    } else {
-        const eq = f.equalizer ?? [];
-        if (eq.length > 0) active.add("_eq");
+
+    // Détecter le preset EQ actif par comparaison des bandes
+    const eq: any[] = f.equalizer ?? [];
+    if (eq.length > 0) {
+        const eqJson = JSON.stringify(
+            [...eq].map((b: any) => ({band: b.band, gain: +b.gain.toFixed(4)})).sort((a: any, b: any) => a.band - b.band)
+        );
+        let matched = false;
+        for (const [id, bands] of Object.entries(EQ_PRESETS)) {
+            const presetJson = JSON.stringify(
+                [...bands].map((b: any) => ({band: b.band, gain: +b.gain.toFixed(4)})).sort((a: any, b: any) => a.band - b.band)
+            );
+            if (eqJson === presetJson) {
+                active.add(id);
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) active.add("_eq");
     }
     return active;
 }
@@ -107,6 +119,4 @@ export async function applyFilterSet(player: Player, selectedIds: string[]): Pro
             break;
     }
 }
-
-
 

@@ -145,10 +145,6 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
                     .setLabel("⏹ Stop")
                     .setStyle(ButtonStyle.Danger)
                     .setDisabled(!isPlaying),
-                new ButtonBuilder()
-                    .setCustomId("nexa_loop")
-                    .setLabel(repeatMode === "off" ? "🔁 Boucle: Off" : repeatMode === "track" ? "🔂 Boucle: Titre" : "🔁 Boucle: File")
-                    .setStyle(repeatMode === "off" ? ButtonStyle.Secondary : ButtonStyle.Success),
             )
         );
         container.addActionRowComponents(
@@ -164,6 +160,10 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
                     .setStyle(ButtonStyle.Secondary)
                     .setDisabled(!isPlaying || info.isLive),
                 new ButtonBuilder()
+                    .setCustomId("nexa_loop")
+                    .setLabel(repeatMode === "off" ? "🔁 Boucle: Off" : repeatMode === "track" ? "🔂 Boucle: Titre" : "🔁 Boucle: File")
+                    .setStyle(repeatMode === "off" ? ButtonStyle.Secondary : ButtonStyle.Success),
+                new ButtonBuilder()
                     .setCustomId("nexa_shuffle")
                     .setLabel("🔀 Shuffle")
                     .setStyle(ButtonStyle.Secondary)
@@ -174,19 +174,27 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
         {
             const activeFilters = getActiveFilters(player!);
             const activeId = FILTERS.find(f => activeFilters.has(f.id))?.id ?? null;
-            const options = FILTERS.map(f =>
+            const options = [
                 new StringSelectMenuOptionBuilder()
-                    .setValue(`nexa_filter_${f.id}`)
-                    .setLabel(`${f.emoji} ${f.label}`)
-                    .setDescription(f.description)
-                    .setDefault(f.id === activeId)
-            );
+                    .setValue("nexa_filter_none")
+                    .setLabel("Aucun filtre")
+                    .setDescription("Désactiver tous les filtres")
+                    .setEmoji("✖️")
+                    .setDefault(activeId === null),
+                ...FILTERS.map(f =>
+                    new StringSelectMenuOptionBuilder()
+                        .setValue(`nexa_filter_${f.id}`)
+                        .setLabel(`${f.emoji} ${f.label}`)
+                        .setDescription(f.description)
+                        .setDefault(f.id === activeId)
+                ),
+            ];
             container.addActionRowComponents(
                 new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
                     new StringSelectMenuBuilder()
                         .setCustomId("nexa_filter_select")
                         .setPlaceholder("🎛️ Filtre audio…")
-                        .setMinValues(0)
+                        .setMinValues(1)
                         .setMaxValues(1)
                         .addOptions(options)
                 )
@@ -249,7 +257,6 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
                 new ButtonBuilder().setCustomId("nexa_playpause").setLabel("⏸ Pause").setStyle(ButtonStyle.Primary).setDisabled(true),
                 new ButtonBuilder().setCustomId("nexa_skip").setLabel("⏭ Skip").setStyle(ButtonStyle.Secondary).setDisabled(true),
                 new ButtonBuilder().setCustomId("nexa_stop").setLabel("⏹ Stop").setStyle(ButtonStyle.Danger).setDisabled(true),
-                new ButtonBuilder().setCustomId("nexa_loop").setLabel("🔁 Off").setStyle(ButtonStyle.Secondary).setDisabled(true),
             )
         );
         return {components: [container], flags: MessageFlags.IsComponentsV2, files: [makePlaceholderAttachment()]};

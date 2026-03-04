@@ -442,7 +442,9 @@ export class NexaBot {
         if (!player) return;
 
         // interaction.values contient tous les ids sélectionnés
-        const selectedIds = (interaction.values as string[]).map((v: string) => v.replace("nexa_filter_", ""));
+        const selectedIds = (interaction.values as string[])
+            .filter(v => v !== "nexa_filter_none")
+            .map((v: string) => v.replace("nexa_filter_", ""));
         await applyFilterSet(player, selectedIds);
         await this.refreshPanel(guildId);
     }
