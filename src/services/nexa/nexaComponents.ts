@@ -59,7 +59,7 @@ function fmt(ms: number): string {
 const BAR_WIDTH = 40; // ~largeur d'un MediaGallery Discord en monospace
 
 /** Cache URL CDN Discord par URL source — évite de re-uploader la même thumbnail */
-const thumbnailCdnCache = new Map<string, string>();
+export const thumbnailCdnCache = new Map<string, string>();
 
 export function cacheThumbnailCdn(sourceUrl: string, cdnUrl: string): void {
     thumbnailCdnCache.set(sourceUrl, cdnUrl);

@@ -8,7 +8,7 @@ import {Client, Events, GatewayIntentBits, type Message, MessageFlags, TextChann
 import * as dotenv from "dotenv";
 import type {Player, Track} from "lavalink-client";
 import {clearHistory, getHistory, getKazagumo, getOrCreatePlayer, initKazagumo, isLavalinkReady, previousTrack, pushHistory, searchTrack, seekRelative, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
-import {buildJukeboxPanel, buildTrackProposal, cacheThumbnailCdn} from "./nexaComponents";
+import {buildJukeboxPanel, buildTrackProposal, cacheThumbnailCdn, thumbnailCdnCache} from "./nexaComponents";
 import {applyFilterSet, getActiveFilters} from "./nexaFilters";
 
 dotenv.config();
@@ -228,40 +228,47 @@ export class NexaBot {
         } catch { /* manager pas encore prêt */
         }
 
-        const options = await buildJukeboxPanel(player ?? null, getHistory(guildId));
-
-        // Récupère la source URL de la thumbnail courante (pour le cache CDN)
+        // Récupère la source URL de la thumbnail courante
         const currentTrack = player?.queue?.current;
         const sourceThumbUrl = currentTrack ? (currentTrack.info.artworkUrl ?? "") : "";
 
-        // Essaie d'éditer le message existant
+        // Essaie de récupérer le message existant AVANT de builder le panneau
         const existingId = this.controlMessages.get(guildId);
-        if (existingId) {
-            const existing = await channel.messages.fetch(existingId).catch(() => null);
-            if (existing) {
-                const edited = await existing.edit(options as any).catch(() => null);
-                // Mettre en cache l'URL CDN de la thumbnail pour éviter le re-upload
-                if (edited && sourceThumbUrl) {
-                    const att = edited.attachments.find(a => a.name === "thumb.jpg");
-                    if (att) cacheThumbnailCdn(sourceThumbUrl, att.url);
-                }
-                return;
+        let existing = existingId
+            ? await channel.messages.fetch(existingId).catch(() => null)
+            : null;
+
+        // Si le message existe et a déjà une thumbnail pour cette track, mettre en cache l'URL CDN
+        if (existing && sourceThumbUrl && !thumbnailCdnCache.get(sourceThumbUrl)) {
+            const att = existing.attachments.find((a: any) => a.name === "thumb.jpg");
+            if (att) cacheThumbnailCdn(sourceThumbUrl, att.url);
+        }
+
+        // Builder le panneau (utilisera le cache CDN si disponible → pas de re-upload)
+        const options = await buildJukeboxPanel(player ?? null, getHistory(guildId));
+
+        if (existing) {
+            const edited = await existing.edit(options as any).catch(() => null);
+            // Si premier upload pour cette track, mettre en cache l'URL CDN retournée
+            if (edited && sourceThumbUrl && !thumbnailCdnCache.get(sourceThumbUrl)) {
+                const att = edited.attachments.find((a: any) => a.name === "thumb.jpg");
+                if (att) cacheThumbnailCdn(sourceThumbUrl, att.url);
             }
+            return;
         }
 
         // Sinon, nettoie et recrée
         try {
             const msgs = await channel.messages.fetch({limit: 20}).catch(() => null);
             if (msgs) {
-                for (const [, msg] of msgs.filter(m => m.author.id === this.client.user!.id)) {
+                for (const [, msg] of msgs.filter((m: any) => m.author.id === this.client.user!.id)) {
                     await msg.delete().catch(() => {
                     });
                 }
             }
             const newMsg = await channel.send(options as any);
-            // Mettre en cache l'URL CDN de la thumbnail
-            if (sourceThumbUrl) {
-                const att = newMsg.attachments.find(a => a.name === "thumb.jpg");
+            if (sourceThumbUrl && !thumbnailCdnCache.get(sourceThumbUrl)) {
+                const att = newMsg.attachments.find((a: any) => a.name === "thumb.jpg");
                 if (att) cacheThumbnailCdn(sourceThumbUrl, att.url);
             }
             this.controlMessages.set(guildId, newMsg.id);
@@ -323,11 +330,29 @@ export class NexaBot {
             await this.handleButton(interaction);
         });
 
-        // Auto-disconnect si salon vocal vide
-        this.client.on(Events.VoiceStateUpdate, async (oldState) => {
+        // Auto-disconnect si salon vocal vide + déconnexion forcée du bot
+        this.client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
+            const guildId = oldState.guild.id;
+
+            // Détecter si c'est le bot lui-même qui a été déconnecté de force
+            if (oldState.member?.id === this.client.user?.id) {
+                // Le bot était dans un VC et n'y est plus
+                if (oldState.channelId && !newState.channelId) {
+                    console.log(`[Nexa] 🔌 Déconnecté de force du vocal — ${guildId}`);
+                    cancelClosingTimer(guildId);
+                    try {
+                        const p = getKazagumo().getPlayer(guildId);
+                        if (p) await p.destroy();
+                    } catch {
+                    }
+                    await this.refreshPanel(guildId);
+                    return;
+                }
+            }
+
             let player: Player | undefined;
             try {
-                player = getKazagumo().getPlayer(oldState.guild.id);
+                player = getKazagumo().getPlayer(guildId);
             } catch {
                 return;
             }
@@ -342,7 +367,7 @@ export class NexaBot {
                 if (!vc2?.isVoiceBased()) return;
                 if (vc2.members.filter(m => !m.user.bot).size === 0) {
                     await player!.destroy();
-                    await this.refreshPanel(oldState.guild.id);
+                    await this.refreshPanel(guildId);
                 }
             }, 5 * 60 * 1000);
         });
