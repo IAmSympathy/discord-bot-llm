@@ -54,20 +54,17 @@ function fmt(ms: number): string {
     return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
 }
 
-const BAR_WIDTH = 28;
+const BAR_WIDTH = 34; // ~largeur d'un MediaGallery Discord en monospace
 
 function buildProgressBar(posMs: number, durationMs: number): string {
     if (!durationMs) return "";
     const ratio = Math.min(1, Math.max(0, posMs / durationMs));
     const filled = Math.round(ratio * BAR_WIDTH);
-    const bar = "█".repeat(filled) + "░".repeat(BAR_WIDTH - filled);
+    const bar = "▬".repeat(filled) + "─".repeat(BAR_WIDTH - filled);
     const elapsed = fmt(posMs);
-    const remaining = "-" + fmt(Math.max(0, durationMs - posMs));
-    // Aligne elapsed à gauche et remaining à droite sur une ligne de BAR_WIDTH + 2 chars
-    const LINE_WIDTH = BAR_WIDTH + 2;
-    const gap = LINE_WIDTH - elapsed.length - remaining.length;
-    const timeLine = elapsed + " ".repeat(Math.max(1, gap)) + remaining;
-    return `${bar}\n${timeLine}`;
+    const remaining = fmt(Math.max(0, durationMs - posMs));
+    // elapsed à gauche, remaining à droite, séparés par la barre
+    return `-# ${elapsed} ${bar} ${remaining}`;
 }
 
 export function trackToDisplay(t: Track) {
@@ -116,6 +113,14 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
         container.addMediaGalleryComponents(
             new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(thumbUrl))
         );
+        // Barre de progression juste sous l'image, sans codeblock
+        if (!info.isLive) {
+            const posMs = (player as any)?.position ?? 0;
+            const durationMs = current.info.duration ?? 0;
+            container.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(buildProgressBar(posMs, durationMs))
+            );
+        }
         container.addSeparatorComponents(new SeparatorBuilder());
         container.addActionRowComponents(
             new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -180,19 +185,16 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
             const remainingFmt = info.isLive ? "∞" : fmt(remainingMs);
 
             const total = history.length + 1 + queue.length;
+            // Titre avec temps restant aligné à droite via padding (monospace -#)
+            const label = "📋 Liste de lecture";
+            const timeLabel = `${remainingFmt} restant`;
+            const PAD = 42; // largeur approximative du conteneur en monospace
+            const gap = Math.max(1, PAD - label.length - timeLabel.length);
+            const header = `**${label}**${" ".repeat(gap)}*${timeLabel}*`;
             const footer = `\n-# *${total} titre${total > 1 ? "s" : ""} au total*`;
 
             container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`**📋 Liste de lecture — ${remainingFmt} restant :**\n\`\`\`\n${lines.join("\n")}\n\`\`\`${footer}`)
-            );
-        }
-        // Barre de progression
-        if (!info.isLive) {
-            const posMs = (player as any)?.position ?? 0;
-            const durationMs = current.info.duration ?? 0;
-            const progress = buildProgressBar(posMs, durationMs);
-            container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`\`\`\`\n${progress}\n\`\`\``)
+                new TextDisplayBuilder().setContent(`${header}\n\`\`\`\n${lines.join("\n")}\n\`\`\`${footer}`)
             );
         }
 
