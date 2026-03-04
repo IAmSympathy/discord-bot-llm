@@ -64,7 +64,7 @@ function buildProgressBar(posMs: number, durationMs: number): string {
     const elapsed = fmt(posMs);
     const remaining = fmt(Math.max(0, durationMs - posMs));
     // elapsed à gauche, remaining à droite, séparés par la barre
-    return `-# ${elapsed} ${bar} ${remaining}`;
+    return `-# ${elapsed} ${bar} -${remaining}`;
 }
 
 export function trackToDisplay(t: Track) {
