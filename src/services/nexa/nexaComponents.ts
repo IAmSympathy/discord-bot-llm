@@ -5,6 +5,7 @@
 import * as path from "path";
 import * as https from "https";
 import * as http from "http";
+import sharp from "sharp";
 import {ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags, SeparatorBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, TextDisplayBuilder,} from "discord.js";
 import type {Player, Track} from "lavalink-client";
 
@@ -16,10 +17,10 @@ function makePlaceholderAttachment(): AttachmentBuilder {
     return new AttachmentBuilder(PLACEHOLDER_PATH, {name: PLACEHOLDER_FILENAME});
 }
 
-/** Télécharge une thumbnail distante en Buffer et la retourne comme AttachmentBuilder */
+/** Télécharge une thumbnail distante, la redimensionne en 1920×1080 (cover) et la retourne comme AttachmentBuilder */
 async function fetchThumbnailAttachment(url: string): Promise<AttachmentBuilder | null> {
     try {
-        const buffer = await new Promise<Buffer>((resolve, reject) => {
+        const raw = await new Promise<Buffer>((resolve, reject) => {
             const proto = url.startsWith("https") ? https : http;
             proto.get(url, (res) => {
                 const chunks: Buffer[] = [];
@@ -28,7 +29,11 @@ async function fetchThumbnailAttachment(url: string): Promise<AttachmentBuilder 
                 res.on("error", reject);
             }).on("error", reject);
         });
-        return new AttachmentBuilder(buffer, {name: "thumb.jpg"});
+        const resized = await sharp(raw)
+            .resize(1920, 1080, {fit: "cover", position: "centre"})
+            .jpeg({quality: 90})
+            .toBuffer();
+        return new AttachmentBuilder(resized, {name: "thumb.jpg"});
     } catch {
         return null;
     }
