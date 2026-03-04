@@ -138,7 +138,16 @@ export function getHistory(guildId: string): Track[] {
 
 export async function skipTrack(guildId: string): Promise<void> {
     const player = getKazagumo().getPlayer(guildId);
-    if (player) await player.skip();
+    if (!player) return;
+    try {
+        await player.skip();
+    } catch {
+        // Dernière track — skip échoue, on stop manuellement pour déclencher queueEnd proprement
+        try {
+            await player.stopPlaying(false, true);
+        } catch {
+        }
+    }
 }
 
 export async function seekRelative(guildId: string, offsetMs: number): Promise<void> {

@@ -9,7 +9,7 @@ import sharp from "sharp";
 import {ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags, SeparatorBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, TextDisplayBuilder,} from "discord.js";
 import type {Player, Track} from "lavalink-client";
 import {FILTERS, getActiveFilters} from "./nexaFilters";
-import {getClosingTimer} from "./nexaBot";
+import {getClosingTimer, getSavedFilter} from "./nexaBot";
 // SectionBuilder et ThumbnailBuilder existent à runtime mais pas encore dans les types
 const {SectionBuilder, ThumbnailBuilder} = require("discord.js") as any;
 
@@ -122,7 +122,7 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
                 [
-                    `# 💽 Nexa's Jukebox - Mode Requêtes`,
+                    `## 💽 Nexa's Jukebox - Mode Requêtes`,
                     `## [${info.title}](${info.url})`,
                     [
                         `${info.sourceEmoji} ${info.channel}`,
@@ -218,7 +218,7 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
             const bar = "▰".repeat(filled) + "▱".repeat(BAR_WIDTH - filled);
 
             container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`# 💽 Nexa's Jukebox - En fermeture`)
+                new TextDisplayBuilder().setContent(`## 💽 Nexa's Jukebox - En fermeture`)
             );
             container.addMediaGalleryComponents(
                 new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(PLACEHOLDER_URL))
@@ -247,13 +247,19 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
                     new ButtonBuilder().setCustomId("nexa_shuffle").setLabel("🔀 Shuffle").setStyle(ButtonStyle.Secondary).setDisabled(true),
                 )
             );
-            // Select filtre désactivé
-            container.addActionRowComponents(
-                new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-                    new StringSelectMenuBuilder().setCustomId("nexa_filter_select").setPlaceholder("🎛️ Filtre audio…").setDisabled(true)
-                        .addOptions([new StringSelectMenuOptionBuilder().setValue("none").setLabel("Aucun filtre")])
-                )
-            );
+            // Select filtre désactivé mais avec le filtre actif affiché
+            {
+                const savedFilter = getSavedFilter(guildId!) ?? null;
+                const filterOptions = [
+                    new StringSelectMenuOptionBuilder().setValue("nexa_filter_none").setLabel("Aucun filtre").setDescription("Désactiver tous les filtres").setEmoji("✖️").setDefault(savedFilter === null),
+                    ...FILTERS.map(f => new StringSelectMenuOptionBuilder().setValue(`nexa_filter_${f.id}`).setLabel(`${f.emoji} ${f.label}`).setDescription(f.description).setDefault(f.id === savedFilter)),
+                ];
+                container.addActionRowComponents(
+                    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+                        new StringSelectMenuBuilder().setCustomId("nexa_filter_select").setPlaceholder("🎛️ Filtre audio…").setDisabled(true).addOptions(filterOptions)
+                    )
+                );
+            }
             container.addSeparatorComponents(new SeparatorBuilder());
             // Liste de lecture : toutes les chansons de l'historique + fermeture au milieu
             {
@@ -265,7 +271,7 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
                 const prevTrack = history.length > 0 ? history[history.length - 1] : null;
                 const lines = [
                     prevTrack ? fmtLine(prevTrack, " ") : " ",
-                    `▶ (Fermeture du Jukebox)`,
+                    `‎ ‎ ‎ ▶ (Fermeture du Jukebox)`,
                     ` `,
                 ];
                 const total = history.length + 1;
@@ -280,7 +286,7 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
         } else {
             container.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    "# 💽 Nexa's Jukebox\n*Aucune musique en cours.*\n-# Envoie le titre d'une chanson dans ce salon pour lancer la lecture !"
+                    "## 💽 Nexa's Jukebox\n*Aucune musique en cours.*\n-# Envoie le titre d'une chanson dans ce salon pour lancer la lecture !"
                 )
             );
             container.addMediaGalleryComponents(

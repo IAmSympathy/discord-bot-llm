@@ -9,7 +9,7 @@ import * as dotenv from "dotenv";
 import type {Player, Track} from "lavalink-client";
 import {getHistory, getKazagumo, getOrCreatePlayer, initKazagumo, isLavalinkReady, previousTrack, pushHistory, searchTrack, seekRelative, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
 import {buildJukeboxPanel, buildTrackProposal} from "./nexaComponents";
-import {applyFilterSet} from "./nexaFilters";
+import {applyFilterSet, getActiveFilters} from "./nexaFilters";
 
 dotenv.config();
 
@@ -20,9 +20,15 @@ const pendingTracks = new Map<string, { track: Track; tracks: Track[]; guildId: 
 const closingTimers = new Map<string, { timer: ReturnType<typeof setTimeout>; endsAt: number }>();
 // ── Dernière track jouée par guildId (pour l'historique au queueEnd)
 const lastPlayedTrack = new Map<string, Track>();
+// ── Filtre actif au moment de la fermeture (pour le restaurer au restart)
+const savedFilterOnClose = new Map<string, string | null>();
 
 export function getClosingTimer(guildId: string): { endsAt: number } | undefined {
     return closingTimers.get(guildId);
+}
+
+export function getSavedFilter(guildId: string): string | null | undefined {
+    return savedFilterOnClose.get(guildId);
 }
 
 function cancelClosingTimer(guildId: string) {
@@ -147,12 +153,22 @@ export class NexaBot {
                 }
             }
 
+            // Sauvegarder le filtre actif pour le restaurer si on relance
+            try {
+                const activeFilters = getActiveFilters(player);
+                const FILTERS = (await import("./nexaFilters")).FILTERS;
+                const activeId = FILTERS.find(f => activeFilters.has(f.id))?.id ?? null;
+                savedFilterOnClose.set(player.guildId, activeId);
+            } catch {
+                savedFilterOnClose.set(player.guildId, null);
+            }
+
             const CLOSE_DELAY = 5 * 60 * 1000;
             const endsAt = Date.now() + CLOSE_DELAY;
 
             const countdownInterval = setInterval(async () => {
                 await this.refreshPanel(player.guildId);
-            }, 10_000);
+            }, 5_000);
 
             const closeTimer = setTimeout(async () => {
                 clearInterval(countdownInterval);
@@ -444,6 +460,12 @@ export class NexaBot {
                 if (!player) return;
                 cancelClosingTimer(guildId);
                 await previousTrack(guildId);
+                // Réappliquer le filtre sauvegardé si on vient du mode fermeture
+                if (savedFilterOnClose.has(guildId)) {
+                    const savedFilter = savedFilterOnClose.get(guildId) ?? null;
+                    savedFilterOnClose.delete(guildId);
+                    if (savedFilter) await applyFilterSet(player, [savedFilter]);
+                }
                 break;
 
             case "nexa_playpause":
@@ -465,12 +487,15 @@ export class NexaBot {
             case "nexa_restart_queue": {
                 if (!player) return;
                 cancelClosingTimer(guildId);
+                const savedFilter = savedFilterOnClose.get(guildId) ?? null;
+                savedFilterOnClose.delete(guildId);
                 const hist = getHistory(guildId);
                 if (hist.length > 0) {
                     for (const t of hist) {
                         player.queue.add(t);
                     }
                     await player.play();
+                    if (savedFilter) await applyFilterSet(player, [savedFilter]);
                 }
                 await this.refreshPanel(guildId);
                 break;
