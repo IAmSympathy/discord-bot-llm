@@ -158,8 +158,11 @@ export async function previousTrack(guildId: string): Promise<void> {
     trackHistory.set(guildId, hist);
 
     // Remettre la track courante en tête de file SANS la re-pousser dans l'historique
-    skipNextPush.add(guildId);
-    if (player.queue.current) player.queue.add(player.queue.current, 0);
+    // Seulement si une track est en cours — en mode fermeture (current=null), pas besoin
+    if (player.queue.current) {
+        skipNextPush.add(guildId);
+        player.queue.add(player.queue.current, 0);
+    }
     await player.play({track: prev});
 }
 

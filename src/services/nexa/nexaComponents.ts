@@ -184,7 +184,7 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
             const currentTitle = info.title.length > 44 ? info.title.slice(0, 43) + "…" : info.title;
             const lines = [
                 prevTrack ? fmtLine(prevTrack, " ") : " ",
-                `▶ ${currentTitle} (${info.duration})`,
+                `‎ ‎ ‎ ▶ ${currentTitle} (${info.duration})`,
                 nextTrack ? fmtLine(nextTrack, " ") : " ",
             ];
             const posMs = (player as any)?.position ?? 0;
