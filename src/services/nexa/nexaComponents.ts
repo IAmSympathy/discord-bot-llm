@@ -137,7 +137,7 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
             new TextDisplayBuilder().setContent(
                 [
                     `## 💽 Nexa's Jukebox - Mode Requêtes`,
-                    `*[${info.title}](${info.url})*`,
+                    `**[${info.title}](${info.url})**`,
                     [
                         `${info.sourceEmoji} ${info.channel}`,
                         info.isLive ? `🔴 LIVE` : `⏱️ ${info.duration}`,
