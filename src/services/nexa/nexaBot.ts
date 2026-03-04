@@ -7,7 +7,7 @@
 import {Client, Events, GatewayIntentBits, type Message, MessageFlags, TextChannel,} from "discord.js";
 import * as dotenv from "dotenv";
 import type {Player, Track} from "lavalink-client";
-import {getKazagumo, getOrCreatePlayer, initKazagumo, isLavalinkReady, previousTrack, searchTrack, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
+import {getHistory, getKazagumo, getOrCreatePlayer, initKazagumo, isLavalinkReady, previousTrack, pushHistory, searchTrack, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
 import {buildJukeboxPanel, buildTrackProposal} from "./nexaComponents";
 
 dotenv.config();
