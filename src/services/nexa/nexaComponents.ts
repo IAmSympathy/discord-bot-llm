@@ -227,11 +227,9 @@ export async function buildJukeboxPanel(player: Player | null, history: Track[] 
 
             const total = history.length + 1 + queue.length;
             // Titre avec temps restant aligné à droite via padding (monospace -#)
-            const label = "📋 Liste de lecture:";
-            const timeLabel = `${remainingFmt} restant`;
-            const PAD = 42; // largeur approximative du conteneur en monospace
-            const gap = Math.max(1, PAD - label.length - timeLabel.length);
-            const header = `**${label}**${"‎".repeat(gap)}*${timeLabel}*`;
+            const label = "📋 Liste de lecture";
+            const timeLabel = `(${remainingFmt} restant)`;
+            const header = `**${label}**‎ ${timeLabel}`;
             const footer = `\n-# *${total} titre${total > 1 ? "s" : ""} au total*`;
 
             container.addTextDisplayComponents(

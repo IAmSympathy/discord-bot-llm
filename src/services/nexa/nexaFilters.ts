@@ -53,16 +53,17 @@ export function getActiveFilters(player: Player): Set<string> {
     const activeBands = eqBands.filter((b: any) => b != null && b.gain !== 0);
     if (activeBands.length > 0) {
         const sig = (bands: any[]) => bands
+            .filter((b: any) => b != null && b.gain !== 0)  // ignorer les bandes à 0 des deux côtés
             .map((b: any) => `${b.band}:${Math.round(b.gain * 10000)}`)
             .sort()
             .join(",");
         const activeSig = sig(activeBands);
         let matched = false;
         for (const [id, presetBands] of Object.entries(EQ_PRESETS)) {
-            if (sig(presetBands) === activeSig) {
-                active.add(id);
-                matched = true;
-                break;
+            if (sig(presetBands) === activeSig) { active.add(id); matched = true; break; }
+        }
+        if (!matched) active.add("_eq");
+    }
             }
         }
         if (!matched) active.add("_eq");
