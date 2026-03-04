@@ -7,7 +7,7 @@
 import {Client, Events, GatewayIntentBits, type Message, MessageFlags, TextChannel,} from "discord.js";
 import * as dotenv from "dotenv";
 import type {Player, Track} from "lavalink-client";
-import {getKazagumo, getOrCreatePlayer, initKazagumo, isLavalinkReady, searchTrack, setVolume, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
+import {getKazagumo, getOrCreatePlayer, initKazagumo, isLavalinkReady, searchTrack, skipTrack, stopPlayback, togglePause,} from "./musicPlayer";
 import {buildJukeboxPanel, buildTrackProposal} from "./nexaComponents";
 
 dotenv.config();
@@ -94,7 +94,7 @@ export class NexaBot {
         } catch { /* manager pas encore prêt */
         }
 
-        const options = buildJukeboxPanel(player ?? null);
+        const options = await buildJukeboxPanel(player ?? null);
 
         // Essaie d'éditer le message existant
         const existingId = this.controlMessages.get(guildId);
@@ -320,20 +320,6 @@ export class NexaBot {
             case "nexa_shuffle": {
                 if (!player) return;
                 player.queue.shuffle();
-                await this.refreshPanel(guildId);
-                break;
-            }
-
-            case "nexa_vol_down": {
-                if (!player) return;
-                await setVolume(guildId, (player.volume ?? 80) - 10);
-                await this.refreshPanel(guildId);
-                break;
-            }
-
-            case "nexa_vol_up": {
-                if (!player) return;
-                await setVolume(guildId, (player.volume ?? 80) + 10);
                 await this.refreshPanel(guildId);
                 break;
             }

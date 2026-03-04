@@ -3,6 +3,8 @@
  */
 
 import * as path from "path";
+import * as https from "https";
+import * as http from "http";
 import {ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags, SeparatorBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, TextDisplayBuilder,} from "discord.js";
 import type {Player, Track} from "lavalink-client";
 
@@ -12,6 +14,24 @@ const PLACEHOLDER_URL = `attachment://${PLACEHOLDER_FILENAME}`;
 
 function makePlaceholderAttachment(): AttachmentBuilder {
     return new AttachmentBuilder(PLACEHOLDER_PATH, {name: PLACEHOLDER_FILENAME});
+}
+
+/** Télécharge une thumbnail distante en Buffer et la retourne comme AttachmentBuilder */
+async function fetchThumbnailAttachment(url: string): Promise<AttachmentBuilder | null> {
+    try {
+        const buffer = await new Promise<Buffer>((resolve, reject) => {
+            const proto = url.startsWith("https") ? https : http;
+            proto.get(url, (res) => {
+                const chunks: Buffer[] = [];
+                res.on("data", (c: Buffer) => chunks.push(c));
+                res.on("end", () => resolve(Buffer.concat(chunks)));
+                res.on("error", reject);
+            }).on("error", reject);
+        });
+        return new AttachmentBuilder(buffer, {name: "thumb.jpg"});
+    } catch {
+        return null;
+    }
 }
 
 function fmt(ms: number): string {
@@ -37,34 +57,38 @@ export function trackToDisplay(t: Track) {
 }
 
 /** Construit le message Components V2 du panneau jukebox */
-export function buildJukeboxPanel(player: Player | null): { components: any[]; flags: number; files?: AttachmentBuilder[] } {
+export async function buildJukeboxPanel(player: Player | null): Promise<{ components: any[]; flags: number; files?: AttachmentBuilder[] }> {
     const container = new ContainerBuilder();
 
     const current = player?.queue?.current as Track | null | undefined;
     const isPaused = player?.paused ?? false;
     const isPlaying = !!current;
     const repeatMode = player?.repeatMode ?? "off";
-    const volume = player?.volume ?? 80;
     const queue = (player?.queue?.tracks ?? []) as Track[];
 
-    // ── Grande image (thumbnail ou placeholder pour garder une taille constante)
     if (current) {
         const info = trackToDisplay(current);
+
+        // Thumbnail : téléchargée comme attachment pour taille uniforme
+        let thumbUrl = PLACEHOLDER_URL;
+        let files: AttachmentBuilder[] = [makePlaceholderAttachment()];
+        if (info.thumbnail) {
+            const thumbAttachment = await fetchThumbnailAttachment(info.thumbnail);
+            if (thumbAttachment) {
+                thumbUrl = "attachment://thumb.jpg";
+                files = [thumbAttachment];
+            }
+        }
+
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                `## 🎵 Nexa — En écoute\n**[${info.title}](${info.url})**\n-# 📺 ${info.channel}${info.isLive ? " · 🔴 LIVE" : ` · ⏱️ ${info.duration}`}${info.requestedBy ? ` · demandé par **${info.requestedBy}**` : ""}`
+                `## 💽 Nexa's Jukebox — Joue\n**[${info.title}](${info.url})**\n-# 📺 ${info.channel}${info.isLive ? " · 🔴 LIVE" : ` · ⏱️ ${info.duration}`}${info.requestedBy ? ` · demandé par **${info.requestedBy}**` : ""}`
             )
         );
-        const thumbUrl = info.thumbnail || PLACEHOLDER_URL;
-        const files = info.thumbnail ? undefined : [makePlaceholderAttachment()];
         container.addMediaGalleryComponents(
-            new MediaGalleryBuilder().addItems(
-                new MediaGalleryItemBuilder().setURL(thumbUrl)
-            )
+            new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(thumbUrl))
         );
-
         container.addSeparatorComponents(new SeparatorBuilder());
-
         container.addActionRowComponents(
             new ActionRowBuilder<ButtonBuilder>().addComponents(
                 new ButtonBuilder()
@@ -93,25 +117,6 @@ export function buildJukeboxPanel(player: Player | null): { components: any[]; f
                     .setDisabled(queue.length < 2),
             )
         );
-        container.addActionRowComponents(
-            new ActionRowBuilder<ButtonBuilder>().addComponents(
-                new ButtonBuilder()
-                    .setCustomId("nexa_vol_down")
-                    .setLabel("🔉 -10%")
-                    .setStyle(ButtonStyle.Secondary)
-                    .setDisabled(!isPlaying),
-                new ButtonBuilder()
-                    .setCustomId("nexa_vol_up")
-                    .setLabel("🔊 +10%")
-                    .setStyle(ButtonStyle.Secondary)
-                    .setDisabled(!isPlaying),
-                new ButtonBuilder()
-                    .setCustomId("nexa_vol_info")
-                    .setLabel(`Volume : ${volume}%`)
-                    .setStyle(ButtonStyle.Secondary)
-                    .setDisabled(true),
-            )
-        );
         container.addSeparatorComponents(new SeparatorBuilder());
         if (queue.length > 0) {
             const lines = queue.slice(0, 5).map((t, i) => {
@@ -128,41 +133,26 @@ export function buildJukeboxPanel(player: Player | null): { components: any[]; f
             );
         }
 
-        return {components: [container], flags: MessageFlags.IsComponentsV2, ...(files ? {files} : {})};
+        return {components: [container], flags: MessageFlags.IsComponentsV2, files};
     } else {
         container.addTextDisplayComponents(
             new TextDisplayBuilder().setContent(
-                "## 🎵 Nexa — Jukebox\n*Aucune musique en cours.*\n-# Envoie le titre d'une chanson dans ce salon pour lancer la lecture !"
+                "## 💽 Nexa's Jukebox\n*Aucune musique en cours.*\n-# Envoie le titre d'une chanson dans ce salon pour lancer la lecture !"
             )
         );
         container.addMediaGalleryComponents(
-            new MediaGalleryBuilder().addItems(
-                new MediaGalleryItemBuilder().setURL(PLACEHOLDER_URL)
-            )
+            new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(PLACEHOLDER_URL))
         );
-
         container.addSeparatorComponents(new SeparatorBuilder());
-
-        const repeatModeIdle = player?.repeatMode ?? "off";
-        const volumeIdle = player?.volume ?? 80;
-
         container.addActionRowComponents(
             new ActionRowBuilder<ButtonBuilder>().addComponents(
                 new ButtonBuilder().setCustomId("nexa_playpause").setLabel("⏸ Pause").setStyle(ButtonStyle.Primary).setDisabled(true),
                 new ButtonBuilder().setCustomId("nexa_skip").setLabel("⏭ Skip").setStyle(ButtonStyle.Secondary).setDisabled(true),
                 new ButtonBuilder().setCustomId("nexa_stop").setLabel("⏹ Stop").setStyle(ButtonStyle.Danger).setDisabled(true),
-                new ButtonBuilder().setCustomId("nexa_loop").setLabel("🔁 Loop : Off").setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder().setCustomId("nexa_loop").setLabel("🔁 Loop : Off").setStyle(ButtonStyle.Secondary).setDisabled(true),
                 new ButtonBuilder().setCustomId("nexa_shuffle").setLabel("🔀 Shuffle").setStyle(ButtonStyle.Secondary).setDisabled(true),
             )
         );
-        container.addActionRowComponents(
-            new ActionRowBuilder<ButtonBuilder>().addComponents(
-                new ButtonBuilder().setCustomId("nexa_vol_down").setLabel("🔉 -10%").setStyle(ButtonStyle.Secondary).setDisabled(true),
-                new ButtonBuilder().setCustomId("nexa_vol_up").setLabel("🔊 +10%").setStyle(ButtonStyle.Secondary).setDisabled(true),
-                new ButtonBuilder().setCustomId("nexa_vol_info").setLabel(`Volume : ${volumeIdle}%`).setStyle(ButtonStyle.Secondary).setDisabled(true),
-            )
-        );
-
         return {components: [container], flags: MessageFlags.IsComponentsV2, files: [makePlaceholderAttachment()]};
     }
 }

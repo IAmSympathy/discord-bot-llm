@@ -246,7 +246,8 @@ export function registerWatchedChannelResponder(client: Client) {
 
             // Vérifier si c'est le salon compteur
             const COUNTER_CHANNEL_ID = EnvConfig.COUNTER_CHANNEL_ID;
-            if (COUNTER_CHANNEL_ID && message.channelId === COUNTER_CHANNEL_ID && !message.author.bot) {
+            const MUSIC_CHANNEL_ID = EnvConfig.NEXA_MUSIC_CHANNEL_ID;
+            if (COUNTER_CHANNEL_ID && message.channelId === COUNTER_CHANNEL_ID && !message.author.bot && message.channelId !== MUSIC_CHANNEL_ID) {
                 // Gérer le message du compteur (validera et supprimera si invalide)
                 const isValid = await handleCounterMessage(message);
 
