@@ -35,7 +35,7 @@ module.exports = {
             out_file: "/home/ubuntu/discord-bot-llm/logs/bot-out.log",
             error_file: "/home/ubuntu/discord-bot-llm/logs/bot-err.log",
             merge_logs: true,
-        }
+        },
         {
             name: "potoken-renewer",
             script: "/home/ubuntu/potoken-gen/gen2.mjs",

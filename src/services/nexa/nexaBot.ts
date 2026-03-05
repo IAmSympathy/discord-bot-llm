@@ -42,20 +42,9 @@ function cancelClosingTimer(guildId: string) {
 // ── Cache lyrics disponibles par trackIdentifier (true/false/undefined=inconnu)
 const lyricsAvailableCache = new Map<string, boolean>();
 
-async function checkLyricsAvailable(player: Player, track: Track): Promise<boolean> {
-    const id = (track.info as any).identifier ?? track.info.uri ?? "";
-    if (lyricsAvailableCache.has(id)) return lyricsAvailableCache.get(id)!;
-    try {
-        const result = await (player as any).getLyrics(track, true).catch(() => null);
-        let hasLyrics = false;
-        if (result?.lines && Array.isArray(result.lines) && result.lines.length > 0) hasLyrics = true;
-        else if (typeof result === "string" && result.length > 10) hasLyrics = true;
-        lyricsAvailableCache.set(id, hasLyrics);
-        return hasLyrics;
-    } catch {
-        lyricsAvailableCache.set(id, false);
-        return false;
-    }
+async function checkLyricsAvailable(_player: Player, _track: Track): Promise<boolean> {
+    // Désactivé - le plugin lavalyrics n'est pas configuré sur le serveur
+    return false;
 }
 
 export class NexaBot {

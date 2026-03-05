@@ -1,4 +1,4 @@
-import {AudioPlayerStatus, createAudioPlayer, createAudioResource, getVoiceConnection, joinVoiceChannel} from "@discordjs/voice";
+import {AudioPlayerStatus, createAudioPlayer, createAudioResource, entersState, getVoiceConnection, joinVoiceChannel, VoiceConnectionStatus} from "@discordjs/voice";
 import {VoiceBasedChannel} from "discord.js";
 import * as path from "path";
 import * as fs from "fs";
@@ -31,7 +31,48 @@ export class KlodovikVoiceService {
         if (!this.canJoinChannel(channel)) {
             return false;
         }
+        return this._doPlaySound(channel);
+    }
 
+    /**
+     * Forcer l'apparition de Klodovik dans un salon vocal (bypass des checks habituels)
+     * Utilisé par la commande /ahuaah
+     */
+    public async playRandomSoundForced(channel: VoiceBasedChannel): Promise<boolean> {
+        const soundFile = this.getRandomSound();
+        if (!soundFile) {
+            return false;
+        }
+        // Détruire une éventuelle connexion existante avant de rejoindre
+        const existingConnection = getVoiceConnection(channel.guild.id);
+        if (existingConnection) {
+            existingConnection.destroy();
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        if (this.isPlaying) {
+            this.isPlaying = false;
+        }
+        return this._doPlaySound(channel);
+    }
+
+    /**
+     * Vérifie si le service est prêt (au moins 1 son disponible)
+     */
+    public isReady(): boolean {
+        return this.getAvailableSounds().length > 0;
+    }
+
+    /**
+     * Obtient le nombre de sons disponibles
+     */
+    public getSoundsCount(): number {
+        return this.getAvailableSounds().length;
+    }
+
+    /**
+     * Logique interne de connexion au vocal et lecture du son
+     */
+    private async _doPlaySound(channel: VoiceBasedChannel): Promise<boolean> {
         const soundFile = this.getRandomSound();
         if (!soundFile) {
             return false;
@@ -48,6 +89,16 @@ export class KlodovikVoiceService {
                 adapterCreator: channel.guild.voiceAdapterCreator as any,
             });
 
+            // Attendre que la connexion soit prête avant de jouer
+            try {
+                await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
+            } catch {
+                console.error("[Klodovik Voice] La connexion n'a pas pu atteindre l'état Ready dans le temps imparti");
+                connection.destroy();
+                this.isPlaying = false;
+                return false;
+            }
+
             // Créer le lecteur audio
             const player = createAudioPlayer();
 
@@ -59,7 +110,7 @@ export class KlodovikVoiceService {
                 inlineVolume: true,
             });
 
-            // Définir le volume aléatoire (entre 50% et 100%)
+            // Définir le volume aléatoire (entre 20% et 60%)
             resource.volume?.setVolume(volume);
 
             console.log(`[Klodovik Voice] Son: ${soundFile} | Volume: ${Math.round(volume * 100)}%`);
@@ -74,6 +125,12 @@ export class KlodovikVoiceService {
             // Quitter automatiquement après la fin du son
             player.on(AudioPlayerStatus.Idle, () => {
                 console.log("[Klodovik Voice] Son terminé, déconnexion...");
+                connection.destroy();
+                this.isPlaying = false;
+            });
+
+            player.on("error", (error) => {
+                console.error("[Klodovik Voice] Erreur du lecteur audio:", error);
                 connection.destroy();
                 this.isPlaying = false;
             });
@@ -93,20 +150,6 @@ export class KlodovikVoiceService {
             this.isPlaying = false;
             return false;
         }
-    }
-
-    /**
-     * Vérifie si le service est prêt (au moins 1 son disponible)
-     */
-    public isReady(): boolean {
-        return this.getAvailableSounds().length > 0;
-    }
-
-    /**
-     * Obtient le nombre de sons disponibles
-     */
-    public getSoundsCount(): number {
-        return this.getAvailableSounds().length;
     }
 
     /**

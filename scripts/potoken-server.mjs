@@ -1,9 +1,9 @@
 /**
  * Serveur HTTP qui génère et expose poToken + visitorData pour Lavalink.
- * Port 8080 — Lavalink le consulte via tokenEndpoint.
+ * Port 8080 — Utilise youtube-po-token-generator (headless Chrome).
  */
-import {BG} from "bgutils-js";
 import {createServer} from "http";
+import {generate} from "youtube-po-token-generator";
 
 let cachedToken = null;
 let lastGenerated = 0;
@@ -14,32 +14,14 @@ async function generateToken() {
     if (cachedToken && now - lastGenerated < TTL) return cachedToken;
 
     try {
-        const requestKey = "O43z0dpjhgX20SCx4KAo";
-        const bgConfig = {
-            fetch: (url, opts) => fetch(url, opts),
-            globalObj: globalThis,
-        };
-
-        const bg = await BG.challenge.create(bgConfig);
-        const bgChallenge = await BG.challenge.solve(bg);
-
-        if (!bgChallenge) throw new Error("BG challenge failed");
-
-        const poToken = await BG.PoToken.generate({
-            program: bgChallenge.program,
-            globalName: bgChallenge.globalName,
-            bgConfig,
-        });
-
-        // visitorData : générer un identifiant stable
-        const visitorData = Buffer.from(JSON.stringify({t: Date.now()})).toString("base64");
-
-        cachedToken = {poToken, visitorData};
-        lastGenerated = now;
-        console.log(`[potoken] Generated poToken: ${poToken.substring(0, 20)}...`);
+        console.log(`[potoken] Generating new token...`);
+        const result = await generate();
+        cachedToken = {poToken: result.poToken, visitorData: result.visitorData};
+        lastGenerated = Date.now();
+        console.log(`[potoken] Generated: ${result.poToken.substring(0, 20)}... vd: ${result.visitorData.substring(0, 20)}...`);
         return cachedToken;
     } catch (err) {
-        console.error("[potoken] Error generating token:", err.message);
+        console.error("[potoken] Error:", err.message);
         return null;
     }
 }
@@ -65,7 +47,5 @@ const server = createServer(async (req, res) => {
 
 server.listen(8080, "127.0.0.1", () => {
     console.log("[potoken] Server running on http://127.0.0.1:8080");
-    // Pré-génère au démarrage
     generateToken().catch(console.error);
 });
-

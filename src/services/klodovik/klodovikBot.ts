@@ -184,6 +184,9 @@ export class KlodovikBot {
                     case "klodovik-whitelist":
                         await this.handleWhitelistCommand(interaction);
                         break;
+                    case "ahuaah":
+                        await this.handleAhuaahCommand(interaction);
+                        break;
                 }
             } catch (error) {
                 console.error(`[Klodovik] Erreur dans la commande ${commandName}:`, error);
@@ -334,6 +337,10 @@ export class KlodovikBot {
                         ],
                     },
                 ],
+            },
+            {
+                name: "ahuaah",
+                description: "[TAH-UM] 🦎 Invoquer Klodovik dans le salon vocal actuel",
             },
         ];
 
@@ -699,6 +706,60 @@ export class KlodovikBot {
                 // Log Discord
                 await logKlodovikWhitelist(username, "clear", undefined, 0, avatarUrl);
                 break;
+        }
+    }
+
+    /**
+     * Gère la commande /ahuaah — Invocation forcée de Klodovik dans le vocal
+     */
+    private async handleAhuaahCommand(interaction: any): Promise<void> {
+        // Réservé aux Owners uniquement
+        const member = interaction.member instanceof GuildMember ? interaction.member : null;
+
+        if (!hasOwnerPermission(member)) {
+            await replyWithError(
+                interaction,
+                "Permission refusée",
+                "Vous n'avez pas la permission d'utiliser cette commande.\n\n*Cette commande est réservée à Tah-Um uniquement.*",
+                true
+            );
+            return;
+        }
+
+        // Vérifier que l'utilisateur est dans un salon vocal
+        const voiceChannel = member?.voice?.channel;
+        if (!voiceChannel || !voiceChannel.isVoiceBased()) {
+            await replyWithError(
+                interaction,
+                "Aucun salon vocal",
+                "Vous devez être dans un salon vocal pour invoquer Klodovik !",
+                true
+            );
+            return;
+        }
+
+        await interaction.deferReply({ephemeral: true});
+
+        const voiceService = KlodovikVoiceService.getInstance();
+
+        if (!voiceService.isReady()) {
+            await interaction.editReply({
+                content: "⚠️ Aucun fichier audio disponible dans `assets/klodovik_sounds/`. Klodovik ne peut pas apparaître.",
+            });
+            return;
+        }
+
+        const played = await voiceService.playRandomSoundForced(voiceChannel);
+
+        if (played) {
+            await interaction.editReply({
+                content: `🦎 **AHUAAH !** Klodovik débarque dans **${voiceChannel.name}** !`,
+            });
+            console.log(`[Klodovik Voice] 🎯 Invocation forcée dans ${voiceChannel.name} par ${interaction.user?.username}`);
+        } else {
+            await interaction.editReply({
+                content: "❌ Klodovik n'a pas pu rejoindre le salon vocal. Vérifiez les permissions du bot.",
+            });
         }
     }
 
