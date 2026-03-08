@@ -345,7 +345,7 @@ export class KlodovikBot {
                 integration_types: [0], // Guild install uniquement
                 options: [
                     {
-                        name: "salon",
+                        name: "channel",
                         description: "Salon vocal cible (par défaut : votre salon vocal actuel)",
                         type: 7, // CHANNEL
                         required: false,

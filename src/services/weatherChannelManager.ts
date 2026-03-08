@@ -7,7 +7,7 @@ const logger = createLogger("WeatherChannelManager");
 
 // Liste des emojis météo possibles (incluant toutes les phases de lune)
 const WEATHER_EMOJIS = ['☀️', '🌤️', '⛅', '☁️', '🌧️', '🌦️', '⛈️', '🌨️', '❄️', '🌫️', '💨', '🌪️', '🌡️', '🌩️', '🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
-const UPDATE_INTERVAL = 10 * 60 * 1000; // 10 minutes
+const UPDATE_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 let weatherChannelId: string | null = null;
 let updateInterval: NodeJS.Timeout | null = null;

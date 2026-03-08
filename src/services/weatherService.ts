@@ -231,7 +231,7 @@ export async function getSherbrookeWeather(): Promise<WeatherData | null> {
  * Formatte la météo pour le nom du canal vocal
  */
 export function formatWeatherChannelName(weather: WeatherData): string {
-    return `${weather.emoji} ${weather.condition}, ${weather.temperature}°`;
+    return `${weather.emoji} ${weather.condition}『${weather.temperature}°』`;
 }
 
 /**

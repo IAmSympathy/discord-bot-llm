@@ -2,12 +2,64 @@ import * as fs from "fs";
 import * as path from "path";
 import {createLogger} from "../utils/logger";
 import {DATA_DIR} from "../utils/constants";
-import {Message, TextChannel} from "discord.js";
+import {Client, Message, TextChannel} from "discord.js";
+import {EnvConfig} from "../utils/envConfig";
 import {checkCounterChallengeProgress} from "./randomEventsService";
 import {recordCounterContributionStats} from "./statsRecorder";
 
 const logger = createLogger("CounterService");
 const COUNTER_STATE_FILE = path.join(DATA_DIR, "counter_state.json");
+
+// Rate limit Discord : max 2 renommages de salon par 10 minutes
+const CHANNEL_RENAME_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+let lastChannelRenameTime = 0;
+
+/**
+ * Met à jour le nom du salon compteur pour afficher le nombre actuel.
+ * Respecte le rate limit Discord (~2 renommages / 10 min).
+ */
+async function updateCounterChannelName(channel: TextChannel, count: number): Promise<void> {
+    const now = Date.now();
+    if (now - lastChannelRenameTime < CHANNEL_RENAME_COOLDOWN_MS) return;
+    try {
+        const newName = `┃🧮┃compteur『${count}』`;
+        await channel.setName(newName);
+        lastChannelRenameTime = now;
+        logger.info(`[Counter] Channel renamed to "${newName}"`);
+    } catch (error) {
+        logger.warn("[Counter] Failed to rename channel (rate limit or permissions):", error);
+    }
+}
+
+/**
+ * Démarre un interval qui vérifie toutes les 5 minutes si le nom du salon
+ * doit être mis à jour (utile si personne n'a compté depuis longtemps).
+ */
+export function startCounterChannelNameUpdater(client: Client): void {
+    const INTERVAL_MS = CHANNEL_RENAME_COOLDOWN_MS; // 5 minutes
+
+    setInterval(async () => {
+        const channelId = EnvConfig.COUNTER_CHANNEL_ID;
+        if (!channelId) return;
+
+        try {
+            const channel = await client.channels.fetch(channelId) as TextChannel | null;
+            if (!channel) return;
+
+            const state = loadCounterState();
+            const expectedName = `┃🧮┃compteur『${state.currentNumber}』`;
+
+            // Ne renommer que si le nom est différent (évite un call inutile)
+            if (channel.name !== expectedName) {
+                await updateCounterChannelName(channel, state.currentNumber);
+            }
+        } catch (error) {
+            logger.warn("[Counter] Periodic channel name check failed:", error);
+        }
+    }, INTERVAL_MS);
+
+    logger.info(`[Counter] Periodic channel name updater started (every ${INTERVAL_MS / 60000} min)`);
+}
 
 interface CounterState {
     currentNumber: number;
@@ -337,6 +389,9 @@ export async function handleCounterMessage(message: Message): Promise<boolean> {
     );
 
     logger.info(`Counter: ${message.author.username} counted ${number}`);
+
+    // Mettre à jour le nom du salon pour afficher le nombre actuel (cooldown 5 min)
+    await updateCounterChannelName(message.channel as TextChannel, number);
 
     return true;
 }

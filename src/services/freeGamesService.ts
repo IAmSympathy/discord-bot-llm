@@ -6,6 +6,10 @@ import * as path from "path";
 
 const logger = createLogger("FreeGamesService");
 
+// Rate limit Discord : max 2 renommages de salon par 10 minutes
+const CHANNEL_RENAME_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+let lastChannelRenameTime = 0;
+
 const API_BASE_URL = "https://api.freestuffbot.xyz/v2";
 const COMPATIBILITY_DATE = "2025-03-01";
 const STATE_FILE = path.join(process.cwd(), "data", "free_games_state.json");
@@ -144,6 +148,37 @@ function saveFilterConfig(config: FreeGamesConfig): void {
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf-8");
     } catch (error) {
         logger.error("Error saving filter config:", error);
+    }
+}
+
+/**
+ * Met à jour le nom du salon freestuff pour afficher le nombre de promotions actives.
+ * Lit l'état depuis le fichier — ne se déclenche que lors de nouvelles promos ou au démarrage.
+ * Respecte le rate limit Discord (~2 renommages / 10 min).
+ */
+async function updateFreeGamesChannelName(client: Client): Promise<void> {
+    const channelId = EnvConfig.FREE_GAMES_CHANNEL_ID;
+    if (!channelId) return;
+
+    const now = Date.now();
+    if (now - lastChannelRenameTime < CHANNEL_RENAME_COOLDOWN_MS) return;
+
+    try {
+        const channel = await client.channels.fetch(channelId) as TextChannel | null;
+        if (!channel) return;
+
+        const state = loadState();
+        const nowSec = Math.floor(Date.now() / 1000);
+        const activeCount = (state.currentGames || []).filter(p => p.until === 0 || p.until > nowSec).length;
+
+        const newName = `┃🎁┃promos『${activeCount}』`;
+        if (channel.name === newName) return;
+
+        await channel.setName(newName);
+        lastChannelRenameTime = now;
+        logger.info(`[FreeGames] Channel renamed to "${newName}"`);
+    } catch (error) {
+        logger.warn("[FreeGames] Failed to rename channel (rate limit or permissions):", error);
     }
 }
 
@@ -625,6 +660,9 @@ export async function processAnnouncement(client: Client, announcement: Resolved
 
         saveState(state);
 
+        // Mettre à jour le nom du salon avec le nombre de promos actives
+        await updateFreeGamesChannelName(client);
+
         logger.info(`Processed announcement ${announcement.id} with ${announcement.resolvedProducts.length} product(s)`);
     } catch (error) {
         logger.error(`Error processing announcement ${announcement.id}:`, error);
@@ -726,6 +764,13 @@ export async function initializeFreeGamesService(client: Client): Promise<void> 
         saveState(state);
         logger.info(`Cleaned old game notifications (kept last 1000)`);
     }
+
+    // Mettre à jour le nom du salon au démarrage (reflète l'état actuel du fichier)
+    setTimeout(() => {
+        updateFreeGamesChannelName(client).catch(error => {
+            logger.warn("[FreeGames] Failed to update channel name at startup:", error);
+        });
+    }, 5000);
 }
 
 

@@ -20,7 +20,7 @@ import {OWNER_ID} from "./services/botStateService";
 import {initializeMemeScheduler} from "./services/memeScheduler";
 import {initializeBirthdayService} from "./services/birthdayService";
 import {initializeYearlyRewindService} from "./services/yearlyRewindService";
-import {initializeCounter} from "./services/counterService";
+import {initializeCounter, startCounterChannelNameUpdater} from "./services/counterService";
 import {initializeActivityMonitor} from "./services/activityMonitor";
 import {EnvConfig} from "./utils/envConfig";
 import {createLogger} from "./utils/logger";
@@ -177,6 +177,8 @@ client.once(Events.ClientReady, async () => {
         } catch (error) {
             logger.error("Error initializing counter:", error);
         }
+        // Démarrer la vérification périodique du nom du salon (toutes les 5 min)
+        startCounterChannelNameUpdater(client);
     }
 
     // Initialiser le moniteur d'activité vocale

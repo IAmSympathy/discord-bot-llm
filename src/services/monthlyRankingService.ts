@@ -301,16 +301,22 @@ export async function processMonthlyRanking(client: Client): Promise<void> {
         // Ajouter le Celestial
         if (celestialWinner) {
             embed.addFields({
-                name: "✨ Bonus Celestial",
-                value: `Un membre chanceux reçoit le rôle <@&${MONTHLY_RANKING_ROLES.CELESTIAL}>: <@${celestialWinner.userId}> ! 🌟`,
+                name: "✨ Bonus",
+                value: `Un membre chanceux reçoit le rôle <@&${MONTHLY_RANKING_ROLES.CELESTIAL}>: <@${celestialWinner.userId}> ! 🌌`,
                 inline: false
             });
         }
 
         embed.setFooter({text: "Les rôles sont réinitialisés chaque mois. Continuez à accumuler de l'XP !"});
 
-        // Envoyer l'annonce avec @everyone
+        // Construire les mentions réelles (hors embed) pour que les pings fonctionnent
+        const mentionParts: string[] = winners.map(w => `<@${w.userId}>`);
+        if (celestialWinner) mentionParts.push(`<@${celestialWinner.userId}>`);
+        const mentions = mentionParts.join(" ");
+
+        // Envoyer l'annonce — les mentions dans `content` génèrent de vrais pings
         await announcementChannel.send({
+            content: mentions,
             embeds: [embed]
         });
 

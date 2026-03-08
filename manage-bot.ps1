@@ -3,7 +3,7 @@
 )
 
 $SSH_KEY = "C:\Users\samyl\Downloads\ssh-key-2026-03-04.key"
-$SERVER = "ubuntu@147.15.132.219"
+$SERVER = "ubuntu@68.233.120.229"
 $SSH_OPTS = "-o StrictHostKeyChecking=no -o ConnectTimeout=15"
 
 # ================================
