@@ -94,9 +94,9 @@ function buildVoiceStatus(channel: VoiceChannel): string {
     ];
 
     const gameCounts = new Map<string, number>();
-    const streamers: typeof members = [];
-    const listeners: typeof members = [];
-    const watchers: typeof members = [];
+    const watchCounts = new Map<string, number>();
+    const listenCounts = new Map<string, number>();
+    const streamCounts = new Map<string, number>();
 
     for (const member of members) {
         const activities = member.presence?.activities ?? [];
@@ -120,67 +120,115 @@ function buildVoiceStatus(channel: VoiceChannel): string {
                 gameCounts.set(dominantName!, (gameCounts.get(dominantName!) ?? 0) + 1);
                 break;
             case ActivityType.Streaming:
-                streamers.push(member);
+                streamCounts.set(dominantName!, (streamCounts.get(dominantName!) ?? 0) + 1);
                 break;
             case ActivityType.Watching:
-                watchers.push(member);
+                watchCounts.set(dominantName!, (watchCounts.get(dominantName!) ?? 0) + 1);
                 break;
             case ActivityType.Listening:
-                listeners.push(member);
+                listenCounts.set(dominantName!, (listenCounts.get(dominantName!) ?? 0) + 1);
                 break;
         }
     }
 
     const sortedGames = [...gameCounts.entries()].sort((a, b) => b[1] - a[1]);
+    const sortedWatches = [...watchCounts.entries()].sort((a, b) => b[1] - a[1]);
+    const sortedListens = [...listenCounts.entries()].sort((a, b) => b[1] - a[1]);
+    const sortedStreams = [...streamCounts.entries()].sort((a, b) => b[1] - a[1]);
+
     const topGameCount = sortedGames[0]?.[1] ?? 0;
+    const topWatchCount = sortedWatches[0]?.[1] ?? 0;
+    const topListenCount = sortedListens[0]?.[1] ?? 0;
+    const topStreamCount = sortedStreams[0]?.[1] ?? 0;
 
-
-    // --- Trouver l'activité la plus représentative (max membres impliqués, min 2) ---
+    // --- Trouver les activités les plus représentatives (min 2 membres) ---
     const scores: { count: number; type: string }[] = [
         {count: topGameCount, type: "game"},
-        {count: streamers.length, type: "stream"},
-        {count: listeners.length, type: "music"},
-        {count: watchers.length, type: "watch"},
+        {count: topStreamCount, type: "stream"},
+        {count: topListenCount, type: "music"},
+        {count: topWatchCount, type: "watch"},
     ];
-    const best = scores.sort((a, b) => b.count - a.count)[0];
+    const sorted = scores.filter(s => s.count >= 2).sort((a, b) => b.count - a.count);
 
-    // Moins de 2 membres concernés → pas assez représentatif
-    if (best.count < 2) return `🎙️ Chill en vocal`;
+    // Aucune activité commune (moins de 2 membres sur la même chose)
+    if (sorted.length === 0) return `🎙️ Chill en vocal`;
 
-    // --- Construire le statut selon l'activité dominante ---
-    switch (best.type) {
-        case "game": {
-            const [topGame, topCount] = sortedGames[0];
+    const best = sorted[0];
+    // Deuxième activité distincte avec au moins 2 membres → toujours affichée en complément
+    const second = sorted.length > 1 ? sorted[1] : null;
 
-            if (sortedGames.length === 1 || sortedGames[1][1] < 2) {
-                // Un seul jeu commun (ou seul avec 2+ joueurs)
-                if (topCount === totalMembers) return `🎮 Tous sur ${topGame}`;
-                return `🎮 ${topCount}/${totalMembers} sur ${topGame}`;
+    // Helper : construit un label court pour une activité donnée
+    function buildActivityLabel(type: string): string {
+        switch (type) {
+            case "game": {
+                const [topGame, topCount] = sortedGames[0];
+                return `🎮 ${topCount} sur ${topGame}`;
             }
-
-            // Deux jeux distincts avec chacun 2+ joueurs
-            const second = sortedGames[1][0];
-            return `🎮 ${topCount} sur ${topGame} • ${second}...`;
-        }
-
-
-        case "stream": {
-            // Chacun stream de son côté → générique
-            return `🎙️ Chill en vocal`;
-        }
-
-        case "music": {
-            // Chacun écoute de son côté → générique
-            return `🎙️ Chill en vocal`;
-        }
-
-        case "watch": {
-            // Chacun regarde de son côté → générique
-            return `🎙️ Chill en vocal`;
+            case "watch": {
+                const [topName, topCount] = sortedWatches[0];
+                return `📺 ${topCount} regardent ${topName}`;
+            }
+            case "music": {
+                const [topName, topCount] = sortedListens[0];
+                return `🎵 ${topCount} écoutent ${topName}`;
+            }
+            case "stream": {
+                const [topName, topCount] = sortedStreams[0];
+                return `📡 ${topCount} streament ${topName}`;
+            }
+            default:
+                return "";
         }
     }
 
-    return `🎙️ Chill en vocal`;
+    // Helper : construit un statut complet pour une activité dominante seule
+    function buildFullStatus(type: string): string {
+        switch (type) {
+            case "game": {
+                const [topGame, topCount] = sortedGames[0];
+                if (sortedGames.length === 1 || sortedGames[1][1] < 2) {
+                    if (topCount === totalMembers) return `🎮 Tous sur ${topGame}`;
+                    return `🎮 ${topCount}/${totalMembers} sur ${topGame}`;
+                }
+                const secondGame = sortedGames[1][0];
+                return `🎮 ${topCount} sur ${topGame} • ${secondGame}...`;
+            }
+            case "watch": {
+                const [topName, topCount] = sortedWatches[0];
+                if (sortedWatches.length === 1 || sortedWatches[1][1] < 2) {
+                    if (topCount === totalMembers) return `📺 Tous regardent ${topName}`;
+                    return `📺 ${topCount}/${totalMembers} regardent ${topName}`;
+                }
+                return `📺 ${topCount} regardent ${topName} • ${sortedWatches[1][0]}...`;
+            }
+            case "music": {
+                const [topName, topCount] = sortedListens[0];
+                if (sortedListens.length === 1 || sortedListens[1][1] < 2) {
+                    if (topCount === totalMembers) return `🎵 Tous écoutent ${topName}`;
+                    return `🎵 ${topCount}/${totalMembers} écoutent ${topName}`;
+                }
+                return `🎵 ${topCount} écoutent ${topName} • ${sortedListens[1][0]}...`;
+            }
+            case "stream": {
+                const [topName, topCount] = sortedStreams[0];
+                if (sortedStreams.length === 1 || sortedStreams[1][1] < 2) {
+                    if (topCount === totalMembers) return `📡 Tous streament ${topName}`;
+                    return `📡 ${topCount}/${totalMembers} streament ${topName}`;
+                }
+                return `📡 ${topCount} streament ${topName} • ${sortedStreams[1][0]}...`;
+            }
+            default:
+                return `🎙️ Chill en vocal`;
+        }
+    }
+
+    // Ex-æquo entre deux activités différentes → combiner les deux labels
+    if (second) {
+        return `${buildActivityLabel(best.type)} • ${buildActivityLabel(second.type)}`;
+    }
+
+    // Une seule activité dominante
+    return buildFullStatus(best.type);
 }
 
 /**
