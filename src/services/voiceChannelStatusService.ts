@@ -151,7 +151,12 @@ function buildVoiceStatus(channel: VoiceChannel): string {
 async function sendStatus(channel: VoiceChannel, state: ChannelRateState): Promise<void> {
     try {
         const status = buildVoiceStatus(channel);
-        await (channel as any).setStatus(status);
+
+        // discord.js 14 n'expose pas setStatus() — on passe par l'API REST directement
+        await channel.client.rest.put(
+            `/channels/${channel.id}/voice-status` as any,
+            {body: {status}}
+        );
 
         state.requestTimestamps.push(Date.now());
         state.pendingUpdate = false;
