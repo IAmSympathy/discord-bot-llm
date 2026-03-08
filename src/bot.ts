@@ -31,6 +31,7 @@ import {initializeLevelRolesForGuild} from "./services/levelRoleService";
 import {initializeRandomEventsService} from "./services/randomEventsService";
 import {initializeFreeGamesService} from "./services/freeGamesService";
 import {setupFreeStuffWebhook} from "./services/freeStuffWebhook";
+import {registerVoiceChannelStatusUpdater} from "./services/voiceChannelStatusService";
 
 
 const logger = createLogger("Bot");
@@ -115,6 +116,9 @@ registerRoleReactionHandler(client);
 
 // Register the voice tracker
 registerVoiceTracker(client);
+
+// Register the voice channel status updater (met à jour le statut vocal en fonction des activités)
+registerVoiceChannelStatusUpdater(client);
 
 // Register the weather channel manager
 registerWeatherChannel(client);
