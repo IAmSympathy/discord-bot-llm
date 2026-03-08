@@ -234,6 +234,8 @@ export function registerVoiceChannelStatusUpdater(client: Client): void {
             }
 
             for (const channel of affected) {
+                const humanMembers = [...channel.members.values()].filter(m => !m.user.bot);
+                if (humanMembers.length === 0) continue; // Salon vide → pas besoin de set le statut
                 await updateChannelStatus(channel);
             }
         } catch (error) {
