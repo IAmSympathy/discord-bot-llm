@@ -15,7 +15,14 @@ interface ChannelRateState {
     debounceTimer?: NodeJS.Timeout;
     pendingUpdate: boolean;       // Une mise à jour est en attente (rate limited)
     pendingTimer?: NodeJS.Timeout;
+    lastBotStatus?: string;       // Dernier statut envoyé par le bot
 }
+
+/** Statuts considérés comme "passifs" : ne pas réécrire si l'utilisateur a changé manuellement */
+const PASSIVE_STATUS_PATTERNS: RegExp[] = [
+    /^👋 .+ attend du monde !$/,
+    /^🎙️ Chill en vocal$/,
+];
 
 const channelStates = new Map<string, ChannelRateState>();
 
@@ -238,6 +245,15 @@ async function sendStatus(channel: VoiceChannel, state: ChannelRateState): Promi
     try {
         const status = buildVoiceStatus(channel);
 
+        // Si le statut calculé est "passif" et identique au dernier statut envoyé par le bot,
+        // on ne réenvoie pas : l'utilisateur a peut-être changé le statut manuellement entre-temps.
+        const isPassive = PASSIVE_STATUS_PATTERNS.some(p => p.test(status));
+        if (isPassive && status === state.lastBotStatus) {
+            logger.debug(`#${channel.name} passive status unchanged ("${status}"), skipping to preserve potential manual edit`);
+            state.pendingUpdate = false;
+            return;
+        }
+
         // discord.js 14 n'expose pas setStatus() — on passe par l'API REST directement
         await channel.client.rest.put(
             `/channels/${channel.id}/voice-status` as any,
@@ -246,6 +262,7 @@ async function sendStatus(channel: VoiceChannel, state: ChannelRateState): Promi
 
         state.requestTimestamps.push(Date.now());
         state.pendingUpdate = false;
+        state.lastBotStatus = status;
 
         logger.info(`Updated status of #${channel.name}: "${status || "(cleared)"}"`);
     } catch (error) {
