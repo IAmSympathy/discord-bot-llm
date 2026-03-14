@@ -74,6 +74,10 @@ export class EnvConfig {
         return process.env.MINECRAFT_ONLINE_CHANNEL_ID;
     }
 
+    static get MINECRAFT_STATUS_SOURCE_USER_ID(): string | undefined {
+        return process.env.MINECRAFT_STATUS_SOURCE_USER_ID;
+    }
+
     static get MINECRAFT_ONLINE_UPDATE_INTERVAL_MS(): number {
         return parseInt(process.env.MINECRAFT_ONLINE_UPDATE_INTERVAL_MS || "60000", 10);
     }

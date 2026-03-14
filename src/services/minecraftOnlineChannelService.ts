@@ -1,10 +1,10 @@
-import {Client, GuildChannel} from "discord.js";
+import {Activity, Client, GuildChannel} from "discord.js";
 import {createLogger} from "../utils/logger";
 import {EnvConfig} from "../utils/envConfig";
 
 const logger = createLogger("MinecraftOnlineChannelService");
 
-const DEFAULT_GUILD_ID = "1482105326021906432";
+const DEFAULT_STATUS_SOURCE_USER_ID = "1482105326021906432";
 const DEFAULT_CHANNEL_ID = "1481902621005713530";
 
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
@@ -15,17 +15,24 @@ const renameTimestamps: number[] = [];
 let pendingName: string | null = null;
 let pendingRenameTimer: NodeJS.Timeout | null = null;
 
-function extractOnlinePlayersFromPresence(client: Client): number | null {
-    const activities = client.user?.presence?.activities ?? [];
-    const pattern = /(\d+)\s*\/\s*\d+\s*(?:players?|joueurs?)/i;
+function extractOnlinePlayersFromActivities(activities: readonly Activity[]): number | null {
+    const patterns = [
+        /(\d+)\s*\/\s*\d+\s*(?:players?|joueurs?)/i,
+        /(?:online|en\s+ligne)\s*[:\-]?\s*(\d+)/i,
+        /(\d+)\s*(?:players?|joueurs?)\s*(?:online|en\s+ligne)?/i,
+    ];
 
     for (const activity of activities) {
         const candidates = [activity.name, activity.state, activity.details];
         for (const value of candidates) {
             if (!value) continue;
-            const match = value.match(pattern);
-            if (match) {
-                return parseInt(match[1], 10);
+            for (const pattern of patterns) {
+                const match = value.match(pattern);
+                if (!match) continue;
+                const onlinePlayers = parseInt(match[1], 10);
+                if (!Number.isNaN(onlinePlayers) && onlinePlayers >= 0) {
+                    return onlinePlayers;
+                }
             }
         }
     }
@@ -62,7 +69,6 @@ function recordRename(now: number): void {
 
 async function getTargetGuildChannel(client: Client): Promise<GuildChannel | null> {
     const channelId = EnvConfig.MINECRAFT_ONLINE_CHANNEL_ID || DEFAULT_CHANNEL_ID;
-    const guildId = EnvConfig.MINECRAFT_STATUS_GUILD_ID || DEFAULT_GUILD_ID;
 
     const channel = await client.channels.fetch(channelId);
     if (!channel) {
@@ -75,13 +81,33 @@ async function getTargetGuildChannel(client: Client): Promise<GuildChannel | nul
         return null;
     }
 
-    const guildChannel = channel as GuildChannel;
-    if (guildChannel.guild.id !== guildId) {
-        logger.warn(`[Minecraft] Channel ${channelId} n'appartient pas au serveur ${guildId}`);
+    return channel as GuildChannel;
+}
+
+async function resolveOnlinePlayersFromSourcePresence(client: Client): Promise<number | null> {
+    const guildChannel = await getTargetGuildChannel(client);
+    if (!guildChannel) return null;
+
+    const sourceUserId = EnvConfig.MINECRAFT_STATUS_SOURCE_USER_ID || DEFAULT_STATUS_SOURCE_USER_ID;
+    const sourceMember = await guildChannel.guild.members.fetch(sourceUserId).catch(() => null);
+    if (!sourceMember) {
+        logger.warn(`[Minecraft] Source presence introuvable (userId: ${sourceUserId})`);
         return null;
     }
 
-    return guildChannel;
+    const activities = sourceMember.presence?.activities ?? [];
+    if (activities.length === 0) {
+        logger.warn(`[Minecraft] Aucune activité de présence détectée pour ${sourceMember.user.username} (${sourceUserId})`);
+        return null;
+    }
+
+    const onlinePlayers = extractOnlinePlayersFromActivities(activities);
+    if (onlinePlayers === null) {
+        logger.warn(`[Minecraft] Impossible d'extraire X depuis les activités de présence de ${sourceMember.user.username}`);
+        return null;
+    }
+
+    return onlinePlayers;
 }
 
 function schedulePendingRename(client: Client, delayMs: number): void {
@@ -146,7 +172,7 @@ export function startMinecraftOnlineChannelUpdater(client: Client): void {
 
     const tick = async () => {
         try {
-            const onlinePlayers = extractOnlinePlayersFromPresence(client);
+            const onlinePlayers = await resolveOnlinePlayersFromSourcePresence(client);
             if (onlinePlayers === null) return;
             await updateMinecraftOnlineChannel(client, onlinePlayers);
         } catch (error) {
