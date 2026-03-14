@@ -17,9 +17,9 @@ let pendingRenameTimer: NodeJS.Timeout | null = null;
 
 function extractOnlinePlayersFromActivities(activities: readonly Activity[]): number | null {
     const patterns = [
-        /(\d+)\s*\/\s*\d+\s*(?:players?|joueurs?)/i,
+        /(\d+)\s*\/\s*\d+\s*(?:in simulation?|players?)/i,
         /(?:online|en\s+ligne)\s*[:\-]?\s*(\d+)/i,
-        /(\d+)\s*(?:players?|joueurs?)\s*(?:online|en\s+ligne)?/i,
+        /(\d+)\s*(?:in simulation?|players?)\s*(?:online|en\s+ligne)?/i,
     ];
 
     for (const activity of activities) {
