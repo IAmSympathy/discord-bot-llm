@@ -82,6 +82,31 @@ export class EnvConfig {
         return parseInt(process.env.MINECRAFT_ONLINE_UPDATE_INTERVAL_MS || "60000", 10);
     }
 
+    static get MINECRAFT_RCON_HOST(): string {
+        return process.env.MINECRAFT_RCON_HOST || "127.0.0.1";
+    }
+
+    static get MINECRAFT_RCON_PORT(): number {
+        return parseInt(process.env.MINECRAFT_RCON_PORT || "25575", 10);
+    }
+
+    static get MINECRAFT_RCON_PASSWORD(): string {
+        return process.env.MINECRAFT_RCON_PASSWORD || "";
+    }
+
+    static get MINECRAFT_RCON_TIMEOUT_MS(): number {
+        return parseInt(process.env.MINECRAFT_RCON_TIMEOUT_MS || "5000", 10);
+    }
+
+    static get MINECRAFT_ONLINE_TOPIC_CHANNEL_ID(): string | undefined {
+        return process.env.MINECRAFT_ONLINE_TOPIC_CHANNEL_ID;
+    }
+
+    static get MINECRAFT_ONLINE_USE_PRESENCE_FALLBACK(): boolean {
+        const value = (process.env.MINECRAFT_ONLINE_USE_PRESENCE_FALLBACK || "1").trim().toLowerCase();
+        return value !== "0" && value !== "false" && value !== "no";
+    }
+
     static get CITATIONS_THREAD_ID(): string | undefined {
         return process.env.CITATIONS_THREAD_ID;
     }

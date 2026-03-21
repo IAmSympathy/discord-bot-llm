@@ -1,6 +1,7 @@
 import {Activity, Client, GuildChannel} from "discord.js";
 import {createLogger} from "../utils/logger";
 import {EnvConfig} from "../utils/envConfig";
+import {Rcon} from "rcon-client";
 
 const logger = createLogger("MinecraftOnlineChannelService");
 
@@ -14,6 +15,11 @@ const RATE_LIMIT_SAFETY_MS = 1000;
 const renameTimestamps: number[] = [];
 let pendingName: string | null = null;
 let pendingRenameTimer: NodeJS.Timeout | null = null;
+
+type OnlineSnapshot = {
+    onlinePlayers: number;
+    players: string[];
+};
 
 function extractOnlinePlayersFromActivities(activities: readonly Activity[]): number | null {
     const patterns = [
@@ -43,6 +49,77 @@ function extractOnlinePlayersFromActivities(activities: readonly Activity[]): nu
 async function updateMinecraftOnlineChannel(client: Client, onlinePlayers: number): Promise<void> {
     const expectedName = `👥 En ligne : ${onlinePlayers}`;
     await tryRenameMinecraftChannel(client, expectedName);
+}
+
+function buildPlayersTopic(snapshot: OnlineSnapshot): string {
+    if (snapshot.onlinePlayers <= 0) {
+        return "Joueurs en ligne (0) : personne";
+    }
+
+    if (snapshot.players.length === 0) {
+        return `Joueurs en ligne (${snapshot.onlinePlayers})`;
+    }
+
+    const base = `Joueurs en ligne (${snapshot.onlinePlayers}) : `;
+    const joinedPlayers = snapshot.players.join(", ");
+    const maxLength = 1024;
+    const rawTopic = `${base}${joinedPlayers}`;
+
+    if (rawTopic.length <= maxLength) {
+        return rawTopic;
+    }
+
+    return `${rawTopic.slice(0, maxLength - 3)}...`;
+}
+
+async function updateMinecraftPlayersTopic(client: Client, snapshot: OnlineSnapshot): Promise<void> {
+    const topicChannelId = EnvConfig.MINECRAFT_ONLINE_TOPIC_CHANNEL_ID || EnvConfig.MINECRAFT_ONLINE_CHANNEL_ID || DEFAULT_CHANNEL_ID;
+    const channel = await client.channels.fetch(topicChannelId).catch(() => null);
+
+    if (!channel) {
+        logger.warn(`[Minecraft] Salon topic ${topicChannelId} introuvable`);
+        return;
+    }
+
+    if (typeof (channel as any).setTopic !== "function") {
+        logger.warn(`[Minecraft] Le salon ${topicChannelId} ne supporte pas setTopic()`);
+        return;
+    }
+
+    const expectedTopic = buildPlayersTopic(snapshot);
+    const currentTopic = typeof (channel as any).topic === "string" ? (channel as any).topic : "";
+    if (currentTopic === expectedTopic) {
+        return;
+    }
+
+    await (channel as any).setTopic(expectedTopic);
+}
+
+function parsePlayersFromRconListResponse(response: string): OnlineSnapshot | null {
+    const trimmed = response.trim();
+
+    const englishFormat = trimmed.match(/^There are\s+(\d+)\s+of a max of\s+\d+\s+players online:?\s*(.*)$/i);
+    if (englishFormat) {
+        const onlinePlayers = parseInt(englishFormat[1], 10);
+        const playersRaw = englishFormat[2]?.trim() || "";
+        const players = playersRaw ? playersRaw.split(",").map(name => name.trim()).filter(Boolean) : [];
+        return {onlinePlayers, players};
+    }
+
+    const countFallback = trimmed.match(/(\d+)/);
+    if (!countFallback) {
+        return null;
+    }
+
+    const onlinePlayers = parseInt(countFallback[1], 10);
+    if (Number.isNaN(onlinePlayers) || onlinePlayers < 0) {
+        return null;
+    }
+
+    const maybePlayersRaw = trimmed.includes(":") ? trimmed.split(":").slice(1).join(":").trim() : "";
+    const players = maybePlayersRaw ? maybePlayersRaw.split(",").map(name => name.trim()).filter(Boolean) : [];
+
+    return {onlinePlayers, players};
 }
 
 function pruneRenameTimestamps(now: number): void {
@@ -110,6 +187,31 @@ async function resolveOnlinePlayersFromSourcePresence(client: Client): Promise<n
     return onlinePlayers;
 }
 
+async function resolveOnlineSnapshotFromRcon(): Promise<OnlineSnapshot | null> {
+    if (!EnvConfig.MINECRAFT_RCON_PASSWORD) {
+        return null;
+    }
+
+    const rcon = await Rcon.connect({
+        host: EnvConfig.MINECRAFT_RCON_HOST,
+        port: EnvConfig.MINECRAFT_RCON_PORT,
+        password: EnvConfig.MINECRAFT_RCON_PASSWORD,
+        timeout: EnvConfig.MINECRAFT_RCON_TIMEOUT_MS,
+    });
+
+    try {
+        const response = await rcon.send("list");
+        const parsed = parsePlayersFromRconListResponse(response);
+        if (!parsed) {
+            logger.warn(`[Minecraft] Réponse RCON inattendue pour 'list': ${response}`);
+            return null;
+        }
+        return parsed;
+    } finally {
+        await rcon.end().catch(() => undefined);
+    }
+}
+
 function schedulePendingRename(client: Client, delayMs: number): void {
     if (pendingRenameTimer) return;
 
@@ -172,9 +274,24 @@ export function startMinecraftOnlineChannelUpdater(client: Client): void {
 
     const tick = async () => {
         try {
-            const onlinePlayers = await resolveOnlinePlayersFromSourcePresence(client);
-            if (onlinePlayers === null) return;
-            await updateMinecraftOnlineChannel(client, onlinePlayers);
+            let snapshot = await resolveOnlineSnapshotFromRcon().catch((error) => {
+                logger.warn("[Minecraft] RCON indisponible, tentative de fallback présence:", error);
+                return null;
+            });
+
+            if (!snapshot && EnvConfig.MINECRAFT_ONLINE_USE_PRESENCE_FALLBACK) {
+                const onlinePlayers = await resolveOnlinePlayersFromSourcePresence(client);
+                if (onlinePlayers !== null) {
+                    snapshot = {onlinePlayers, players: []};
+                }
+            }
+
+            if (!snapshot) {
+                return;
+            }
+
+            await updateMinecraftOnlineChannel(client, snapshot.onlinePlayers);
+            await updateMinecraftPlayersTopic(client, snapshot);
         } catch (error) {
             logger.warn("[Minecraft] Erreur pendant la mise à jour du salon:", error);
         }

@@ -25,6 +25,7 @@
     "figlet": "^1.10.0",
     "lavalink-client": "^2.9.6",
     "play-dl": "^1.9.7",
+    "rcon-client": "^4.2.4",
     "sharp": "^0.34.5",
     "tweetnacl": "^1.0.3"
   },
