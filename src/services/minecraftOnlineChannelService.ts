@@ -53,14 +53,14 @@ async function updateMinecraftOnlineChannel(client: Client, onlinePlayers: numbe
 
 function buildPlayersTopic(snapshot: OnlineSnapshot): string {
     if (snapshot.onlinePlayers <= 0) {
-        return "Joueurs en ligne (0) : personne";
+        return "En ligne (0) : Aucun";
     }
 
     if (snapshot.players.length === 0) {
-        return `Joueurs en ligne (${snapshot.onlinePlayers})`;
+        return `En ligne (${snapshot.onlinePlayers})`;
     }
 
-    const base = `Joueurs en ligne (${snapshot.onlinePlayers}) : `;
+    const base = `En ligne (${snapshot.onlinePlayers}) : `;
     const joinedPlayers = snapshot.players.join(", ");
     const maxLength = 1024;
     const rawTopic = `${base}${joinedPlayers}`;
