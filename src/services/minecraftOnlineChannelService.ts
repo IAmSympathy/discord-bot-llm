@@ -452,9 +452,6 @@ async function handleChunkyAutomation(snapshot: OnlineSnapshot): Promise<void> {
 
     const cooldownMs = Math.max(60_000, EnvConfig.MINECRAFT_CHUNKY_COOLDOWN_MS);
     const now = Date.now();
-    if (now - lastChunkyAutomationAt < cooldownMs) {
-        return;
-    }
 
     const radius = Math.max(3501, EnvConfig.MINECRAFT_CHUNKY_IDLE_RADIUS);
     const worlds = getChunkyWorldsToProcess();
@@ -497,6 +494,8 @@ async function handleChunkyAutomation(snapshot: OnlineSnapshot): Promise<void> {
     chunkyAutomationInFlight = true;
 
     try {
+        // Let chunky continue/resume immediately after players leave;
+        // throttle only brand-new chunky start operations.
         const allowStart = now - lastChunkyAutomationAt >= cooldownMs;
         await withRconConnection(async (rcon) => {
             const taskState = await ensureChunkyTaskForWorld(rcon, worldName, radius, allowStart);
