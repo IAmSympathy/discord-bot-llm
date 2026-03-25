@@ -537,62 +537,54 @@ async function handleChunkyPauseOnPlayersOnline(snapshot: OnlineSnapshot): Promi
         return;
     }
 
-    logger.debug(`[MinecraftChunkyPause] Appelée avec ${snapshot.onlinePlayers} joueurs en ligne. lastSnapshot=${lastOnlinePlayersSnapshot}`);
-
-    // Première exécution : initialiser et ne rien faire
-    if (lastOnlinePlayersSnapshot === null) {
-        lastOnlinePlayersSnapshot = snapshot.onlinePlayers;
-        logger.info(`[MinecraftChunkyPause] Première exécution: initialisation à ${snapshot.onlinePlayers} joueurs`);
-        return;
-    }
-
-    const wasNoPlayersOnline = lastOnlinePlayersSnapshot === 0;
     const arePlayersOnline = snapshot.onlinePlayers > 0;
-
+    const previousSnapshot = lastOnlinePlayersSnapshot;
     lastOnlinePlayersSnapshot = snapshot.onlinePlayers;
 
-    // Transition 0 -> 1+ : faire la pause
-    if (wasNoPlayersOnline && arePlayersOnline) {
-        if (!EnvConfig.MINECRAFT_RCON_PASSWORD) {
-            return;
-        }
-
-        if (chunkyMarkedUnavailable) {
-            return;
-        }
-
-        try {
-            await withRconConnection(async (rcon) => {
-                const pauseResponse = await sendRconCommand(rcon, "chunky pause");
-                if (chunkyMarkedUnavailable) {
-                    logger.warn("[Minecraft] Chunky introuvable via RCON pendant 'chunky pause'. Automatisation désactivée jusqu'au redémarrage.");
-                    return;
-                }
-
-                const pauseState = classifyChunkyPauseResponse(pauseResponse);
-                if (pauseState === "paused" || pauseState === "already-paused" || pauseState === "no-task") {
-                    chunkyPauseIssuedForActivePlayers = true;
-                    markChunkyStateDirty();
-                    logger.info(`[Minecraft] Chunky pausé lors de l'arrivée de joueurs (${snapshot.onlinePlayers}) : ${pauseState}`);
-                    return;
-                }
-
-                logger.warn(`[Minecraft] Chunky pause: réponse inattendue: ${pauseResponse}`);
-            });
-        } catch (error) {
-            logger.warn("[Minecraft] Erreur pendant la pause automatique Chunky:", error);
-        }
-        return;
-    }
-
-    // Transition 1+ -> 0 : reset le flag pour permettre la prochaine pause
-    if (!arePlayersOnline && !wasNoPlayersOnline) {
+    // Dès que le serveur redevient vide, autoriser une future pause.
+    if (!arePlayersOnline) {
         if (chunkyPauseIssuedForActivePlayers) {
             chunkyPauseIssuedForActivePlayers = false;
             markChunkyStateDirty();
-            logger.info(`[Minecraft] Chunky: flag pause réinitialisé après départ des joueurs`);
+            logger.info("[Minecraft] Chunky: flag pause réinitialisé (0 joueur en ligne)");
         }
         return;
+    }
+
+    if (!EnvConfig.MINECRAFT_RCON_PASSWORD) {
+        return;
+    }
+
+    if (chunkyMarkedUnavailable) {
+        return;
+    }
+
+    // Ne pas spammer: on pause une seule fois par période "joueurs en ligne".
+    if (chunkyPauseIssuedForActivePlayers) {
+        return;
+    }
+
+    try {
+        await withRconConnection(async (rcon) => {
+            const pauseResponse = await sendRconCommand(rcon, "chunky pause");
+            if (chunkyMarkedUnavailable) {
+                logger.warn("[Minecraft] Chunky introuvable via RCON pendant 'chunky pause'. Automatisation désactivée jusqu'au redémarrage.");
+                return;
+            }
+
+            const pauseState = classifyChunkyPauseResponse(pauseResponse);
+            if (pauseState === "paused" || pauseState === "already-paused" || pauseState === "no-task") {
+                chunkyPauseIssuedForActivePlayers = true;
+                markChunkyStateDirty();
+                const transition = previousSnapshot === 0 ? "0->1+" : "online-stable";
+                logger.info(`[Minecraft] Chunky pausé (${transition}, joueurs: ${snapshot.onlinePlayers}) : ${pauseState}`);
+                return;
+            }
+
+            logger.warn(`[Minecraft] Chunky pause: réponse inattendue: ${pauseResponse}`);
+        });
+    } catch (error) {
+        logger.warn("[Minecraft] Erreur pendant la pause automatique Chunky:", error);
     }
 }
 
