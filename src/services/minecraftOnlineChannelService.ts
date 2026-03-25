@@ -692,6 +692,22 @@ function parsePlayersFromRconListResponse(response: string): OnlineSnapshot | nu
     return {onlinePlayers, players};
 }
 
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+    let timer: NodeJS.Timeout | null = null;
+    try {
+        return await Promise.race([
+            promise,
+            new Promise<T>((_, reject) => {
+                timer = setTimeout(() => reject(new Error(`${label} timeout (${timeoutMs}ms)`)), timeoutMs);
+            }),
+        ]);
+    } finally {
+        if (timer) {
+            clearTimeout(timer);
+        }
+    }
+}
+
 function pruneRenameTimestamps(now: number): void {
     while (renameTimestamps.length > 0 && now - renameTimestamps[0] >= RATE_LIMIT_WINDOW_MS) {
         renameTimestamps.shift();
@@ -862,20 +878,30 @@ export function startMinecraftOnlineChannelUpdater(client: Client): void {
                 return;
             }
 
-            await updateMinecraftOnlineChannel(client, snapshot.onlinePlayers).catch((error) => {
-                logger.warn("[Minecraft] Erreur pendant le renommage du salon:", error);
-            });
-
-            await updateMinecraftPlayersTopic(client, snapshot).catch((error) => {
-                logger.warn("[Minecraft] Erreur pendant la mise a jour du topic joueurs:", error);
-            });
-
             await handleChunkyPauseOnPlayersOnline(snapshot).catch((error) => {
                 logger.warn("[Minecraft] Erreur pendant la pause Chunky:", error);
             });
 
             await handleChunkyAutomation(snapshot).catch((error) => {
                 logger.warn("[Minecraft] Erreur pendant l'automatisation Chunky:", error);
+            });
+
+            // Exécuter Discord après Chunky pour qu'un blocage API Discord
+            // n'empêche jamais la pause/continue Chunky.
+            await withTimeout(
+                updateMinecraftOnlineChannel(client, snapshot.onlinePlayers),
+                8_000,
+                "rename channel",
+            ).catch((error) => {
+                logger.warn("[Minecraft] Erreur pendant le renommage du salon:", error);
+            });
+
+            await withTimeout(
+                updateMinecraftPlayersTopic(client, snapshot),
+                8_000,
+                "update topic",
+            ).catch((error) => {
+                logger.warn("[Minecraft] Erreur pendant la mise a jour du topic joueurs:", error);
             });
         } catch (error) {
             logger.warn("[Minecraft] Erreur pendant la mise à jour du salon:", error);
