@@ -274,13 +274,13 @@ function getChunkyWorldsToProcess(): string[] {
     if (configuredWorlds.length > 0) {
         return configuredWorlds;
     }
-    return ["world", "the_nether", "the_end"];
+    return ["overworld", "the_nether", "everdawn", "everbright", "the_end"];
 }
 
 function getChunkyWorldCandidates(worldName: string): string[] {
     const normalized = worldName.trim().toLowerCase();
     const aliasesByWorld: Record<string, string[]> = {
-        "world": ["world", "overworld", "minecraft:overworld"],
+        "world": ["overworld", "world", "minecraft:overworld"],
         "overworld": ["overworld", "world", "minecraft:overworld"],
         "minecraft:overworld": ["minecraft:overworld", "overworld", "world"],
         "world_nether": ["world_nether", "the_nether", "nether", "minecraft:the_nether"],
@@ -331,6 +331,29 @@ async function sendRconCommand(rcon: Rcon, command: string): Promise<string> {
         markChunkyStateDirty();
     }
     return response;
+}
+
+async function sendChunkyChatAnnouncement(rcon: Rcon, message: string): Promise<void> {
+    const safeMessage = message.replace(/\r?\n/g, " ").trim();
+    if (!safeMessage) {
+        return;
+    }
+
+    try {
+        await rcon.send(`say ${safeMessage}`);
+    } catch (error) {
+        logger.warn("[Minecraft] Impossible d'envoyer l'annonce chat Chunky:", error);
+    }
+}
+
+function getCurrentChunkyWorldName(): string {
+    const worlds = getChunkyWorldsToProcess();
+    if (worlds.length === 0) {
+        return "unknown";
+    }
+
+    const safeIndex = Math.min(Math.max(chunkyCurrentWorldIndex, 0), worlds.length - 1);
+    return worlds[safeIndex];
 }
 
 function getNextPendingWorldIndex(worlds: string[], startAt: number): number {
@@ -387,6 +410,9 @@ async function ensureChunkyTaskForWorld(rcon: Rcon, worldName: string, radius: n
     if (continueState === "continued" || continueState === "already-running") {
         chunkyStartedWorlds.add(worldName);
         markChunkyStateDirty();
+        if (continueState === "continued") {
+            await sendChunkyChatAnnouncement(rcon, `[Chunky] Continuing generation for dimension ${worldName}.`);
+        }
         logger.info(`[Minecraft] Chunky ${worldName} (${selectedWorldName}): ${continueState === "continued" ? "continue" : "déjà en cours"}`);
         return "running";
     }
@@ -424,6 +450,7 @@ async function ensureChunkyTaskForWorld(rcon: Rcon, worldName: string, radius: n
     if (startState === "started") {
         chunkyStartedWorlds.add(worldName);
         markChunkyStateDirty();
+        await sendChunkyChatAnnouncement(rcon, `[Chunky] Starting generation for dimension ${worldName} (radius ${radius}).`);
         logger.info(`[Minecraft] Chunky ${worldName} (${selectedWorldName}): nouvelle tâche démarrée (radius ${radius})`);
         return "started";
     }
@@ -579,6 +606,10 @@ async function handleChunkyPauseOnPlayersOnline(snapshot: OnlineSnapshot): Promi
             if (pauseState === "paused" || pauseState === "already-paused" || pauseState === "no-task") {
                 chunkyPauseIssuedForActivePlayers = true;
                 markChunkyStateDirty();
+                if (pauseState === "paused" || pauseState === "already-paused") {
+                    const worldName = getCurrentChunkyWorldName();
+                    await sendChunkyChatAnnouncement(rcon, `[Chunky] Paused generation for dimension ${worldName} because players are online.`);
+                }
                 const transition = transitionedToOnline ? "0->1+" : "online-stable";
                 logger.info(`[Minecraft] Chunky pausé (${transition}, joueurs: ${snapshot.onlinePlayers}) : ${pauseState}`);
                 return;
