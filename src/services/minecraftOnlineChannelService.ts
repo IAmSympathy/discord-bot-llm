@@ -186,6 +186,8 @@ function classifyChunkyWorldResponse(response: string): ChunkyWorldSelectState {
         normalized.includes("selected world")
         || normalized.includes("world set")
         || normalized.includes("using world")
+        || normalized.includes("world changed to")
+        || normalized.includes("changed to")
         || normalized.includes("current world")
     ) {
         return "selected";
@@ -197,7 +199,12 @@ function classifyChunkyWorldResponse(response: string): ChunkyWorldSelectState {
 function classifyChunkyContinueResponse(response: string): ChunkyContinueState {
     const normalized = normalizeChunkyResponse(response);
 
-    if (normalized.includes("already running") || normalized.includes("already generating")) {
+    if (
+        normalized.includes("already running")
+        || normalized.includes("already generating")
+        || normalized.includes("task already started")
+        || normalized.includes("already started")
+    ) {
         return "already-running";
     }
 
@@ -270,11 +277,33 @@ function classifyChunkyPauseResponse(response: string): ChunkyPauseState {
 }
 
 function getChunkyWorldsToProcess(): string[] {
+    const normalizeWorldName = (rawWorld: string): string => {
+        const normalized = rawWorld.trim().toLowerCase();
+        const aliases: Record<string, string> = {
+            "world": "overworld",
+            "minecraft:overworld": "overworld",
+            "world_the_end": "the_end",
+            "end": "the_end",
+            "minecraft:the_end": "the_end",
+            "world_nether": "the_nether",
+            "nether": "the_nether",
+            "minecraft:the_nether": "the_nether",
+            "the_everdawn": "everdawn",
+            "blueskies:everdawn": "everdawn",
+            "world_the_everdawn": "everdawn",
+            "the_everbright": "everbright",
+            "blueskies:everbright": "everbright",
+            "world_the_everbright": "everbright",
+        };
+
+        return aliases[normalized] ?? normalized;
+    };
+
     const configuredWorlds = EnvConfig.MINECRAFT_CHUNKY_WORLDS;
     if (configuredWorlds.length > 0) {
-        return configuredWorlds;
+        return Array.from(new Set(configuredWorlds.map(normalizeWorldName).filter(Boolean)));
     }
-    return ["overworld", "the_nether", "everdawn", "everbright", "the_end"];
+    return ["overworld", "the_end", "everdawn", "everbright", "the_nether"];
 }
 
 function getChunkyWorldCandidates(worldName: string): string[] {
@@ -924,6 +953,11 @@ export function startMinecraftOnlineChannelUpdater(client: Client): void {
                 8_000,
                 "rename channel",
             ).catch((error) => {
+                const message = error instanceof Error ? error.message : String(error);
+                if (message.includes("timeout")) {
+                    logger.info(`[Minecraft] Renommage Discord ignoré temporairement: ${message}`);
+                    return;
+                }
                 logger.warn("[Minecraft] Erreur pendant le renommage du salon:", error);
             });
 
@@ -932,6 +966,11 @@ export function startMinecraftOnlineChannelUpdater(client: Client): void {
                 8_000,
                 "update topic",
             ).catch((error) => {
+                const message = error instanceof Error ? error.message : String(error);
+                if (message.includes("timeout")) {
+                    logger.info(`[Minecraft] Topic Discord ignoré temporairement: ${message}`);
+                    return;
+                }
                 logger.warn("[Minecraft] Erreur pendant la mise a jour du topic joueurs:", error);
             });
         } catch (error) {
