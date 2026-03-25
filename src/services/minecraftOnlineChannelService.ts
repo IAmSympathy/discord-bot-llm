@@ -537,9 +537,12 @@ async function handleChunkyPauseOnPlayersOnline(snapshot: OnlineSnapshot): Promi
         return;
     }
 
+    logger.debug(`[MinecraftChunkyPause] Appelée avec ${snapshot.onlinePlayers} joueurs en ligne. lastSnapshot=${lastOnlinePlayersSnapshot}`);
+
     // Première exécution : initialiser et ne rien faire
     if (lastOnlinePlayersSnapshot === null) {
         lastOnlinePlayersSnapshot = snapshot.onlinePlayers;
+        logger.info(`[MinecraftChunkyPause] Première exécution: initialisation à ${snapshot.onlinePlayers} joueurs`);
         return;
     }
 
