@@ -46,6 +46,7 @@ type ChunkyWorldTaskState = "running" | "started" | "completed" | "waiting-coold
 type ChunkyPersistedState = {
     version: 1;
     lastChunkyAutomationAt: number;
+    lastOnlinePlayersSnapshot: number | null;
     chunkyMarkedUnavailable: boolean;
     chunkyPauseIssuedForActivePlayers: boolean;
     chunkyCurrentWorldIndex: number;
@@ -57,6 +58,7 @@ function getChunkyPersistedStateSnapshot(): ChunkyPersistedState {
     return {
         version: 1,
         lastChunkyAutomationAt,
+        lastOnlinePlayersSnapshot,
         chunkyMarkedUnavailable,
         chunkyPauseIssuedForActivePlayers,
         chunkyCurrentWorldIndex,
@@ -101,6 +103,12 @@ async function loadChunkyStateFromDisk(): Promise<void> {
 
         if (typeof parsed.lastChunkyAutomationAt === "number" && Number.isFinite(parsed.lastChunkyAutomationAt)) {
             lastChunkyAutomationAt = parsed.lastChunkyAutomationAt;
+        }
+
+        if (typeof parsed.lastOnlinePlayersSnapshot === "number" && Number.isInteger(parsed.lastOnlinePlayersSnapshot) && parsed.lastOnlinePlayersSnapshot >= 0) {
+            lastOnlinePlayersSnapshot = parsed.lastOnlinePlayersSnapshot;
+        } else if (parsed.lastOnlinePlayersSnapshot === null) {
+            lastOnlinePlayersSnapshot = null;
         }
 
         if (typeof parsed.chunkyMarkedUnavailable === "boolean") {
