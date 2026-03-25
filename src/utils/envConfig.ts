@@ -107,6 +107,27 @@ export class EnvConfig {
         return value !== "0" && value !== "false" && value !== "no";
     }
 
+    static get MINECRAFT_CHUNKY_AUTOMATION_ENABLED(): boolean {
+        const value = (process.env.MINECRAFT_CHUNKY_AUTOMATION_ENABLED || "1").trim().toLowerCase();
+        return value !== "0" && value !== "false" && value !== "no";
+    }
+
+    static get MINECRAFT_CHUNKY_IDLE_RADIUS(): number {
+        return parseInt(process.env.MINECRAFT_CHUNKY_IDLE_RADIUS || "5000", 10);
+    }
+
+    static get MINECRAFT_CHUNKY_WORLDS(): string[] {
+        const raw = process.env.MINECRAFT_CHUNKY_WORLDS || "world,the_nether,the_end";
+        return raw
+            .split(",")
+            .map((world) => world.trim())
+            .filter(Boolean);
+    }
+
+    static get MINECRAFT_CHUNKY_COOLDOWN_MS(): number {
+        return parseInt(process.env.MINECRAFT_CHUNKY_COOLDOWN_MS || "900000", 10);
+    }
+
     static get CITATIONS_THREAD_ID(): string | undefined {
         return process.env.CITATIONS_THREAD_ID;
     }
