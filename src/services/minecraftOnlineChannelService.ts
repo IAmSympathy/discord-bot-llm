@@ -209,14 +209,6 @@ function classifyChunkyContinueResponse(response: string): ChunkyContinueState {
     }
 
     if (
-        normalized.includes("continu")
-        || normalized.includes("resum")
-        || normalized.includes("task will continue")
-    ) {
-        return "continued";
-    }
-
-    if (
         normalized.includes("no task")
         || normalized.includes("nothing to continue")
         || normalized.includes("no chunks selected")
@@ -225,6 +217,14 @@ function classifyChunkyContinueResponse(response: string): ChunkyContinueState {
         || normalized.includes("done")
     ) {
         return "no-task";
+    }
+
+    if (
+        normalized.includes("continuing")
+        || normalized.includes("resumed")
+        || normalized.includes("task will continue")
+    ) {
+        return "continued";
     }
 
     return "unknown";
@@ -437,9 +437,10 @@ async function ensureChunkyTaskForWorld(rcon: Rcon, worldName: string, radius: n
 
     const continueState = classifyChunkyContinueResponse(continueResponse);
     if (continueState === "continued" || continueState === "already-running") {
+        const isFirstAnnouncement = !chunkyStartedWorlds.has(worldName);
         chunkyStartedWorlds.add(worldName);
         markChunkyStateDirty();
-        if (continueState === "continued") {
+        if (continueState === "continued" && isFirstAnnouncement) {
             await sendChunkyChatAnnouncement(rcon, `[Chunky] Continuing generation for dimension ${worldName}.`);
         }
         logger.info(`[Minecraft] Chunky ${worldName} (${selectedWorldName}): ${continueState === "continued" ? "continue" : "déjà en cours"}`);
