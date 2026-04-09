@@ -1,6 +1,6 @@
 import {Activity, Client, GuildChannel} from "discord.js";
-import {createLogger} from "../utils/logger";
-import {EnvConfig} from "../utils/envConfig";
+import {createLogger} from "../../utils/logger";
+import {EnvConfig} from "../../utils/envConfig";
 import {Rcon} from "rcon-client";
 import {promises as fs} from "fs";
 import path from "path";
@@ -271,7 +271,7 @@ function getChunkyWorldsToProcess(): string[] {
     if (configuredWorlds.length > 0) {
         const filteredConfiguredWorlds = configuredWorlds
             .map(normalizeWorldName)
-            .filter(world => CANONICAL_CHUNKY_WORLDS.has(world));
+            .filter((world: string) => CANONICAL_CHUNKY_WORLDS.has(world));
 
         if (filteredConfiguredWorlds.length > 0) {
             return Array.from(new Set(filteredConfiguredWorlds));
